@@ -1,0 +1,522 @@
+group 'leocdp'
+
+//-------------------------------------------------------------------------------
+// load ext properties from the file leocdp-build.properties 
+file("./leocdp-build.properties").withReader { 
+   Properties props = new Properties()
+   props.load(it)
+   project.ext.leoCdpBuild = props
+}
+
+// the output for BUILD
+def buildOutputFolderPath = leoCdpBuild['buildOutputFolderPath'].trim()
+
+// the output for STATIC files in CDN
+def staticOutputFolderPath = leoCdpBuild['staticOutputFolderPath'].trim()
+
+
+//-------------------------------------------------------------------------------
+
+// load ext properties from the file leocdp-metadata.properties 
+file("./leocdp-metadata.properties").withReader { 
+   Properties props = new Properties()
+   props.load(it)
+   project.ext.leoCdpMetadata = props
+}
+
+//////////////////////////////////////////
+version leoCdpMetadata['buildVersion'] ///
+//////////////////////////////////////////
+
+buildscript {
+	repositories {
+    	maven {
+      		url "https://plugins.gradle.org/m2/"
+    	}
+    	mavenLocal()
+  	}
+  	dependencies {
+    	classpath "org.gradle-webtools.minify:gradle-minify-plugin:1.3.2"
+  	}
+}
+
+apply plugin: 'java'
+apply plugin: 'maven'
+apply plugin: 'eclipse'
+apply plugin: "org.gradlewebtools.minify"
+
+eclipse {
+    project {
+        name = 'LeoTech-Core-System'
+    }
+}
+
+sourceCompatibility = 11 
+
+repositories {
+ 	mavenLocal()
+	google()
+    mavenCentral()
+    maven {
+    	url = "https://oss.sonatype.org/content/repositories/snapshots"
+    }
+}
+
+configurations.all {
+   exclude module: 'ch.qos.logback'
+}
+
+dependencies {
+	
+	// Joda Time https://www.joda.org/joda-time/index.html
+	compile group: 'joda-time', name: 'joda-time', version: '2.12.2'
+	
+	// deps of https://github.com/USPA-Technology/QueryBuilder
+	compile group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.14.2'
+	compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.14.2'
+	compile group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.14.2'	
+	compile group: 'com.fasterxml.jackson.module', name: 'jackson-module-scala_2.13', version: '2.14.2'
+	
+	// CSV, TSV parser
+	compile group: 'com.univocity', name: 'univocity-parsers', version: '2.9.1'
+	
+	// MVEL (MVFLEX Expression Language) to process AutomatedFlow
+	compile group: 'org.mvel', name: 'mvel2', version: '2.5.2.Final'
+
+	// MySQL, PostgreSQL, sqlite data connector
+	compile group: 'com.mysql', name: 'mysql-connector-j', version: '9.3.0'
+	compile group: 'org.postgresql', name: 'postgresql', version: '42.7.7'
+	compile group: 'org.xerial', name: 'sqlite-jdbc', version: '3.50.2.0'
+	
+	// Jdbi library provides convenient, idiomatic access to relational databases
+	compile group: 'org.jdbi', name: 'jdbi3-core', version: '3.49.5'
+	compile group: 'org.jdbi', name: 'jdbi3-sqlobject', version: '3.49.5'
+	
+	// High-quality thumbnails from existing images
+	compile group: 'net.coobird', name: 'thumbnailator', version: '0.4.20'
+	
+	// Captcha  https://github.com/logicsquad/nanocaptcha
+	compile group: 'net.logicsquad', name: 'nanocaptcha', version: '2.1'
+	
+	// for parsing, formatting, and validating international phone numbers https://github.com/google/libphonenumber/
+	compile group: 'com.googlecode.libphonenumber', name: 'libphonenumber', version: '9.0.10'
+	
+	// for job schedulers in data connectors
+	compile group: 'org.quartz-scheduler', name: 'quartz', version: '2.3.2'
+	
+	// core STMP client to send email
+	compile group: 'com.sun.mail', name: 'javax.mail', version: '1.6.2'
+	
+	// generate html and text mail via one fluent build from https://github.com/rocketbase-io/email-template-builder
+	compile group: 'io.rocketbase.mail', name: 'email-template-builder', version: '2.4.0'
+	
+	// Google OAuth
+	compile group: 'com.google.oauth-client', name: 'google-oauth-client', version: '1.34.1'    
+	compile group: 'com.google.oauth-client', name: 'google-oauth-client-jetty', version: '1.34.1'       
+	
+	// Google Drive API	
+	compile group: 'com.google.apis', name: 'google-api-services-drive', version: 'v3-rev20231128-2.0.0'
+	
+	// Google Sheets API
+	compile group: 'com.google.apis', name: 'google-api-services-sheets', version: 'v4-rev20230815-2.0.0'
+	
+	// Google Storage for License and Backup
+	compile group: 'com.google.cloud', name: 'google-cloud-storage', version: '2.22.5'
+	
+	
+	// ------ END DEFAULT CORE LIBS for MARKETING ACTIVATION ----
+	
+    compile (	   
+		fileTree(dir: 'ext-lib', include: '**/*.jar') 	
+		
+		// Arangodb driver: primary database of Leo CDP
+		,'com.arangodb:arangodb-java-driver:6.25.0'
+ 	
+    	// vertx
+    	,'io.vertx:vertx-core:3.8.5'			
+		,'io.vertx:vertx-web:3.8.5'
+		,'io.vertx:vertx-web-client:3.8.5'
+		,'io.vertx:vertx-codegen:3.8.5'
+		,'io.vertx:vertx-auth-jwt:3.8.5'
+		
+		// gson
+		,'com.google.code.gson:gson:2.9.0'
+		
+		// log4j
+		,'org.apache.logging.log4j:log4j-api:2.17.2'
+		,'org.apache.logging.log4j:log4j-core:2.17.2'
+		,'org.slf4j:slf4j-api:2.0.3'
+		,'org.slf4j:slf4j-simple:2.0.3'
+		
+		// XSS filter
+		,'org.jsoup:jsoup:1.21.1'
+		,'com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:20240325.1'
+		
+		// common util				
+		,'org.apache.commons:commons-lang3:3.12.0'
+		,'commons-validator:commons-validator:1.7'
+		,'commons-net:commons-net:3.6'    		
+		,'commons-io:commons-io:2.5'
+		,'redis.clients:jedis:2.10.2'
+		
+		,'org.apache.httpcomponents:httpclient:4.5.13'
+		,'com.google.guava:guava:32.0.1-jre'
+		,'org.databene:contiperf:2.3.4'
+		,'com.google.javascript:closure-compiler:v20210302'
+		,'com.github.jknack:handlebars:4.3.1'
+		,'com.github.spullara.mustache.java:compiler:0.9.6'
+		,'org.yaml:snakeyaml:1.33' 
+				
+		// Friendly Content ID
+		,'com.devskiller.friendly-id:friendly-id:1.1.0'	
+						
+		// SEO util
+		,'com.github.slugify:slugify:2.5'
+		,'net.gcardone.junidecode:junidecode:0.4.1'   
+			
+		// Maxmind Geolocation
+		,'com.maxmind.geoip2:geoip2:3.0.1'	
+		,'com.google.openlocationcode:openlocationcode:1.0.4'
+
+		// for Math library
+		,'org.apache.commons:commons-math3:3.6.1'			
+            
+		// for Embebded OpenSSP Ad Server
+		,'com.squareup.okhttp3:okhttp:4.12.0'
+		,'javax.servlet:javax.servlet-api:3.1.0'
+	
+		// Kafka for raw event data tracking
+		,'org.apache.kafka:kafka-clients:3.5.2'
+		,'org.apache.kafka:kafka-streams:3.5.2'
+		
+		// Image Processing Lib: Headline + Watermark + Visual Image  Generator
+		,'org.docx4j.org.capaxit.textimage:TextImageGen:1.9'
+		,'com.github.jai-imageio:jai-imageio-core:1.4.0'
+		
+		// QR Code Generator 
+		,'io.nayuki:qrcodegen:1.8.0'
+    ) 
+    	
+    testImplementation (
+    	'org.junit.jupiter:junit-jupiter-engine:5.10.3' 
+		,'org.assertj:assertj-core:3.26.3'
+		
+		// Web Crawler for Ajax website, need correct version of Chromedriver at https://chromedriver.chromium.org/downloads
+		,'org.seleniumhq.selenium:selenium-java:4.22.0'
+		
+		// generates fake data for testing
+		,'net.datafaker:datafaker:1.5.0'
+		
+    )
+}
+
+uploadArchives {
+    repositories {
+       flatDir {
+           dirs 'repos'
+       }
+    }
+}
+
+tasks.withType(Jar) {
+	//destinationDir = file("$rootDir/BUILD-OUTPUT")
+	destinationDir = file(buildOutputFolderPath)
+}
+
+// JS minification
+task minifyJsAdminResource(type: org.gradlewebtools.minify.JsMinifyTask) {
+    srcDir = project.file("resources/app-templates/leocdp-admin/common-resources") 
+    dstDir = project.file("resources/app-templates/leocdp-admin/common-resources-min")
+    options { 
+    	originalFileNames = true 
+    }
+}
+
+def getClasspathStringJars() {
+	def baseFolder = 'deps/'
+    def fileNames = []
+    configurations.compile.each { File file -> fileNames.add(baseFolder + file.name) }
+    
+    def classpath = fileNames.join(" ; ")    
+    return '. ; ' + classpath + ' ; '
+}
+
+def getImplementationVersion() {
+    def date = new Date()
+    def implVersion = leoCdpMetadata['buildVersion'] + "_" + date.format('yyyy-MM-dd-HH-mm-ss')
+    return implVersion
+}
+
+/////////////////////////// BEGIN BUILD FOR DEPLOYED JAR ///////////////////////////////
+
+task buildLeoMainHttpStarter(type: Jar) {	
+	dependsOn classes   
+    from(sourceSets.main.output) {
+        include "**"
+    }
+    baseName = 'leo-main-starter'
+    manifest {
+   		attributes ('Implementation-Title': 'MainHttpStarter', 
+        			'Implementation-Version': getImplementationVersion(),
+        			'Main-Class': ' leotech.starter.MainHttpStarter',
+        			'Class-Path' : getClasspathStringJars() 
+        )
+	}
+} 
+
+task buildLeoDataObserverStarter(type: Jar) {	
+	dependsOn classes   
+    from(sourceSets.main.output) {
+        include "**"
+    }
+    baseName = 'leo-observer-starter'
+    manifest {
+   		attributes ('Implementation-Title': 'DataObserverStarter', 
+        			'Implementation-Version': getImplementationVersion(),
+        			'Main-Class': ' leotech.starter.DataObserverStarter',
+        			'Class-Path' : getClasspathStringJars() 
+        )
+	}
+}
+
+task buildLeoScheduledJobStarter(type: Jar) {	
+	dependsOn classes   
+    from(sourceSets.main.output) {
+        include "**"
+    }
+    baseName = 'leo-scheduler-starter'
+    manifest {
+   		attributes ('Implementation-Title': 'ScheduledJobStarter', 
+        			'Implementation-Version': getImplementationVersion(),
+        			'Main-Class': ' leotech.starter.ScheduledJobStarter',
+        			'Class-Path' : getClasspathStringJars() 
+        )
+	}
+}
+
+task buildLeoDataProcessingStarter(type: Jar) {	
+	dependsOn classes   
+    from(sourceSets.main.output) {
+        include "**"
+    }
+    baseName = 'leo-data-processing-starter'
+    manifest {
+   		attributes ('Implementation-Title': 'DataProcessingStarter', 
+        			'Implementation-Version': getImplementationVersion(),
+        			'Main-Class': ' leotech.starter.DataProcessingStarter',
+        			'Class-Path' : getClasspathStringJars() 
+        )
+	}
+}
+
+task buildLeoDataDeliveryStarter(type: Jar) {	
+	dependsOn classes   
+    from(sourceSets.main.output) {
+        include "**"
+    }
+    baseName = 'leo-delivery-starter'
+    manifest {
+   		attributes ('Implementation-Title': 'DataDeliveryStarter', 
+        			'Implementation-Version': getImplementationVersion(),
+        			'Main-Class': ' leotech.starter.DataDeliveryStarter',
+        			'Class-Path' : getClasspathStringJars() 
+    	)
+	}
+}
+
+task buildLeoUploadFileHttpStarter(type: Jar) {	
+	dependsOn classes   
+    from(sourceSets.main.output) {
+        include "**"
+    }
+    baseName = 'leo-uploader-starter'
+    manifest {
+   		attributes ('Implementation-Title': 'UploadFileHttpStarter', 
+        			'Implementation-Version': getImplementationVersion(),
+        			'Main-Class': ' leotech.starter.UploadFileHttpStarter',
+        			'Class-Path' : getClasspathStringJars() 
+        			)
+	}
+}
+
+/////////////////////////// BEGIN COPY TASKS ///////////////////////////////
+
+
+// 1) copy configs
+task CopyConfigsFolderToBUILD(type: Copy) {  
+	from files('configs')
+  	into buildOutputFolderPath + "/configs" 
+  	exclude "**DEV**"
+  	exclude "**PRO**"
+  	
+  	println '###  CopyConfigsFolderToBUILD OK !!!  ###'
+}
+
+
+
+// 2) copy templates
+task CopyResourcesFolderToBUILD(type: Copy, dependsOn: minifyJsAdminResource) {  
+	from files('resources')
+  	into  buildOutputFolderPath + "/resources" 
+  	
+  	includeEmptyDirs = true
+  	exclude "**/common-resources"
+  	
+  	println '###  CopyResourcesFolderToBUILD OK !!!  ###'
+}
+
+// 3) copy dependency system libs
+task CopyRuntimeLibsFolderToBUILD(type: Copy) {  
+	from configurations.compile  
+  	into  buildOutputFolderPath + "/deps" 
+  	
+  	println '###  CopyRuntimeLibsFolderToBUILD OK !!!  ###'
+}
+
+// 4) copy public folder to BUILD
+task CopyPublicFolderToBUILD(type: Copy) {  
+	from files('public')
+  	into  buildOutputFolderPath + "/public"  
+  	
+  	includeEmptyDirs = true
+  	
+  	// excluded files
+  	exclude "**/leo.proxy.js"
+  	exclude "**/leo.observer.js"
+  	exclude "**/leoads.src.js"
+  	
+  	// excluded folders
+  	exclude "**/exported-files/**.*"
+  	exclude "**/uploaded-files/**.*"
+  	exclude "**/qrcode/**.png"
+  	exclude "**/sample-data"
+  	
+  	println '###  CopyPublicFolderToBUILD OK !!!  ###'
+}
+
+// 5) copy public folder to STATIC for public CDN at https://www.jsdelivr.com
+// E.g: https://gcore.jsdelivr.net/gh/USPA-Technology/leo-cdp-static-files/js/leo-observer/leo.observer.min.js
+task CopyPublicFolderToSTATIC(type: Copy) {  
+	from files('public')
+  	into staticOutputFolderPath  
+  	
+  	// excluded files
+  	exclude "**/leo.proxy.js"
+  	exclude "**/leo.observer.js"
+  	exclude "**/leoads.src.js"
+  	
+  	// excluded folders
+  	exclude "**/exported-files"
+  	exclude "**/uploaded-files"
+  	exclude "**/sample-data"
+  	exclude "**/qrcode/**.png"
+  	exclude "**/html/leo-event-proxy.html"
+  	
+  	println '###  CopyPublicFolderToSTATIC OK !!!  ###'
+}
+
+
+// 6) copy shell-script-starter and installation
+task CopyDevOpsScriptToBUILD(type: Copy) {  
+
+    copy {
+        from 'devops-script/docker-arangodb'
+        into buildOutputFolderPath + '/devops-script/docker-arangodb'
+    }
+
+    copy {
+        from 'devops-script/docker-kafka'
+        into buildOutputFolderPath + '/devops-script/docker-kafka'
+    }
+    
+    copy {
+        from 'devops-script/kafka-docker-production'
+        into buildOutputFolderPath + '/devops-script/kafka-docker-production'
+    }
+
+    copy {
+        from 'devops-script/script-installation'
+        into buildOutputFolderPath + '/devops-script/script-installation'
+    }
+    
+    println '###  CopyDevOpsScriptToBUILD OK !!!  ###'
+}
+
+// 7) copy README.md, data flow image and release notes
+task CopyTechDocuments(type: Copy) {  
+
+	from file('NOTES-FOR-NEW-SETUP.md')
+  	into buildOutputFolderPath
+  	
+  	from file('README.md')
+  	into buildOutputFolderPath
+  	
+  	from file('ChangeLog.md')
+  	into buildOutputFolderPath
+  	
+  	from file('leo-cdp-version-1.0.png')
+  	into buildOutputFolderPath
+  	
+  	from file('leo-cdp-how-it-works.png')
+  	into buildOutputFolderPath
+  	
+  	println '###  CopyTechDocuments OK !!!  ###'
+}
+
+
+// 8) Copy AQL code To Build
+task CopyDatabaseQueryTemplateToBuild(type: Copy) {  
+  	
+  	from file('configs/database-query-template.aql')
+  	into buildOutputFolderPath + "/configs"
+  
+  	println '###  CopyDatabaseQueryTemplateToBuild OK !!!  ###'
+}
+
+// 9) copy templates
+task CopyAirflowDagFolderToBUILD(type: Copy) {  
+	from files('../airflow-dags')
+  	into  buildOutputFolderPath + "/airflow-dags" 
+  	
+  	exclude "**/logs"
+  	exclude "**/__pycache__"
+  	
+  	println '###  CopyAirflowDagFolderToBUILD OK !!!  ###'
+}
+
+// 10) compile and copy key Leo CDP jars
+def mainJarTasks = [buildLeoMainHttpStarter, buildLeoDataObserverStarter, buildLeoScheduledJobStarter, buildLeoDataProcessingStarter]
+task AllBuildJarLeoCDP(dependsOn: mainJarTasks) {
+     println '###  AllBuildJarLeoCDP OK !!!  ###'
+}
+
+// 11) Build all system
+def systemJarTasks = [ CopyRuntimeLibsFolderToBUILD, CopyConfigsFolderToBUILD ]
+def staticTasks = [CopyTechDocuments, CopyDevOpsScriptToBUILD, CopyPublicFolderToBUILD, CopyResourcesFolderToBUILD ]
+def allReleaseTasks = [CopyDatabaseQueryTemplateToBuild, mainJarTasks, CopyTechDocuments, CopyPublicFolderToBUILD, CopyResourcesFolderToBUILD, CopyRuntimeLibsFolderToBUILD ]
+
+task AllBuildForOneLeoCDP(dependsOn: allReleaseTasks) {    
+     println '###  AllBuildForOneLeoCDP OK !!!  ###'
+}
+
+defaultTasks 'AllBuildForOneLeoCDP'
+
+build {
+    dependsOn AllBuildForOneLeoCDP
+}
+
+
+/////////////////////////// END COPY TASKS ///////////////////////////////
+
+/////////////////////////// END BUILD FOR DEPLOYED JAR ///////////////////////////////
+
+// deploy jar to Remote Servers and restart all
+task AutoBuildAndDeployToRemoteServers(type: Exec) {    
+    commandLine 'sh', './shell-scripts/deploy-ad-server.sh'
+}
+
+// just restart all servers
+task RestartAllServers(type: Exec) {    
+    commandLine 'sh', './shell-scripts/restart-all-ad-servers.sh'
+}
+

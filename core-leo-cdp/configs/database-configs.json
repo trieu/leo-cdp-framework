@@ -1,0 +1,14 @@
+{
+	"configs": {
+		"localCdpDbConfigs": {
+			"username": "root",
+			"password": "12345678",
+			"database": "leo_cdp",
+			"host": "127.0.0.1",
+			"port": 8600,
+			"dbdriver": "arangodb",
+			"dbdriverclasspath": "com.arangodb.ArangoDB",
+			"enabled": true
+		}
+	}
+}

@@ -1,0 +1,3 @@
+#!/bin/sh
+
+wget -S -O - https://leocdp.example.com/ping | grep ...

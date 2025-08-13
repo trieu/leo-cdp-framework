@@ -1,0 +1,91 @@
+[
+	{
+		"index" : -1,
+		"id": "local_admin_mail_server",
+		"name": "SMTP Mail Server for System Management",
+		"description": "The Email SMTP for user login management and system monitoring alert",
+		"configs": {
+			"service_api_url": "",
+			"service_api_key": "",
+			"smtp_enabled":false,
+			"smtp_username": "",
+			"smtp_password": "",
+			"smtp_host": "",
+			"smtp_port": 587,
+			"smtp_auth": true,
+			"smtp_starttls_enable": true
+		}
+	},
+	{
+		"index" : -2,
+		"id": "local_smtp_mail_server",
+		"name": "SMTP Mail Server for Email Marketing",
+		"description": "To target your customers through email, by providing useful content, product information, PR event and feedback survey",
+		"configs": {
+			"service_api_url": "",
+			"service_api_key": "",
+			"smtp_enabled":false,
+			"smtp_username": "",
+			"smtp_password": "",
+			"smtp_host": "",
+			"smtp_port": 587,
+			"smtp_auth": true,
+			"smtp_starttls_enable": true
+		}
+	},
+	{
+		"index" : 3,
+		"id": "local_airflow_server",
+		"name": "Local Airflow Server",
+		"description": "The Airflow server for data services: information enrichment, customer personalization and campaign activation",
+		"configs": {
+			"service_api_url":"http://0.0.0.0:8080/api/v1/dags/",
+			"airflow_authorization_username": "",
+			"airflow_authorization_password": ""
+		}
+	},
+	{
+		"index" : 4,
+		"id": "cdp_recommender",
+		"name": "Recommendation Service for Personalization",
+		"description": "The Personalization Engine to suggest most personalized information directly to your customers",
+		"configs": {
+			"service_api_url":"http://0.0.0.0:8080/api/v1/dags/cdp_recommender/dagRuns",
+			"airflow_authorization_username": "",
+			"airflow_authorization_password": "",
+			"service_max_item_for_profile": 50,
+			"service_max_item_for_request": 10
+		}
+	},
+	
+	{
+		"index" : 5,
+		"id": "cdp_classification",
+		"name": "Profile Data Classification",
+		"description": "To set-up the ongoing process of synchronizing data from CDP to digital marketing platforms",
+		"configs": {
+			"service_api_url":"http://0.0.0.0:8080/api/v1/dags/cdp_classification/dagRuns",
+			"airflow_authorization_username": "",
+			"airflow_authorization_password": ""
+		}
+	},
+	{
+		"index" : 6,
+		"id": "cdp_prediction",
+		"name": "Profile Score Prediction",
+		"description": "To predict Customer Acquisition Cost (CAC), Customer Lifetime Value (CLV) and Credit Score from behavioral data",
+		"configs": {
+			"service_api_url":"http://0.0.0.0:8080/api/v1/dags/cdp_prediction/dagRuns",
+			"airflow_authorization_username": "",
+			"airflow_authorization_password": ""
+		}
+	},
+	
+	{
+		"index" : -1,
+		"id": "leo_cdp_metadata",
+		"name": "Leo CDP Meta Data",
+		"description": "Metadata for core system",
+		"configs": {}
+	}
+]

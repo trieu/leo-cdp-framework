@@ -1,0 +1,231 @@
+<!-- Data Journey Flow -->
+<div class="row">
+    <div class="col-lg-7" >
+		<h5 class="page-header" id="page_breadcrumb" > </h5>
+	</div> 
+    <div class="col-lg-5 text-right" style="padding: 10px">
+    	<button type="button" class="btn btn-info" title="Go back" onclick="history.back()" > 
+			<i class="fa fa-arrow-circle-left" aria-hidden="true"></i> Back 
+		</button>
+      	<button type="button" class="btn btn-do-now" onclick="refreshJourneyMapView()" title="Refresh data"  > 
+      		<i class="fa fa-refresh" aria-hidden="true"></i> Refresh
+      	</button>
+    	<button type="button" class="btn btn-danger data-control-delete" onclick="deleteCurrentJourneyMap()" title="Delete current journey map" > 
+    		<i class="fa fa-trash" aria-hidden="true"></i> Delete 
+    	</button>
+      	<button type="button" class="btn btn-goto-router data-control-edit" onclick="createNewJourneyMap()" title="Create New Data Journey Map"  > 
+    		<i class="fa fa-plus-circle" aria-hidden="true"></i> New Data Journey Map
+    	</button>
+    </div>
+</div>
+
+<div class="row">
+	<div class="col-lg-12">
+	
+		<div class="row">
+			<div class="col-lg-4" >
+	            <div class="panel panel-info">
+            		<div class="panel-heading"> <h3 class="panel-title text-center"> <i class="fa fa-list" aria-hidden="true"></i> All Data Journey Maps</h3> </div>
+				  	<div class="panel-body" style="height: 80px; padding-top: 20px; font-weight: bold;" >
+				  		<select id="journeyMapList" data-placeholder="Choose an Journey Map" class="select" >
+		                  <!-- journeyMapList -->  
+		                </select>
+		                <div id="default_journey_map_check" style="display: none; margin-top: 8px; font-weight: bold;" > 
+				  			<i style="font-size:1.2em;color:#3300ff" class="fa fa-check-square-o" aria-hidden="true"></i> Default journey map
+				  		</div>
+				  	</div>
+				</div>
+			</div>
+			<div class="col-lg-8" >
+				<div class="panel panel-info">
+            		<div class="panel-heading"> <h3 class="panel-title text-center"> <i class="fa fa-info-circle" aria-hidden="true"></i> Data Journey Name </h3> </div>
+				  	<div class="panel-body" style="height: 80px" >
+				  		 <h4 class="highlight_text text-center" onmouseover="this.style.border = '1px dashed'" onmouseout="this.style.border = '0px'" title="Click to edit" onclick="editJourneyMapName()">
+				  		 	<a id="journeyMapName" href="javascript: editJourneyMapName()" title="Click to edit" >&nbsp;</a>
+				  		 	<input id="journeyMapNameEditor" type="text" class="form-control"  placeholder="Enter journey map name" style="display: none" >
+				  		 </h4>
+				  	</div>
+				</div>
+			</div>
+		</div>
+	
+		<!--  Data Flow Chart for Visualization -->
+       	<div class="panel panel-business">
+          	<div class="panel-heading"> <h3 class="panel-title text-center"> <i class="fa fa-map-o" aria-hidden="true"></i> Data Journey Flow </h3> </div>
+		  	<div class="panel-body" >
+		  		<ul class="nav nav-tabs" data-tab-content="journey_flow_tabs" > 
+			   		<li class="active" >
+		        		<a href="javascript:" data-target-tab="panel_journey_flow_design" > 
+		        			<i class="fa fa-pencil-square" aria-hidden="true"></i> All Touchpoint Hubs
+		        		</a>
+		       		</li>
+				</ul>
+				<div class="tab-content" id="journey_flow_tabs" style="min-height: 550px;" >
+					<!-- tab 1 Design Mode   -->
+					<div class="tab-pane active" id="panel_journey_flow_design" >
+						<div id="journeyFlowChart" class="experience_journey_flow" style="height: 550px;"></div>
+					</div>
+				</div>
+		  	</div>
+		</div>
+		
+		<!--  Tab Navigation Items -->
+		<ul class="nav nav-tabs" data-tab-content="journey_touchpoint_tabs" > 
+			<li class="active" id="tab_journey_data_observers" >
+       			<a href="javascript:" data-target-tab="panel_data_observers"  > <i class="fa fa-list" aria-hidden="true"></i> Data Observer </a>
+       		</li>
+	   		<li>
+        		<a href="javascript:" data-target-tab="panel_touchpoint_hubs" > <i class="fa fa-list" aria-hidden="true"></i> Touchpoint Hub</a>
+       		</li>
+       		
+       		<li>
+       			<a href="javascript:" data-target-tab="panel_summary_report"  > <i class="fa fa-bar-chart aria-hidden="true"></i> Touchpoint Hub Report  </a>
+       		</li>
+       		<li style="display: none">
+       			<a href="javascript:loadJourneyFlowReport()" data-target-tab="panel_journey_flow_report" > 
+       				<i class="fa fa-snowflake-o" aria-hidden="true"></i> Event Flow Report 
+       			</a>
+       		</li>
+       		<li id="tab_journey_data_authorization" style="display: none">
+       			<a href="javascript:" data-target-tab="panel_journey_data_authorization"  > <i class="fa fa-lock" aria-hidden="true"></i> User Authorization </a>
+       		</li>
+       		
+		</ul>
+
+		<div class="tab-content" id="journey_touchpoint_tabs" style="min-height:450px; margin-bottom:60px;" >
+			<!-- tab 2 Touchpoint Data Observer  -->
+			<div class="tab-pane active" id="panel_data_observers" >
+				<div class="top_page_header" >
+					<h4> All data observers to collect events and profiles from all touchpoints</h4>
+				</div>
+
+		        <div class="table-responsive" >
+		        	<div class="col-lg-12" style="margin-bottom: 15px">
+						<div class="col-lg-8">
+							<input id="txt_filter_keywords_observers" class="form-control" type="text" placeholder="Enter keywords to search observers by name" autocomplete="off">
+						</div>
+						<div class="col-lg-4">
+							<button id="btn_filterObservers" type="button" class="btn btn-primary" onclick="filterDataObserverList( $('#txt_filter_keywords_observers').val() )" title="Filter data"> 
+					     		<i class="fa fa-filter" aria-hidden="true"></i> Search
+					     	</button>
+					     	<button type="button" class="btn btn-do-now" onclick="loadDataObserverList()" title="Refresh data"> 
+					     		<i class="fa fa-refresh" aria-hidden="true"></i> Refresh
+					     	</button>
+						</div>
+					</div>
+		            <div id="data_observers_table"></div>
+		        </div>
+			</div>
+		
+			<!-- tab 1 Touchpoint Data Hub   -->
+			<div class="tab-pane " id="panel_touchpoint_hubs" >
+				<div class="top_page_header" >
+					<h4> All touchpoint hubs in data journey map </h4>
+				</div>
+				<div class="table-responsive">
+		    		<div id="touchpoint_hub_table"></div>
+		    	</div>
+			</div>
+			
+			<!-- tab 3 Journey Data Report  -->
+			<div class="tab-pane" id="panel_summary_report" >
+				<!-- Event Matrix -->
+				<div class="col-lg-12"  >
+					<h4 class="highlight_text" > <i class="fa fa-info-circle" aria-hidden="true"></i> Matrix Report between the Touchpoint Hubs and Event Metrics </h4> 
+					<div id="journey_map_event_matrix" class="col-lg-12"> </div>
+				</div>
+				
+				<!-- Data Observer Bar Chart -->
+            	<div class="col-lg-12" style="display: none;">
+					<h4 class="highlight_text" > <i class="fa fa-info-circle" aria-hidden="true"></i> Top Event Sources </h4> 
+					<div id="journeyObserverChart" class="col-lg-12"> </div>
+				</div>	
+			</div>
+			
+			<!-- tab 4 Report Mode  -->
+			<div class="tab-pane" id="panel_journey_flow_report" >
+				 <div id="journeyFlowReport" class="experience_journey_flow" style="height: 720px;"></div>
+			</div>
+			
+			<!-- tab 5 User Authorization  -->
+			<div class="tab-pane" id="panel_journey_data_authorization" >
+				<div class="top_page_header" >
+					<h4> The user authorization of <span id="authorizedJourneyName" style="font-weight: bold;"></span> </h4>
+				</div>
+		        <div class="col-lg-12">
+		            <div class="form-group row"  >
+						<label class="control-label col-lg-4" for="authorizedJourneyViewers">Authorized users can view this data journey map</label>
+						<div class="col-lg-8" >
+							<select id="authorizedJourneyViewers" multiple data-placeholder="Choose an authorized data viewer" class="select" style="display: none;" >
+							  	<!-- list of login accounts -->
+							</select>
+						</div>
+					</div>
+					<div class="form-group row"  >
+						<label class="control-label col-lg-4" for="authorizedJourneyEditors">Authorized users can update this data journey map</label>
+						<div class="col-lg-8" >
+							<select id="authorizedJourneyEditors" multiple data-placeholder="Choose an authorized data editor" class="select" style="display: none;" >
+							  	<!-- list of login accounts -->
+							</select>
+						</div>
+					</div>
+					<div class="checkbox">
+					  <label style="font-weight: bold;">
+					  	<input type="checkbox" id="updateAllProfilesInJourney" checked="checked"> Use cascading update data authorization for all customer profiles in this data journey map
+					  </label>
+					</div>
+					<div class="form-group text-right"  >
+						<button type="button" class="btn btn-success" onclick="saveJourneyDataAuthorization()"  > 
+							<i class="fa fa-check-square-o" aria-hidden="true"></i> Update User Authorization
+						</button>
+					</div>
+		        </div>
+			</div>
+
+		</div>	
+			
+   </div>
+</div>
+
+<!-- /////// JavaScript /////// -->
+<script>
+	var currentJourneyMapId = "id_default_journey";
+	var eventMetrics = false;
+	var cxFeedbackTemplates = false, landingPageTemplates = false;
+	
+	// touchpoint flow network
+	var flowNetworkGraph = false;
+	
+	var initJourneyMap = function(id) {
+		if(typeof id === 'string') {
+			currentJourneyMapId = id;
+		}
+		if(currentJourneyMapId === "id_default_journey"){
+			$('#default_journey_map_check').show();
+			$('button.data-control-delete').attr('disabled','disabled');
+		}
+		
+		var role = currentUserProfile.role;
+   		if( role >=5 ) {
+   			$("#tab_journey_data_authorization").show();
+   		}
+    	
+    	// panel tabs 
+    	setupTabPanels();
+    	
+    	// the journey map selection
+    	loadJourneyMapList();
+    	
+    	// name editor
+		initJourneyMapNameEditor();
+    	
+    	// event metrics for observer JS
+    	loadEventMetrics();
+    	
+    	// init data observer UI
+   		initDataObserverList();
+    	
+    	// the flow
+   		initJourneyMapAndTouchpointHubs();
+	}
+</script>

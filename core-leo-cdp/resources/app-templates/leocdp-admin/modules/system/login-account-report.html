@@ -1,0 +1,239 @@
+<div class="container-fluid" id="user_form">
+
+    <!-- MAIN BODY here -->
+    <div class="row">
+		<div class="col-lg-10">
+			<h5 class="page-header" id="page_breadcrumb" > </h5>
+		</div>
+		<div class="col-lg-2 text-right" style="padding: 10px">
+	     	<button type="button" class="btn btn-info" onclick="history.back()" title="Back"  > 
+	       		<i class="fa fa-arrow-circle-left" aria-hidden="true"></i> Back
+	       	</button>
+	       	<button type="button" id="btn_login_account_edit" class="btn btn-goto-router" title="Edit Login Account" style="display: none;" > 
+	     		<i class="fa fa-pencil-square-o" aria-hidden="true"></i> Edit 
+	     	</button>
+	     </div>
+	</div>
+	
+	<h4> User Login Account <span id="authorized_user_login" class="highlight_text"></span> </h4>
+	<hr>
+
+    <!-- MAIN BODY here -->
+   
+    <div class="row col-lg-12">
+        
+        	<!--  Tab Navigation Items -->
+		    <ul class="nav nav-tabs" data-tab-content="login_account_tabs" >
+				<li class="active" >
+					<a href="javascript:" data-target-tab="panel_login_account_tab_general" title="User Profile Information" > <i class="fa fa-info-circle" aria-hidden="true"></i> User Information </a>
+		       	</li>
+		       	<li>
+					<a href="javascript:" data-target-tab="panel_login_account_role" title="Account Permission" > <i class="fa fa-lock" aria-hidden="true"></i> User's Role</a>
+		       	</li>
+		       	<li>
+					<a href="javascript:" data-target-tab="panel_login_account_view_logs" title="View System Event Logs" > <i class="fa fa-list" aria-hidden="true"></i> Action Logs</a>
+		       	</li>
+		  	</ul>
+		  	
+		  	<!-- Tab Contents  -->
+	    	<div id="login_account_tabs" class="tab-content" style="min-height: 750px;"  >
+	    	
+	    		<!-- tab 1 General Login Information  -->
+				<div class="tab-pane active" id="panel_login_account_tab_general" >
+					<div class="form-group">
+	                    <label> Display Name</label>:
+	                    <span id="systemUser_displayName" class="highlight_text"></span>
+	                </div>
+	                <div class="form-group">
+	                    <label> User Login</label>:
+	                    <span id="systemUser_userLogin" class="highlight_text"></span>
+	                </div>	                
+	                <div class="form-group">
+	                    <label> Contact Email </label>:
+	                    <span id="systemUser_userEmail" class="highlight_text"></span>
+	                </div>
+	                <div class="form-group">
+	                    <label> Profile Visitor ID </label>:
+	                    <span id="systemUser_profileVisitorId" class="highlight_text"></span>
+	                    <a id="systemUser_profileViewByVisitorId" href="javascript:" style="display: none;" target="_blank" > Data Profile </a>
+	                </div>
+	                
+	                <hr>
+	                
+	                <div class="form-group">
+	                    <label> Business Unit </label>:
+	                    <span id="systemUser_businessUnit" class="highlight_text"></span>
+	                </div>
+	                
+	                <div class="form-group">
+	                    <label> Departments / User Groups </label>:
+	                    <select id="systemUser_inGroups" name="inGroups" data-placeholder="Select some departments or user-groups" class="select" multiple="multiple" style="display: none;">
+	                        <option value="bod"> Board of Directors (BOD) </option>
+	                        <option value="investor"> Investor </option>
+	                        <option value="data_engineering_team"> Data Engineering </option>
+	                        <option value="data_science_team"> Data Science </option>
+	                        <option value="devops_team"> DevOps / DataOps </option>
+	                        <option value="ai_team"> A.I team </option>
+	                        <option value="marketing"> Marketing </option>
+	                        <option value="market_research"> Market Research </option>
+	                        <option value="finance"> Finance </option>
+	                        <option value="accounting"> Accounting </option>
+	                        <option value="audit"> Auditing </option>
+	                        <option value="biz_operation"> Business Operation </option>
+	                        <option value="pr_operation"> PR Operation </option>
+	                        <option value="product_operation"> Product Operation </option>
+	                        <option value="engineering"> Product Engineering </option>
+	                        <option value="product_rnd"> Product R&D Development </option>
+	                        <option value="logistics"> Logistics / Product Delivery </option>
+	                        <option value="customer_support"> Customer Support </option>
+	                        <option value="trading"> Trading </option>
+	                        <option value="purchasing"> Purchasing </option>
+	                        <option value="sales_team"> Sales </option>
+	                        <option value="tech"> IT / Technology Support </option>
+	                        <option value="media_agency"> Media Marketing Agency </option>
+	                        <option value="sales_agent"> Sales Agent / Sales Representative </option>
+	                    </select>
+	                </div>
+	                
+	                <div class="form-group">
+	                    <label> Job Title / Job Position </label>:
+	                    <span id="systemUser_jobPosition" class="highlight_text"></span>
+	                </div>
+	                
+				</div>
+				
+				<!-- tab 2 Account Permissions  -->
+				<div class="tab-pane" id="panel_login_account_role" >
+					<div class="action-div">
+						<h4 class="highlight_text"> <i class="fa fa-lock" aria-hidden="true"></i> User's Role for Permission </h4>
+	                    <div class="radio" >
+	                        <label><input type="radio" name="role" value="0" disabled="disabled" > 
+	                        	REPORT VIEWER: the login account can access Unified Analytics Hub to view summary reports </label>
+	                    </div>
+	                    <div class="radio"  >
+	                        <label><input type="radio" name="role" value="1" disabled="disabled"> 
+	                        	CUSTOMER DATA VIEWER: the login account has permissions to view authorized customer data (profiles and segments)</label>
+	                    </div>
+	                    <div class="radio"  >
+	                        <label><input type="radio" name="role" value="2" disabled="disabled"> 
+	                        	STANDARD USER: the login account can access Unified Analytics Hub and view authorized customer data  </label>
+	                    </div>
+	                    <div class="radio">
+	                        <label><input type="radio" name="role" value="3" disabled="disabled"> 
+	                        	CUSTOMER DATA EDITOR: the login account has permissions to manage authorized customer data (profiles and segments)</label>
+	                    </div>
+	                    <div class="radio">
+	                        <label><input type="radio" name="role" value="4" disabled="disabled"> 
+	                        	DATA OPERATOR: the login account has access Unified Analytics Hub, manage Journey Data Hub and update authorized customer profiles </label>
+	                    </div>
+	                    <div class="radio">
+	                        <label><input type="radio" name="role" value="5" disabled="disabled"> 
+	                        	DATA ADMIN: the login account has full permissions to manage customer data, can manage Data Asset and Data Service </label>
+	                    </div>
+	                    <div class="radio">
+	                        <label><input type="radio" name="role" value="6" disabled="disabled"> 
+	                        	SUPER ADMIN: the login account has full of permissions to manage system and manage all user login accounts </label>
+	                    </div>
+	                </div>
+				</div>
+				
+				<!-- tab 3 View Logs  -->
+				<div class="tab-pane" id="panel_login_account_view_logs" >
+					
+				</div>
+	
+			</div>
+
+    </div>
+
+</div>
+
+<hr>
+
+<script>
+    var userLoginModel = false;
+
+    function initUserLoginReport(userLogin) {
+    	 setupTabPanels();
+ 	  	 
+         var urlStr = baseLeoAdminUrl + '/user/get-by-username';
+         LeoAdminApiUtil.callPostAdminApi(urlStr, { 'userLogin': userLogin }, function (json) {
+             if (json.httpCode === 0 && json.errorMessage === '') {
+                 if (typeof json.data === "object") {
+                     userLoginModel = json.data;
+                     loadUserActionLogs();
+                     
+                     var date = LeoAdminApiUtil.formater.toDateString(userLoginModel.creationTime);
+
+                     $('#systemUser_displayName').text(userLoginModel.displayName);
+                     $('#systemUser_userLogin').text(userLoginModel.userLogin);
+                     $('#systemUser_userEmail').text(userLoginModel.userEmail);
+                     $('#systemUser_businessUnit').text(userLoginModel.businessUnit);                     
+                     
+                  	 // inGroups
+                  	 var inGroupsNode = $('#systemUser_inGroups');                     
+                     var inGroups = typeof userLoginModel.inGroups === 'object' ? userLoginModel.inGroups : [];                     
+                  	 if(inGroups.length === 0) {
+                  		inGroupsNode.hide().parent().append("<span class='highlight_text'> No data available </span>");
+                  	 }
+                  	 else {
+                  		inGroups.forEach(function(e){
+                       	 inGroupsNode.find('option[value="' + e + '"]').attr('selected', 'selected');
+                        })
+                        inGroupsNode.chosen({ width: "100%", no_results_text: "No data available" }).trigger("chosen:updated");
+                        // make it read-only
+                        $('div.chosen-container li.search-field, div.chosen-container div.chosen-drop, div.chosen-container a.search-choice-close').hide();
+                  	 }
+                     
+                     var position = userLoginModel.customData.position ? userLoginModel.customData.position : '';
+                     $('#systemUser_jobPosition').text(position);
+                     
+                     var vid = userLoginModel.profileVisitorId || '';
+                     if(vid !== ''){
+						$('#systemUser_profileVisitorId').text(vid); 	  			
+		 	  		 	var url = "#calljs-leoCdpRouter('Customer_Profile_Info_By_Visitor_ID','"+vid+"')";
+		 	  		 	$('#systemUser_profileViewByVisitorId').attr('href',url).show();
+					 }
+		  			
+                     
+                     // 
+                     $('input[name="role"]').parent().parent().hide();
+                     $('input[name="role"][value=' + userLoginModel.role + ']').attr('checked', '').parent().css("font-weight","bolder").parent().show();
+                     
+                     if(json.canEditData) {
+                    	 $('#btn_login_account_edit').show().click(function(){
+                    		 location.hash = "#calljs-leoCdpRouter('User_Login_Editor','" + userLoginModel.key + "')";
+                    	 })
+                     }
+                 }
+                 else {
+                	 notifyErrorMessage("Can not get system user username: " + userLogin)
+                 }
+             }
+             else {
+            	 notifyErrorMessage("Can not get system user username: " + userLogin)
+             }
+         });
+
+    }
+    
+    var dataTableObj = false;
+    function loadUserActionLogs() {
+    	var userLogin = userLoginModel.userLogin;
+    	
+    	if(typeof userLoginModel === 'object') {
+    		if(typeof dataTableObj === 'object') {
+    			// refresh table from server
+        		var table = $('#system_event_table').DataTable();
+        		table.clear();
+        		table.ajax.reload();
+        	}
+        	else {
+        		// init table and request data
+        		dataTableObj = loadSystemEventsFromLoginUser(userLogin);
+        		$('#authorized_user_login').text(userLogin);
+        	}
+    	}
+    }
+ 
+</script>

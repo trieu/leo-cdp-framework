@@ -1,0 +1,501 @@
+
+<!-- CX Data dashboard -->
+
+<div id="cx_dashboard_loader" class="loader"></div>
+<div id="cx_dashboard" class="row" style="display: none;">
+	<div class="col-lg-12 report_page_header">
+		<h4> <i class="fa fa-tachometer" aria-hidden="true"></i> Customer Experience (CX) Data Report </h4>
+	</div>
+
+    <!-- Date filter control -->
+    <div class="col-lg-12 float-right">
+        <div class='col-lg-5 col-xs-12'>
+            <div class="form-group">
+                <div class='input-group date' id='beginFilterDate'>
+                    <input type='text' class="form-control" autocomplete="off" /> 
+                    <span class="input-group-addon"> <span class="glyphicon glyphicon-calendar"></span> </span>
+                </div>
+            </div>
+        </div>
+        <div class='col-lg-5 col-xs-12'>
+            <div class="form-group">
+                <div class='input-group date' id='endFilterDate'>
+                    <input type='text' class="form-control" autocomplete="off" /> 
+                    <span class="input-group-addon"> <span class="glyphicon glyphicon-calendar"></span> </span>
+                </div>
+            </div>
+        </div>
+        <div class='col-lg-2 col-xs-12 text-center'>
+        	<button type="button" class="btn btn-goto-router" style="width: 70%" onclick="refreshDashboardCX()" > 
+        		<i class="fa fa-check" aria-hidden="true"></i> OK </button>
+        </div>
+    </div>
+     
+    <div class="col-lg-12"  >
+     	<!--  Tab Navigation Items -->
+	    <ul id="cx_report_tab_buttons" class="nav nav-tabs" data-tab-content="cx_report_tabs" >
+			<li data-report-type="rating" onclick="loadCxRatingReport(true)" class="active" >
+				<a href="javascript:" data-target-tab="panel_cx_rating_report" title="CX Data Report" > <i class="fa fa-bar-chart" aria-hidden="true"></i> CX Rating Report </a>
+	       	</li>
+	       	<li data-report-type="survey" onclick="loadCxSurveyReport(true)" >
+				<a href="javascript:" data-target-tab="panel_cx_survey_report" title="CX Survey Report" > <i class="fa fa-list" aria-hidden="true"></i> CX Survey Report </a>
+	       	</li>
+	       	<li data-report-type="touchpoint" onclick="loadCxTouchpointReport(true)" style="display:none" >
+				<a href="javascript:" data-target-tab="panel_cx_touchpoint_report" title="CX Touchpoint Report" > <i class="fa fa-list" aria-hidden="true"></i> CX Touchpoint Report </a>
+	       	</li>
+	  	</ul>
+	  	
+	  	<div id="cx_report_tabs" class="tab-content" style="min-height: 700px;"  >
+		  	<!-- tab 1 CX Rating Report  -->
+			<div class="tab-pane active" id="panel_cx_rating_report" >
+				<div>
+
+		      		<div class="col-lg-9">
+		      			<div class="form-group highlight_box" >
+				     		<div class="col-lg-3">
+				     			<label> <i class="fa fa-info-circle" aria-hidden="true"></i> Filter by Rating Type </label>
+				     		</div>
+				     		<div class="col-lg-9" id="feedbackDataTypeHolder" >
+				               	<label class="radio-inline"><input type="radio" name="feedbackDataType" value="2" checked > CFS Rating </label>
+				               	<label class="radio-inline"><input type="radio" name="feedbackDataType" value="3" > CES Rating </label>
+				               	<label class="radio-inline"><input type="radio" name="feedbackDataType" value="4" > CSAT Rating </label>
+				               	<label class="radio-inline"><input type="radio" name="feedbackDataType" value="5" > NPS Rating </label>
+				     		</div>
+						</div>
+						<div class="col-lg-12 highlight_box" >
+							<div class='text-center' style="margin-bottom: 15px">
+								<h4> <i class="fa fa-bar-chart" aria-hidden="true"></i> <span id="cxReportHeader" >  </span> 
+									Report from <mark id="beginReportDate"></mark> to <mark id="endReportDate" ></mark> </h4>
+							</div>
+							<canvas id="dailyCxScoreBarChart" data-chart-type="bar" ></canvas>
+						</div>
+		      		</div>
+		      		
+					<div class="col-lg-3"> 
+						<div style="border-top: dashed 1px #000;">
+							<h5 class="text-center" > Overall <span id="overall_score_label" ></span> Score </h5>
+							<canvas id="overallCxScoreChart" style="height:236px; width:100%" ></canvas>
+						</div>
+						
+				       	<div class="chart_box" style="border-top: dashed 1px #000;margin-top: 10px;">
+				        	<h5 class=" text-center" > <span id="positive_profile_label" >Promoter</span>  Profile Count </h5>
+				            <div class="summary_metric">
+				                <div class="vcenter text-center profile_count" id="positive_profile_count"  >
+				 					0
+				                </div>
+				            </div>
+				       	</div>
+				       	
+				       	<div class="chart_box" style="border-top: dashed 1px #000;margin-top: 10px;">
+				        	<h5 class=" text-center" > <span id="neutral_profile_label" >Passive</span>  Profile Count </h5>
+				            <div class="summary_metric">
+				                <div class="vcenter text-center profile_count" id="neutral_profile_count"  >
+				 					0
+				                </div>
+				            </div>
+				       	</div>
+				       	
+				       	<div class="chart_box" style="border-top: dashed 1px #000;margin-top: 10px;">
+				        	<h5 class=" text-center" > <span id="negative_profile_label" >Detractor</span>  Profile Count </h5>
+				            <div class="summary_metric">
+				                <div class="vcenter text-center profile_count" id="negative_profile_count"  >
+				 					0
+				                </div>
+				            </div>
+				       	</div>
+			        </div>
+				  	
+				</div>
+			</div>
+		
+			<!-- tab 2 CX Survey Report -->
+			<div class="tab-pane" id="panel_cx_survey_report" >
+				
+				<h5 style="font-weight: bold;"> <i class="fa fa-list" aria-hidden="true"></i>  List of survey templates </h5>
+				<div class="col-lg-10"  >
+	                <select id="feedbackSurveyList" data-placeholder="Choose a survey" class="select" >
+	                  	<!-- feedbackSurveyList -->  
+	                </select>
+                </div>
+                <div class="col-lg-2 text-right"  >
+                	<button type="button" class="btn btn-primary" style="width: 120px" onclick="exportDataCxSurvey()" > 
+        				<i class="fa fa-cloud-download" aria-hidden="true"></i> Data Export 
+        			</button>
+                </div>
+                <div class="col-lg-12 container" style="min-height: 1500px; overflow-y: scroll; overflow-x: hidden; margin-top: 12px; " >
+					<ul id="feedback_survey_flow" class="list-group list-group-dividered list-group-full" style="" >
+		     			<!-- feedback_survey_flow  -->
+					</ul>
+					<iframe src="https://e.infogram.com/de48b477-0e90-42e5-8dfe-13959e9789f0?src=embed" width="100%" height="1200" style="width: 100%; height: 1200px; border: 0; display: none;" ></iframe>
+				</div>
+				
+			</div>
+			
+			<!-- tab 3 CX Touchpoint Report -->
+			<div class="tab-pane" id="panel_cx_touchpoint_report" >
+				<div class="col-lg-12"  >
+					<label style="background-color: #FAFADE;color: #3300ff!important;"> <i class="fa fa-info-circle" aria-hidden="true"></i> The list of touchpoint hub </label>
+	                <select id="touchpointHubList" data-placeholder="Choose a touchpoint hub" class="select" >
+	                  	<!-- touchpointHubList -->  
+	                </select>
+                </div>
+                <div class="col-lg-12 container" style="min-height: 1600px; overflow-y: scroll; overflow-x: hidden; margin-top: 12px; " >
+					<ul id="touchpoint_hub_flow" class="list-group list-group-dividered list-group-full"  >
+		     			<!-- touchpoint_hub_flow  -->
+					</ul>
+				</div>
+			</div>
+     	  
+		</div>
+	</div>
+</div>
+  
+
+<script>
+
+	window.cxDailyReportChart = false;
+	window.overallCxChart = false;
+	var defaultCxScoreLabels = { "positive" : "Positive", "neutral" : "Neutral", "negative" : "Negative"};
+	var defaultNpsScoreLabels = { "positive" : "Promoter", "neutral" : "Passive", "negative" : "Detractor"};
+
+    var initCXAnalyticsDashboard = function() {
+    	setupTabPanels();
+    	initDateFilterComponent(false, null, null, 45);
+    	loadCxRatingReport(false);
+    	
+    	// when the radio button is clicked, load data
+    	$('#feedbackDataTypeHolder').find('input[type="radio"]').click(function(){
+    		loadCxRatingReport(true);
+    		$('#cxReportHeader').text($(this).parent().text())
+    	});
+    	initFeedbackSurveySelection()
+    }
+	
+	
+	
+	// 
+    var loadCxRatingReport = function(refresh){
+    	var selectedRadioBtn = $('#feedbackDataTypeHolder').find('input[type="radio"]:checked');
+    	var feedbackDataTypeText = selectedRadioBtn.parent().text();
+    	var feedbackDataType = parseInt(selectedRadioBtn.val());
+    	var dateFilter = getDateFilterValues();
+    	
+    	var requestParams = {};
+    	requestParams['beginFilterDate'] = moment(dateFilter.beginFilterDate).format(defaultDateFormat)
+    	requestParams['endFilterDate'] = moment(dateFilter.endFilterDate).format(defaultDateFormat)
+    	requestParams['feedbackDataType'] = feedbackDataType;
+    	
+    	$('#cxReportHeader').text(feedbackDataTypeText);
+    	$('#overall_score_label').text(feedbackDataTypeText);
+    	$('#beginReportDate').text(requestParams['beginFilterDate']);
+    	$('#endReportDate').text(requestParams['endFilterDate']);
+    	
+    	var cxScoreLabels = defaultCxScoreLabels;
+    	if(feedbackDataType === 5) {
+    		cxScoreLabels = defaultNpsScoreLabels;
+    	} 
+    	
+    	var urlStr = baseLeoAdminUrl + '/cdp/analytics360/cx-report';
+    	
+    	$("#cx_dashboard_loader").show();
+    	$("#cx_dashboard").hide();
+    	LeoAdminApiUtil.getSecuredData(urlStr, requestParams , function (json) {
+    		$("#cx_dashboard_loader").hide();
+        	$("#cx_dashboard").show();
+    		
+            if (json.httpCode === 0 && json.errorMessage === '') {
+            	
+            	var fbReport = json.data;
+            	console.log(fbReport)
+        		
+        		// 1) overall cx stats
+        		var overallScore = fbReport.scoreCX;
+    			var delta = overallScore.positivePercentage - overallScore.negativePercentage;
+        		var overallCxData = {
+	   				  donutChartCenterData : {
+	   					  value : delta,
+	   					  suffix : "%",
+	   					  marginTop : 25
+	   				  },
+	   				  labels: [
+	   					cxScoreLabels.negative,
+	   					cxScoreLabels.neutral,
+	   					cxScoreLabels.positive
+	   				  ],
+	   				  datasets: [
+	   				    {
+	   				      data: [overallScore.negativePercentage, overallScore.neutralPercentage, overallScore.positivePercentage],
+	   				      backgroundColor: [
+	   				        "#EA9D9C",
+	   				     	"#9AC9F9",
+	   				        "#55F699"
+	   				      ],
+	   				      hoverBackgroundColor: [
+	   				        "#ff5c33",
+	   				     	"#7DBAF9",
+	   				        "#ccff66"
+	   				      ]
+	   				    }]
+     			};
+
+     		   	if(refresh && typeof window.overallCxChart === "object"){
+     		   		window.overallCxChart.data = overallCxData;
+     		   		window.overallCxChart.update();
+	       		} else {
+	       			window.overallCxChart = renderDonutChartJs('Overall CX Score', 'overallCxScoreChart', overallCxData)
+	       		}
+     		   	
+     		   	// 2) profile stats
+     		   	$('#positive_profile_label').text(cxScoreLabels.positive);
+     		   	$('#neutral_profile_label').text(cxScoreLabels.neutral);
+     		  	$('#negative_profile_label').text(cxScoreLabels.negative);
+     		  	
+     		   	$('#positive_profile_count').text(fbReport.positiveProfileCount);
+     		   	$('#neutral_profile_count').text(fbReport.neutralProfileCount);
+     		  	$('#negative_profile_count').text(fbReport.negativeProfileCount);
+        		
+        		// 3) daily stats
+        		var cxChartData = {labels : false, datasets : false};
+
+        		var labels = [];
+        		var rawDateFilter = getRawDateFilterValues();
+        		var bDate = rawDateFilter.beginFilterDate;
+        		var eDate = rawDateFilter.endFilterDate;
+        		while (bDate.isBefore(eDate, 'day')) {
+        		  labels.push(bDate.format(defaultDateFormat));
+        		  bDate.add(1, 'days');
+        		}
+        		cxChartData.labels = labels;
+        		
+        		var datasets = [{
+					label: cxScoreLabels.negative.toUpperCase(),
+					backgroundColor: "#EA9D9C",
+					borderColor: "#EA9D9C",
+					data: []
+				}, {
+					label: cxScoreLabels.neutral.toUpperCase(),
+					backgroundColor: "#68B1FC",
+					borderColor: "#68B1FC",
+					data: []
+				}, {
+					label: cxScoreLabels.positive.toUpperCase(),
+					backgroundColor: "#55F699",
+					borderColor: "#55F699",
+					data: []
+				}];
+        		
+        		labels.forEach(function(dailyKey) {
+        			var scoreCX = fbReport.dailyScoreCX[dailyKey];
+        			if(scoreCX){
+        				datasets[0].data.push(scoreCX.negativePercentage)
+            			datasets[1].data.push(scoreCX.neutralPercentage)
+            			datasets[2].data.push(scoreCX.positivePercentage)
+        			}
+        			else {
+        				datasets[0].data.push(0)
+            			datasets[1].data.push(0)
+            			datasets[2].data.push(0)
+        			}
+        		});
+        		
+        		cxChartData.datasets = datasets;
+        		
+        		if(refresh && typeof window.cxDailyReportChart === "object"){
+        			window.cxDailyReportChart.data = cxChartData;
+        			window.cxDailyReportChart.update();
+        		} else {
+        			window.cxDailyReportChart = renderStackedBarChart('dailyCxScoreBarChart', cxChartData);
+        		}
+				
+            } else {
+                LeoAdminApiUtil.logErrorPayload(json);
+            }
+        });
+    }
+    
+    
+    var defaultSurveyTemplateId = false;
+    function initFeedbackSurveySelection() {
+    	var urlStr = window.baseLeoAdminUrl + "/cdp/asset-item/asset-templates-for-survey";
+    	LeoAdminApiUtil.getSecuredData(urlStr, {}, function (json) { 
+    		
+    		// priority group selector
+			var pgSelector = $('#feedbackSurveyList');
+			pgSelector.find("option").remove();
+			
+			var firstId = false;
+    		json.data.forEach(function(group,i){ 
+    			var id = group.id;
+    			var option = '<option value="'+id+'" >' + group.title + '</option>';
+    			pgSelector.append(option);
+    			if(defaultSurveyTemplateId === false) {
+    				defaultSurveyTemplateId = id;
+    			}
+    		})
+    		
+    		// select the first
+    		if(typeof defaultSurveyTemplateId === "string"){
+    			pgSelector.val(defaultSurveyTemplateId).change();
+    		}
+    		
+    		// set the first
+    		pgSelector.chosen({
+                width: "100%",
+                no_results_text: "Oops, nothing found!"
+            }).trigger("chosen:updated").change(function(){
+            	console.log("chosen:updated" + $(this).val());
+            	defaultSurveyTemplateId =  $(this).val();
+            	loadCxSurveyReport(true);
+            });
+    	})
+    }
+    
+    var spinnerHtml = '<li class="list-group-item view">  <div style="font-size:30px" class="text-center" > <i class="fa fa-spinner" aria-hidden="true"></i> </div> </li>';
+    var noDataHtml = '<li class="list-group-item view" > <div class="alert alert-info" role="alert" > No data available </div> </li>';
+    
+    function loadCxSurveyReport(refresh) {
+    	var feedbackFlowHolder = $('#feedback_survey_flow');
+    	
+    	if( defaultSurveyTemplateId === false ) {
+    		feedbackFlowHolder.html(noDataHtml); 
+    		return;
+    	} 
+    	else {
+    		feedbackFlowHolder.html(spinnerHtml); 
+    		
+    		var dateFilter = getDateFilterValues();
+        	var requestParams = {};
+        	requestParams['beginFilterDate'] = moment(dateFilter.beginFilterDate).format(defaultDateFormat);
+        	requestParams['endFilterDate'] = moment(dateFilter.endFilterDate).format(defaultDateFormat); 
+        	requestParams['refTemplateId'] = defaultSurveyTemplateId;
+        	var previewUrl = baseLeoObserverUrl + "/webform?&tplfbt=SURVEY&tplid=" + defaultSurveyTemplateId;
+        	
+        	var urlStr = baseLeoAdminUrl + '/cdp/analytics360/cx-survey-report';
+        	
+        	LeoAdminApiUtil.getSecuredData(urlStr, requestParams , function (json) {
+                if (json.httpCode === 0 && json.errorMessage === '') {
+    				// clear old data
+                	feedbackFlowHolder.empty();
+                	
+    	         	var surveyList = json.data;
+    	     		if(surveyList.length === 0){
+    	     			feedbackFlowHolder.html(noDataHtml); 
+    	     		}
+    	     		else {
+    	     			feedbackFlowHolder.css('height','1600px');
+    	     			_.forEach(surveyList,function(e,i){
+    	     				var id = e.id;
+    	         			e.createdAt = moment.utc(e.createdAt).local().format(defaultDateTimeFormat);
+    	         			
+    	         			e.title = e.header ;
+    	         			if(e.group){
+    	         				e.title += (" - " + e.group);
+    	         			}
+    	         			if(e.evaluatedObject){
+    	         				e.title += (" - " + e.evaluatedObject);
+    	         			}
+    	         			if(e.evaluatedItem){
+    	         				e.title += (" - " + e.evaluatedItem);
+    	         			}
+    	         			if(e.evaluatedPerson){
+    	         				e.title += (" - " + e.evaluatedPerson);
+    	         			}
+    	         			
+    	         			e.profileCount = e.profileIds.length;
+    	         			e.previewUrl = previewUrl;
+    	         			
+    	         			//console.log(e)
+    	             		 
+    	     			 	var eventTpl = _.template($('#survey-report-item-tpl').html());
+    	         			var html = eventTpl(e);
+    	         			feedbackFlowHolder.append(html);
+    	         			
+    	         			// hide all div that has no data
+    	         			$("#fsrs_" + id).find("div.small").each(function(){
+    	         				var s = $(this).text().trim();
+    	         				if(s === ""){
+    	         					$(this).hide();
+    	         				}
+    	         			});
+    	         			
+    	         			// add star icon into item HTML
+    	         			var starNode = $("#fs_star_" + id);
+    	         			var star = '<i class="fa fa-star" aria-hidden="true"></i>';
+    	         			var starHalf = '<i class="fa fa-star-half-o" aria-hidden="true"></i>';
+    	         			var starNum = Math.floor(e.avgFeedbackScore);
+    	         			for(var i=0; i< starNum;i++){
+    	         				starNode.append(star);
+    	         			}
+    	         			if(e.avgFeedbackScore - starNum > 0){
+             					starNode.append(starHalf);
+             				}
+    	        		}); 
+    	     		}
+                }
+        	});
+    	}
+    	
+    	$('a.exportDataCxSurvey').hide().attr("href","");
+    }
+    
+    function loadCxTouchpointReport(refresh) {
+    	//
+    	alert("TODO")
+    }
+    
+    function refreshDashboardCX(){
+    	var reportType = $('#cx_report_tab_buttons li.active').data('report-type');
+    	if(reportType === "rating") {
+    		loadCxRatingReport(true);
+    	} else {
+    		loadCxSurveyReport(true);
+    	}
+    }
+    
+    function showRawSurveyData(node){
+    	var isHidden = $(node).attr("aria-expanded") === "false";
+    	var s;
+    	if(isHidden){
+    		s = '<i class="fa fa-minus-circle" aria-hidden="true"></i> Hide Data';
+    	} else {
+    		s = '<i class="fa fa-plus-circle" aria-hidden="true"></i> Show Data';
+    	}
+    	$(node).html(s);
+    }
+    
+    function showSurveyProfileData(node){
+    	var isHidden = $(node).attr("aria-expanded") === "false";
+    	var s;
+    	if(isHidden){
+    		s = '<i class="fa fa-minus-circle" aria-hidden="true"></i> Hide List';
+    	} else {
+    		s = '<i class="fa fa-plus-circle" aria-hidden="true"></i> Show List';
+    	}
+    	$(node).html(s);
+    }
+    
+    function exportDataCxSurvey(){
+		// noti
+		iziToast.info({ timeout : 2000, message: 'The system is processing to export data of the survey' });
+		
+		var dateFilter = getDateFilterValues();
+		var requestParams = {};
+    	requestParams['beginFilterDate'] = moment(dateFilter.beginFilterDate).format(defaultDateFormat);
+    	requestParams['endFilterDate'] = moment(dateFilter.endFilterDate).format(defaultDateFormat); 
+    	requestParams['refTemplateId'] = defaultSurveyTemplateId;
+    	
+        var url = window.baseLeoAdminUrl + '/cdp/analytics360/cx-survey-data-export';
+        $('a.exportDataCxSurvey').hide().attr("href","");
+        LeoAdminApiUtil.getSecuredData(url, requestParams, function (json) {
+            if (json.httpCode === 0 && json.errorMessage === '' && json.data) {
+               var map = json.data;
+               for(var k in map){
+            	   var url = window.baseLeoAdminUrl + map[k];
+            	   $('#exportDataCxSurvey_'+k).attr("href", url).show();
+               }
+               iziToast.success({ timeout : 2000, message: 'The exported data of survey is ready !' });
+            }
+        });
+	}
+    
+</script>

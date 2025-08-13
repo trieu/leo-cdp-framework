@@ -1,0 +1,79 @@
+<style>
+	.jsgrid .jsgrid-custom-button {
+	    border: none;
+	    cursor: pointer;
+	    background-color: transparent;
+	}
+	.jsgrid .event-set-rules {
+		font-size:1.2em; color:blue;
+	}
+	.modal-body .eventName {
+		font-size:1.5em; color:blue; font-weight: bold;
+	}
+	#event_metrics_table tr > td.jsgrid-cell {
+		font-size:12.9px; color:blue; 
+	}
+	#event_metrics_table tr > td.jsgrid-cell:nth-of-type(1), #event_metrics_table tr > td.jsgrid-cell:nth-of-type(3), #event_metrics_table tr > td.jsgrid-cell:nth-of-type(4) {
+		font-weight: bold; font-size:13.1px;
+	}
+	#event_metrics_table th.jsgrid-header-cell {
+		background-color: #D5D8DC;
+	}
+	#event_metrics_table tr.jsgrid-alt-row td.jsgrid-cell {
+		background-color: #EAECEE;
+	}
+	.editable_event_metric {
+		background-color: #FFF8DC;
+    	border-radius: 8px;
+    	padding: 4px;
+	}
+	div.data_funnel {
+		width:98% !important; 
+		margin: auto !important;  
+		max-width: 550px !important; 
+	}
+</style>
+
+<div class="row">
+    <div class="col-lg-12">
+        <h5 class="page-header" id="page_breadcrumb" > </h5>
+    </div>
+</div>
+
+<div class="container-fluid">
+
+    <div class="row" >
+  		<div class="row col-lg-12 text-center">
+
+  			<div class="col-md-12" >
+                 <h4 class="chart_header text-center" style="font-weight:bolder;" > Data Funnel for Customer Analytics </h4>
+                 <div class="summary_metric data_funnel" >
+	               <div class="vcenter">
+	                  <div id="profile_funnel" ></div>
+	               </div>
+	           	</div>
+            </div>
+
+        </div>
+        
+        <div class="col-lg-12" style="margin-top: 8px;">
+         	<h4 class="text-center">
+				<mark  style="font-weight:bolder;"> All Event Data Metrics for Customer Analytics </mark> 
+         		(The table is sorted by the Event Score) 
+         	</h4>
+            <div class="table-responsive">
+                <div id="event_metrics_table"></div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+	// global var
+	var behavioralMetricsData = [], customerFunnelStages;
+
+	var initBehavioralEventList = function() {
+		loadBehavioralEventList()
+	}
+</script>

@@ -1,0 +1,32 @@
+{
+	"clusterInfoRedis": [
+		{
+			"host": "127.0.0.1",
+			"port": 6480
+		}
+	],
+	"realtimeDataStats": [
+		{
+			"host": "127.0.0.1",
+			"port": 6480
+		}
+	],
+	"localCache": [
+		{
+			"host": "127.0.0.1",
+			"port": 6480
+		}
+	],
+	"masterCache": [
+		{
+			"host": "127.0.0.1",
+			"port": 6480
+		}
+	],
+	"pubSubQueue": [
+		{
+			"host": "127.0.0.1",
+			"port": 6480
+		}
+	]
+}

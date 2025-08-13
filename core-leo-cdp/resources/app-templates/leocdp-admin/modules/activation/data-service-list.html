@@ -1,0 +1,223 @@
+<style>
+.active_data_service_box {
+	border-color: #0E0E0E!important;
+}
+.active_data_service_box > .panel-heading {
+	background-color: #fcf8e3!important;
+}
+#filter_data_services_keywords {
+	width: 100%;
+}
+
+</style>
+
+<!-- Data Service Services -->
+
+<div class="row">
+	<div class="col-lg-10">
+		<h5 class="page-header" id="page_breadcrumb"></h5>
+	</div>
+	<div class="col-lg-2 text-right" style="padding: 10px;">
+		<button type="button" class="btn btn-goto-router data-control-insert" onclick="newDataService()" title="Install New Activation Data Service" >
+			<i class="fa fa-plus-circle" aria-hidden="true"></i> New Activation Service
+		</button>
+	</div>
+</div>
+
+<div class="top_page_header" >
+	<h4> 
+		<i class="fa fa-exchange " aria-hidden="true"></i> Activation Service Management 
+		<i id="data_services_tooltip" class="fa fa-question-circle" aria-hidden="true" title="Please set configuration to activate data_services" ></i>
+	</h4>
+</div>
+
+<div class="col-lg-12 row">
+	<div class="panel panel-info" >
+	   	<div class="panel-heading">
+	   		<b> <i class="fa fa-search" aria-hidden="true"></i> Activation Service Filter </b>
+	   	</div>
+	    <div class="panel-body">
+	      	<div class="col-lg-12 row">
+	      		<div class="col-lg-8" >
+	      			<div class="col-md-7" >
+						<input id="filter_data_services_keywords" type="text" placeholder="Enter keywords to filter by name" autocomplete="off">		
+					</div>	
+					<div class="col-md-5" >	
+						<select class="form-control" id="select_filter_data_services" >
+					    	<option value="all"> Show all activation services</option>
+					    	<option value="active"> Show only active services </option>
+					    	<option value="active_for_personalization" title="filter only active data services for data personalization" > Show active services for personalization</option>
+					    	<option value="active_for_enrichment" title="filter only active data services for data enrichment"> Show active  services for data enrichment</option>
+					    	<option value="active_for_synchronization" title="filter only active data services for data synchronization"> Show active services for synchronization</option>
+					    </select>
+				    </div>
+				</div>
+				<div class="col-lg-4">
+					<div class="col-md-6 text-center" >
+					 	<button type="button" style="width: 160px;" class="btn btn-do-now" onclick="resetDataServiceFilter()" >
+					 		<i class="fa fa-fw fa-undo"></i> Reset 
+					 	</button>
+					</div>
+					<div class="col-md-5 text-center" >
+					 	<button type="button" style="width: 160px;" class="btn btn-goto-router" onclick="loadAllDataServices()" >
+					 		<i class="fa fa-fw fa-filter"></i> Filter 
+					 	</button>
+					</div>
+				</div>
+	      	</div>
+	    </div>
+	</div>
+	<div class="row gridholder">
+		<div id="data_services_loader" class="loader"></div>
+		<div class="col-lg-12" id="data_services_holder" style="display: none;">
+			<!-- list -->
+		</div>
+		<div class="col-lg-12" id="data_services_pagination" > </div>
+	</div>	
+</div>
+
+<script id='tpl_data_service_view' type="text/html" >
+<div class="data_service_box col-lg-4">
+  <div class="panel panel-default" id="data_service_box_<%- id %>">
+	<div class="panel-heading"   > 
+		<b id="service_box_header_<%- id %>" > 
+			<i class="fa fa-exchange " aria-hidden="true"></i> <span style="font-size:13px"> <%- name %> </span> 
+		</b>
+		<i class="fa fa-question-circle config_description" aria-hidden="true" style="float:right" title="<%- description %>" ></i>
+	</div>
+	<div class="panel-body">
+		<div class="row" >
+			<div class="col-md-12">
+				<div class="form-group">
+					<div id="<%- id %>_api_key_div" >
+						<label id="<%- id %>_api_key_label" for="<%- id %>_api_key"> API Key </label>
+						<input id="<%- id %>_api_key"  autocomplete="off" type="text" value="<%- service_api_key %>" class="form-control" placeholder="API key" disabled >
+						<br>
+					</div>
+					<div id="<%- id %>_api_url_div" >
+  						<label for="<%- id %>_api_url">  API URL </label>
+  						<input id="<%- id %>_api_url" autocomplete="off" type="text" value="<%- configs.service_api_url %>" class="form-control"  placeholder="API URL" disabled >
+					</div>
+				</div>
+			</div>
+		</div>
+	 	<div id="<%- id %>_buttons_div" class="row" style="margin-top:10px">
+			<div class="col-md-4 text-center">
+		    	<button type="button" class="btn btn-goto-router btn-sm" title="Set configs for this data_service" onclick="loadDataService('<%- id %>')" > 
+		  			<i class="fa fa-cog" aria-hidden="true"></i> Configs 
+		  		</button>
+		    </div>
+			<div class="col-md-4 text-center">
+		    	<button type="button" class="btn btn-danger btn-sm" title="Delete this data service" onclick="deleteDataService('<%- id %>')" > 
+		  			<i class="fa fa-trash" aria-hidden="true"></i> Delete
+		  		</button>
+		    </div>
+			<div class="col-md-4 text-center">
+		    	<button type="button" class="btn btn-danger btn-sm" title="Delete all configs of this data service" onclick="resetDataService('<%- id %>')" > 
+		  			<i class="fa fa-undo" aria-hidden="true"></i> Reset
+		  		</button>
+		    </div>
+	 	</div>
+	</div>
+  </div>
+</div>
+</script>
+
+
+<script id='tpl_config_row_item' type="text/html" >
+<div class="col-md-12 form-group config_item"  id="configDataService_<%- serviceId %>_<%- time %>" >
+	<div class="col-md-3 float-left" >
+    	<input type="text" name="configName" placeholder="Enter key" class="form-control" value="<%- configName %>" >
+   	</div>
+	<div class="col-md-8 float-left" >
+    	<input type="<%- inputType %>" name="configValue" placeholder="Enter value" class="form-control" value="<%- configValue %>">
+   	</div>
+	<div title="Delete" class="col-md-1" onclick="deleteConfigOfDataService('configDataService_<%- serviceId %>_<%- time %>')"> 
+		<h4><i class="fa fa-times-circle delete-item-btn" aria-hidden="true"></i></h4> 
+	</div>
+</div>
+</script>
+
+
+<!-- dialog html -->
+<div class="modal fade" id="dialogSetDataServiceInfo" role="dialog">
+	<div class="modal-dialog modal-lg" >
+		<!-- Modal content-->
+		<div class="modal-content">   
+			<div class="modal-header">
+				<h4 class="modal-title text-center" > <i class="fa fa-info-circle" aria-hidden="true"></i> Data Service Information </h4>
+			</div>         
+			<div class="modal-body">
+			
+				<div class="row form-group">
+					<label class="control-label col-md-3" for="dataServiceName" > Service Name </label>
+					<div class="col-md-9 float-left" >
+				    	<input type="text" id="dataServiceName"  placeholder="Enter Service Name" class="form-control" style="width: 98%" >
+				   	</div>
+				</div>
+				
+				<div class="row form-group">
+					<label class="control-label col-md-3" for="dataServiceDescription" > Description </label>
+					<div class="col-md-9 float-left" >
+				    	<textarea id="dataServiceDescription" class="form-control" rows="2" style="width: 98%" ></textarea>
+				   	</div>
+				</div>
+				
+				
+				<div class="row form-group">
+					<label class="control-label col-md-3" for="dataServiceDagId" > Airflow DAG ID </label>
+					<div class="col-md-9 float-left" >
+				    	<input type="text" id="dataServiceDagId"  placeholder="Enter Airflow DAG ID" class="form-control" style="width: 98%" >
+				   	</div>
+				</div>
+				<div class="row form-group">
+					<label class="control-label col-md-3" for="dataServiceStatus" > Status of service </label>
+					<div class="col-md-9 float-left" >
+				    	<label class="checkbox-inline control-label" >
+					      	<input id="dataServiceStatus" type="checkbox" > Ready
+					    </label>
+				   	</div>
+				</div>
+				
+				<hr>
+				<div class="row form-group">
+					<label class="control-label col-md-3" > Purposes of data activation</label>
+					<div class="col-md-9 float-left" >
+						<label class="checkbox-inline control-label" >
+					      	<input id="forPersonalization" type="checkbox" value="true"> <b>  Data Personalization (E.g: Use your own recommendation engine) </b>
+					    </label>
+					    <br>
+						<label class="checkbox-inline control-label">
+					      	<input id="forDataEnrichment" type="checkbox" value="true"> <b>  Data Enrichment (E.g: CLV scoring, predict customer interests) </b>
+					    </label>
+					    <br>
+					    <label class="checkbox-inline control-label">
+					      	<input id="forSynchronization" type="checkbox" value="true" > <b>  Data Synchronization (E.g: Synch contact to email marketing platforms) </b>
+					    </label>
+				    </div>
+				</div>
+				<hr>
+				<div style="margin-bottom: 10px" > 
+					<strong> Configurations </strong>
+					<button type="button" class="btn btn-primary btn-sm" title="Add a configuration" onclick="addNewConfigForDataService('newConfig')" > 
+		  			<i class="fa fa-plus" aria-hidden="true"></i> New Config
+		  		</button>
+				</div>
+				<div id="dataServiceConfigList" style="max-height: 220px; overflow-y: scroll; overflow-x: hidden; margin-top: 5px;" > </div>
+			</div>
+			<div class="modal-footer" >
+				<button type="button" class="btn btn-info" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i> Close</button>
+				<button type="button" class="btn btn-goto-router" onclick="saveDataServiceInfo(this)" id="dataServiceSaveButton"  >
+					<i class="fa fa-check-square-o" aria-hidden="true"></i> Save 
+				</button>		        
+		    </div>  
+		</div>
+	</div>
+</div>
+
+
+<script>
+	var initDataServiceList = function() {
+		loadAllDataServices();		
+	}
+</script>

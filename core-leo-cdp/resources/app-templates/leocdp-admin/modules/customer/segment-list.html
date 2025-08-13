@@ -1,0 +1,100 @@
+
+<!-- Segment Listing -->
+
+<style>
+.segment_name_in_list{ 
+	min-width: 240px!important;
+}
+.segment_name_in_list a{ 
+	color: #3300ff!important;
+	font-size:14px!important;
+	font-weight: bold;
+}
+#segment_list_table i.fa {
+	color: #3300ff!important;
+}
+th.sorting, th.sorting_desc, th.sorting_asc {
+	text-decoration: underline;
+}
+</style>
+
+<div class="row">
+	<div class="col-lg-9">
+		<h5 class="page-header" id="page_breadcrumb" > </h5>
+	</div>
+	<div class="col-lg-3 text-right" style="padding: 10px">
+		<button type="button" class="btn btn-do-now" onclick="refreshAllSegments()" title="Refresh data of all segments" > 
+    		<i class="fa fa-refresh" aria-hidden="true"></i> Refresh
+    	</button>
+		<button type="button" class="btn btn-goto-router data-control-insert" onclick="newSegmentBuilder()">
+			<i class="fa fa-plus-circle" aria-hidden="true"></i> New Segment
+		</button>
+	</div>
+</div>
+
+<div id="segment_list_loader" class="loader"></div>
+<div id="segment_list" class="row" style="display: none;">
+	<div class="col-lg-12">
+		<div class="top_page_header" >
+			<h4> <i class="fa fa-object-group" aria-hidden="true"></i> Segment Data Management </h4>
+		</div>
+	    <div class="table-responsive">
+	        <table id="segment_list_table" class="display" style="width:100%;">
+	            <thead>
+	                <tr>
+	                	<th class="text-center"></th>
+	                    <th class="text-center">Name</th>
+	                    <th class="text-center">Size</th>
+	                    <th class="text-center">Description</th>
+	                    <th class="text-center">Data Owner</th>
+	                    <th class="text-center">Created at</th>
+	                    <th class="text-center">Updated at</th>
+	                    <th>Actions</th>
+	                </tr>
+	            </thead>
+	            <tfoot>
+	                <tr>
+	                	<th class="text-center"></th>
+	                    <th class="text-center">Name</th>
+	                    <th class="text-center">Size</th>
+	                    <th class="text-center">Description</th>
+	                    <th class="text-center">Data Owner</th>
+	                    <th class="text-center">Created at</th>
+	                    <th class="text-center">Updated at</th>
+	                    <th>Actions</th>
+	                </tr>
+	            </tfoot>
+	        </table>
+	    </div>
+	</div>
+</div>
+
+<script>
+	var initSegmentList = function() {
+		var tableDomSel = '#segment_list_table';
+		var containerDomSel = "#segment_list";
+		var loaderDomSel = "#segment_list_loader";
+		
+		var filterParams = function(d){
+			return d;
+		}
+		var loadDataCallback = function(){
+			if( ! $(tableDomSel).data('canInsertData') ){
+				$('button.data-control-insert').attr('disabled','disabled');
+			}
+		}
+		loadSegmentListByFilter(containerDomSel, loaderDomSel, tableDomSel, filterParams, loadDataCallback);
+	}
+	
+	var canEditData = false, canDeteteData = false, dataTable = false;
+	
+	function refreshSegmentTable() {
+	    $('#segment_list_table').DataTable().clear();
+	    $('#segment_list_table').DataTable().ajax.reload();
+	}
+	
+	var newSegmentBuilder = function() {
+	 	location.hash = "calljs-leoCdpRouter('Segment_Builder','new')";
+	}
+	
+</script>

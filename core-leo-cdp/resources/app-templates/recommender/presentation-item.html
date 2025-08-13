@@ -1,0 +1,284 @@
+<!doctype html>
+<html>
+<head>
+	<title> {{pageTitle}} </title>
+	<meta name="description" content="{{{customData.content.description}}}"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=yes">
+	
+	<!-- META FOR FACEBOOK -->
+	<meta property="og:site_name" content="{{host}}"/>
+	<meta property="og:rich_attachment" content="true"/>
+	<meta property="og:type" content="article"/>
+	<meta property="og:image" itemprop=thumbnailUrl content="{{{customData.content.headlineImageUrl}}}"/>
+	<meta property="og:image:width" content="800"/>
+	<meta property="og:image:height" content="420"/>
+	<meta content="{{customData.content.title}}" itemprop="headline" property="og:title"/>
+	<meta content="{{customData.content.description}}" itemprop="description" property="og:description"/>
+	
+	<meta name="robots" content="noarchive, max-image-preview:large, index"/>
+	<meta name="googlebot" content="noarchive"/>
+	
+	<link rel="apple-touch-icon" sizes="180x180" href="https://{{baseStaticUrl}}images/leocdp-icon/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="https://{{baseStaticUrl}}images/leocdp-icon/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="https://{{baseStaticUrl}}images/leocdp-icon/favicon-16x16.png">
+	
+	<link rel="mask-icon" href="https://{{baseStaticUrl}}images/leocdp-icon/safari-pinned-tab.svg" color="#5bbad5">
+	
+	<meta name="msapplication-TileColor" content="#da532c">
+	<meta name="theme-color" content="#ffffff">
+	
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+	<link rel="stylesheet" href="https://gcore.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" >
+	
+	<link rel="preconnect" href="https://fonts.gstatic.com">
+	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap" rel="stylesheet">
+	
+	<script src="https://code.jquery.com/jquery-3.6.4.min.js" ></script>
+	
+	<!--  revealjs -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.css"  crossorigin="anonymous" referrerpolicy="no-referrer" />
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/theme/black.min.css"  crossorigin="anonymous" referrerpolicy="no-referrer" />
+	
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.js"  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/plugin/markdown/markdown.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/plugin/highlight/highlight.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/plugin/notes/notes.min.js"  rossorigin="anonymous" referrerpolicy="no-referrer"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/plugin/math/math.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+	<style type="text/css">
+		body { overflow: scroll!important; padding-top: 10px;  }
+		#image_holder {
+			display: block; margin-left: auto;margin-right: auto; max-width:100%; max-height: 420px;
+		}
+		#video_holder {
+			text-align: center;
+			width: 86%;
+    		margin: auto;
+		}
+		h1.preview  {
+			font-size: 2.2em!important;
+		}
+		h2.preview  {
+			font-size: 1.8em!important;
+		}
+		h3.preview  {
+			font-size: 1.4em!important;
+		}
+		h4.preview  {
+			font-size: 1em!important;
+		}
+		input {
+			margin: 10px 4px;
+		}
+		button {
+			min-width: 120px; padding: 4px;
+		}
+		
+		.reveal_pc_screen p {
+			font-size: 28px!important;
+		}
+		
+		.reveal .code-wrapper code {
+		    white-space: pre;
+		    background: #FFF!important;
+		}
+		
+		@media only screen and (max-width: 600px) {
+		  	.reveal .slides {
+			  	inset: 38% auto auto 50%!important;
+			}
+			h1  {
+				font-size: 1.9em!important;
+			}
+			h2  {
+				font-size: 1.6em!important;
+			}
+			h3  {
+				font-size: 1.3em!important;
+			}
+			h4  {
+				font-size: 1em!important;
+			}
+			input {
+				width: 98%!important;
+			}
+		}
+	</style>
+	
+</head>
+
+<body>
+
+	<!-- MAIN CONTENT -->
+	 
+	<div id="presentation_container" >
+		<div class="reveal"  >
+			<div class="slides">
+				<section data-markdown>
+	                <script type="text/template">
+                        {{{customData.content.mediaInfo}}}
+                    </script>
+	            </section>
+	        </div>
+		</div>
+	</div>
+	
+	<div style="display: none;" id="video_holder" >
+		<div id="video" style="margin: auto;" class="embed-responsive embed-responsive-16by9" ></div>
+	</div>
+	
+	<div id="image_container" style="display: none;" >
+   		<img id="image_holder"  src="{{{customData.content.headlineImageUrl}}}" />
+   	</div>
+	
+
+	<!-- MAIN JS -->
+	<script>
+		
+		var leoObserverLogDomain = "{{baseLeoObserverUrl}}";
+		var leoObserverCdnDomain = "{{baseStaticUrl}}";
+	
+		var srcTouchpointName = "Content Item: " + document.title;
+		var srcTouchpointUrl = encodeURIComponent(location.protocol + '//' + location.host + location.pathname);
+		
+		var injectedVisitorId = "{{customData.injectedVisitorId}}";
+	    var referer = "{{customData.referer}}";
+	    var leoObserverId = "{{customData.observerId}}";
+	    var videoUrl = "{{{customData.content.headlineVideoUrl}}}".trim();
+	    
+		var maxScale = 1, minScale = 0.3;
+		var winW = $(window).innerWidth(), winH =  $(window).innerHeight();
+		var preview = false;
+		var isMobileView = winW < 600 && winH > winW;
+		
+		function initPresentationView(){
+			var pcNode = $('#presentation_container');
+			var h = winH - 30;
+			
+			if(videoUrl != "") {
+				h = Math.floor(winH/2);
+			}
+			pcNode.css('height',h+'px');
+			
+			if(isMobileView) {
+				maxScale = 0.8;
+			}
+			else if(location.search.indexOf('preview=1')>0){
+				maxScale = 0.7;
+				initWidth = 860;
+				preview = true;
+			}
+			else {
+				// in desktop PC
+				pcNode.css('margin',"auto").css('width',"82%!important");
+				pcNode.addClass('reveal_pc_screen');
+			}
+			
+			// RevealJS
+			Reveal.initialize({
+				overview: true,
+				controls: true,
+				progress: true,
+				history: true,
+				center: true,
+				keyboard: true,
+				touch: true,
+				loop: false,
+				margin: 0.04,
+				minScale: minScale,
+				maxScale: maxScale,
+				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
+			});
+			
+			Reveal.initialize().then( () => {
+				// init slides is done
+			 	if(preview){
+			 		$('h1, h2, h3, h4').addClass('preview');
+			 		var holder = $('#contact-data-holder');
+			 		holder.find('input, button').attr('disabled','disabled')
+			 	}
+			 	else if(isMobileView){
+			 		//$('h1, h2, h3, h4, p').addClass('r-fit-text');
+			 	}
+			});
+		}
+		
+		$(document).ready(initPresentationView);
+	</script>
+	
+	<script>
+		function leoObserverProxyReady(session) {
+			var eventData = { "title": srcTouchpointName};
+			if(videoUrl != "") {
+				eventData["videoUrl"]= videoUrl;
+			}
+			LeoObserverProxy.recordViewEvent("content-view",eventData);
+		}
+		
+		function leoRecordEventPlayVideo(eventData) {
+			eventData = eventData ? eventData : {};
+			LeoObserverProxy.recordViewEvent("play-video",eventData);
+		}
+		
+		function submitContactToLeoCDP() {
+			if(!preview){
+				var eventData = { "title": srcTouchpointName};
+				eventData.firstName = $('#firstName').val();
+				eventData.email = $('#email').val();
+				eventData.loginProvider = "presentationSubmitContact";
+				LeoObserverProxy.recordActionEvent("submit-contact",eventData);
+				setTimeout(function(){
+					var holder = $('#contact-data-holder');
+					var okMessage = "<h2>"+ holder.data('submitok') +"</h2>";
+					holder.parent().empty().html(okMessage)
+				},900)
+			}
+		}
+	
+	    (function() {
+			var leoproxyJsPath = '/js/leo-observer/leo.proxy.min.js';
+		    var src = location.protocol + '//' + window.leoObserverCdnDomain + leoproxyJsPath;
+		    var jsNode = document.createElement('script');
+		    jsNode.async=true; jsNode.defer=true; jsNode.src = src;
+		    var s = document.getElementsByTagName('script')[0];
+		    s.parentNode.insertBefore(jsNode, s);
+		})();
+	</script>
+	
+	<script src="https://www.youtube.com/iframe_api" async="true" ></script>
+	<script>
+		function youtubeParser(url){
+		    var regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
+		    var match = url.match(regExp);
+		    return (match&&match[7].length==11)? match[7] : false;
+		}
+	    var player, playing = false;
+	    function onYouTubeIframeAPIReady() {
+	    	if(videoUrl != "") {
+	    		var videoId = youtubeParser(videoUrl);
+		        player = new YT.Player('video', {
+		            height: '360',
+		            width: '640',
+		            videoId: videoId,
+		            events: { 'onStateChange': onPlayerStateChange }
+		        });
+		        $('#video_holder').show();
+			}
+	    }
+	
+	    function onPlayerStateChange(event) {
+	      if (event.data == YT.PlayerState.PLAYING) {
+	         console.log('video started');
+	         leoRecordEventPlayVideo({ "video_url": videoUrl})
+	         playing = true;
+	      }
+	
+	      else if(event.data == YT.PlayerState.PAUSED){
+	            console.log('video paused');
+	            playing = false;
+	       }
+	    }
+	</script>
+	
+</body>
+</html>

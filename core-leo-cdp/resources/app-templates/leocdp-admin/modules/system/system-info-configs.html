@@ -1,0 +1,179 @@
+<style>
+.positive_dqs {
+	color: #3300ff!important;
+    font-size: 1.2em!important;
+}
+.negative_dqs {
+	color: #FF0000!important;
+    font-size: 1.1em!important;
+}
+.profile_field_type {
+	font-family:Tahoma, sans-serif;
+}
+</style>
+
+<div class="row">
+    <div class="col-lg-12">
+        <h5 class="page-header" id="page_breadcrumb"> </h5>
+    </div>
+</div>
+    
+<div class="container-fluid">
+    <!-- MAIN BODY here -->
+	<div class="row">
+		<div class="col-lg-12">
+		
+			<!--  Tab Navigation Items -->
+		    <ul class="nav nav-tabs" data-tab-content="system_info_tabs" >
+				<li class="active" >
+					<a href="javascript:" data-target-tab="panel_data_quality_scoring" title="Profile Metadata to compute the total of Data Quality Score" > 
+					<i class="fa fa-list-ul" aria-hidden="true"></i> Data Quality Scoring </a>
+		       	</li>
+		       	<li>
+					<a href="javascript:" data-target-tab="panel_sys_services" title="System Services" > <i class="fa fa-cogs" aria-hidden="true"></i> System Services </a>
+		       	</li>
+		       	<li >
+					<a href="javascript:" data-target-tab="panel_sys_upgrade" title="Upgrade System" > <i class="fa fa-cloud-download" aria-hidden="true"></i> Upgrade System </a>
+		       	</li>
+		  	</ul>
+		  	
+		  	<!-- Tab Contents  -->
+	    	<div id="system_info_tabs" class="tab-content" style="min-height: 750px;"  >
+	    	
+		    	<!-- tab 1 Event Report  -->
+				<div class="tab-pane active" id="panel_data_quality_scoring" >
+					<div class="col-lg-9">
+		         		<h4> <i class="fa fa-database" aria-hidden="true"></i> 
+		         			<mark> There are <span id="profileAttributeCount"></span> attributes in the Profile Data Model to compute the total of data quality score </mark> </h4>
+		         		<h5> Max Total Data Quality Score <span id="maxTotalDataQualityScore" class="highlight_text"></span> </h5>
+		         	</div>
+		         	<div class="col-lg-3 text-right" >
+			         	<button type="button" class="btn btn-goto-router" onclick="callDataQualityComputeJob()" title="Recompute and update data quality score for all profiles"  > 
+				     		<i class="fa fa-check-square-o" aria-hidden="true"></i> Run Data Quality Scoring Job
+				     	</button>
+			     	</div>
+					<div class="col-lg-12" style="margin-top: 8px;">
+			            <div class="table-responsive">
+			                <div id="profile_metadata_table"></div>
+			            </div>
+			        </div>
+				</div>
+				
+				<!-- tab 2 Event Report  -->
+				<div class="tab-pane " id="panel_sys_services" >
+					<div  >
+						<h4> <i class="fa fa-cogs" aria-hidden="true"></i> <mark> Configuration Management for Core System Services </mark> </h4>
+					</div>
+					<div  id="system_configs_holder" >
+						<!-- list -->
+					</div>
+				</div>
+				
+				<!-- tab 3 Event Report  -->
+				<div class="tab-pane " id="panel_sys_upgrade" >
+					<div class="col-lg-9">
+		         		<h4> <i class="fa fa-info-circle" aria-hidden="true"></i> 
+		         			<mark> To run automatically download and upgrade the system, please click "System Upgrade"</mark> </h4>
+		         	</div>
+		         	<div class="col-lg-3 text-right" >
+			         	<button type="button" class="btn btn-goto-router" onclick="callSystemControlUpgrade()" title="Upgrade System"  > 
+				     		<i class="fa fa-cloud-download" aria-hidden="true"></i> System Upgrade
+				     	</button>
+			     	</div>
+					<div class="col-lg-12" style="margin-top: 8px;">
+			            <textarea class="form-control" id="upgrade_system_logs" rows="9" placeholder="system upgrade logs"></textarea>
+			        </div>
+				</div>
+			</div>
+			
+		</div>
+	</div>
+</div>
+
+<script>
+	var systemConfigMap = {};
+	var initSystemConfigManagement = initSystemConfigManagement || function() {
+		setupTabPanels();
+		loadSystemInfoConfigs();
+		$('#maxTotalDataQualityScore').text(maxTotalDataQualityScore)
+	}
+</script>
+
+<script id='tpl_system_config_box' type="text/html" >
+<div class="col-lg-4">
+  <div class="panel panel-default panel_active_<%- status === 1 %> ">
+	<div class="panel-heading"   > 
+		<b id="header_<%- id %>_<%- status === 1 %>" > 
+			<i class="fa fa-cogs" aria-hidden="true"></i> <mark> <span style="font-size:14px"> <%- name %> </span> </mark> 
+		</b>
+		<i class="fa fa-question-circle config_description" aria-hidden="true" style="float:right" title="<%- description %>" ></i>
+	</div>
+	<div class="panel-body">
+		<div class="row" >
+			<div class="col-md-12">
+				<div class="form-group">
+					<div id="<%- id %>_api_url_div" >
+  						<label for="<%- id %>_api_url">  Service URL </label>
+  						<input id="<%- id %>_api_url" autocomplete="off" type="text" value="<%- configs.service_api_url %>" class="form-control" placeholder="API URL" disabled >
+					</div>
+				</div>
+			</div>
+		</div>
+	 	<div id="<%- id %>_buttons_div" class="row" style="margin-top:10px">
+			<div class="col-md-6 text-center">
+		    	<button type="button" class="btn btn-goto-router btn-sm"  title="Set Configs" onclick="setSystemServiceInfo('<%- id %>')" <%- disabledText %>  > 
+		  			<i class="fa fa-cog" aria-hidden="true"></i> Set Configs 
+		  		</button>
+		    </div>
+			<div class="col-md-6 text-center">
+		    	<button type="button" class="btn btn-danger btn-sm"  title="Reset all configs of this service" onclick="resetSystemServiceInfo('<%- id %>')" <%- disabledText %>  > 
+		  			<i class="fa fa-trash" aria-hidden="true"></i> Reset Configs 
+		  		</button>
+		    </div>
+	 	</div>
+	</div>
+  </div>
+</div>
+</script>
+
+<script id='tpl_config_row_item' type="text/html" >
+<div class="row form-group">
+	<label id="config_label_<%- inputName %>" class="control-label col-md-4" for="<%- inputName %>" ><%- inputName %></label>
+	<div class="col-md-8 float-left" style="background-color:#DCDCDC!important;padding:2px">
+    	<input type="<%- inputType %>" name="<%- inputName %>" placeholder="Enter the value of <%- inputName %>" class="form-control" style="border: none!important;margin:0!important">
+   	</div>
+</div>
+</script>
+
+<!-- dialog HTML -->
+<div class="modal fade" id="dialogSetSystemConfigs" role="dialog">
+	<div class="modal-dialog modal-lg">
+		<!-- Modal content-->
+		<div class="modal-content">   
+			<div class="modal-header">
+				<h4 class="modal-title text-center" > System Service Configuration </h4>
+			</div>         
+			<div class="modal-body">
+				<strong id="systemServiceName" >  </strong>
+				<div id="systemServiceDescription" >  </div>
+				<div  class="col-md-12 float-left" style="padding:2px">
+					<label class="control-label col-md-4 highlight_text" for="systemServiceStatus">Status</label>
+					<div class="col-md-8 float-left" >
+				    	<input type="checkbox" id="systemServiceStatus" name="status" class="form-control" style="border: none!important;margin:0!important">
+				   	</div>
+				</div>
+				<hr>
+				<strong >Configuration List</strong>
+				<div id="systemServiceConfigList" style="max-height: 500px; overflow-y: scroll; overflow-x: hidden;width: 100%" >
+					<!-- systemServiceConfigList -->
+				</div>
+			</div>
+			<div class="modal-footer" >
+				<button type="button" class="btn btn-success" onclick="saveSystemServiceInfo(this)" id="systemServiceSaveButton"  >
+					<i class="fa fa-check" aria-hidden="true"></i> Save 
+				</button>
+		        <button type="button" class="btn btn-info" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i> Close</button>
+		    </div>  
+		</div>
+	</div>
+</div>

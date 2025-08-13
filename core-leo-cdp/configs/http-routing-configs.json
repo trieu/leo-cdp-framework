@@ -1,0 +1,74 @@
+{
+	"map": {
+		
+		" Admin 0 -  MainHttpRouter ------------" : {"notes" : "CDP Admin Master 0 - Default Worker and Web Socket" },
+		"localLeoMainAdminWorker": {
+			"name": "MainHttpWorker",
+			"host": "cdpsys.admin",
+			"port": 9070,
+			"classNameHttpRouter": "leotech.starter.router.MainHttpRouter",
+			"bodyHandlerEnabled": true,
+			"sockJsHandlerEnabled": true
+		},
+		
+		" Admin 1 -  MainHttpRouter ------------" : {"notes" : "CDP Admin Worker 1" },
+		"localLeoMainAdminWorker1": {
+			"name": "MainHttpWorker-1",
+			"host": "cdpsys.admin",
+			"port": 9071,
+			"classNameHttpRouter": "leotech.starter.router.MainHttpRouter",
+			"bodyHandlerEnabled": true,
+			"sockJsHandlerEnabled": false
+		},
+		
+		" Admin 2 -  MainHttpRouter ------------" : {"notes" : "CDP Admin Worker 2" },
+		"localLeoMainAdminWorker2": {
+			"name": "MainHttpWorker-2",
+			"host": "cdpsys.admin",
+			"port": 9072,
+			"classNameHttpRouter": "leotech.starter.router.MainHttpRouter",
+			"bodyHandlerEnabled": true,
+			"sockJsHandlerEnabled": false
+		},
+		
+		" Admin 3 -  MainHttpRouter ------------" : {"notes" : "CDP Admin Worker 3" },
+		"localLeoMainAdminWorker3": {
+			"name": "MainHttpWorker-3",
+			"host": "cdpsys.admin",
+			"port": 9073,
+			"classNameHttpRouter": "leotech.starter.router.MainHttpRouter",
+			"bodyHandlerEnabled": true,
+			"sockJsHandlerEnabled": false
+		},
+		
+		" Observer 0 -  ObserverHttpRouter ------------" : {"notes" : "Default Data Observer" },
+		"localLeoObserverWorker": {
+			"name": "LeoObserverHttp-0",
+			"host": "cdpsys.observer",
+			"port": 9080,
+			"classNameHttpRouter": "leotech.starter.router.ObserverHttpRouter",
+			"bodyHandlerEnabled": true,
+			"sockJsHandlerEnabled": false
+		},
+		" Observer 1 -  ObserverHttpRouter ------------" : {"notes" : "Event Observer Worker 1" },
+		"localLeoObserverWorker1": {
+			"name": "LeoObserverHttp-1",
+			"host": "cdpsys.observer",
+			"port": 9081,
+			"classNameHttpRouter": "leotech.starter.router.ObserverHttpRouter",
+			"bodyHandlerEnabled": true,
+			"sockJsHandlerEnabled": false
+		},
+		
+		" LOCAL -  DeliveryHttpRouter ------------" : {"notes" : "Default CDP - Data Delivery" },
+		"localLeoDeliveryWorker": {
+			"name": "DeliveryHttpRouter-0",
+			"host": "cdpsys.observer",
+			"port": 9050,
+			"classNameHttpRouter": "leotech.starter.router.DeliveryHttpRouter",
+			"bodyHandlerEnabled": true,
+			"sockJsHandlerEnabled": false
+		}
+		
+	}
+}

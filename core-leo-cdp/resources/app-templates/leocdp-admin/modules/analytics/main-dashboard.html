@@ -1,0 +1,189 @@
+<style>
+    #customer_source {
+    	width: 100%; float:left;
+    }
+    #chart text, #customer_source text {
+    	font-size:14px;
+    }  
+    #primary_dashboard {
+    	margin-bottom: 20px;
+    } 
+    #primary_dashboard svg {
+    	margin:auto; display:block;
+    }
+	#profile_journey_funnel_wrapper {
+		width: 96%; margin: auto; padding-bottom:40px; padding-top:15px;
+	}
+	#profile_funnel_wrapper {
+		padding-bottom:20px; padding-top:10px;
+	}
+	#flow_network_report_wrapper {
+		display:block; height:680px; width:100%; background-color:#e8e8e8; border-radius:10px;
+	}
+</style>
+
+<div id="primary_dashboard_loader" class="loader"></div>
+<div id="primary_dashboard" class="container-fluid"  style="display: none;" >
+
+    <div class="row">
+        
+        <div class="col-md-9">
+				
+         	<div class="report_page_header">
+				<h4> <i class="fa fa-area-chart" aria-hidden="true"></i> 
+					Customer Data Report from <mark id="beginReportDate"></mark> to <mark id="endReportDate" ></mark> 
+				</h4>
+			</div>
+			
+        	<div class="row float-right">
+        		<div class='col-md-4 col-xs-12' style="border-right:1px solid #000;height: 60px;font-weight: bold;" >
+        			<label for="journeyMapList">Data Journey Map</label>
+        			<div>
+        				<select id="journeyMapList" data-placeholder="Choose an Journey Map" class="select" > </select>
+        			</div>
+        		</div>
+		        <div class='col-md-3 col-xs-12'  >
+		            <div class="form-group">
+		                <div class='input-group date' id='beginFilterDate'>
+		                    <input type='text' class="form-control" autocomplete="off" /> <span class="input-group-addon">
+		                        <span class="glyphicon glyphicon-calendar"></span>
+		                    </span>
+		                </div>
+		            </div>
+		        </div>
+		        <div class='col-md-3 col-xs-12'>
+		            <div class="form-group">
+		                <div class='input-group date' id='endFilterDate'>
+		                    <input type='text' class="form-control" autocomplete="off" /> <span class="input-group-addon">
+		                        <span class="glyphicon glyphicon-calendar"></span>
+		                    </span>
+		                </div>
+		            </div>
+		        </div>
+		        <div class='col-md-2 col-xs-12 text-center'>
+		        	<button type="button" class="btn btn-goto-router" style="width: 90%" onclick="showDashboardReport(true)" > 
+		        		<i class="fa fa-check" aria-hidden="true"></i> OK </button>
+		        </div>
+		    </div>
+	       
+            <div class="chart_box" >
+            	<ul class="nav nav-tabs" data-tab-content="main_dashboard_report_tabs" >
+		         	
+		         	<li onclick="showDashboardReport(false)" style="display: none;" >
+		          		<a href="javascript:" data-target-tab="panel_profile_journey_funnel" title="Profile Journey Report"> 
+		          			<i class="fa fa-map-o" aria-hidden="true"></i> Profile Journey  
+		          		</a>
+		         	</li>
+		         	<li class="active" >
+		         		<a href="javascript:" data-target-tab="panel_touchpoint_report" title="Source Report Details at specific touchpoint" > 
+		         			<i class="fa fa-dot-circle-o" aria-hidden="true"></i> Touchpoints
+		         		</a>
+		         	</li>		
+            		<li>
+		         		<a href="javascript:" data-target-tab="panel_observer_report" title="Profile Sources by Observer" > 
+		         			<i class="fa fa-dot-circle-o" aria-hidden="true"></i> Touchpoint Hub
+		         		</a>
+		         	</li>	       
+		         	<li  >
+		         		<a href="javascript:" data-target-tab="panel_profile_funnel" title="Data Funnel Report" > 
+		         			<i class="fa fa-filter" aria-hidden="true"></i> Profile Funnel 
+		         		</a>
+		         	</li>  		
+		         	         			         		         	
+		         	<li style="display: none;" >
+		         		<a href="javascript:" data-target-tab="panel_flow_network_report" title="Network Flow Report" > 
+		         			<i class="fa fa-connectdevelop" aria-hidden="true"></i> Data Journey
+		         		</a>
+		         	</li>
+	   			</ul>
+	   			
+	   			<div class="tab-content" id="main_dashboard_report_tabs" style="min-height: 450px"  >
+	   				<!-- tab 1 Touchpoint Details Report  -->
+					<div class="highlight_box tab-pane active" id="panel_touchpoint_report" >
+						<div id="touchpoint_report_wrapper" class="vcenter" ></div>
+						<hr>
+						<div id="touchpoint_report_table"></div>
+					</div>
+	   			
+					<!-- tab 2 Profile Journey Report  -->
+					<div class="highlight_box tab-pane " id="panel_profile_journey_funnel"  >
+						<div id="profile_journey_funnel_wrapper" class="vcenter" >
+	                  		<div id="profile_journey_funnel" class="funnel" ></div>
+	               		</div>
+					</div>
+					
+					<!-- tab 3 Profile Funnel Report  -->
+					<div class="highlight_box tab-pane" id="panel_profile_funnel" >
+						<div id="profile_funnel_wrapper" class="vcenter" >
+	                  		<div id="profile_funnel"></div>
+	               		</div>
+					</div>
+	   			
+	   				<!-- tab 3 Touchpoint Hub Report  -->
+					<div class="highlight_box tab-pane" id="panel_observer_report" >
+						<div id="observer_report_wrapper" class="vcenter" ></div>
+						<hr>
+						<div id="observer_report_table"></div>
+					</div>
+	   				
+					
+					
+					<!-- tab 5 Journey Flow Report  -->
+					<div class="tab-pane" id="panel_flow_network_report" >
+						<div id="flow_network_report_wrapper" ></div>
+					</div>
+				</div>
+	            
+            </div>
+            
+        </div>
+        
+        <!-- holder for Total Customer Statistics and Total Event Statistics -->
+        <div class="col-md-3"> 
+        	<div id="profile_summary_stats_loader" class="loader"></div>
+        	<div id="profile_summary_stats" class="chart_box">
+	        		            
+	            <div class="panel panel-summary" >
+            		<div class="panel-heading"> <h4 class="panel-title text-center"> <i class="fa fa-info-circle" aria-hidden="true"></i> Summary Report </h4> </div>
+				  	<div class="panel-body" id="profile_total_stats">
+				  		<!--  Summary: profile, segment, revenue -->
+				  	</div>
+				</div>
+	            
+	            <div class="panel panel-marketing">
+            		<div class="panel-heading"> <h4 class="panel-title text-center"> <i class="fa fa-info-circle" aria-hidden="true"></i> Marketing Report in Total</h4> </div>
+				  	<div class="panel-body" id="marketing_metrics_holder" >
+				  	</div>
+				</div>
+				
+				<div class="panel panel-business">
+            		<div class="panel-heading"> <h4 class="panel-title text-center"> <i class="fa fa-info-circle" aria-hidden="true"></i> Sales Report in Total</h4> </div>
+				  	<div class="panel-body" id="sales_metrics_holder" >
+				  	</div>
+				</div>
+				
+				<div class="panel panel-cx" >
+            		<div class="panel-heading"> <h4 class="panel-title text-center"> <i class="fa fa-info-circle" aria-hidden="true"></i> CX Report in Total</h4> </div>
+				  	<div class="panel-body" id="cx_metrics_holder" >
+				  	</div>
+				</div>
+	            
+	       	</div>
+        </div>
+        
+    </div>
+   
+    <div class="row chart_box" style="display: none;" >
+     	<div class="col-md-3" >
+     		<div id="customer_source" >
+                <h4 class="chart_header" > Media Sources </h4>
+            </div>
+     	</div>
+    	<div class="col-md-12">
+	        <h4 class="chart_header" style="width: 100%;" > Total Visitor Statistics of Media Channels </h4>
+	        <div id="chart" style="text-align:center;">
+	            <svg></svg>
+	        </div>
+        </div>
+    </div>
+</div>

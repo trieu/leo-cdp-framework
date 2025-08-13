@@ -1,0 +1,151 @@
+<!doctype html>
+<html>
+<head>
+	<title>{{pageTitle}}</title>
+	<meta name="keywords" content="CDP Survey, LEO CX Feedback Form"/>
+	<meta name="description" content="CDP Survey and CX Feedback Form"/>
+	<meta name="copyright" content="LeoCDP.com"/>
+	<meta name="author" content="Trieu Nguyen - trieu@leocdp.com"/>
+	
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	
+	<!-- Twitter-bootstrap CSS   -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" />
+	
+	<!-- JSON Form is required for LEO Form -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.13.1/underscore-min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jsonform/2.2.5/jsonform.min.js"></script>
+	
+	<!-- Open Location Code JavaScript API -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/openlocationcode/1.0.4/openlocationcode.min.js" ></script>
+	
+	<!-- Leaflet Map -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.min.css" />
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.min.js"></script>
+	
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.devbridge-autocomplete/1.4.11/jquery.autocomplete.min.js" ></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment-with-locales.min.js" ></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.33/moment-timezone-with-data.min.js" ></script>
+		
+	<!-- CSS Icon  -->
+	<link href="https://gcore.jsdelivr.net/gh/USPA-Technology/leo-cdp-static-files/css/font-awesome.min.css" rel="stylesheet" />
+	
+	<!-- Main CSS for Survey UI -->
+	<link href="https://{{baseStaticUrl}}/css/leo-survey.css?_={{cacheBustingKey}}" rel="stylesheet" />
+	
+	<!-- Main JS processor for Survey Data -->
+	<script type="text/javascript" src="https://{{baseStaticUrl}}/js/leo-form/leo.survey.processor.js?_={{cacheBustingKey}}"></script>
+	
+	<!-- MarkDown parser -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/5.1.0/marked.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+
+	<!-- BEGIN Template headCode -->
+{{{customData.headCode}}}
+	<!-- END Template headCode -->
+	
+</head>
+<body style="background-color:transparent;" >
+	
+	<!-- template survey form -->
+	
+	<div id="main_container" class="container" style="margin-bottom: 50px">
+		<div class="panel panel-default">
+	    	<div class="panel-body" style="padding:10px!important">
+		    	<div id="survey_placeholder" style="display: none;">
+			    	<div>
+			    		<img id="Header_Image_URL" class="img-responsive center-block" src="" style="display: none;"  >
+			    	</div>
+		    	
+					<h2 id="Header" ></h2>
+					<div class="alert alert-description" id="Description" style="display: none;"></div>
+		            <hr>
+	            
+					<form id="form_leo_survey"></form>
+				
+					<div id="leo_form_error" class="alert alert-danger" style="display: none;"></div>
+				
+					<h3 id="Footer" ></h3>
+					<div>
+						<img id="Footer_Image_URL" class="img-responsive center-block" src="" style="display: none;" >
+					</div>
+				</div>
+	    	</div>
+	  	</div>
+	</div>
+	
+	<!-- encoded JSON data for survey model  -->
+	<textarea id="surveyJsonMetaData" style="display:none!important;" >{{customData.surveyJsonMetaData}}</textarea>
+
+	<script>
+	    // event name when submit form
+    	window.submitEventName = "{{defaultTrackingMetric}}";
+    	
+    	//LEO Web Observer for touchpoint
+    	window.leoObserverId = "{{customData.observerId}}";
+    	
+	    // CDN of observer JS 
+	    window.leoObserverLogDomain = "{{baseLeoObserverUrl}}";
+   		window.leoObserverCdnDomain = "{{baseStaticUrl}}";
+   		
+   		// feedback from what ?
+		window.srcTouchpointName = "{{pageTitle}}";
+		window.srcTouchpointUrl = '{{customData.srcTouchpointUrl}}';
+		
+		// feedback form template 
+		window.refTemplateId = "{{customData.templateId}}";	
+		window.feedbackTypeAsText = "{{customData.feedbackTypeAsText}}";
+		window.containerIframeId = leoObserverId + "_" + refTemplateId;
+    
+		var preview = {{customData.preview}};
+		var isDev = location.host === "demotrack.leocdp.net";
+		
+		// load survey UI
+		initFeedbackSurvey(function(){
+			updateIframeHeight();
+		});
+		
+		// load core js
+		(function() {
+			var referer = '{{customData.referer}}';
+			if(referer === "") {
+				window.srcTouchpointUrl = encodeURIComponent(referer); 
+			} else {
+				window.srcTouchpointUrl = encodeURIComponent(location.protocol + '//' + location.host + location.pathname);
+			}
+			// leo proxy JS
+			var leoproxyJsPath = '/js/leo-observer/leo.proxy.min.js';
+			if(isDev) {
+				leoproxyJsPath = '/js/leo-observer/leo.proxy.js';
+			}
+		    var src = location.protocol + '//' + window.leoObserverCdnDomain + leoproxyJsPath;
+		    var jsNode = document.createElement('script');
+		    jsNode.async = true;
+		    jsNode.src = src;
+		    var s = document.getElementsByTagName('script')[0];
+		    s.parentNode.insertBefore(jsNode, s);
+		})();
+		
+		function leoObserverProxyReady(session) {
+		    //LEO is ready, record event data if not in preview iframe
+		    if(location.href.indexOf("preview=1") > 0){
+		    	// set width for preview mode in admin
+		    	$('#main_container').css("width", "1024px");
+		    	// skip tracking event
+		    } 
+		    else if(location.href.indexOf("shared-devices=1") < 0){
+		    	// just tracking event in user' device, not in shared device
+		    	LeoObserverProxy.recordViewEvent("survey-view");
+		    }
+		}
+		
+		function updateIframeHeight(){
+			var h = document.body.scrollHeight;
+			var message = containerIframeId + '#' + h;
+			window.parent.postMessage(message, '*');
+		}
+	</script>
+</body>
+</html>

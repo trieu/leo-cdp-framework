@@ -1,0 +1,354 @@
+<!-- Admin Navigation Menu -->
+
+<nav id="main_admin_navigation" class="navbar navbar-fixed-top" role="navigation" style="display: none;">
+
+	<div class="navbar-header">
+		<button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
+			<span class="sr-only">Toggle navigation</span> <span class="icon-bar"></span>
+			<span class="icon-bar"></span> <span class="icon-bar"></span>
+		</button>
+
+		<a class="navbar-brand" href="/">
+			<img id="logo-img" src="" alt="MainLogo" style="display: none;" title="ReSynap" data-container="body" data-toggle="popover" data-placement="bottom" 
+									data-content="AI-Driven Insights Platform" />
+		</a>
+
+		<div style="width:100%;">
+			<input id="main_search_profile" type="text" placeholder="Enter name, email or phone number to search customer profiles" autocomplete="off" 
+				title="Profile Search" data-container="body" data-toggle="popover" data-placement="bottom" data-content="You can enter name, email or phone number to search customer profiles" >
+		</div>
+
+		<!-- Top User Menu -->
+		<ul class="nav navbar-right top-nav">
+			<li id="menu_ai_chatbot" >				 
+				<a href="javascript: initLeoChatBot('global')" title="AI Chatbot" data-container="body" data-toggle="popover" data-placement="bottom" data-content="Your personal AI assistant"  > 
+					<i class="fa fa-commenting-o"></i> AI Chatbot 
+				</a> 
+			</li>
+			<li class="dropdown" id="menu_system_control" style="min-width:170px!important;">
+				<a href="javascript:" class="dropdown-toggle" data-toggle="dropdown">
+					<i class="fa fa-bars" aria-hidden="true"></i> System Control <b class="caret"></b>
+				</a>
+				<ul class="dropdown-menu"  style="min-width:180px!important;" >
+					<li> 
+						<a href="javascript:"> 
+							<i class="fa fa-fw fa-envelope"></i> Inbox 
+							<span id="notification_count" class="badge highlight_text">0</span> 
+						</a> 
+					</li>					
+					<li>
+						<a href="#calljs-leoCdpRouter('My_Login_Editor')"> <i class="fa fa-user"></i> <span id="userDisplayName" ></span> </a> 
+					</li>
+					<li class="divider"></li>
+					<li>
+						<a href="javascript:LeoAdminApiUtil.logout()"> <i class="fa fa-power-off"></i> Log Out </a>
+					</li>
+				</ul>
+			</li>
+		</ul>
+	</div>
+
+	<!-- Sidebar Menu Items -->
+	<div id="main-navbar" class="collapse navbar-collapse navbar-ex1-collapse" style="visibility: hidden;">
+		<ul class="nav navbar-nav side-nav">
+			
+			<!--  1 - Data Reports Menu   -->
+			<li id="nav_analytics_hub" style="display: none;" data-system-user-roles="0,2,4,5" >
+				<a class="top_nav_item" href="javascript:;" data-toggle="collapse" data-target="#analytics_hub_menu"> <i class="fa fa-fw fa-pie-chart"></i>
+				 	Data Analytics <i id="data_analytics_hub_collapse_icon" class="fa fa-fw fa-caret-down"> </i>
+				</a>
+				<ul id="analytics_hub_menu" class="collapse in" aria-expanded="true">
+					<li>
+						<a id="Event_Data_Report" href="#calljs-leoCdpRouter('Event_Data_Report')" 
+							title="Event Data Report" data-container="body" data-toggle="popover" data-placement="right" data-content="Show reports about event data stream and event matrix" > 
+							<i class="fa fa-fw fa-line-chart"></i> Behavioral Report </a>
+					</li>
+					<li id="Customer_Data_Report_Menu" >
+						<a id="Customer_Data_Report" href="#calljs-leoCdpRouter('Customer_Data_Report')" 
+							title="Customer Data Report" data-container="body" data-toggle="popover" data-placement="right" data-content="Show reports about profile funnel, profile journey, touchpoint and data journey map" > 
+							<i class="fa fa-fw fa-filter"></i> Touchpoint Report </a>
+					</li>
+					<li>
+						<a id="CX_Data_Report" href="#calljs-leoCdpRouter('CX_Data_Report')" 
+							title="CX Data Report" data-container="body" data-toggle="popover" data-placement="right" data-content="Show customer experience reports: product/service rating and feedback survey" > 
+							<i class="fa fa-fw fa-tachometer"></i> CX Data Report </a>
+					</li>
+					<li style="display: none">
+						<a id="Custom_Dashboard" href="#calljs-leoCdpRouter('Custom_Dashboard')" 
+							title="Custom Dashboard" data-container="body" data-toggle="popover" data-placement="right" data-content="Show custom dashboard about sales, marketing and finance" > 
+							<i class="fa fa-fw fa-bar-chart"></i> Custom Reports </a>
+					</li>
+				</ul>
+			</li>
+			
+			<!--  2 - Data Journey Hub   -->
+			<li id="nav_journey_hub"  >
+				<a class="top_nav_item" href="javascript:;" data-toggle="collapse" data-target="#journey_hub_menu"> <i class="fa fa-fw fa-map"></i>
+				 	Data Journey Map<i id="journey_hub_collapse_icon" class="fa fa-fw fa-caret-down"></i>
+				</a>
+				<ul id="journey_hub_menu" class="collapse in" aria-expanded="true">	
+					<li id="Customer_Persona_Menu" style="display: none" >
+						<a id="Customer_Persona" href="#calljs-leoCdpRouter('Customer_Persona')" 
+							title="Customer Persona Management" data-container="body" data-toggle="popover" data-placement="right" data-content="Manage all customer personas" >
+							<i class="fa fa-fw fa-user-circle-o"></i> Customer Persona </a>
+					</li>
+					<li >
+						<a id="Data_Journey_Map" href="#calljs-leoCdpRouter('Data_Journey_Map','id_default_journey')" 
+							title="Data Journey Map Management" data-container="body" data-toggle="popover" data-placement="right" data-content="Manage all customer data journey maps and touchpoint data hubs" > 
+							<i class="fa fa-fw fa-exchange"></i> Data Journey Map </a>
+					</li>		
+					<li id="Event_Data_Funnel_Menu"  >
+						<a id="Event_Data_Funnel" href="#calljs-leoCdpRouter('Event_Data_Funnel')" 
+							title="Event Data Funnel Management" data-container="body" data-toggle="popover" data-placement="right" data-content="Manage all event data metrics for customer analytics" >
+							<i class="fa fa-fw fa-filter"></i> Behavioral Metrics </a>
+					</li>					
+				</ul>
+			</li>
+			
+			<!--  3 - Customer Data Hub Menu  -->
+			<li id="nav_customer_hub" style="display: none;" data-system-user-roles="1,2,3,4,5" >
+				<a class="top_nav_item" href="javascript:;" data-toggle="collapse" data-target="#customer_hub_menu"> <i class="fa fa-fw fa-address-card-o"></i>
+					Customer Data Hub<i id="customer_data_hub_collapse_icon" class="fa fa-fw fa-caret-down"></i>
+				</a>
+				<ul id="customer_hub_menu" class="collapse in" aria-expanded="true">
+					
+					<li id="Profile_Management_Menu" >
+						<a id="Profile_Management" href="#calljs-leoCdpRouter('Profile_Management')" 
+							title="All Customer Profiles" data-container="body" data-toggle="popover" data-placement="right" data-content="Manage all customer profiles: visitor, lead, prospect & engaged customers" > 
+							<i class="fa fa-fw fa-user-circle-o"></i> Profile Management </a>
+					</li>
+					<li id="Segment_Management_Menu" >
+						<a id="Segment_Management" href="#calljs-leoCdpRouter('Segment_Management')" 
+							title="All Customer Segments" data-container="body" data-toggle="popover" data-placement="right" data-content="Manage all customer segments: active visitors, leads, engaged customers,..."   > 
+							<i class="fa fa-users" aria-hidden="true"></i> Segment Management </a>
+					</li>
+					<li id="Community_Management_Menu" style="display: none">
+						<a id="Community_Management" href="#calljs-leoCdpRouter('Community_Management')" 
+							title="All Customer Communities" data-container="body" data-toggle="popover" data-placement="right" data-content="Manage all customer communities" > 
+							<i class="fa fa-fw fa-users"></i> Communities </a>
+					</li>
+			
+				</ul>
+			</li>
+			
+			<!-- 4 - Data Activation Hub Menu -->
+			<li id="nav_activation_hub" style="display: none;" data-system-user-roles="4,5" >
+				<a class="top_nav_item" href="javascript:;" data-toggle="collapse" data-target="#data_activation_hub_menu"> 
+				<i class="fa fa-fw fa-cogs"></i> Activation Workflow <i id="data_activation_hub_collapse_icon" class="fa fa-fw fa-caret-down"></i>
+				</a>
+				<ul id="data_activation_hub_menu" class="collapse in" aria-expanded="true">
+					<li>
+						<a id="Digital_Asset_Management" href="#calljs-leoCdpRouter('Digital_Asset_Management')" 
+							title="Digital Asset Management" data-container="body" data-toggle="popover" data-placement="right" 
+								data-content="Manage digital data assets: short URL links, content catalogs, product catalogs, voucher catalogs, presentation slides, feedback forms, HTML email templates, text message templates"  > 
+							<i class="fa fa-fw fa-list" ></i> Data Asset Management </a>
+					</li>					
+					<li id="Data_Service_Management_Menu" style="display: none;" data-system-user-roles="5,6" >
+						<a id="Data_Service_Management" href="#calljs-leoCdpRouter('Data_Service_Management')" 
+							title="Activation Services" data-container="body" data-toggle="popover" data-placement="right" data-content="Manage activation services: data synchronization data enrichment & data personalization"  >
+							<i class="fa fa-fw fa-exchange" aria-hidden="true" ></i> Data Activation Services </a>
+					</li>
+					<li id="Automated_Campaigns_Menu" style="display: none" >
+						<a id="Automated_Campaigns" href="#calljs-leoCdpRouter('Automated_Campaigns')" 
+							title="Automation Rules" data-container="body" data-toggle="popover" data-placement="right" data-content="Manage Automation Rules for email marketing, Zalo marketing, SMS marketing, Facebook Ads,... " >
+							<i class="fa fa-fw fa-cogs" aria-hidden="true" ></i> Automated Campaigns </a>
+					</li>
+					<li id="Activation_Rules_Menu" style="display: none" >
+						<a id="Activation_Rules" href="#calljs-leoCdpRouter('Activation_Rules')">
+							<i class="fa fa-fw fa-cogs" aria-hidden="true" ></i> Activation Rules </a>
+					</li>					
+				</ul>
+			</li>
+
+			<!--  5 - Core System Management  -->
+			<li id="nav_system_management" style="display: none;" >
+				<a class="top_nav_item" href="javascript:;" data-toggle="collapse" data-target="#system_management_menu"> <i class="fa fa-cogs" aria-hidden="true"></i>
+					System Management <i id="system_management_collapse_icon" class="fa fa-fw fa-caret-down"></i>
+				</a>
+				<ul id="system_management_menu" class="collapse in" aria-expanded="true">
+					<li>
+						<a id="User_Login_Management" href="#calljs-leoCdpRouter('User_Login_Management')"
+							title="User Login Accounts" data-container="body" data-toggle="popover" data-placement="right" data-content="Manage system user login accounts" >
+							<i class="fa fa-user-plus" aria-hidden="true"></i> User Login Accounts </a>
+					</li>
+					<li id="System_Data_Settings_Menu" >
+						<a id="System_Data_Settings" href="#calljs-leoCdpRouter('System_Data_Settings')" 
+							title="System Data Settings" data-container="body" data-toggle="popover" data-placement="right" data-content="Manage system settings & upgrade the system" >
+							<i class="fa fa-gear" aria-hidden="true"></i> System Data Settings </a>
+					</li>
+				</ul>
+			</li>
+			
+			<li >
+				<div class="panel panel-default">
+				    <div class="panel-body" style="font-size: 9px;" >
+				    	<div data-container="body" data-toggle="popover" data-placement="top" style="color:#3300ff!important" >
+				    		<b>Build ID: <span id="system_build_id" ></span></b>
+				    	</div>
+				    </div>
+				</div>
+			</li>
+			
+		</ul>
+	</div>
+	<!-- /.navbar-collapse -->
+</nav>
+
+<div id="page-main-notification" style="display: none;"> </div>
+
+<div id="page-wrapper" >
+	<!-- page data here -->
+	<div id="page_main_content" class="container-fluid" >
+		<div class="loader"></div>
+	</div>
+</div>
+
+<script>
+	
+	function loadUserInfoWidget() {
+	    var urlStr = baseLeoAdminUrl + '/user/get';
+	    LeoAdminApiUtil.callPostAdminApi(urlStr, {}, function (json) {
+	        if (json.httpCode === 0 && json.errorMessage === '') {
+	            if (json.data) {
+	                var systemUser = json.data;
+	                var role = systemUser.role;
+	                
+	                var dn = textTruncate(systemUser.displayName,15);
+	                var tt = 'Click to view the login information of ' + systemUser.displayName;
+	                $('#userDisplayName').text(dn).attr('title', tt);
+	                window.currentUserProfile = systemUser;
+	                
+	                // websocket
+	                LeoCdpAdmin.initSystemNotifications(systemUser)
+	                
+	                if(role === 6) {
+	                	// hasSuperAdminRole === true
+	                	$("#nav_system_management").show();
+	                	$('#main-navbar').find("li[data-system-user-roles]").show();
+	                } 
+	                else {
+	                	$('#main-navbar').find("li[data-system-user-roles]").each(function(){
+	                		var roles = $(this).data("system-user-roles") + "";
+	                		console.log("roles " , roles, roles.indexOf)
+	                		if(roles.indexOf(role)>=0){
+	                			$(this).show()
+	                		}
+	                	});
+	                }	
+	                // tracking user and save events to profile
+	                loadLeoObserverForAdmin();
+	            }
+	        }
+	    });
+	}
+	
+	function loadLeoObserverForAdmin(){
+		// the main proxy Leo JS
+	  	var leoproxyJsPath = "/js/leo-observer/leo.proxy.min.js";
+	  	var src = location.protocol + "//" + window.leoObserverCdnDomain + leoproxyJsPath;
+	  	var jsNode = document.createElement("script");	  	
+	  	jsNode.async = true;
+	  	jsNode.src = src;
+	  	var s = document.getElementsByTagName("script")[0];
+	  	s.parentNode.insertBefore(jsNode, s);
+	}
+	
+	function leoObserverProxyReady(session) {
+  		// LeoObserverProxy.recordViewEvent("admin-view");
+  		// after login, check Leo Bot to support user
+  		LeoObserverProxy.synchLeoVisitorId(function (vid) {
+	  		window.currentUserProfile.profileVisitorId = vid;
+	  		checkLeoBotIsServerReady(vid);
+	  	});	       
+  	}
+
+	/////////////////////////////// READY //////////////////////////////////
+	
+	function pageWrapperResize(){
+		var w = $(window).width() - 216;
+		$('#page-wrapper').attr('style', 'width:'+ w + 'px!important');
+		window.pageWrapperWidth = w;
+	}
+	
+	function navigationSetup(){
+		// 1 analytics menu
+		$("#analytics_hub_menu").on("hide.bs.collapse", function(){
+        	$("#data_analytics_hub_collapse_icon").attr('class','fa fa-fw fa-caret-left');
+        });
+        $("#analytics_hub_menu").on("show.bs.collapse", function(){
+        	$("#data_analytics_hub_collapse_icon").attr('class','fa fa-fw fa-caret-down');
+        });
+        
+     	// 2 journey menu
+		$("#journey_hub_menu").on("hide.bs.collapse", function(){
+        	$("#journey_hub_collapse_icon").attr('class','fa fa-fw fa-caret-left');
+        });
+        $("#journey_hub_menu").on("show.bs.collapse", function(){
+         	$("#journey_hub_collapse_icon").attr('class','fa fa-fw fa-caret-down');
+        });
+         
+		// 3 customer menu
+		$("#customer_hub_menu").on("hide.bs.collapse", function(){
+        	$("#customer_data_hub_collapse_icon").attr('class','fa fa-fw fa-caret-left');
+        });
+        $("#customer_hub_menu").on("show.bs.collapse", function(){
+        	$("#customer_data_hub_collapse_icon").attr('class','fa fa-fw fa-caret-down');
+        });  
+        
+     	// 4 activation menu
+		$("#data_activation_hub_menu").on("hide.bs.collapse", function(){
+        	$("#data_activation_hub_collapse_icon").attr('class','fa fa-fw fa-caret-left');
+        });
+        $("#data_activation_hub_menu").on("show.bs.collapse", function(){
+        	$("#data_activation_hub_collapse_icon").attr('class','fa fa-fw fa-caret-down');
+        });
+        
+     	// 5 system menu
+		$("#system_management_menu").on("hide.bs.collapse", function(){
+        	$("#system_management_collapse_icon").attr('class','fa fa-fw fa-caret-left');
+        });
+        $("#system_management_menu").on("show.bs.collapse", function(){
+        	$("#system_management_collapse_icon").attr('class','fa fa-fw fa-caret-down');
+        });
+	}
+
+	function mainViewReady() {
+		if (isMobileDevice()) {
+			var msg ='<div class="alert alert-info"> <strong> The Admin Portal </strong> is currently not supported on mobile browsers! </div>';
+			$('#page-main-notification').show().html(msg);
+		} else {
+			
+			$(window).resize(pageWrapperResize);
+			$('#logo-img').attr('src',window.pageHeaderLogo).show();
+			
+			pageWrapperResize();
+			loadUserInfoWidget();
+			navigationSetup();
+			$('#main_admin_navigation').show();
+			
+			$('#system_build_id').text(leoCdpBuildVersion).parent().attr('title',leoCdpBuildVersion);
+			
+			// search bar handler
+			$('#main_search_profile').on('keyup', function (e) {
+				// enter to search
+		        if (e.keyCode === 13) {
+		        	var keywords = $(this).val().trim();
+		        	if(keywords.length > 1){
+		        		var encodedString = Base64.encode(keywords);
+		        		location.hash = "calljs-leoCdpRouter('Customer_Profile_Search','" + encodedString + "')";
+		        	}
+		        	else {
+		        		location.hash = "calljs-leoCdpRouter('Profile_Management')";
+		        	}
+		        }
+		    });
+			
+			// show main menu guide
+			initMainMenuGuide();
+		
+			
+		}
+	}
+	
+	
+</script>

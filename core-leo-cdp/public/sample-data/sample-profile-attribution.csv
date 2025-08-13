@@ -1,0 +1,12 @@
+profile_attr,persona_attr,matching_score
+Live_in_Saigon,Live_in_Saigon,100
+Visited_Web,Visited_Web,100
+Installed_App,Installed_App,100
+Used_Credit_Card,Used_Credit_Card,100
+Buy_Product,Buy_Product,45
+Live_in_Saigon,Visited_Web,100
+Visited_Web,Installed_App,100
+Installed_App,Used_Credit_Card,100
+Installed_App,Buy_Product,45
+Installed_App,Live_in_Saigon,100
+Used_Credit_Card,Live_in_Saigon,100

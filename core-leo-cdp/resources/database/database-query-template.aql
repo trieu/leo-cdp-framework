@@ -1,0 +1,2215 @@
+#####################################################################
+#######  ####### LEO CDP - ARANGODB DATABASE QUERY ####### ####### 
+#####################################################################
+
+########### JourneyMap  ########################################################################################################;
+
+AQL_GET_JOURNEYS_BY_PAGINATION =>
+	FOR d in cdp_journeymap  
+		FILTER d.status >= 0 AND (@searchValue != "" ? LOWER(d.name) LIKE @searchValue : true)
+				AND (@hasAdminRole == TRUE OR @loginUsername == "" OR @loginUsername IN d.authorizedViewers OR @loginUsername IN d.authorizedEditors)
+		SORT d.@sortField @sortDirection
+		LIMIT @startIndex,@numberResult 
+		RETURN d
+;
+
+AQL_COUNT_JOURNEY_FOR_PAGINATION =>
+	FOR d in cdp_journeymap  
+		FILTER d.status >= 0 AND (@searchValue != "" ? LOWER(d.name) LIKE @searchValue : true)
+				AND (@hasAdminRole == TRUE OR @loginUsername == "" OR @loginUsername IN d.authorizedViewers OR @loginUsername IN d.authorizedEditors)
+		COLLECT WITH COUNT INTO length
+		RETURN length
+;
+
+AQL_GET_JOURNEY_MAP_BY_ID => 
+	FOR e in cdp_journeymap 
+	FILTER e._key == @id AND e.status > 0
+	RETURN e
+;
+
+AQL_GET_JOURNEY_MAP_BY_NAME =>
+	FOR e in cdp_journeymap 
+	FILTER e.name == @name
+	RETURN e
+;
+
+AQL_GET_ALL_JOURNEY_MAPS =>
+	FOR e in cdp_journeymap  
+	FILTER e.status > 0
+	SORT e.updatedAt DESC 
+	RETURN e
+;
+
+AQL_GET_ALL_JOURNEY_MAPS_FOR_USER =>
+	FOR e in cdp_journeymap  
+	FILTER e.status > 0 AND (@loginUsername IN e.authorizedViewers[*] OR @loginUsername IN e.authorizedEditors[*])
+	SORT e.updatedAt DESC 
+	RETURN e
+;
+
+AQL_REMOVE_AUTHORIZED_JOURNEY_MAPS_FOR_USER =>
+	FOR d in cdp_journeymap
+		FILTER @userLogin IN d.authorizedViewers OR @userLogin IN d.authorizedEditors
+		LET newViewers = ( FOR u IN d.authorizedViewers LET newViewer = ( u != @userLogin ? u : 0 ) RETURN newViewer )
+		LET updatedViewers = ( FOR u in newViewers FILTER u != 0 RETURN u)
+		LET newEditors = ( FOR u IN d.authorizedEditors LET newEditor = ( u != @userLogin ? u : 0 ) RETURN newEditor )
+		LET updatedEditors = ( FOR u in newEditors FILTER u != 0 RETURN u) 
+		UPDATE d WITH { authorizedViewers: updatedViewers, authorizedEditors: updatedEditors } IN cdp_journeymap
+;
+
+AQL_GET_JOURNEY_MAP_REFKEYS_BY_IDS =>
+	FOR e in cdp_journeymap  
+	FILTER e.status > 0 AND e._key IN @idList
+	SORT e.updatedAt DESC 
+	RETURN {"id":e._key, "name": e.name }
+;
+
+AQL_COUNT_PROFILE_WITH_JOURNEY => 
+	LET filtered_profiles = (
+		FOR p in cdp_profile FILTER p.status > 0 AND p.updatedAt >= @beginFilterDate AND p.updatedAt <= @endFilterDate 
+		RETURN {"_key":p._key, "inJourneyMaps": p.inJourneyMaps}
+	)
+	LET vcAwareness = LENGTH(
+	    FOR p in filtered_profiles
+	        FOR s in p.inJourneyMaps 
+	            FILTER (s.id == @journeyMapId OR @journeyMapId == "") AND s.indexScore >= 1 AND s.type == "VISITOR" 
+	    RETURN DISTINCT p._key
+	)
+	LET vcAttraction = LENGTH(
+	    FOR p in filtered_profiles
+	        FOR s in p.inJourneyMaps
+	        FILTER (s.id == @journeyMapId OR @journeyMapId == "") AND s.indexScore >= 2 AND s.type == "VISITOR" 
+	    RETURN DISTINCT p._key
+	)
+	LET vcAsk = LENGTH(
+	    FOR p in filtered_profiles
+	        FOR s in p.inJourneyMaps
+	        FILTER (s.id == @journeyMapId OR @journeyMapId == "") AND s.indexScore >= 3 AND s.type == "VISITOR" 
+	    RETURN DISTINCT p._key
+	)
+	LET vcAction = LENGTH(
+	    FOR p in filtered_profiles
+	        FOR s in p.inJourneyMaps
+	        FILTER (s.id == @journeyMapId OR @journeyMapId == "") AND s.indexScore >= 4 AND s.type == "VISITOR" 
+	    RETURN DISTINCT p._key
+	)
+	LET vcAdvocacy = LENGTH(
+	    FOR p in filtered_profiles
+	        FOR s in p.inJourneyMaps
+	        FILTER (s.id == @journeyMapId OR @journeyMapId == "") AND s.indexScore >= 5 AND s.type == "VISITOR" 
+	    RETURN DISTINCT p._key
+	)
+		
+	LET ccAwareness = LENGTH(
+	    FOR p in filtered_profiles
+	        FOR s in p.inJourneyMaps 
+	        FILTER (s.id == @journeyMapId OR @journeyMapId == "") AND s.indexScore >= 1 AND s.type == "CONTACT" 
+	    RETURN DISTINCT p._key
+	)
+	LET ccAttraction = LENGTH(
+	    FOR p in filtered_profiles
+	        FOR s in p.inJourneyMaps
+	        FILTER (s.id == @journeyMapId OR @journeyMapId == "") AND s.indexScore >= 2 AND s.type == "CONTACT" 
+	    RETURN DISTINCT p._key
+	)
+	LET ccAsk = LENGTH(
+	    FOR p in filtered_profiles
+	        FOR s in p.inJourneyMaps
+	        FILTER (s.id == @journeyMapId OR @journeyMapId == "") AND s.indexScore >= 3 AND s.type == "CONTACT"
+	    RETURN DISTINCT p._key
+	)
+	LET ccAction = LENGTH(
+	    FOR p in filtered_profiles
+	        FOR s in p.inJourneyMaps
+	        FILTER (s.id == @journeyMapId OR @journeyMapId == "") AND s.indexScore >= 4 AND s.type == "CONTACT" 
+	    RETURN DISTINCT p._key
+	)
+	LET ccAdvocacy = LENGTH(
+	    FOR p in filtered_profiles
+	        FOR s in p.inJourneyMaps
+	        FILTER (s.id == @journeyMapId OR @journeyMapId == "") AND s.indexScore >= 5 AND s.type == "CONTACT" 
+	    RETURN DISTINCT p._key
+	)
+	RETURN {
+		"visitorCountAwareness":vcAwareness, "visitorCountAttraction":vcAttraction, "visitorCountAsk":vcAsk, "visitorCountAction":vcAction, "visitorCountAdvocacy":vcAdvocacy,
+		"contactCountAwareness":ccAwareness, "contactCountAttraction":ccAttraction, "contactCountAsk":ccAsk, "contactCountAction":ccAction, "contactCountAdvocacy":ccAdvocacy
+	}
+;
+
+AQL_COUNT_JOURNEY_EVENT_PROFILE => 
+	LET eAwareness = LENGTH(
+	    FOR e in cdp_trackingevent
+        FILTER (e.refJourneyId == @journeyMapId OR @journeyMapId == "") AND e.journeyStage >= 1 AND e.refProfileId == @profileId 
+	    RETURN DISTINCT e._key
+	)
+	LET eAttraction = LENGTH(
+	    FOR e in cdp_trackingevent
+        FILTER (e.refJourneyId == @journeyMapId OR @journeyMapId == "") AND e.journeyStage >= 2 AND e.refProfileId == @profileId 
+	    RETURN DISTINCT e._key
+	)
+	LET eAsk = LENGTH(
+	    FOR e in cdp_trackingevent
+        FILTER (e.refJourneyId == @journeyMapId OR @journeyMapId == "") AND e.journeyStage >= 3 AND e.refProfileId == @profileId 
+	    RETURN DISTINCT e._key
+	)
+	LET eAction = LENGTH(
+	    FOR e in cdp_trackingevent
+        FILTER (e.refJourneyId == @journeyMapId OR @journeyMapId == "") AND e.journeyStage >= 4 AND e.refProfileId == @profileId 
+	    RETURN DISTINCT e._key
+	)
+	LET eAdvocacy = LENGTH(
+	    FOR e in cdp_trackingevent
+        FILTER (e.refJourneyId == @journeyMapId OR @journeyMapId == "") AND e.journeyStage >= 5 AND e.refProfileId == @profileId 
+	    RETURN DISTINCT e._key
+	)
+	LET journeyData = (
+	    FOR p in cdp_profile
+	        FOR s in p.inJourneyMaps
+	        FILTER (s.id == @journeyMapId OR @journeyMapId == "") AND p._key == @profileId 
+	    RETURN {funnelIndex:  s.funnelIndex, scoreCX: s.scoreCX }
+	)
+	RETURN {"countAwareness":eAwareness, "countAttraction":eAttraction, "countAsk":eAsk, "countAction":eAction, "countAdvocacy":eAdvocacy, 
+			"funnelIndex": journeyData[0] != null ? journeyData[0].funnelIndex : 0, 
+			"scoreCX" : journeyData[0] != null ? journeyData[0].scoreCX : null}
+;
+
+AQL_JOURNEY_REPORT_FOR_PROFILE =>
+	LET stats = (
+		FOR e in cdp_trackingevent 
+	    FILTER e.refJourneyId == @journeyId AND e.refProfileId == @profileId
+	    COLLECT touchpointHubId = e.refTouchpointHubId
+	    AGGREGATE eventCount = COUNT_DISTINCT(e._key), profileCount = COUNT_DISTINCT(e.refProfileId)
+	    RETURN {"touchpointHubId":touchpointHubId, "eventCount": eventCount, "profileCount":profileCount}
+    )
+    FOR e in cdp_touchpointhub 
+    	FOR s in stats 
+    	FILTER e._key == s.touchpointHubId
+    	SORT s.eventCount DESC 
+    	RETURN {"touchpointHubId":e._key, "name":e.name, "eventCount": s.eventCount, "profileCount": s.profileCount}
+;
+
+AQL_PROFILE_REPORT_FOR_JOURNEY =>
+	LET visitorCount = LENGTH(
+	    FOR p in cdp_profile
+	        FOR s in p.inJourneyMaps 
+	        FILTER (s.id == @journeyMapId OR @journeyMapId == "") AND 
+	               ( p.funnelStage == 'new-visitor' OR p.funnelStage == 'returning-visitor' )
+	    RETURN p._key
+	)
+	LET leadCount = LENGTH(
+	    FOR p in cdp_profile
+	        FOR s in p.inJourneyMaps 
+	        FILTER (s.id == @journeyMapId OR @journeyMapId == "") AND 
+	               (p.funnelStage == 'lead' OR p.funnelStage == 'prospect' )
+	    RETURN p._key
+	)
+	LET customerCount = LENGTH(
+	    FOR p in cdp_profile
+	        FOR s in p.inJourneyMaps 
+	        FILTER (s.id == @journeyMapId OR @journeyMapId == "") AND 
+	               (p.funnelStage == 'new-customer' OR p.funnelStage == 'engaged-customer'
+	               OR p.funnelStage == 'happy-customer' OR p.funnelStage == 'customer-advocate' 
+	               OR p.funnelStage == 'unhappy-customer' OR p.funnelStage == 'terminated-customer'
+	               )
+	    RETURN p._key
+	)
+	LET totalProfile = visitorCount + leadCount + customerCount
+	LET summaryReport = [
+	    {"type":1000, "name":"Visitor Report", "profileCount": visitorCount},
+	    {"type":1001, "name":"Lead Report", "profileCount": leadCount},
+	    {"type":1002, "name":"Customer Report", "profileCount": customerCount},
+	    {"touchpointHubId":"leo_data_observer", "profileCount":totalProfile}
+	]
+	LET stats = (
+		FOR e in cdp_trackingevent 
+	    FILTER (e.refJourneyId == @journeyMapId OR @journeyMapId == "") AND e.refTouchpointHubId != "leo_data_observer"
+	    COLLECT touchpointHubId = e.refTouchpointHubId
+	    AGGREGATE profileCount = COUNT_DISTINCT(e.refProfileId)
+	    RETURN {"touchpointHubId":touchpointHubId, "profileCount":profileCount}
+	)
+	LET finalStats = UNION(stats, summaryReport)
+	FOR e in cdp_touchpointhub 
+		FOR s in finalStats 
+		FILTER ( e._key == s.touchpointHubId AND (e.journeyMapId == @journeyMapId OR @journeyMapId == "") ) OR e.type == s.type
+		SORT e.journeyLevel 
+	RETURN {"touchpointHubId":e._key, "name":e.name, "profileCount": s.profileCount}
+;    
+
+###########  TOUCHPOINT HUB  ########################################################################################################;
+
+AQL_GET_TOUCHPOINT_HUB_BY_HOSTNAME => 
+	FOR e in cdp_touchpointhub 
+	FILTER CONTAINS(e.url, @hostname)
+	SORT e.updatedAt DESC
+	LIMIT 1
+	RETURN e
+;
+
+AQL_GET_TOUCHPOINT_HUB_BY_OBSERVER => 
+	FOR e in cdp_touchpointhub 
+	FILTER e.observerId == @observerId
+	RETURN e
+;
+
+AQL_GET_TOUCHPOINT_HUBS_BY_JOURNEY_MAP => 
+	LET observerStats = (
+	    FOR o IN cdp_eventobserver
+	    LET totalProfile = @refreshData == true ? LENGTH(
+	        FOR e IN cdp_trackingevent
+	        FOR p IN cdp_profile
+	        FILTER e.observerId == o._key AND p.status > 0 AND p._key == e.refProfileId
+	        RETURN DISTINCT e.refProfileId
+	    ) : -1
+	    RETURN {"totalProfile":totalProfile,"touchpointHubId":o.touchpointHubId}
+	)
+	FOR t IN cdp_touchpointhub
+	    FOR r IN observerStats
+	    LET total = r.totalProfile >= 0 ? r.totalProfile : t.totalProfile
+	    FILTER t._key == r.touchpointHubId 
+	            AND (t.journeyMapId == @journeyMapId OR t._key == "leo_data_observer" OR t.type >= 1000) AND t.status >= 0
+	    UPDATE t WITH { totalProfile: total } IN cdp_touchpointhub
+	    RETURN DISTINCT t
+;
+
+AQL_GET_TOUCHPOINT_HUB_BY_ID =>
+	FOR e in cdp_touchpointhub 
+	FILTER e._key == @id AND e.status >= 0
+	RETURN e
+;
+
+AQL_GET_ALL_TOUCHPOINT_HUBS =>
+	FOR e in cdp_touchpointhub  
+	FILTER e.status >= 0
+	SORT e.journeyLevel 
+	RETURN e
+;
+
+AQL_GET_TOUCHPOINT_HUB_REPORT_FOR_PROFILE =>
+	FOR e in cdp_trackingevent 
+    FILTER (e.refJourneyId == @journeyId OR @journeyId == "") AND e.refProfileId == @refProfileId
+   	LET hostname = e.refTouchpointHost == e.srcTouchpointHost ? (e.srcTouchpointHost) : (e.refTouchpointHost)
+    LET groupName = (hostname == null OR hostname == "") ? "Unknown Source" : hostname
+    COLLECT name = groupName
+    AGGREGATE eventCount = COUNT_DISTINCT(e._key), profileCount = COUNT_DISTINCT(e.refProfileId)
+    SORT eventCount DESC
+    RETURN {"name":name, "eventCount": eventCount}
+;
+
+AQL_GET_TOUCHPOINT_HUB_REPORT =>
+	LET stats = (
+		FOR e in cdp_trackingevent 
+		    FILTER (e.refJourneyId == @journeyId OR @journeyId == "") AND (e.createdAt >= @beginFilterDate OR @beginFilterDate == "") AND (e.createdAt <= @endFilterDate OR @endFilterDate == "")
+		    LET hostname = e.refTouchpointHost == e.srcTouchpointHost ? (e.srcTouchpointHost) : (e.refTouchpointHost)
+		    LET groupName = (hostname == null OR hostname == "") ? "Unknown Source" : hostname
+		    COLLECT name = groupName
+		    AGGREGATE eventCount = COUNT_DISTINCT(e._key), profileCount = COUNT_DISTINCT(e.refProfileId)
+		    SORT profileCount DESC
+		    LIMIT @startIndex,@numberResult
+		    RETURN {"name":name, "eventCount": eventCount, "profileCount": profileCount}
+	)
+	FOR s in stats
+	FILTER s.profileCount > 1 AND s.eventCount > 1
+	RETURN s
+;
+
+AQL_TOUCHPOINT_HUB_PROFILE_REPORT =>
+	LET tpReports = (
+	  FOR t IN cdp_touchpointhub
+	  FILTER (t.journeyMapId == @journeyId OR @journeyId == "")
+	  FOR e IN cdp_profile2touchpointhub
+	  FILTER e._to == CONCAT('cdp_touchpointhub/', t._key) 
+	  COLLECT tpHubId = t._key, tpName = t.name
+	  AGGREGATE profileCount = COUNT_DISTINCT(e._from)
+	  RETURN { "id": tpHubId, "profileCount": profileCount }
+	)
+	
+	LET stats = APPEND(tpReports, { "id": "leo_data_observer" } )
+	
+	FOR t IN cdp_touchpointhub
+	    FILTER (t.journeyMapId == @journeyId OR @journeyId == "") && (t.type > 0 && t.type != 30)
+	    FOR s IN stats
+	        LET profileCount = (s.id == t._key AND HAS(s, "profileCount")) ? s.profileCount : 0
+	RETURN DISTINCT {
+	    "touchpointHubId": t._key, 
+	    "name": t.name,               
+	    "profileCount": profileCount
+	}
+;
+
+AQL_TOUCHPOINT_HUB_DETAIL_REPORT =>
+	LET visitors = (
+	    FOR t in cdp_touchpointhub
+	    FILTER (t.journeyMapId == @journeyId OR @journeyId == "")
+	    FOR e in cdp_profile2touchpointhub
+	        FILTER e.funnelStage == 'new-visitor' OR e.funnelStage == 'returning-visitor'
+	            FILTER e._to == CONCAT('cdp_touchpointhub/',t._key) 
+	            COLLECT tpHubId = t._key, tpName = t.name
+	            AGGREGATE report = COUNT_DISTINCT(e._from)
+	    RETURN {"id":tpHubId, "visitor": report}
+	)
+	
+	LET leads = (
+	    FOR t in cdp_touchpointhub
+	    FILTER (t.journeyMapId == @journeyId OR @journeyId == "")
+	    FOR e in cdp_profile2touchpointhub
+	        FILTER e._to == CONCAT('cdp_touchpointhub/',t._key) AND e.funnelStage == 'lead'
+	            COLLECT tpHubId = t._key, tpName = t.name
+	            AGGREGATE report = COUNT_DISTINCT(e._from)
+	    RETURN {"id":tpHubId, "lead": report}
+	)
+	
+	LET prospects = (
+	    FOR t in cdp_touchpointhub
+	    FILTER (t.journeyMapId == @journeyId OR @journeyId == "")
+	    FOR e in cdp_profile2touchpointhub
+	        FILTER e._to == CONCAT('cdp_touchpointhub/',t._key) AND e.funnelStage == 'prospect'
+	            COLLECT tpHubId = t._key, tpName = t.name
+	            AGGREGATE report = COUNT_DISTINCT(e._from)
+	    RETURN {"id":tpHubId, "prospect": report}
+	)
+	
+	LET newCustomers = (
+	    FOR t in cdp_touchpointhub
+	    FILTER (t.journeyMapId == @journeyId OR @journeyId == "")
+	    FOR e in cdp_profile2touchpointhub
+	        FILTER e._to == CONCAT('cdp_touchpointhub/',t._key) AND e.funnelStage == 'new-customer'
+	        COLLECT tpHubId = t._key, tpName = t.name
+	        AGGREGATE report = COUNT_DISTINCT(e._from)
+	    RETURN {"id":tpHubId, "newCustomer": report}
+	)
+	
+	LET engagedCustomers = (
+	    FOR t in cdp_touchpointhub
+	    FILTER (t.journeyMapId == @journeyId OR @journeyId == "")
+	    FOR e in cdp_profile2touchpointhub
+	        FILTER e._to == CONCAT('cdp_touchpointhub/',t._key) AND ( e.funnelStage == 'engaged-customer'
+		            OR e.funnelStage == 'happy-customer' OR e.funnelStage == 'customer-advocate')
+	            COLLECT tpHubId = t._key, tpName = t.name
+	            AGGREGATE report = COUNT_DISTINCT(e._from)
+	    RETURN {"id":tpHubId, "engagedCustomer": report}
+	)
+	
+	LET churnedProfiles = (
+	    FOR t in cdp_touchpointhub
+	    FILTER (t.journeyMapId == @journeyId OR @journeyId == "")
+	    FOR e in cdp_profile2touchpointhub
+	        FILTER e._to == CONCAT('cdp_touchpointhub/',t._key) 
+	        	AND (e.funnelStage == 'unhappy-customer' OR e.funnelStage == 'terminated-customer')
+	            COLLECT tpHubId = t._key, tpName = t.name
+	            AGGREGATE report = COUNT_DISTINCT(e._from)
+	    RETURN {"id":tpHubId, "churnedProfile": report}
+	)
+	
+	LET stats = APPEND(UNION(visitors, leads, prospects, newCustomers, engagedCustomers, churnedProfiles),{"id":"leo_data_observer"})
+	
+	FOR t in cdp_touchpointhub
+	    FILTER (t.journeyMapId == @journeyId OR @journeyId == "")
+	    FOR s IN stats
+	        LET visitor = (s.id == t._key AND HAS(s, "visitor"))  ? s.visitor : 0
+	        LET lead = (s.id == t._key AND HAS(s, "lead"))  ? s.lead : 0
+	        LET prospect = (s.id == t._key AND HAS(s, "prospect"))  ? s.prospect : 0
+	        LET newCustomer = (s.id == t._key AND HAS(s, "newCustomer"))  ? s.newCustomer : 0
+	        LET engagedCustomer = (s.id == t._key AND HAS(s, "engagedCustomer"))  ? s.engagedCustomer : 0
+	        LET churnedProfile = (s.id == t._key AND HAS(s, "churnedProfile"))  ? s.churnedProfile : 0
+	        RETURN DISTINCT {"touchpointHubId":t._key, "name": t.name, 
+	            "visitor": visitor, "lead": lead, "prospect": prospect, 
+	            "newCustomer": newCustomer, "engagedCustomer": engagedCustomer, 
+	            "churnedProfile":churnedProfile }
+;
+
+###########  Event Observer  ########################################################################################################;
+
+AQL_GET_EVENT_OBSERVER_BY_HOSTNAME =>
+	FOR e in cdp_eventobserver 
+	FILTER CONTAINS(e.dataSourceUrl, @hostname) 
+	SORT e.updatedAt DESC
+	LIMIT 1
+	RETURN e
+;
+
+AQL_GET_EVENT_OBSERVER_BY_ID =>
+	FOR e in cdp_eventobserver 
+	FILTER e.status >= 0 AND e._key == @id 
+	RETURN e
+;
+
+AQL_GET_EVENT_OBSERVERS_BY_TYPE =>
+	FOR e in cdp_eventobserver 
+	FILTER e.status >= 0 AND e.type == @type
+	RETURN e
+;
+
+AQL_GET_EVENT_OBSERVERS_BY_JOURNEY_MAP =>
+	FOR e in cdp_eventobserver 
+	FILTER (e.journeyMapId == @journeyMapId OR e._key == "leo_data_observer") AND e.type < 1000 AND e.status >= 0
+	SORT e.journeyLevel 
+	RETURN e
+;
+
+AQL_FILTER_EVENT_OBSERVERS_BY_JOURNEY_MAP =>
+	FOR e in cdp_eventobserver 
+	FILTER (e.journeyMapId == @journeyMapId OR e._key == "leo_data_observer") AND e.type < 1000 AND e.status >= 0 AND LIKE(e.name, @filterKeywords, true)
+	SORT e.journeyLevel 
+	RETURN e
+;
+
+AQL_GET_EVENT_OBSERVER_BY_TOUCHPOINT_HUB =>
+	FOR e in cdp_eventobserver 
+	FILTER e.touchpointHubId == @touchpointHubId AND e.status >= 0
+	RETURN e
+;
+
+AQL_GET_ALL_EVENT_OBSERVERS =>
+	FOR e in cdp_eventobserver  
+	FILTER e.status >= 0
+	RETURN e
+;	    
+
+########### TOUCHPOINT  ########################################################################################################;
+
+AQL_GET_TOUCHPOINT_BY_ID =>
+	FOR e in cdp_touchpoint 
+	FILTER e._key == @id  
+	RETURN e
+;
+
+AQL_GET_TOUCHPOINTS => 
+	FOR e in cdp_touchpoint 
+	FILTER e.name LIKE @searchPhrase OR @searchPhrase == ""
+	SORT e.createdAt DESC
+	LIMIT @startIndex,@numberResult 
+	RETURN e
+;
+
+AQL_GET_TOUCHPOINT_BY_URL =>
+	FOR e in cdp_touchpoint 
+	FILTER e.url == @url  
+	RETURN e
+;
+
+AQL_GET_TOUCHPOINT_BY_NAME =>
+	FOR e in cdp_touchpoint 
+	FILTER e.name == @name  
+	RETURN e
+;
+
+AQL_GET_TOUCHPOINT_BY_URL_AND_NAME =>
+	FOR e in cdp_touchpoint 
+	FILTER e.url == @url AND e.name == @name  
+	LIMIT 1
+	RETURN e
+;
+
+AQL_GET_TOUCHPOINTS_BY_FILTER =>
+	FOR p in cdp_touchpoint  
+	SORT p.createdAt DESC
+	LIMIT @startIndex,@numberResult 
+	RETURN p
+;
+
+AQL_UPDATE_CONTEXT_SESSION_AFTER_MERGE =>
+	FOR d IN cdp_contextsession
+		FILTER d.profileId == @oldProfileId 
+		UPDATE d WITH { profileId: @newProfileId, visitorId: @newVisitorId } IN cdp_contextsession
+;
+
+AQL_GET_TOUCHPOINT_REPORT =>
+	LET tpStats = (
+	    FOR e in cdp_trackingevent 
+		FILTER LENGTH(e.refProfileId) > 0 AND (e.refJourneyId == @journeyId OR @journeyId == "") AND (e.createdAt >= @beginFilterDate AND e.createdAt <= @endFilterDate)
+		COLLECT srcTouchpointId = e.srcTouchpointId  
+		AGGREGATE eventCount = COUNT_DISTINCT(e._key), profileCount = COUNT_DISTINCT(e.refProfileId)
+		RETURN {"touchpointId": srcTouchpointId, "eventCount": eventCount, "profileCount":profileCount}
+	)
+	
+	FOR s in tpStats
+		FOR t in cdp_touchpoint  
+	    	LET profileCount =  s.profileCount
+	    	LET eventCount =  s.eventCount
+			FILTER s.touchpointId == t._key AND (profileCount > 0 AND eventCount > 0) AND (t.type == @touchpointType OR @touchpointType < 0)
+			SORT profileCount DESC 
+	LIMIT @startIndex,@numberResult 
+	RETURN {"touchpoint":t, "profileCount":profileCount, "eventCount": eventCount}
+;
+
+AQL_GET_TOUCHPOINT_REPORT_FOR_PROFILE =>
+	LET tpStats = (
+		FOR e in cdp_trackingevent 
+		FILTER (e.refJourneyId == @journeyId OR @journeyId == "") AND e.refProfileId == @refProfileId
+		COLLECT srcTouchpointId = e.srcTouchpointId  
+		AGGREGATE eventCount = COUNT_DISTINCT(e._key)
+		RETURN {"touchpointId": srcTouchpointId, "eventCount": eventCount}
+	)
+
+	FOR s in tpStats
+		FOR t in cdp_touchpoint
+			LET eventCount =  s.eventCount
+			FILTER s.touchpointId == t._key AND eventCount > 0 AND (t.type == @touchpointType OR @touchpointType < 0)
+		SORT eventCount DESC 
+		LIMIT @startIndex,@numberResult 
+	RETURN {"touchpoint":t, "eventCount": eventCount}
+;
+
+AQL_GET_TOUCHPOINT_FLOW_STATISTICS =>
+	LET stats = 
+	(
+		FOR e in cdp_trackingevent 
+			FILTER LENGTH(e.refProfileId) > 0 AND (e.refJourneyId == @refJourneyId OR @refJourneyId == "") AND (e.refProfileId == @refProfileId 
+				OR @refProfileId == "") AND ((e.createdAt >= @beginFilterDate OR @beginFilterDate == "") 
+				AND (e.createdAt <= @endFilterDate OR @endFilterDate == ""))
+			COLLECT refTouchpointId = e.refTouchpointId, srcTouchpointId = e.srcTouchpointId
+			AGGREGATE eventCount = COUNT_DISTINCT(e._key), profileCount = COUNT_DISTINCT(e.refProfileId)
+			LIMIT @startIndex,@numberFlow 
+		RETURN {"refTouchpointId": refTouchpointId, "srcTouchpointId": srcTouchpointId, "eventCount": eventCount, "profileCount": profileCount}
+	)
+	LET refStats = (
+	    FOR s in stats
+	        FOR t in cdp_touchpoint 
+	        FILTER t._key == s.refTouchpointId AND s.eventCount > 0 
+	    RETURN {"refTouchpointId": s.refTouchpointId, "refTouchpointName":t.name, "refTouchpointUrl":t.url, "srcTouchpointId": s.srcTouchpointId, "eventCount": s.eventCount, "profileCount": s.profileCount}
+	)
+	FOR s in refStats
+		FOR t in cdp_touchpoint 
+		FILTER t._key == s.srcTouchpointId
+		SORT s.eventCount DESC 
+	RETURN {"refTouchpointId":s.refTouchpointId,"refTouchpointName":s.refTouchpointName, "refTouchpointUrl":s.refTouchpointUrl, 
+			"srcTouchpointId": s.srcTouchpointId,"srcTouchpointName":t.name, "srcTouchpointUrl": t.url, 
+			"eventCount": s.eventCount, "profileCount": s.profileCount}
+;
+
+AQL_GET_TOUCHPOINT_STATISTICS =>
+	LET refStats = 
+		(
+			FOR e in cdp_trackingevent 
+				FILTER (e.refJourneyId == @refJourneyId OR @refJourneyId == "") AND (e.refProfileId == @refProfileId OR @refProfileId == "")
+					   AND ((e.createdAt >= @beginFilterDate OR @beginFilterDate == "") AND (e.createdAt <= @endFilterDate OR @endFilterDate == ""))
+				COLLECT refTouchpointId = e.refTouchpointId, observerId = e.observerId
+				AGGREGATE eventCount = COUNT_DISTINCT(e._key), profileCount = COUNT_DISTINCT(e.refProfileId)
+				SORT eventCount DESC 
+				LIMIT @startIndex,@numberFlow 
+			RETURN {"refTouchpointId": refTouchpointId, "observerId":observerId, "eventCount": eventCount, "profileCount": profileCount}
+		)
+	LET refTouchpointStats = (
+	    FOR s in refStats
+		    FOR t in cdp_touchpoint 
+		        FILTER t._key == s.refTouchpointId
+		        SORT s.eventCount DESC  
+		    RETURN {"observerId":s.observerId, "refTouchpointId": s.refTouchpointId, "refTouchpointName":t.name, "refTouchpointUrl":t.url, "eventCount": s.eventCount, "profileCount": s.profileCount}
+	)
+	
+	LET srcStats = 
+		(
+			FOR e in cdp_trackingevent 
+				FILTER (e.refJourneyId == @refJourneyId OR @refJourneyId == "") AND (e.refProfileId == @refProfileId OR @refProfileId == "")
+					   AND ((e.createdAt >= @beginFilterDate OR @beginFilterDate == "") AND (e.createdAt <= @endFilterDate OR @endFilterDate == ""))
+				COLLECT srcTouchpointId = e.srcTouchpointId, observerId = e.observerId
+				AGGREGATE eventCount = COUNT_DISTINCT(e._key), profileCount = COUNT_DISTINCT(e.refProfileId)
+				LIMIT @startIndex,@numberFlow 
+			RETURN {"srcTouchpointId": srcTouchpointId, "observerId": observerId, "eventCount": eventCount, "profileCount": profileCount}
+		)
+	LET srcTouchpointStats = (
+	    FOR s in srcStats
+		    FOR t in cdp_touchpoint 
+		        FILTER t._key == s.srcTouchpointId
+		    SORT s.eventCount DESC  
+		    RETURN {"observerId":s.observerId, "srcTouchpointId": s.srcTouchpointId, "srcTouchpointName":t.name, "srcTouchpointUrl":t.url, "eventCount": s.eventCount, "profileCount": s.profileCount}
+	)
+	
+	RETURN UNION(
+	  refTouchpointStats,
+	  srcTouchpointStats
+	)
+;
+
+###########  DATA_FLOW_STAGE  ########################################################################################################;
+
+AQL_GET_ALL_DATA_FLOW_STAGES =>
+	FOR e in cdp_dataflowstage 
+	RETURN e
+;
+
+AQL_GET_DATA_FLOW_STAGES_BY_FLOW_NAME =>
+	FOR e in cdp_dataflowstage 
+	FILTER e.flowName == @flowName 
+	RETURN e
+;
+
+AQL_DELETE_DATA_FLOW_STAGES_BY_FLOW_NAME =>
+	FOR e in cdp_dataflowstage  
+	FILTER e.flowName == @flowName 
+    REMOVE { _key: e._key } IN cdp_dataflowstage
+;
+
+AQL_GET_DATA_FLOW_STAGE_BY_ID =>
+	FOR e in cdp_dataflowstage
+	FILTER e._key >= @id
+	RETURN e
+;
+
+###########  EVENT_METRICS  ########################################################################################################;
+
+AQL_GET_EVENT_METRICS_BY_FLOW_NAME =>
+	FOR e in cdp_eventmetric 
+	FILTER e.flowName == @flowName 
+	RETURN e
+;
+
+AQL_DELETE_EVENT_METRICS_BY_FLOW_NAME =>
+	FOR e in cdp_eventmetric  
+	FILTER e.flowName == @flowName 
+    REMOVE { _key: e._key } IN cdp_eventmetric
+;
+
+###########  DAILY_REPORT_UNITS   ########################################################################################################;
+
+AQL_GET_DAILY_REPORT_UNITS =>
+	LET stats = 
+	(
+		FOR d IN cdp_dailyreportunit
+		FILTER d.createdAt >= @fromDate AND d.createdAt <= @toDate AND d.objectName == @objectName AND (d.journeyMapId == @journeyMapId OR @journeyMapId == "")
+		COLLECT eventName = d.eventName, dateKey = d.dateKey, journeyMapId = d.journeyMapId, createdAt = DATE_TRUNC(d.createdAt, 'day') 
+		AGGREGATE sumDailyCount = SUM(d.dailyCount)
+		RETURN {"journeyMapId":journeyMapId, "dateKey":dateKey, "objectName": @objectName, "eventName": eventName, 
+					"createdAt": createdAt, "dailyCount": sumDailyCount}
+	)
+	FOR s IN stats
+	SORT s.createdAt
+	RETURN s
+;
+
+AQL_GET_DAILY_REPORT_UNITS_FOR_ONE_OBJECT => 
+	FOR d in cdp_dailyreportunit 
+	FILTER d.createdAt >= @fromDate AND d.createdAt <= @toDate 
+			AND (d.journeyMapId == @journeyMapId OR @journeyMapId == "")
+			AND d.objectName == @objectName AND d.objectId == @objectId
+	SORT d.createdAt
+	RETURN d
+;
+
+AQL_OBJECT_COUNT_FROM_DAILY_REPORT_UNITS =>
+	RETURN LENGTH
+	(
+		FOR d IN cdp_dailyreportunit
+			FOR p in cdp_profile
+				FILTER d.createdAt >= @fromDate AND d.createdAt <= @toDate 
+					AND d.objectName == @objectName AND d.objectId == p._key AND p.status > 0 
+				RETURN DISTINCT p._key
+	)
+;
+
+AQL_UPDATE_DAILY_REPORT_UNITS_TO_NEW_PROFILE =>
+	FOR d IN cdp_dailyreportunit
+		FILTER d.objectId == @oldProfileId AND d.objectName == "cdp_profile"
+	    UPDATE d WITH { objectId: @newProfileId } IN cdp_dailyreportunit
+;
+
+AQL_SEGMENT_SIZE_DAILY_REPORT_UNITS =>
+	RETURN LENGTH
+	(
+		FOR d IN cdp_dailyreportunit
+			FOR p in cdp_profile
+    			FILTER @segmentId IN p.inSegments[*].id AND d.createdAt >= @fromDate AND d.createdAt <= @toDate 
+        				AND d.objectName == "cdp_profile" AND d.objectId == p._key AND p.status > 0 
+    		RETURN DISTINCT p._key
+	)
+;
+
+AQL_SEGMENT_DAILY_REPORT_UNITS =>
+	FOR d IN cdp_dailyreportunit
+		FOR p in cdp_profile
+    		FILTER @segmentId IN p.inSegments[*].id AND d.createdAt >= @fromDate AND d.createdAt <= @toDate 
+        			AND d.objectName == "cdp_profile" AND d.objectId == p._key AND p.status > 0 
+    SORT d.createdAt
+	RETURN DISTINCT d
+;
+
+
+############# CONTENT ITEM  ########################################################################################################;
+
+AQL_GET_ASSET_CONTENT_BY_ID =>
+	FOR p in cdp_assetcontent 
+	FILTER p._key == @id  
+	RETURN p
+;
+
+AQL_GET_ASSET_CONTENT_BY_SLUG =>
+	FOR p in cdp_assetcontent 
+	FILTER p.slug == @slug  
+	RETURN p
+;
+
+AQL_GET_ASSET_CONTENT_BY_CAMPAIGN  =>
+	FOR p in cdp_assetcontent 
+	FILTER p.campaignId == @campaignId  
+	RETURN p
+;
+
+AQL_GET_ASSET_CONTENT_BY_FULL_URL =>
+	FOR p in cdp_assetcontent 
+	FILTER p.fullUrl == @fullUrl  
+	RETURN p
+;
+
+AQL_GET_ASSET_CONTENT_BY_NETWORK =>
+	FOR p in cdp_assetcontent 
+	FILTER p.networkId == @networkId 
+	SORT p.updatedAt DESC
+	LIMIT @startIndex,@numberResult 
+	RETURN p
+;
+
+AQL_GET_ASSET_CONTENT_BY_FILTER =>
+	FOR p in cdp_assetcontent 
+	SORT p.updatedAt DESC
+	LIMIT @startIndex,@numberResult 
+	RETURN p
+;
+
+AQL_GET_ASSET_CONTENT_BY_GROUP =>
+	FOR p in cdp_assetcontent 
+	FILTER @groupId IN p.groupIds[*] AND ( @keywords == "" OR LOWER(p.title) LIKE LOWER(@keywords) )
+	SORT p.updatedAt DESC
+	LIMIT @startIndex,@numberResult 
+	RETURN p
+;
+
+AQL_GET_ALL_ASSET_CONTENT_BY_GROUP =>
+	FOR p in cdp_assetcontent 
+	FILTER @groupId IN p.groupIds[*] AND ( @keywords == "" OR LOWER(p.title) LIKE LOWER(@keywords) )
+	SORT p.updatedAt DESC
+	RETURN p
+;
+
+AQL_GET_ALL_ASSET_CONTENT_BY_CATEGORY_OR_GROUP =>
+	FOR p in cdp_assetcontent 
+	FILTER @categoryId IN p.categoryIds[*] OR @groupId IN p.groupIds[*] 
+	SORT p.updatedAt DESC
+	RETURN p
+;
+
+AQL_GET_ASSET_CONTENT_BY_OWNER =>
+	FOR p in cdp_assetcontent 
+	FILTER p.ownerId == @ownerId
+	LIMIT @startIndex,@numberResult 
+	RETURN p
+;
+
+AQL_GET_VIEWABLE_ASSET_CONTENT_BY_GROUP =>
+	FOR p in cdp_assetcontent 
+	FILTER @groupId IN p.groupIds[*] AND (p.ownerId == @ownerId OR p.privacyStatus == 0)
+	LIMIT @startIndex,@numberResult 
+	RETURN p
+;
+
+
+AQL_GET_KEYWORDS_OF_ALL_ASSET_CONTENT =>
+	LET list = (FOR doc IN post FILTER LENGTH( doc.keywords ) > 0 return doc.keywords)
+	RETURN {"keywords" : FLATTEN(list,3)}
+;
+
+########### DIGITAL ASSET GROUP  ########################################################################################################;
+
+AQL_GET_ASSET_GROUP_BY_ID =>
+	FOR p in cdp_assetgroup 
+	FILTER p._key == @id  
+	RETURN p
+;
+
+AQL_GET_ASSET_GROUP_BY_SLUG =>
+	FOR p in cdp_assetgroup 
+	FILTER p.slug == @slug  
+	RETURN p
+;
+
+AQL_GET_DEFAULT_ASSET_GROUP_FOR_ASSET_TYPE =>
+	FOR p in cdp_assetgroup 
+	FILTER p.defaultGroup == true AND p.assetType == @assetType
+	LIMIT 1  
+	RETURN p
+;
+
+AQL_GET_ASSET_GROUPS =>
+	FOR p in cdp_assetgroup 
+	LIMIT @startIndex,@numberResult 
+	SORT p.updatedAt DESC
+	RETURN p
+;
+
+AQL_GET_ALL_ASSET_GROUPS_BY_CATEGORY =>
+	FOR p in cdp_assetgroup 
+	FILTER @categoryId IN p.categoryIds[*]
+	SORT p.updatedAt DESC
+	RETURN p
+;
+
+AQL_GET_PUBLIC_ASSET_GROUPS_BY_CATEGORY =>
+	FOR p in cdp_assetgroup 
+	FILTER p.privacyStatus == 0 AND @categoryId IN p.categoryIds[*]
+	SORT p.updatedAt DESC
+	RETURN p
+;
+
+AQL_GET_ASSET_GROUPS_FOR_SEGMENTATION =>
+	FOR e in cdp_assetgroup
+	FILTER LENGTH(e.eventNamesForSegmentation) > 0
+	RETURN e
+;
+
+########### DIGITAL ASSET CATEGORY  ########################################################################################################;
+
+AQL_GET_ALL_CATEGORIES =>
+	FOR p in cdp_assetcategory
+	RETURN p
+;
+
+AQL_FIND_KEY_BY_SLUG =>
+	FOR p in cdp_assetcategory FILTER p.slug == @slug  
+	RETURN p._key
+;
+
+AQL_GET_CATEGORY_BY_ID =>
+	FOR p in cdp_assetcategory FILTER p._key == @id  
+	RETURN p
+;
+
+AQL_GET_ALL_CATEGORIES_BY_NETWORK =>
+	FOR p in cdp_assetcategory FILTER p.networkId == @networkId 
+	RETURN p
+;
+
+########### SYSTEM USER LOGIN ########################################################################################################;
+
+AQL_FIND_KEY_BY_USERLOGIN => 
+	FOR u in system_user 
+	FILTER u.userLogin == @userLogin  
+	RETURN u._key
+;
+
+AQL_GET_USER_BY_USERLOGIN => 
+	FOR u in system_user 
+	FILTER u.userLogin == @userLogin  
+	RETURN u
+;
+
+AQL_GET_USERLOGIN_BY_EMAIL => 
+	FOR u in system_user 
+	FILTER u.userEmail == @email  
+	RETURN u.userLogin
+;
+
+AQL_GET_USER_BY_KEY => 
+	FOR u in system_user 
+	FILTER u._key == @key  
+	RETURN u
+;
+
+AQL_GET_ALL_USERS_IN_NETWORK => 
+	FOR u in system_user 
+	FILTER u.networkId == @networkId AND (u.role != 6 OR @forManagement == TRUE)
+	SORT u.updatedAt DESC
+	RETURN u
+;
+
+########### UPLOADER FILE_METADATA  ########################################################################################################;
+
+AQL_GET_FILE_METADATA_BY_PATH => 
+	FOR f in cdp_filemetadata 
+	FILTER f.path == @path  
+	RETURN f
+;
+
+AQL_GET_FILE_METADATA_BY_NETWORK_ID => 
+	FOR f in cdp_filemetadata 
+	FILTER f.networkId == @networkId  
+	RETURN f
+;
+
+AQL_GET_FILE_METADATA_BY_OWNER_ID => 
+	FOR f in cdp_filemetadata 
+	FILTER f.ownerLogin == @ownerLogin  
+	RETURN f
+;
+
+AQL_GET_FILE_METADATA_BY_OBJECT => 
+	FOR f in cdp_filemetadata 
+	FILTER f.refObjectClass == @refObjectClass AND f.refObjectKey == @refObjectKey  
+	RETURN f
+;
+
+
+
+########### PROFILE  ########################################################################################################;
+
+AQL_COUNT_TOTAL_CONTACT_PROFILES =>
+	FOR p IN cdp_profile
+    FILTER p.status > 0 AND p.type > 0
+    COLLECT WITH COUNT INTO length
+	RETURN length
+;
+
+AQL_COUNT_TOTAL_ANONYMOUS_PROFILES => 
+	FOR p IN cdp_profile
+    FILTER p.status > 0 AND p.type == 0 
+    COLLECT WITH COUNT INTO length
+	RETURN length
+;
+
+AQL_COUNT_TOTAL_BUSINESS_PROFILES =>
+	FOR p IN cdp_profile
+    FILTER p.status > 0 AND p.type > 0 AND ("purchase" IN p.behavioralEvents || "subscribe" IN p.behavioralEvents)
+    COLLECT WITH COUNT INTO length
+	RETURN length
+;
+
+AQL_COUNT_TOTAL_UNHAPPY_PROFILES =>
+	FOR p IN cdp_profile
+    FILTER p.status > 0 AND p.type > 0 AND p.funnelStage == "happy-profile" 
+    COLLECT WITH COUNT INTO length
+	RETURN length
+;
+ 
+AQL_GET_ACTIVE_PROFILES_BY_PAGINATION =>
+	FOR p in cdp_profile  
+	FILTER p.status > 0 
+	SORT p[@sortBy] DESC
+	LIMIT @startIndex,@numberResult 
+	RETURN p
+; 
+
+AQL_COUNT_PROFILE_BY_SEGMENT_ID =>
+	RETURN LENGTH(
+	    FOR p in cdp_profile
+	    FILTER @segmentId IN p.inSegments[*].id AND p.status > 0 
+	    RETURN p._key
+	)
+;
+
+AQL_GET_ALL_PROFILE_IDS_IN_SEGMENT =>
+	FOR p IN cdp_profile  
+  		FILTER @segmentId IN p.inSegments[*].id AND p.status > 0 
+  	RETURN p._key
+;
+
+AQL_GET_PROFILES_BY_PAGINATION =>
+	FOR p in cdp_profile  
+	SORT p[@sortBy] DESC
+	LIMIT @startIndex,@numberResult 
+	RETURN p
+;
+
+AQL_GET_PROFILE_BY_ID_FOR_SYSTEM =>
+	FOR p in cdp_profile 
+	FILTER p._key == @id
+	RETURN p
+;
+
+AQL_GET_ACTIVE_PROFILE_IDENTITY_BY_ID =>
+	FOR profile in cdp_profile 
+	FILTER profile._key == @id AND profile.status > 0 
+	RETURN {
+	  id: profile._key,
+	  visitorId: profile.visitorId,
+	  crmRefId: profile.crmRefId,
+	  primaryEmail: profile.primaryEmail,
+	  primaryPhone: profile.primaryPhone,
+	  personaUri: profile.personaUri,
+	  primaryUsername: profile.primaryUsername,
+	  firstName: profile.firstName,
+	  lastName: profile.lastName,
+	  fingerprintId: profile.fingerprintId,
+	  socialMediaProfiles: profile.socialMediaProfiles,
+	  applicationIDs: profile.applicationIDs,
+	  governmentIssuedIDs: profile.governmentIssuedIDs,
+	  loyaltyIDs: profile.loyaltyIDs,
+	  fintechSystemIDs: profile.fintechSystemIDs,
+	  inSegments: profile.inSegments
+	}
+;
+
+AQL_GET_PROFILE_BY_ID_FOR_ADMIN =>
+	FOR p in cdp_profile 
+	FILTER p._key == @id AND (@loginUsername IN p.authorizedViewers[*] OR p.visitorId == @profileVisitorId)
+	RETURN p
+;
+
+AQL_GET_PROFILE_BY_CRM_ID_FOR_ADMIN =>
+	LET crmId = TO_STRING(@crmRefId)
+	FOR p in cdp_profile 
+	FILTER p.status == 1 AND crmId != "" AND p.crmRefId == crmId AND (@loginUsername IN p.authorizedViewers[*] OR @hasAdminRole == TRUE)
+	LIMIT 1
+	RETURN p
+;
+
+AQL_GET_PROFILE_BY_VISITOR_ID_FOR_ADMIN =>
+	LET visitorId = TO_STRING(@visitorId)
+	FOR p in cdp_profile 
+	FILTER visitorId != "" AND p.visitorId == visitorId AND p.status == 1 
+			AND (@loginUsername IN p.authorizedViewers[*] OR @hasAdminRole == TRUE OR p.visitorId == @profileVisitorId)
+	SORT p.dataQualityScore DESC
+	LIMIT 1
+	RETURN p
+;
+
+AQL_GET_PROFILE_BY_PRIMARY_EMAIL =>
+	LET email = TO_STRING(@email)
+	FOR p in cdp_profile 
+	FILTER (p.primaryEmail == email OR email IN p.identities[*]) AND p.status == 1
+	SORT p.dataQualityScore DESC
+	LIMIT 1
+	RETURN p
+;
+
+AQL_GET_PROFILE_BY_PRIMARY_PHONE =>
+	LET phone = TO_STRING(@phone)
+	FOR p in cdp_profile 
+	FILTER (p.primaryPhone == phone OR phone IN p.identities[*]) AND p.status == 1
+	SORT p.dataQualityScore DESC
+	LIMIT 1
+	RETURN p
+;
+
+AQL_GET_PROFILE_BY_VISITOR_ID =>
+	LET visitorId = TO_STRING(@visitorId)
+	FOR p in cdp_profile 
+	FILTER (p.visitorId == visitorId OR visitorId IN p.identities[*]) AND p.status == 1
+	SORT p.dataQualityScore DESC
+	LIMIT 1
+	RETURN p
+;
+
+AQL_GET_PROFILE_ID_BY_PRIMARY_KEYS =>
+	FOR p in cdp_profile 
+		FILTER ((@profileId == p._key AND @profileId != "") OR (@crmRefId == p.crmRefId AND @crmRefId != "")
+		OR (@primaryEmail == p.primaryEmail AND @primaryEmail != "") OR (@primaryPhone == p.primaryPhone AND @primaryPhone != "")) AND p.status == 1
+		LIMIT 1
+		RETURN DISTINCT p._key
+;
+
+AQL_GET_PROFILE_ID_BY_VISITOR_ID =>
+	FOR p in cdp_profile 
+	FILTER @visitorId == p.visitorId AND p.status == 1
+	LIMIT 1
+	RETURN p._key
+;
+
+AQL_GET_PROFILE_BY_FINGERPRINT_OR_VISITOR_ID =>
+	FOR p in cdp_profile 
+	FILTER p.status == 1 
+		AND ( (@lastSeenIp == p.lastSeenIp AND @lastUsedDeviceId == p.lastUsedDeviceId AND @fingerprintId == p.fingerprintId)
+		OR  @visitorId == p.visitorId ) 
+	SORT p.dataQualityScore DESC
+	LIMIT 1
+	RETURN p
+;
+
+AQL_GET_PROFILE_BY_LOGIN_INFO =>
+	FOR p in cdp_profile 
+	FILTER @loginInfo != "" AND @loginInfo IN p.identities[*] AND p.status == 1
+	SORT p.dataQualityScore DESC
+	LIMIT 1
+	RETURN p
+;
+
+AQL_GET_PROFILE_BY_LOGIN_INFO_WITH_PASSWORD =>
+	FOR p in cdp_profile 
+	FILTER @loginInfo != "" AND p.password == @password AND @loginInfo IN p.identities[*] AND p.status == 1
+	SORT p.dataQualityScore DESC
+	LIMIT 1
+	RETURN p
+;
+
+AQL_GET_PROFILES_BY_EMAILS => 
+	FOR email in @emails 
+    	FOR p in cdp_profile 
+		FILTER (email == p.primaryEmail OR email IN p.secondaryEmails) AND p.status == 1
+		RETURN DISTINCT p
+;
+
+AQL_GET_PROFILES_BY_PHONES => 
+	FOR phone in @phones 
+    	FOR p in cdp_profile 
+		FILTER (phone == p.primaryPhone OR phone IN p.secondaryPhones) AND p.status == 1
+		RETURN DISTINCT p
+;
+
+AQL_GET_PROFILES_BY_APPLICATION_IDS =>
+	FOR applicationID in @applicationIDs 
+		FOR p in cdp_profile FILTER p.status == 1 AND LENGTH(applicationID) > 0 AND applicationID IN p.applicationIDs   
+		RETURN DISTINCT p
+;
+
+AQL_GET_PROFILES_BY_LOYALTY_IDS =>
+	FOR loyaltyID in @loyaltyIDs 
+		FOR p in cdp_profile FILTER p.status == 1 AND LENGTH(loyaltyID) > 0 AND loyaltyID IN p.loyaltyIDs 
+		RETURN DISTINCT p
+;
+
+AQL_GET_PROFILES_BY_GOVERNMENT_ISSUED_IDS =>
+	FOR governmentIssuedID in @governmentIssuedIDs 
+    	FOR p in cdp_profile 
+		FILTER p.status == 1 AND LENGTH(governmentIssuedID) > 0 AND governmentIssuedID IN p.governmentIssuedIDs
+		RETURN DISTINCT p
+;
+
+AQL_GET_PROFILE_BY_IDENTITY_RESOLUTION => 
+	LET rs1 = (
+        FOR p in cdp_profile 
+        FILTER  p.status == 1 AND ( 
+        	(p.primaryEmail == @email AND @email != "" )
+        	OR (p.primaryPhone == @phone AND @phone != "" )
+        	OR (@citizenId != "" AND @citizenId IN p.governmentIssuedIDs[*])
+        	) 
+    	RETURN p
+    )
+	RETURN { "deterministic" : rs1, "probabilistic" : [] }
+;
+
+AQL_GET_PROFILE_BY_KEY_IDENTITIES => 
+	LET rs1 = (
+        FOR e in cdp_profile 
+        FILTER  e.status == 1 AND 
+        	(
+            	@visitorId IN e.identities[*] OR @email IN e.identities[*]
+            )
+    	RETURN e
+    )
+    LET rs2 = (
+        FOR e in cdp_profile 
+        FILTER e.status == 1 AND @fingerprintId IN e.identities[*]
+    	RETURN e
+    )
+	RETURN { "deterministic" : rs1, "probabilistic" : rs2 }
+;
+
+AQL_PROFILE_COLLECTOR_TOTAL =>
+	FOR d IN cdp_profile
+	    FILTER d.status > 0 
+	    COLLECT funnelStage = d.funnelStage WITH COUNT INTO length
+	    RETURN { "collectorKey" : funnelStage, "collectorCount" : length }
+;
+
+AQL_PROFILE_STATS_COLLECTOR =>
+	LET totalProfile = FIRST(FOR p IN cdp_profile 
+	    FILTER p.status > 0 
+	    COLLECT WITH COUNT INTO length RETURN length)
+	    
+	LET totalVisitor = FIRST(FOR p IN cdp_profile 
+	    FILTER p.status > 0 
+	    FILTER p.type == 0  
+	    COLLECT WITH COUNT INTO length RETURN length)
+	    
+	LET customerBehaviors = ["subscribe","purchase","order-failed", "product-return", "order-checkout","repurchase"]
+	LET totalCustomerProfile = FIRST(
+        FOR p IN cdp_profile
+	    FILTER p.status > 0 
+	    FILTER (p.behavioralEvents ANY IN customerBehaviors)
+	    COLLECT WITH COUNT INTO length RETURN length)
+	
+	LET totalContactProfile = FIRST(FOR p IN cdp_profile
+	    FILTER p.status > 0 
+	    FILTER p.type > 0 
+	    FILTER (LENGTH(p.primaryEmail) > 0 OR LENGTH(p.primaryPhone) > 0)
+	    COLLECT WITH COUNT INTO length RETURN length)
+		
+	LET totalSegments = FIRST(FOR s IN cdp_segment 
+	    FILTER s.status > 0 
+	    COLLECT WITH COUNT INTO length RETURN length)
+	
+	LET totalInactiveVisitor = FIRST(FOR p IN cdp_profile
+	    FILTER p.type == 0 
+	    FILTER p.totalLeadScore < 6 
+	    FILTER p.totalEngagementScore < 6 
+	    FILTER LENGTH(p.primaryEmail) == 0 
+	    FILTER LENGTH(p.primaryPhone) == 0 
+	    FILTER LENGTH(p.purchasedItemIds) == 0 
+	    FILTER LENGTH(p.purchasedItems) == 0 
+	    FILTER LENGTH(p.topEngagedTouchpointIds) < 2 
+	    FILTER LENGTH(p.governmentIssuedIDs) == 0 
+	    FILTER LENGTH(p.applicationIDs) == 0 
+	    FILTER LENGTH(p.crmRefId) == 0 
+	    FILTER DATE_DIFF(p.updatedAt, DATE_NOW(), 'day') > @inactiveLimitDays
+	    COLLECT WITH COUNT INTO length RETURN length)
+	
+	RETURN { 
+	    "totalProfile": totalProfile,
+	    "totalVisitor":totalVisitor,
+	    "totalInactiveVisitor":totalInactiveVisitor,
+	    "totalCustomerProfile":totalCustomerProfile,
+	    "totalContactProfile":totalContactProfile,
+	    "totalSegments":totalSegments
+	}
+;
+
+AQL_REVENUE_STATS_COLLECTOR =>
+	FOR d IN cdp_profile
+	FILTER d.status > 0 AND d.type > 0
+	COLLECT AGGREGATE avgTransactionValue = AVERAGE(d.totalTransactionValue), totalTransactionValue = SUM(d.totalTransactionValue) 
+	RETURN { 
+	    "avgTransactionValue" : avgTransactionValue ? avgTransactionValue : 0, 
+	    "totalTransactionValue" : totalTransactionValue ? totalTransactionValue : 0
+	}
+;
+
+AQL_PROFILE_COLLECTOR_IN_DATE_RANGE =>
+	FOR d IN cdp_profile
+	    FILTER (@journeyMapId == "" OR @journeyMapId IN d.inJourneyMaps[*].id) AND d.status > 0 AND (d.updatedAt >= @beginFilterDate AND d.updatedAt <= @endFilterDate)
+	    COLLECT funnelStage = d.funnelStage WITH COUNT INTO length
+	    RETURN { "collectorKey" : funnelStage, "collectorCount" : length }
+;
+
+AQL_PROFILE_TIMESERIES_COLLECTOR => 
+	FOR d IN cdp_profile
+	    FILTER d.updatedAt >= @beginFilterDate AND d.updatedAt <= @endFilterDate
+	   	COLLECT dateTime = DATE_TRUNC(d.updatedAt, @truncatedUnit), collectorKey = d.funnelStage WITH COUNT INTO length
+	    RETURN { "dateTime" : dateTime, "collectorKey" : collectorKey, "collectorCount" : length }
+;
+
+AQL_INSERT_SEGMENT_REF_KEY_FOR_PROFILE =>
+	LET newSegment = {
+	  "id": @segmentId,
+	  "indexScore": @segmentIndexScore,
+	  "lastDataSynch": 0,
+	  "name": @segmentName,
+	  "queryHashedId": @queryHashedId
+	}
+	
+	UPDATE { _key: @profileId } 
+	WITH { inSegments: [newSegment], "authorizedViewers": @authorizedViewers, "authorizedEditors": @authorizedEditors } 
+	IN cdp_profile
+;
+
+AQL_UPDATE_SEGMENT_REF_KEY_FOR_PROFILE =>
+	FOR profile IN cdp_profile
+	  FILTER profile._key == @profileId
+	  LET updatedSegments = (
+	    FOR segment IN profile.inSegments
+	      RETURN MERGE(
+	        segment,
+	        segment.id == @segmentId ? { 
+	          indexScore: @segmentIndexScore, 
+	          name: @segmentName,
+	          queryHashedId: @queryHashedId
+	        } : {}
+	      )
+	  )
+	  UPDATE profile WITH { inSegments: updatedSegments, authorizedViewers: @authorizedViewers, authorizedEditors: @authorizedEditors } IN cdp_profile
+;
+   
+AQL_APPEND_SEGMENT_REF_KEY_FOR_PROFILE =>
+	LET newSegment = {
+	  "id": @segmentId,
+	  "indexScore": @segmentIndexScore,
+	  "lastDataSynch": 0,
+	  "name": @segmentName,
+	  "queryHashedId": @queryHashedId
+	}
+	
+	FOR profile IN cdp_profile
+	  FILTER profile._key == @profileId
+	  UPDATE profile 
+	  WITH { inSegments: PUSH(profile.inSegments, newSegment), "authorizedViewers": @authorizedViewers, "authorizedEditors": @authorizedEditors } 
+	  IN cdp_profile   
+;
+
+AQL_REMOVE_SEGMENT_REF_KEY_FOR_PROFILE =>
+	FOR profile IN cdp_profile
+	  FILTER profile._key == @profileId
+	  LET updatedSegments = (
+	    FOR segment IN profile.inSegments
+	      FILTER segment.id NOT IN @removedSegmentIds
+	      RETURN segment
+	  )
+  	UPDATE profile WITH { inSegments: updatedSegments } IN cdp_profile
+;
+
+AQL_REMOVE_VIEWABLE_PROFILES_FOR_USER =>
+	FOR p in cdp_profile
+		FILTER @userLogin IN p.authorizedViewers
+		LET newList = ( FOR u IN p.authorizedViewers LET newItem = ( u != @userLogin ? u : 0 ) RETURN newItem )
+		LET updatedList = ( FOR u in newList FILTER u != 0 RETURN u) 
+		UPDATE p WITH { authorizedViewers: updatedList } IN cdp_profile
+;
+
+AQL_REMOVE_EDITABLE_PROFILES_FOR_USER =>
+	FOR p in cdp_profile
+		FILTER @userLogin IN p.authorizedEditors
+		LET newList = ( FOR u IN p.authorizedEditors LET newItem = ( u != @userLogin ? u : 0 ) RETURN newItem )
+		LET updatedList = ( FOR u in newList FILTER u != 0 RETURN u) 
+		UPDATE p WITH { authorizedEditors: updatedList } IN cdp_profile
+;
+
+AQL_DELETE_ALL_INVALID_PROFILES =>
+	FOR p in cdp_profile  
+	FILTER p.type == 0 AND p.dataQualityScore == 0 AND LENGTH(p.eventStatistics) == 0 AND p.funnelStage == "new-visitor" AND DATE_DIFF(p.updatedAt, DATE_NOW(), "minute") > 3
+    REMOVE { _key: p._key } IN cdp_profile
+;
+
+AQL_DELETE_PROFILE_BY_ID =>
+	FOR p in cdp_profile  
+	FILTER p.status != 1 AND p._key == @profileId
+    REMOVE { _key: p._key } IN cdp_profile
+;
+
+AQL_PROFILE_BATCH_UPDATE_STATUS =>
+	FOR p IN cdp_profile
+		FILTER p._key IN @selectedProfileIds
+		UPDATE p WITH { status: @newStatus } IN cdp_profile
+;
+
+AQL_PROFILE_BATCH_REMOVE =>
+	FOR p IN cdp_profile
+		FILTER p._key IN @selectedProfileIds
+		UPDATE p WITH { status: @newStatus, inSegments: [] } IN cdp_profile
+;
+
+AQL_UPDATE_AUTHORIZATION_FOR_PROFILES_BY_JOURNEY =>
+	FOR p in cdp_profile
+	    FILTER @journeyMapId IN p.inJourneyMaps[*].id
+	    LET tempAuthorizedViewers = UNION_DISTINCT(p.authorizedViewers, @newAuthorizedViewers)
+		LET finalAuthorizedViewers = MINUS(tempAuthorizedViewers, @removedViewers)
+		LET tempAuthorizedEditors = UNION_DISTINCT(p.authorizedEditors, @newAuthorizedEditors)
+		LET finalAuthorizedEditors = MINUS(tempAuthorizedEditors, @removedEditors)
+		UPDATE p WITH { authorizedViewers : finalAuthorizedViewers, authorizedEditors : finalAuthorizedEditors } IN cdp_profile
+;
+
+AQL_DELETE_ALL_DEAD_VISITORS =>
+	LET c = LENGTH(
+		FOR p in cdp_profile
+		FILTER (CHAR_LENGTH(p.firstName) == 0 AND
+		        CHAR_LENGTH(p.lastName) == 0 AND
+		        CHAR_LENGTH(p.primaryEmail) == 0 AND
+		        CHAR_LENGTH(p.primaryPhone) == 0 AND
+		        CHAR_LENGTH(p.crmRefId) == 0 AND
+		        p.type == 0 AND
+		        p.totalLeadScore == 0) OR
+		       p.status == -44
+		RETURN p._key
+	)
+	RETURN c 
+;
+
+AQL_REMOVE_INACTIVE_PROFILES =>
+	LET removedProfiles = (
+	  FOR p IN cdp_profile
+	    FILTER p.type == 0 AND 
+	           p.totalLeadScore < 6 AND 
+	           p.totalEngagementScore < 6 AND 
+	           length(p.primaryEmail) == 0 AND
+	           length(p.primaryPhone) == 0 AND
+	           length(p.purchasedItemIds) == 0 AND 
+	           length(p.purchasedItems) == 0 AND 
+	           length(p.topEngagedTouchpointIds) < 2 AND
+	           length(p.governmentIssuedIDs) == 0 AND 
+	           length(p.applicationIDs) == 0 AND 
+	           length(p.crmRefId) == 0 AND 
+	           DATE_DIFF(p.updatedAt, DATE_NOW(), 'day') > @numberOfDays
+	    LIMIT @limitSize
+	    REMOVE { _key: p._key } IN cdp_profile
+	    RETURN OLD
+	)
+	RETURN LENGTH(removedProfiles)
+;
+
+AQL_DELETE_DATA_OF_DEAD_PROFILES =>
+	
+	LET del_trackingevent = LENGTH( 
+		FOR e IN cdp_trackingevent
+	    FILTER e.refProfileId NOT IN (
+	        FOR p IN cdp_profile
+	          RETURN p._key
+	    ) 
+	    LIMIT @limitSize
+	    REMOVE { _key: e._key } IN cdp_trackingevent
+	    RETURN OLD
+	)
+
+	LET del_profile2conversion = LENGTH(
+	    FOR e IN cdp_profile2conversion
+	    LET profileId = SUBSTRING(e._from , LENGTH("cdp_profile/") )
+	    FILTER profileId NOT IN (
+	        FOR p IN cdp_profile
+	          RETURN p._key
+	    ) 
+	    LIMIT @limitSize
+	    REMOVE { _key: e._key } IN cdp_profile2conversion
+	    RETURN OLD
+	)
+ 
+	LET del_profile2touchpointhub = LENGTH(
+	    FOR e IN cdp_profile2touchpointhub
+	    LET profileId = SUBSTRING(e._from , LENGTH("cdp_profile/") )
+	    FILTER profileId NOT IN (
+	        FOR p IN cdp_profile
+	          RETURN p._key
+	    ) 
+	    LIMIT @limitSize
+	    REMOVE { _key: e._key } IN cdp_profile2touchpointhub
+	    RETURN OLD
+	)
+
+	LET del_profile2content = LENGTH(
+	    FOR e IN cdp_profile2content
+	    LET profileId = SUBSTRING(e._from , LENGTH("cdp_profile/") )
+	    FILTER profileId NOT IN (
+	        FOR p IN cdp_profile
+	          RETURN p._key
+	    ) 
+	    LIMIT @limitSize
+	    REMOVE { _key: e._key } IN cdp_profile2content
+	    RETURN OLD
+	)
+
+	LET del_profile2product = LENGTH(
+	    FOR e IN cdp_profile2product
+	    LET profileId = SUBSTRING(e._from , LENGTH("cdp_profile/") )
+	    FILTER profileId NOT IN (
+	        FOR p IN cdp_profile
+	          RETURN p._key
+	    ) 
+	    LIMIT @limitSize
+	    REMOVE { _key: e._key } IN cdp_profile2product
+	    RETURN OLD
+	)
+
+	LET del_profile2profile = LENGTH(
+	    FOR e IN cdp_profile2profile
+	    LET profileId = SUBSTRING(e._from , LENGTH("cdp_profile/") )
+	    FILTER profileId NOT IN (
+	        FOR p IN cdp_profile
+	          RETURN p._key
+	    ) 
+	    LIMIT @limitSize
+	    REMOVE { _key: e._key } IN cdp_profile2profile
+	    RETURN OLD
+	)
+ 
+	RETURN del_trackingevent + del_profile2touchpointhub + del_profile2content + del_profile2product + del_profile2conversion + del_profile2profile
+;
+
+###########  CONTEXT_SESSION  ########################################################################################################;
+
+AQL_GET_CONTEXT_SESSION_BY_KEY =>
+	FOR e in cdp_contextsession 
+	FILTER e.sessionKey == @sessionKey  
+	RETURN e
+;
+
+AQL_GET_CONTEXT_SESSIONS_BY_VISITOR_ID =>
+	FOR e in cdp_contextsession 
+	FILTER e.visitorId == @visitorId  
+	SORT e.createdAt DESC
+	RETURN e
+;
+
+AQL_GET_CONTEXT_SESSIONS_BY_PROFILE_ID =>
+	FOR e in cdp_contextsession 
+	FILTER e.profileId == @profileId  
+	SORT e.createdAt DESC
+	RETURN e
+;
+
+###########  TRACKING_EVENT ########################################################################################################;
+
+AQL_GET_TRACKING_EVENTS_BY_PAGINATION =>
+	FOR e in cdp_trackingevent 
+	LIMIT @startIndex,@numberResult 
+	RETURN e
+;
+
+AQL_GET_TRACKING_EVENTS_BY_PROFILE_ID =>
+	FOR e in cdp_trackingevent 
+	FILTER e.refProfileId == @refProfileId AND (e.refJourneyId == @refJourneyId OR @refJourneyId == "")
+	SORT e.timestamp DESC
+	LIMIT @startIndex,@numberResult 
+	RETURN e
+;
+
+AQL_GET_LAST_EVENTS_OF_PROFILE_BY_METRIC_NAMES =>
+	LET events = (
+	    FOR metricName IN @metricNames
+	        LET lastEvent = FIRST(
+	            FOR e IN cdp_trackingevent
+	                FILTER e.refProfileId == @refProfileId 
+	                    AND (e.refJourneyId == @refJourneyId OR @refJourneyId == "")
+	                    AND e.metricName == metricName
+	                SORT e.timestamp DESC
+	                LIMIT 1
+	                RETURN e
+	        )
+	        RETURN { [metricName]: lastEvent }
+	)
+	
+	 LET lastEvent = FIRST(
+	    FOR e IN cdp_trackingevent
+	        FILTER e.refProfileId == @refProfileId 
+	            AND (e.refJourneyId == @refJourneyId OR @refJourneyId == "")
+	        SORT e.timestamp DESC
+	        LIMIT 1
+	        RETURN e
+	)
+	RETURN { lastEvent : lastEvent, events: MERGE(events)}
+;
+
+AQL_SEARCH_TRACKING_EVENTS_BY_PROFILE_ID_AND_KEYWORDS =>
+	FOR e in cdp_trackingevent 
+	FILTER e.refProfileId == @refProfileId AND (e.refJourneyId == @refJourneyId OR @refJourneyId == "") 
+			AND ( LOWER(e.srcTouchpointName) LIKE @searchValue OR e.srcTouchpointUrl LIKE @searchValue OR e.metricName == @metricName)
+	SORT e.timestamp DESC
+	LIMIT @startIndex,@numberResult 
+	RETURN e
+;
+
+AQL_GET_UNPROCESSED_EVENTS_BY_PROFILE_ID =>
+	FOR e in cdp_trackingevent 
+	FILTER e.refProfileId == @refProfileId AND e.state == 0
+	LIMIT @startIndex,@numberResult 
+	RETURN e
+;
+
+AQL_GET_TRACKING_EVENTS_BY_PROFILE_ID_AND_METRIC_NAME =>
+	FOR e in cdp_trackingevent 
+	FILTER e.refProfileId == @refProfileId AND e.metricName == @metricName
+	SORT e.timestamp DESC
+	LIMIT @startIndex,@numberResult 
+	RETURN e
+;
+
+AQL_GET_CONVERSION_EVENTS_BY_PROFILE_ID =>
+	FOR e in cdp_trackingevent 
+	FILTER e.refProfileId == @refProfileId AND e.isConversion == true
+	SORT e.timestamp DESC
+	LIMIT @startIndex,@numberResult 
+	RETURN e
+;
+
+AQL_GET_TRACKING_EVENTS_FOR_REPORTING_BY_PROFILE_ID =>
+	FOR e in cdp_trackingevent 
+	FILTER e.refProfileId == @profileId
+        LET refTouchpoint = (
+            FOR t IN cdp_touchpoint
+            FILTER t._key == e.refTouchpointId
+            RETURN DISTINCT t
+        )
+        LET srcTouchpoint = (
+            FOR t IN cdp_touchpoint
+            FILTER t._key == e.srcTouchpointId
+            RETURN DISTINCT t
+        )
+        RETURN {"metricName":e.metricName,"metricValue":e.metricValue,
+                "browserName":e.browserName,"deviceName":e.deviceName,
+                "deviceOS":e.deviceOS, "deviceType": e.deviceType,
+                "environment":e.environment,"observerId":e.observerId,
+                "createdAt":e.createdAt,
+                "refTouchpoint":refTouchpoint, 
+                "srcTouchpoint": srcTouchpoint}
+;
+
+AQL_UPDATE_TRACKING_EVENT_STATE_PROCESSED =>
+	FOR e IN cdp_trackingevent
+	    FILTER e._key == @id
+	    UPDATE e WITH { state: 1 } IN cdp_trackingevent
+;
+
+AQL_MERGE_TRACKING_EVENT_TO_NEW_PROFILE =>
+	FOR e IN cdp_trackingevent
+	    FILTER e.refProfileId == @oldProfileId
+	    UPDATE e WITH { refProfileId: @newProfileId, state: 0 } IN cdp_trackingevent
+;
+
+AQL_EVENT_COLLECTOR_TOTAL => 
+	FOR e IN cdp_trackingevent
+	    COLLECT metricName = e.metricName WITH COUNT INTO length
+	    RETURN { "collectorKey" : metricName, "collectorCount" : length }
+;
+
+AQL_EVENT_COLLECTOR_TOTAL_IN_DATE_RANGE => 
+	FOR e IN cdp_trackingevent
+	    FILTER (e.createdAt >= @beginFilterDate AND e.createdAt <= @endFilterDate) AND (e.refJourneyId == @journeyMapId OR @journeyMapId == "")
+	    COLLECT metricName = e.metricName WITH COUNT INTO length
+	    RETURN { "collectorKey" : metricName, "collectorCount" : length }
+;
+
+AQL_EVENT_TIMESERIES_COLLECTOR => 
+	FOR e IN cdp_trackingevent
+	    FILTER e.createdAt >= @beginFilterDate AND e.createdAt <= @endFilterDate
+	   	COLLECT dateTime = DATE_TRUNC(e.createdAt, @truncatedUnit), collectorKey = e.metricName WITH COUNT INTO length
+	    RETURN { "dateTime" : dateTime, "collectorKey" : collectorKey, "collectorCount" : length }
+;
+
+AQL_DELETE_TRACKING_EVENTS_BY_PROFILE_ID =>
+	FOR e in cdp_trackingevent  
+	FILTER e.refProfileId == @refProfileId  
+    REMOVE { _key: e._key } IN cdp_trackingevent
+;
+
+AQL_UPDATE_TRACKING_EVENT_REF_TOUCHPOINT_HUB_ID =>
+	FOR e IN cdp_trackingevent
+	    FILTER LIKE(e.refTouchpointUrl, @refUrlPrefix, true) 
+	    UPDATE e WITH { refTouchpointHubId: @refTouchpointHubId } IN cdp_trackingevent
+;
+
+AQL_UPDATE_TRACKING_EVENT_SRC_TOUCHPOINT_HUB_ID =>
+	FOR e IN cdp_trackingevent
+	    FILTER LIKE(e.srcTouchpointUrl, @srcUrlPrefix, true) 
+	    UPDATE e WITH { srcTouchpointHubId: @srcTouchpointHubId } IN cdp_trackingevent
+;
+
+AQL_GET_TRACKING_EVENT_TIMESERIES_REPORT =>
+	FOR e in cdp_trackingevent 
+		FILTER (e.refJourneyId == @refJourneyId OR @refJourneyId == "") AND (e.refProfileId == @refProfileId OR @refProfileId == "") AND e.observerId != null
+			   AND ((e.createdAt >= @beginFilterDate OR @beginFilterDate == "") AND (e.createdAt <= @endFilterDate OR @endFilterDate == ""))
+		COLLECT dateKey = DATE_FORMAT(e.createdAt,"%yyyy-%mm-%dd"), metricName = e.metricName
+		AGGREGATE eventCount = COUNT_DISTINCT(e._key)
+	    RETURN {"datekey": dateKey, "metricName": metricName, "eventCount": eventCount}
+;
+
+AQL_PROFILE_MATRIX_REPORT =>
+	LET stats = 
+		(
+			FOR e in cdp_trackingevent 
+				FILTER (e.refJourneyId == @refJourneyId OR @refJourneyId == "") AND (e.refProfileId == @refProfileId OR @refProfileId == "")
+					   AND ((e.createdAt >= @beginFilterDate OR @beginFilterDate == "") AND (e.createdAt <= @endFilterDate OR @endFilterDate == ""))
+				COLLECT observerId = e.observerId
+				AGGREGATE profileCount = COUNT_DISTINCT(e.refProfileId)
+				SORT profileCount DESC
+			RETURN {"observerId": observerId, "profileCount": profileCount}
+		)
+	FOR s in stats
+		FOR o in cdp_eventobserver
+		   FILTER o._key == s.observerId 
+		    RETURN { "labelX":o.name, "value": s.profileCount}
+;
+
+AQL_EVENT_MATRIX_REPORT =>
+	LET stats = 
+		(
+			FOR e in cdp_trackingevent 
+				FILTER (e.refJourneyId == @refJourneyId OR @refJourneyId == "") AND (e.refProfileId == @refProfileId OR @refProfileId == "")
+					   AND ((e.createdAt >= @beginFilterDate OR @beginFilterDate == "") AND (e.createdAt <= @endFilterDate OR @endFilterDate == ""))
+				COLLECT groupKey = e.observerId, metricName = e.metricName
+				AGGREGATE eventCount = COUNT_DISTINCT(e._key)
+				SORT eventCount DESC
+			RETURN {"groupKey": groupKey, "metricName": metricName, "eventCount": eventCount}
+		)	
+	FOR o in cdp_eventobserver
+	    FILTER o.journeyMapId == @refJourneyId OR @refJourneyId == "" OR o.touchpointHubId == "leo_data_observer"
+		FOR s in stats
+		FILTER o._key == s.groupKey
+		RETURN { "labelY":o.name, "labelX": s.metricName, "value": s.eventCount, "journeyMapId": o.journeyMapId, "touchpointHubId": o.touchpointHubId} 
+;	    
+
+###########  FEEDBACK DATA: EVENT AND REPORT ########################################################################################################;
+
+AQL_GET_FEEDBACK_EVENTS_BY_PROFILE_ID =>
+	FOR e in cdp_feedbackdata 
+		FILTER e.refProfileId == @refProfileId  
+		SORT e.createdAt DESC
+		LIMIT @startIndex,@numberResult 
+		RETURN e
+;
+
+AQL_GET_FEEDBACK_EVENTS_BY_TYPE_AND_DATES =>
+	FOR e in cdp_feedbackdata 
+		FILTER ( e.feedbackType == @feedbackType && e.createdAt >= @fromDate && e.createdAt <= @toDate)
+		SORT e.createdAt
+		COLLECT  date = DATE_TRUNC(e.createdAt, "days") INTO group
+		RETURN { "dateKey":  DATE_FORMAT(date,"%yyyy-%mm-%dd"), "date": date, "feedbackEvents": group[*].e }
+;
+
+AQL_UPDATE_FEEDBACK_DATA_TO_NEW_PROFILE =>
+	FOR e IN cdp_feedbackdata
+	    FILTER e.refProfileId == @oldProfileId
+	    UPDATE e WITH { refProfileId: @newProfileId } IN cdp_feedbackdata
+;
+
+AQL_GET_LATEST_FEEDBACK_SCORE =>
+	FOR e in cdp_feedbackdata 
+		FILTER e.refTemplateId == @refTemplateId && e.refVisitorId == @refVisitorId && e.touchpointUrl == @touchpointUrl 
+		SORT e.createdAt DESC
+		LIMIT 1
+		RETURN e.feedbackScore
+;
+
+AQL_GET_FEEDBACK_EVENTS_BY_TEMPLATE_ID => 
+	FOR e in cdp_feedbackdata 
+		FILTER e.refTemplateId == @refTemplateId && e.createdAt >= @fromDate && e.createdAt <= @toDate 
+		SORT e.createdAt DESC
+		RETURN e
+;
+
+AQL_GET_FEEDBACK_EVENTS_BY_EVENT_NAME => 
+	FOR e in cdp_feedbackdata 
+		FILTER e.eventName == @eventName  
+		SORT e.createdAt DESC
+		LIMIT @startIndex,@numberResult 
+		RETURN e
+;
+
+AQL_DELETE_FEEDBACK_EVENTS_BY_PROFILE_ID =>
+	FOR e in cdp_feedbackdata  
+	FILTER e.refProfileId == @refProfileId  
+    REMOVE { _key: e._key } IN cdp_feedbackdata
+;
+
+###########  WEBHOOK EVENT  ########################################################################################################;
+
+AQL_GET_WEBHOOK_EVENTS_BY_SOURCE =>
+	FOR e in cdp_webhookdataevent  
+	FILTER e.source == @source
+	SORT e.createdAt DESC  
+	RETURN e
+;
+
+########### PRODUCT ITEM  ########################################################################################################;
+
+AQL_GET_PRODUCT_ITEM_BY_ID =>
+	FOR e in cdp_productitem FILTER e._key == @id  
+		RETURN e
+;
+
+AQL_GET_PRODUCT_ITEMS => 
+	FOR e in cdp_productitem 
+		FILTER e.status >= 0  
+		SORT e.createdAt DESC
+		LIMIT @startIndex,@numberResult 
+		RETURN e
+;
+
+AQL_SEARCH_PRODUCT_ITEMS_BY_KEYWORDS => 
+	FOR e in cdp_productitem 
+	FILTER e.status >= 0 AND LENGTH(e.productId) > 0 AND e.title LIKE @keywords
+	LIMIT @startIndex,@numberResult  
+	RETURN {"productId": e.productId, "title": e.title }
+;
+
+AQL_GET_PRODUCT_ITEM_BY_FULL_URL =>
+	FOR e in cdp_productitem FILTER e.fullUrl == @fullUrl  
+		RETURN e
+;
+
+AQL_GET_PRODUCT_ITEM_BY_PRODUCT_ID_AND_ID_TYPE =>
+	FOR e in cdp_productitem FILTER e.productId == @productId AND e.productIdType == @productIdType
+		RETURN e
+;
+
+AQL_GET_PRODUCT_ITEMS_IN_GROUP =>
+	FOR p in cdp_productitem 
+		FILTER @groupId IN p.groupIds[*] AND p.status >= 0 AND ( @keywords == "" OR LOWER(p.title) LIKE LOWER(@keywords) )
+		SORT p.updatedAt DESC
+		LIMIT @startIndex,@numberResult 
+		RETURN p
+;
+
+AQL_GET_PRODUCT_ITEMS_BY_CAMPAIGN => 
+	FOR e in cdp_productitem 
+		FILTER @campaignId IN e.inCampaigns[*] 
+		RETURN e
+;
+
+AQL_COUNT_PRODUCT_ITEMS_IN_GROUP =>
+	FOR p IN cdp_productitem 
+	FILTER @groupId IN p.groupIds[*] AND ( @keywords == "" OR LOWER(p.title) LIKE LOWER(@keywords) )
+    COLLECT WITH COUNT INTO length
+    RETURN length
+;
+
+########### TEMPLATE ITEM  ########################################################################################################;
+
+AQL_GET_TEMPLATE_BY_ID =>
+	FOR e IN cdp_assettemplate FILTER e._key == @id  
+	RETURN e
+;
+
+AQL_GET_TEMPLATE_BY_SLUG =>
+	FOR e IN cdp_assettemplate FILTER e.slug == @slug  
+	RETURN e
+;
+
+AQL_GET_TEMPLATES => 
+	FOR e IN cdp_assettemplate 
+	SORT e.createdAt DESC
+	LIMIT @startIndex,@numberResult 
+	RETURN e
+;
+
+AQL_GET_TEMPLATES_IN_GROUP =>
+	FOR p IN cdp_assettemplate 
+	FILTER @groupId IN p.groupIds[*] AND p.status >= 0 AND ( @keywords == "" OR LOWER(p.title) LIKE LOWER(@keywords) )
+	SORT p.updatedAt DESC
+	LIMIT @startIndex,@numberResult 
+	RETURN p
+;
+
+AQL_COUNT_TEMPLATES_IN_GROUP =>
+	FOR p IN cdp_assettemplate 
+		FILTER @groupId IN p.groupIds[*] AND ( @keywords == "" OR LOWER(p.title) LIKE LOWER(@keywords) )
+	    COLLECT WITH COUNT INTO length
+	    RETURN length
+;
+
+AQL_GET_TEMPLATES_BY_ASSET_TYPE_AND_CATEGORY =>
+	FOR e IN cdp_assettemplate
+	FILTER e.assetType == @assetType AND @categoryId IN e.categoryIds
+	SORT e.updatedAt DESC
+	return e
+;
+
+AQL_GET_TEMPLATES_BY_ASSET_TYPE_AND_TEMPLATE_TYPE_AND_CATEGORY =>
+	FOR e IN cdp_assettemplate
+	FILTER e.assetType == @assetType AND e.templateType == @templateType AND @categoryId IN e.categoryIds
+	SORT e.updatedAt DESC
+	return e
+;
+
+###########  DEVICE  ########################################################################################################;
+
+AQL_GET_DEVICE_BY_ID =>
+	FOR e in cdp_device FILTER e._key == @id
+	RETURN e
+;
+
+###########  TARGET_MEDIA_UNIT  ########################################################################################################;
+
+AQL_GET_TARGET_MEDIA_UNIT_BY_ID =>
+	FOR e in cdp_targetmediaunit 
+	FILTER e._key == @id
+	RETURN e
+;
+
+AQL_GET_TARGET_MEDIA_UNIT_BY_PROFILE_ID =>
+	FOR e in cdp_targetmediaunit 
+	FILTER e.refProfileId == @refProfileId
+	RETURN e
+;
+
+###########  SEGMENT  ########################################################################################################;
+
+AQL_GET_SEGMENTS_BY_PAGINATION =>
+	FOR d in cdp_segment  
+		FILTER d.status >= 0 AND (@searchValue != "" ? LOWER(d.name) LIKE @searchValue : true)
+				AND (@hasAdminRole == TRUE OR d.ownerUsername == @loginUsername OR @loginUsername IN d.authorizedViewers OR @loginUsername IN d.authorizedEditors)
+				AND (@authorizedViewer IN d.authorizedViewers OR @authorizedViewer == "") 
+				AND (@authorizedEditor IN d.authorizedEditors OR @authorizedEditor == "")
+		SORT d.@sortField @sortDirection
+		LIMIT @startIndex,@numberResult 
+		RETURN d
+;
+
+AQL_GET_SEGMENTS_TO_REFRESH =>
+	FOR d in cdp_segment  
+		FILTER d.status >= 0 AND d.autoUpdateProfiles == TRUE
+		SORT d.updatedAt
+		LIMIT @startIndex,@numberResult 
+		RETURN d
+;
+
+AQL_COUNT_SEGMENT_FOR_PAGINATION =>
+	FOR d in cdp_segment  
+		FILTER d.status >= 0 AND (@searchValue != "" ? LOWER(d.name) LIKE @searchValue : true)
+				AND (@hasAdminRole == TRUE OR d.ownerUsername == @loginUsername OR @loginUsername IN d.authorizedViewers)
+				AND (@authorizedViewer IN d.authorizedViewers OR @authorizedViewer == "") 
+				AND (@authorizedEditor IN d.authorizedEditors OR @authorizedEditor == "")
+		COLLECT WITH COUNT INTO length
+		RETURN length
+;
+
+AQL_GET_ALL_SEGMENTS_BY_FILTERING =>
+	FOR d in cdp_segment  
+		FILTER d.status >= 0 AND (d.forDeepAnalytics == @forDeepAnalytics OR d.forPredictiveAnalytics == @forPredictiveAnalytics 
+			OR d.forPersonalization == @forPersonalization OR d.forEmailMarketing == @forEmailMarketing OR d.forRealtimeMarketing == @forRealtimeMarketing
+			OR d.forReTargeting == @forReTargeting OR d.forLookalikeTargeting == @forLookalikeTargeting)
+		SORT d.indexScore
+		RETURN d
+;
+
+AQL_GET_ALL_SEGMENTS_BY_AUTHORIZATION =>
+	FOR d in cdp_segment  
+		FILTER d.status >= 0 AND (@authorizedViewer IN d.authorizedViewers OR @authorizedViewer == "") AND (@authorizedEditor IN d.authorizedEditors OR @authorizedEditor == "")
+		SORT d.updatedAt DESC
+		RETURN d
+;
+
+AQL_GET_ALL_SEGMENT_REFS_BY_AUTHORIZATION =>
+	FOR d in cdp_segment  
+		FILTER d.status >= 0 AND (@authorizedViewer IN d.authorizedViewers OR @authorizedViewer == "") AND (@authorizedEditor IN d.authorizedEditors OR @authorizedEditor == "")
+		SORT d.updatedAt DESC
+		RETURN {"id":d._key, "name":d.name, "totalCount": d.totalCount}
+;
+
+AQL_REMOVE_VIEWABLE_SEGMENTS_FOR_USER =>
+	FOR d in cdp_segment
+		FILTER @userLogin IN d.authorizedViewers
+		LET newList = ( FOR u IN d.authorizedViewers LET newItem = ( u != @userLogin ? u : 0 ) RETURN newItem )
+		LET updatedList = ( FOR u in newList FILTER u != 0 RETURN u) 
+		UPDATE d WITH { authorizedViewers: updatedList } IN cdp_segment
+;
+
+AQL_REMOVE_EDITABLE_SEGMENTS_FOR_USER =>
+	FOR d in cdp_segment
+		FILTER @userLogin IN d.authorizedEditors
+		LET newList = ( FOR u IN d.authorizedEditors LET newItem = ( u != @userLogin ? u : 0 ) RETURN newItem )
+		LET updatedList = ( FOR u in newList FILTER u != 0 RETURN u) 
+		UPDATE d WITH { authorizedEditors: updatedList } IN cdp_segment
+;
+
+AQL_GET_SEGMENT_REFKEYS_BY_IDS =>
+	FOR d in cdp_segment  
+	FILTER d.status > 0 AND d._key IN @idList
+	SORT d.indexScore 
+	RETURN {"id":d._key, "name":d.name, "indexScore": d.indexScore}
+;
+
+AQL_GET_SEGMENTS_TO_DELETE_FOREVER =>
+	FOR d in cdp_segment  
+		FILTER d.status < 0 AND LENGTH(d.campaignIds) == 0
+		RETURN d
+;
+
+AQL_GET_SEGMENT_BY_ID =>
+	FOR d in cdp_segment 
+		FILTER d._key == @id AND d.status >= 0
+		RETURN d
+;
+
+AQL_GET_SEGMENTS_FOR_RECOMMENDER =>
+	FOR d IN cdp_segment
+		FILTER d.forPersonalization == TRUE AND d.status >= 0 
+		RETURN d
+;
+
+AQL_GET_MAX_INDEX_SCORE_IN_SEGMENTS =>
+	FOR d in cdp_segment
+		FILTER d.status >= 0 
+		SORT d.indexScore DESC
+		LIMIT 1
+		RETURN d.indexScore
+;
+
+AQL_GET_ALL_SEGMENTS =>
+	FOR d in cdp_segment  
+		FILTER d.status >= 0 
+		RETURN d
+;
+
+AQL_GET_ALL_ACTIVE_SEGMENTS =>
+	FOR d in cdp_segment  
+		FILTER d.status > 0 
+		RETURN d
+;
+
+AQL_UPDATE_SEGMENT_TOTAL_COUNT =>
+	FOR d IN cdp_segment
+	    FILTER d._key == @segmentId 
+	    UPDATE d WITH { totalCount: @totalCount, updatedAt: @currentDateTime } IN cdp_segment
+;
+
+###########  BUSINESS ACCOUNT  ########################################################################################################;
+
+AQL_GET_ACCOUNTS_BY_PAGINATION =>
+	FOR d in cdp_businessaccount  
+		FILTER d.status >= 0 AND (@searchValue != "" ? d.name LIKE @searchValue : true || @searchValue != "" ? d.description LIKE @searchValue : true)
+				AND (@hasAdminRole == TRUE OR d.ownerUsername == @loginUsername OR @loginUsername IN d.authorizedViewers)
+		SORT d.@sortField @sortDirection
+		LIMIT @startIndex,@numberResult 
+		RETURN d
+;
+
+AQL_COUNT_ACCOUNT_FOR_PAGINATION =>
+	FOR d in cdp_businessaccount  
+	FILTER d.status >= 0 AND (@searchValue != "" ? d.name LIKE @searchValue : true || @searchValue != "" ? d.description LIKE @searchValue : true)
+				AND (@hasAdminRole == TRUE OR d.ownerUsername == @loginUsername OR @loginUsername IN d.authorizedViewers)
+	COLLECT WITH COUNT INTO length
+	RETURN length
+;
+
+AQL_GET_ACCOUNTS_TO_DELETE_FOREVER =>
+	FOR d in cdp_businessaccount  
+		FILTER d.status < 0
+		RETURN d
+;
+
+AQL_GET_ACCOUNT_BY_ID =>
+	FOR d in cdp_businessaccount FILTER d._key == @id AND d.status >= 0
+	RETURN d
+;
+
+########### ACTIVATION CAMPAIGN  ########################################################################################################;
+
+AQL_GET_CAMPAIGN_BY_ID =>
+	FOR e in cdp_campaign FILTER e._key == @id AND e.status >= 0
+	RETURN e
+;
+
+AQL_GET_CAMPAIGNS_BY_PAGINATION =>
+	FOR e in cdp_campaign  
+		FILTER e.status >= 0 
+		LET targetedSegmentNames = (	
+		    FOR id in e.targetedSegmentIds
+		        FOR s in cdp_segment
+		            FILTER s._key == id
+		    RETURN s.name
+		)
+		SORT e.updatedAt DESC
+		LIMIT @startIndex,@numberResult 
+	RETURN MERGE(e, {'targetedSegmentNames':targetedSegmentNames} )
+;
+
+AQL_GET_CAMPAIGNS_TO_DELETE_FOREVER =>
+	FOR e in cdp_campaign  
+	SORT e.updatedAt DESC
+	LIMIT @startIndex,@numberResult 
+	RETURN e
+;
+
+########### SYSTEM_SERVICE  ########################################################################################################;
+
+AQL_GET_SYSTEM_SERVICE_BY_ID =>
+	FOR e in system_service FILTER e._key == @id
+	RETURN e
+;
+
+AQL_GET_PUBLIC_SYSTEM_SERVICES =>
+	FOR e in system_service FILTER e.index >= 0
+	SORT e.index
+	RETURN e
+;
+
+AQL_REMOVE_ALL_SYSTEM_SERVICES =>
+	FOR e in system_service  
+	FILTER e.index >= 0
+    REMOVE { _key: e._key } IN system_service
+;
+
+AQL_GET_ALL_SYSTEM_SERVICES =>
+	FOR e in system_service 
+	SORT e.index
+	RETURN e
+;
+
+########### DATA_SERVICE  ########################################################################################################;
+
+AQL_GET_DATA_SERVICE_BY_ID =>
+	FOR e in cdp_dataservice 
+	FILTER e._key == @id
+	RETURN e
+;
+
+AQL_LIST_DATA_SERVICES =>
+	FOR e in cdp_dataservice 
+	FILTER (LOWER(e.name) LIKE LOWER(@keywords) OR LOWER(e.description) LIKE LOWER(@keywords) OR @keywords == "")
+	SORT e.updatedAt DESC
+	LIMIT @startIndex, @numberResult
+	RETURN e
+;
+
+AQL_LIST_DATA_SERVICES_WITH_FILTER =>
+	FOR e in cdp_dataservice   
+	FILTER (LOWER(e.name) LIKE LOWER(@keywords) OR LOWER(e.description) LIKE LOWER(@keywords) OR @keywords == "") 
+		AND e.status == 1   
+		AND ( (e.forSynchronization == @forSynchronization AND @forSynchronization == true)
+			OR (e.forDataEnrichment == @forDataEnrichment AND @forDataEnrichment == true)
+			OR (e.forPersonalization == @forPersonalization AND @forPersonalization == true)  )
+	SORT e.updatedAt DESC
+	LIMIT @startIndex, @numberResult 
+	RETURN e
+;
+
+AQL_LIST_ALL_ACTIVE_DATA_SERVICES =>
+	FOR e in cdp_dataservice 
+	FILTER LENGTH(e.configs['service_api_key']) > 0 AND e.status == 1
+	RETURN e
+;
+
+########### ACTIVATION_RULES  ########################################################################################################;
+
+AQL_GET_ACTIVE_ACTIVATION_RULES_BY_SERVICE_ID =>
+	FOR e in cdp_activationrule 
+	FILTER e.dataServiceId == @dataServiceId AND e.active == true
+	SORT e.createdAt DESC
+	RETURN e
+;
+
+AQL_GET_ACTIVATION_RULES_BY_SEGMENT_ID =>
+	FOR e in cdp_activationrule 
+	FILTER e.segmentId == @segmentId
+	SORT e.createdAt DESC
+	RETURN e
+;
+
+AQL_GET_ACTIVATION_RULE_BY_ID =>
+	FOR e in cdp_activationrule 
+	FILTER e._key == @id
+	RETURN e
+;
+
+AQL_REMOVE_ACTIVATION_RULE_BY_ID =>
+	FOR e in cdp_activationrule  
+	FILTER e._key == @id
+    REMOVE { _key: e._key } IN cdp_activationrule
+    LET removed = OLD 
+  	RETURN removed._key
+;
+
+AQL_IS_ACTIVATION_RULE_READY_TO_RUN =>
+	RETURN LENGTH(
+		FOR e IN cdp_activationrule
+			FOR d IN cdp_dataservice
+			FILTER e.dataServiceId == d._key AND e._key == @activationRuleId
+			AND e.active == TRUE AND d.status == 1 AND CHAR_LENGTH(d.configs['service_api_key']) > 0
+		RETURN e._key
+	) > 0
+;
+
+########### PERSONALIZATION ENGINE  ########################################################################################################;
+
+AQL_GET_METADATA_RECOMMENDED_PRODUCTS_OF_PROFILE =>
+	LET fromEdgeId = CONCAT("cdp_profile/",@profileId) 
+	FOR r IN cdp_profile2product
+	    FOR t IN cdp_targetmediaunit
+	FILTER r.eventMetricId == "recommend" AND r._from == fromEdgeId AND r.targetMediaUnitId == t._key
+	SORT r.eventScore DESC, r.indexScore 
+	LIMIT @numberResult
+	RETURN {"rankingMetaData": r, "targetMediaUnit": t}
+;	
+
+AQL_SET_RANKING_RECOMMENDED_PRODUCTS_OF_PROFILE =>
+	LET fromEdgeId = CONCAT("cdp_profile/",@profileId) 
+	FOR r IN cdp_profile2product
+	    FOR t IN cdp_targetmediaunit
+	FILTER r.eventMetricId == "recommend" AND r._from == fromEdgeId AND r.targetMediaUnitId == t._key AND t.refProductItemId == @productId
+	UPDATE r WITH { indexScore: @newIndexScore, updatedAt : DATE_ISO8601(DATE_NOW()) } IN cdp_profile2product
+;
+
+########### system_event  ########################################################################################################;
+
+AQL_DELETE_SYSTEM_EVENTS_BY_USER_LOGIN =>
+	FOR e in system_event  
+	FILTER e.userLogin == @userLogin  
+    REMOVE { _key: e._key } IN system_event
+;
+
+AQL_GET_SYSTEM_EVENTS_BY_USER_LOGIN =>
+	FOR e in system_event  
+	FILTER e.userLogin == @userLogin  
+	SORT e.createdAt DESC
+	LIMIT @startIndex, @numberResult 
+	RETURN e
+;
+
+AQL_GET_SYSTEM_EVENTS_BY_OBJECT_NAME_AND_ID =>
+	FOR e in system_event  
+	FILTER e.objectName == @objectName AND e.objectId == @objectId 
+	SORT e.createdAt DESC
+	LIMIT @startIndex, @numberResult 
+	RETURN e
+;
+
+AQL_GET_SYSTEM_EVENTS_BY_OBJECT_NAME =>
+	FOR e in system_event  
+	FILTER e.objectName == @objectName
+	SORT e.createdAt DESC
+	LIMIT @startIndex, @numberResult 
+	RETURN e
+;
+
+############################################### END AQL  #####################################################################################

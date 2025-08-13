@@ -1,0 +1,202 @@
+
+<!-- Behavioral Report -->
+  
+<div id="event_dashboard_loader" class="loader"></div>  
+<div id="event_dashboard" class="row" style="display: none;">
+
+    	<!--  main UI for event timeseries -->
+      	
+     	<div class="col-lg-9 ">
+     			
+     		<div class="report_page_header">
+				<h4> <i class="fa fa-bar-chart" aria-hidden="true"></i> Behavioral Report from <mark id="eventDataFromDate"></mark> to <mark id="eventDataToDate" ></mark> </h4>
+			</div>
+			
+     		<!-- Date filter control -->
+	     	<div class="col-lg-12 float-right">
+				<div class='col-md-4 col-xs-12' style="border-right:1px solid #000;height: 60px;" >
+        			<label for="journeyMapList">Data Journey Map</label>
+        			<div>
+        				<select id="journeyMapList" data-placeholder="Choose an Journey Map" class="select" > </select>
+        			</div>
+        		</div>
+		        <div class='col-md-3 col-xs-12'  >
+		            <div class="form-group">
+		                <div class='input-group date' id='beginFilterDate'>
+		                    <input type='text' class="form-control" autocomplete="off" /> <span class="input-group-addon">
+		                        <span class="glyphicon glyphicon-calendar"></span>
+		                    </span>
+		                </div>
+		            </div>
+		        </div>
+		        <div class='col-md-3 col-xs-12'>
+		            <div class="form-group">
+		                <div class='input-group date' id='endFilterDate'>
+		                    <input type='text' class="form-control" autocomplete="off" /> <span class="input-group-addon">
+		                        <span class="glyphicon glyphicon-calendar"></span>
+		                    </span>
+		                </div>
+		            </div>
+		        </div>
+		        <div class='col-lg-2 col-xs-12 text-center'>
+		        	<button id="btn_refresh_event_report" type="button" class="btn btn-goto-router" style="width: 90%"  > 
+		        		<i class="fa fa-check" aria-hidden="true"></i> OK </button>
+		        </div>
+		    </div>
+		    
+   			
+   			<div class="chart_box"  >
+            	<ul class="nav nav-tabs" data-tab-content="main_dashboard_report_tabs" >   
+            		<li class="active">
+		         		<a href="javascript:" data-target-tab="panel_event_timeseries_report" title="Time Series Report" > 
+		         			<i class="fa fa-line-chart" aria-hidden="true"></i> Behavioral Event
+		         		</a>
+		         	</li>	         		
+		         	<li>
+		         		<a href="javascript:" data-target-tab="panel_event_data_metrix_report" title="Event Data Matrix" > 
+		         			<i class="fa fa-table" aria-hidden="true"></i> Event Matrix
+		         		</a>
+		         	</li>
+	   			</ul>
+	   			
+	   			<div class="tab-content" id="main_dashboard_report_tabs" style="min-height: 450px"  >
+	   			
+	   				<!-- tab 1 Time Series  -->
+					<div class="highlight_box tab-pane active" id="panel_event_timeseries_report" >
+				    	<div id="timeseries_event_wrapper" > 
+			   				<canvas id="timeseriesEventChart" </canvas>
+			   			</div>
+					</div>
+	   			
+					<!-- tab 2 Data Matrix  -->
+					<div class=" tab-pane " id="panel_event_data_metrix_report"  >
+						<div id="event_data_metrix_report" class="col-lg-12"> </div>
+					</div>
+					
+				</div>
+	            
+            </div>
+   			
+   		</div>
+   		
+		<div class="col-lg-3"> 
+        	<div class="chart_box">
+	        	<h5 class="highlight_text text-center" > Profile Statistics </h5>
+	            <div class="summary_metric">
+	                <div class="vcenter text-center profile_count" id="profile_count_for_events"  >
+	 					0
+	                </div>
+	            </div>
+	        </div>
+	        <div class="chart_box" >   
+	            <h5 class="highlight_text text-center" > Behavioral Event Statistics </h5>
+	            <div class="summary_metric">
+	                <div class="vcenter" id="event_report_stats" style="overflow-y:scroll;">
+	                    <!--  Event Summary Report -->
+	                </div>
+	            </div>
+	       	</div>
+        </div>
+
+</div>
+
+
+<script>
+	var currentJourneyMapId = ""; 
+    var intEventDataDashboard =  function() {
+    	// init tabs
+    	setupTabPanels();
+    	// data filter
+    	initDateFilterComponent(false, null, null, 30);
+    	
+		loadJourneyMapList(false, function(id){
+			currentJourneyMapId = id;
+			// load event reports
+			loadEventDailyReportUnit(true);
+        },true);
+		
+		loadEventDailyReportUnit(false);
+		
+		$('#btn_refresh_event_report').click(function(){
+			loadEventDailyReportUnit(true)
+		})
+    }  
+    
+    function loadEventMatrixSummaryReport(){
+    	var sel = '#event_report_stats';
+    	var loader = '<div class="loader"></div>';
+    	
+    	var wh = $(window).height();
+   		var h = wh - (Math.floor(wh/3)+50);
+   		$(sel).html(loader).css('height',h+'px');
+   		$('#event_data_metrix_report').html(loader)
+    	
+    	setTimeout(function(){
+    		var params = getDateFilterValues();
+    		var beginFilterDate = params.beginFilterDate;
+    		var endFilterDate = params.endFilterDate;
+    		loadJourneyMapEventMatrix(currentJourneyMapId, 'event_data_metrix_report', beginFilterDate, endFilterDate, function(data){
+    			// event summary stats
+				var reportSummary = data.reportSummary;
+		   		var reportKeys = Object.keys(data.reportSummary);
+		   		var len = reportKeys.length;
+	    		if(len > 0) {
+	    			$(sel).empty();
+	    			reportKeys.sort();
+	    			reportKeys.forEach(function(eventName) {
+	    				var eventCount = reportSummary[eventName];
+	    				appendItemCount(sel, eventName, eventCount);
+	       			});	        		
+	    		}
+	    		else {
+	    			$(sel).empty().html('<div class="text-center" style="padding: 10px"> No data available </div>');
+	    		}
+    		})
+    	}, 1100)
+    }
+    
+    window.eventTimeseriesChart = false;
+    var loadEventDailyReportUnit = function(refresh){
+    		
+    	var params = getDateFilterValues();
+		var beginFilterDate = new moment( params.beginFilterDate).format(defaultDateFormat);
+		var endFilterDate = new moment( params.endFilterDate).format(defaultDateFormat);
+    	params['journeyMapId'] = currentJourneyMapId;
+    	
+    	var beginReportDate = params.beginFilterDate;
+    	$('#eventDataFromDate').text(new moment(beginReportDate).format(defaultDateFormat))
+    	
+    	var endReportDate = params.endFilterDate;
+    	$('#eventDataToDate').text(new moment(endReportDate).format(defaultDateFormat))
+        
+    	var urlStr = baseLeoAdminUrl + '/cdp/analytics360/event-report/summary';
+    	
+    	$("#event_dashboard_loader").show();
+    	$("#event_dashboard").hide();
+    	LeoAdminApiUtil.getSecuredData(urlStr, params , function (json) {
+        	$("#event_dashboard_loader").hide();
+        	$("#event_dashboard").show();
+        	
+            if (json.httpCode === 0 && json.errorMessage === '') {
+        		//  profile stats
+        		var profileCount =  new Number(json.data.profileCount).toLocaleString(); 
+        		$('#profile_count_for_events').text(profileCount);
+        		
+	    		// render chart data
+	    		var chartId = 'timeseriesEventChart';
+	    		var showAllDataset = true;
+	    		if(refresh === true && eventTimeseriesChart !== false){
+	    			renderTimeseriesChart(chartId, json.data , true, window.eventTimeseriesChart, showAllDataset );
+	    		}
+	    		else {
+	    			window.eventTimeseriesChart = renderTimeseriesChart(chartId, json.data , false, false, showAllDataset);
+	    		}
+	    		
+	    		loadEventMatrixSummaryReport();
+            } else {
+                console.error(json);
+            }
+        });
+    }
+</script>
+

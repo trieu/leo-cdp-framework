@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<WorkerConfigs classpath="rfx.core.configs.WorkerConfigs" type="object">
+
+	<!-- the global configs for workers -->
+	<customConfigs type="map">
+		<!-- Default Data Config for static resource handler -->
+
+		<config name="VSTORAGE_GET_TOKEN_URL">
+			
+		</config>
+		
+		<config name="CDP_CORE_VSTORAGE_CONTAINER_URL">
+			
+		</config>
+		
+		<config name="VSTORAGE_GET_TOKEN_BODY">
+			
+		</config>
+		
+			
+		<config name="SERVICE_ACCOUNT_KEY_FILE_PATH">
+			
+		</config>
+		
+		<config name="GOOGLE_SHEET_URL">
+			https://docs.google.com/spreadsheets/d/
+		</config>
+
+
+	</customConfigs>
+
+</WorkerConfigs>

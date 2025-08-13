@@ -1,0 +1,314 @@
+<style>
+#webtpl_url_holder {
+	font-size: 11.5px;
+	font-weight: bold;
+	color: #3300ff;
+}
+</style>
+<div class="container-fluid" id="item_editor_form">
+
+	<!-- MAIN BODY here -->
+	<div class="row">
+		<div class="col-lg-9">
+			<h5 class="page-header" id="page_breadcrumb"></h5>
+		</div>
+		<div class="col-lg-3 text-right">
+
+			<button type="button" class="btn btn-info" onclick="history.back()">
+				<i class="fa fa-arrow-circle-left" aria-hidden="true"></i> Back
+			</button>
+
+			<button type="button" class="btn btn-danger"
+				onclick="LeoCdpAdmin.navFunctions.deleteItemAsset(htmlTemplateData)">
+				<i class="fa fa-trash" aria-hidden="true"></i> Delete
+			</button>
+
+			<button type="button" class="btn btn-goto-router data-control-edit"
+				onclick="webTemplateEditorSave()">
+				<i class="fa fa-fw fa-check-square-o"></i> Save
+			</button>
+
+		</div>
+	</div>
+
+	<!-- MAIN BODY here -->
+	<div class="row">
+
+		<fieldset>
+
+			<div class="form-group">
+				<label>Title</label> <input id="asset_item_title" type="text"
+					class="form-control" placeholder="Enter title" name="title"
+					autocomplete="off">
+			</div>
+
+			<div class="form-group">
+				<label>Description</label>
+				<div id="description_div" style="display: block;">
+					<textarea class="form-control" rows="2"
+						placeholder="Enter description" name="description"></textarea>
+				</div>
+			</div>
+
+			<div id="contentClassForEmailTemplate" class="form-group">
+				<label>Landing Page Type</label>
+				<div>
+					<div class="radio">
+						<label for="cl_feedback_survey"> <input
+							id="cl_basic_landing_page" type="radio"
+							value="basic_landing_page" name="contentClass">Basic Landing Page
+						</label>
+					</div>
+					<div class="radio">
+						<label for="cl_feedback_survey"> <input
+							id="cl_feedback_survey" type="radio" value="feedback_survey"
+							name="contentClass">Feedback Survey
+						</label>
+					</div>
+					<div class="radio">
+						<label for="cl_gamification"> <input
+							id="cl_gamification" type="radio"
+							value="gamification" name="contentClass">Website Gamification
+						</label>
+					</div>
+				</div>
+			</div>
+
+			<div id="webtpl_url_holder" class="alert alert-info" role="alert">
+				<i class="fa fa-qrcode" aria-hidden="true" style="font-size: 1.1em"></i>
+				<b>Preview Content URL</b> <a id="webtpl_url" class="small-text"
+					href="javascript:" target="_blank"></a> <br>
+			</div>
+
+			<div id="qr_code_holder" class="thumbnail">
+				<img id="webtpl_qrcode_url" style="max-height: 200px" />
+			</div>
+
+			<div class="form-group" id="content_div_wrapper">
+				<label>Template </label>
+
+				<div id="content_div"></div>
+				<div id="raw_media_container" style="width: 100%;">
+					<textarea id="raw_media_html"></textarea>
+				</div>
+			</div>
+			
+			<div class="form-group" style="display: none;">
+				<label>Template JSON Model</label>
+				<div id="json_metadata_container" style="width: 100%;">
+					<textarea id="json_metadata"></textarea>
+				</div>
+				<hr>
+			</div>
+
+		</fieldset>
+
+	</div>
+</div>
+
+<hr>
+
+<script>
+
+    var itemId = "";
+    var groupId = "";
+    var categoryId = "";
+    
+    var htmlTemplateData = false;
+
+    //raw HTML code editor
+    var rawHtmlEditor = false, rawJsonEditor = false;
+    
+    function initTemplateEditor(params){
+    	htmlTemplateData = false;
+    	
+    	// html code editor
+    	rawHtmlEditor = CodeMirror.fromTextArea(document.getElementById("raw_media_html"), {        
+    		 mode: "htmlmixed",           
+             lineNumbers: true ,
+             smartIndent: true ,
+             lineWrapping : true,
+             matchBrackets : true,
+             matchTags: {bothTags: true},
+             extraKeys: {"Ctrl-Space": "autocomplete"}
+        });
+        rawHtmlEditor.setSize($('#raw_media_container').width()-18, 1);
+        
+        rawJsonEditor = CodeMirror.fromTextArea(document.getElementById("json_metadata"), {        
+            mode: "application/ld+json",           
+            lineNumbers: true ,
+            smartIndent: true ,
+            lineWrapping : true,
+            matchBrackets : true,
+            matchTags: {bothTags: true}
+        });
+        rawJsonEditor.setSize($('#json_metadata_container').width()-18, 1);
+    	
+        // load data from server
+    	loadTemplateEditor(params);
+    }
+    
+    var showPreviewWebTemplateUrl = function() {
+    	if(htmlTemplateData) {
+    		var url = "https://" + baseLeoObserverDomain + "/webhtml?tplid=" + htmlTemplateData.id + "&cb=" + new Date().getTime();
+     		$('#webtpl_url').attr('href',url).text(url);
+     		
+     		if(htmlTemplateData.assetType === 4 || htmlTemplateData.assetType === 5 || htmlTemplateData.assetType === 6) {
+     			// hide QR code if assetType is email template , social media or push notification
+     			$('#qr_code_holder').hide();
+     		} else {
+     			var qrCodeFullUrl = baseLeoAdminUrl + htmlTemplateData.qrCodeUrl.substr(1);
+         		$('#webtpl_qrcode_url').attr('src',qrCodeFullUrl);
+     		}
+    	}
+ 	}
+
+    function loadTemplateEditor(params) {
+        if (params) {
+            itemId = params.itemId;
+            groupId = params.groupId;
+            categoryId = params.categoryId;
+            
+            console.log('=====> load template editor for id ' + itemId);
+
+            var urlStr = baseLeoAdminUrl + '/cdp/asset-item/get';
+
+            LeoAdminApiUtil.callPostAdminApi(urlStr, params, function (json) {
+                if (json.httpCode === 0 && json.errorMessage === '') {
+                    htmlTemplateData = json.data;
+                    var assetType = htmlTemplateData.assetType;
+                    document.title = htmlTemplateData.title ? 'Asset Template Editor - ' + htmlTemplateData.title : 'New Content Template';
+                    
+
+        	     	// breadcrumb link update
+        	        updateBreadcrumbInAssetPost(htmlTemplateData.assetCategories, htmlTemplateData.assetGroups, htmlTemplateData.title );
+
+                    var form = $('#item_editor_form');
+                    for (var k in htmlTemplateData) {
+                        var value = htmlTemplateData[k];
+                        var fieldType = typeof value;
+
+                        if (fieldType === 'number' || fieldType === 'string') {
+                            if (k === 'mediaInfo') {
+                            	 rawHtmlEditor.setValue(value);
+                                 CodeMirrorAutoFormat(rawHtmlEditor);
+                                 rawHtmlEditor.setSize(null, 650);
+                            } 
+                            else if (k === 'jsonMetadata') {
+                            	rawJsonEditor.setValue(value);
+                                CodeMirrorAutoFormat(rawJsonEditor);
+                                rawJsonEditor.setSize(null, 450);
+                            }
+                            else if (k === 'description') {
+                                form.find("textarea[name='description']").val(value);
+                            } 
+                                                  
+                            else {
+                                var node = form.find('input[name="'+ k + '"]');
+                                var type = node.attr('type');
+                                if(type === "text" ||  type === "text") {
+                                	node.val(value);
+                                }
+                                else if(type === "radio"){
+                                	$('input[value="'+value+'"][name="contentClass"]').prop('checked', true);
+                                }
+                            }
+                        }
+                        console.log(k + " : " + value + " fieldType :" + fieldType)
+                    }
+                    
+                    if( $('input[name="contentClass"]:checked').length === 0 ){
+                    	if(assetType === 4) {
+                    		// EMAIL_CONTENT
+                    		$('input[name="contentClass"][value="basic_email_content"]').prop('checked', true);
+                    	}
+                    	else if(assetType === 7) {
+                    		// WEB_HTML_CONTENT
+                    		$('input[name="contentClass"][value="basic_landing_page"]').prop('checked', true);
+                    	}
+                    }
+                    
+                    showPreviewWebTemplateUrl();
+                    if(htmlTemplateData.qrCodeUrl !== ""){
+                    	rawHtmlEditor.on("change",function(){
+                    		saveWebTemplateData();
+                        })
+                        rawJsonEditor.on("change",function(){
+                    		saveWebTemplateData();
+                        })
+                    } 
+                    else {
+                    	$('#survey_url_holder').hide()
+                    }
+                } else {
+                    LeoAdminApiUtil.logErrorPayload(json);
+                }
+            });
+        }
+    }
+
+    function saveWebTemplateData(callback) {
+        if (htmlTemplateData) {
+            htmlTemplateData.itemId = itemId;
+            htmlTemplateData.groupId = groupId;
+            htmlTemplateData.categoryId = categoryId;
+   
+            console.log('=====> saveWebTemplateData itemId ' + itemId);
+
+            //get DOM view and set into htmlTemplateData
+            var form = $('#item_editor_form');
+            htmlTemplateData.title = form.find('input[name="title"]').val().trim();
+            htmlTemplateData.description = form.find('textarea[name="description"]').val().trim();
+      
+            htmlTemplateData.contentClass = $('input[name="contentClass"]:checked').val();
+            htmlTemplateData.type = 9;
+            htmlTemplateData.mediaInfo = rawHtmlEditor.getValue().trim();
+            
+            var jsonMetadata = rawJsonEditor.getValue().trim();
+            htmlTemplateData.jsonMetadata = jsonMetadata;
+            
+            if(htmlTemplateData.title === "") {
+            	iziToast.error({
+            	    title: 'Error',
+            	    message: 'The title can not be empty !'
+            	});
+            }
+            else {
+            	if (typeof callback === 'function') {
+            		// the final save
+            		$('#ajaxLoaderDialog').modal({
+                		backdrop: 'static',
+                		keyboard: false
+            		});
+            	}
+            	
+            	//done set data model, POST to API
+                var urlStr = baseLeoAdminUrl + '/cdp/asset-item/save';
+                LeoAdminApiUtil.callPostAdminApi(urlStr, htmlTemplateData, function (json) {
+                    if (json.httpCode === 0 && json.errorMessage === '') {
+                        if (typeof callback === 'function') {
+                            if(json.data === ''){
+                                $('#error-on-save').html('Data is not valid !').show().delay(6000).fadeOut('slow');
+                            } else {
+                                callback(htmlTemplateData); // OK
+                            }                        
+                        }
+                    } else {
+                        $('#error-on-save').html(json.errorMessage).show().delay(6000).fadeOut('slow');
+                        LeoAdminApiUtil.logErrorPayload(json);
+                    }
+                });
+            }
+        }
+    }
+
+    function webTemplateEditorSave() {
+        var onSaveOk = function (item) {
+        	notifySavedOK("Content Template")  
+            $('#ajaxLoaderDialog').modal('hide');   
+            location.hash = "calljs-leoCdpRouter('Asset_Group_Details','" + item.groupId + "')";
+        }
+        saveWebTemplateData(onSaveOk);
+    }
+   
+</script>

@@ -1,0 +1,401 @@
+<style>
+	#feedback_form_url_holder {
+		font-size: 11.5px;
+	    font-weight: bold;
+	    color: #3300ff;
+	}
+	.display-flex-center {
+	    display:flex;
+	    align-items:center;
+	    border: 1px solid;
+	    border-radius: 6px;
+	}
+	.display-flex-center button {
+		margin: auto
+	}
+	.display-flex-center .fa-code {
+		font-size: 1.3em;
+		font-weight: bold;
+	}
+	#survey_form_editor_wrapper, #embedded_html_form_wrapper {
+		clear: both;
+		display: block;
+		padding-top: 15px;
+	}
+	.modal-body .eventName {
+		font-size:1.5em; color:blue; font-weight: bold;
+	}
+</style>
+
+<div class="container-fluid" id="item_editor_form">
+
+    <!-- MAIN BODY here -->
+    <div class="row">
+        <div class="col-lg-9">
+	         <h5 class="page-header" id="page_breadcrumb" > </h5>
+        </div>
+       	<div class="col-lg-3 text-right">
+            
+	         <button type="button" class="btn btn-info" onclick="history.back()">
+               	<i class="fa fa-arrow-circle-left" aria-hidden="true"></i> Back
+             </button>
+               
+             <button type="button" class="btn btn-danger" onclick="LeoCdpAdmin.navFunctions.deleteItemAsset(feedbackModel)">
+               	<i class="fa fa-trash" aria-hidden="true"></i> Delete
+             </button>
+             
+             <button type="button" class="btn btn-goto-router data-control-edit" onclick="feedbackFormEditorSave()"  > 
+        		<i class="fa fa-fw fa-check-square-o"></i> Save 
+        	 </button>  
+           
+        </div>
+    </div>
+
+    <!-- MAIN BODY here -->
+    <div class="row" id="feedback_form_editor_div" style="visibility: hidden;"> 
+            <div class="form-group">
+                 <label> Title </label>
+                 <input id="asset_item_title" type="text" class="form-control" placeholder="Enter title" name="title" autocomplete="off">
+            </div>
+
+            <div class="form-group">
+                 <label> Description </label>
+                 <div id="description_div" style="display: block;">
+                     <textarea class="form-control" rows="2" placeholder="Enter description" name="description"></textarea>
+                 </div>
+                
+            </div>
+            
+            <div class="form-group" >
+			 	<label> Feedback Form Type </label>
+                <div style="margin-left: 20px" >
+                	<label class="radio-inline"><input type="radio" name="templateType" value="0" > Survey Form </label>
+                	<label class="radio-inline"><input type="radio" name="templateType" value="1" > Contact Form </label>
+                	<label class="radio-inline"><input type="radio" name="templateType" value="2" > CFS Rating Form </label>
+                	<label class="radio-inline"><input type="radio" name="templateType" value="3" > CES Rating Form </label>
+                	<label class="radio-inline"><input type="radio" name="templateType" value="4" > CSAT Rating Form </label>
+                	<label class="radio-inline"><input type="radio" name="templateType" value="5" > NPS Rating Form </label>
+                </div>
+			</div>
+			<div class="form-group" >
+                <label> Form Language </label>
+                <div style="margin-left: 20px" >
+                	<label class="radio-inline"><input type="radio" name="surveyLanguage" value="en" checked="checked" > English </label>
+                	<label class="radio-inline"><input type="radio" name="surveyLanguage" value="vn" > Vietnamese </label>
+                </div>
+            </div>
+			
+			<hr>
+			<div class="form-group editor_wrapper"  >
+				<label> HTML Head Code </label>
+             	<div id="html_head_code_container" style="width: 100%;" >
+                	<textarea id="html_head_code"></textarea>
+            	</div>
+            </div>
+		 
+           	<div class="form-group editor_wrapper" id="survey_form_editor_wrapper"  >
+                <label> LEO Web Form Template </label>
+                <div id="raw_media_container" style="width: 100%;" >
+                     <textarea id="raw_media_html"></textarea>
+                </div>
+           	</div>
+            
+           	<div class="form-group editor_wrapper" id="embedded_html_form_wrapper"  >
+                <label> HTML Body Code </label>
+                <div id="html_body_code_container" style="width: 100%;" >
+                     <textarea id="html_body_code"></textarea>
+                </div>
+           	</div>
+            
+           	<div>
+				 <div id="feedback_form_url_holder" class="alert alert-info" role="alert" >
+			 	 	<i class="fa fa-qrcode" aria-hidden="true" style="font-size: 1.1em" ></i>  
+				 	<b> Preview URL </b> <a id="preview_url_feedback_form" class="small-text" href="javascript:" target="_blank" ></a>
+				 </div>	
+			</div>
+           	<div class="form-group" id="feedback_form_preview_holder" style="display: none;">
+            	<label> Preview </label>
+	            <div class="embed-responsive embed-responsive-16by9 display-flex-center " style="display: none;" >
+	               <iframe class="embed-responsive-item" id="feedback_form_preview" src=""></iframe>
+	            </div>
+           	</div> 
+    </div>
+</div>
+
+<hr>
+
+<script>
+    var itemId = "";
+    var groupId = "";
+    var categoryId = "";
+    
+    var feedbackModel = false;
+
+    //raw HTML code editor
+    var surveyTemplateEditor, headHtmlEditor, bodyHtmlEditor;
+
+    function initSurveyEditor(params) {
+    	feedbackModel = false;
+    	
+    	// html_head_code editor
+    	headHtmlEditor = CodeMirror.fromTextArea(document.getElementById("html_head_code"), {        
+            mode: "htmlmixed",           
+            lineNumbers: true ,
+            smartIndent: true ,
+            lineWrapping : true,
+            matchBrackets : true,
+            matchTags: {bothTags: true},
+            extraKeys: {"Ctrl-Space": "autocomplete"}
+        });
+    	headHtmlEditor.setSize($('#html_head_code_container').width()-18, 250);
+    	
+    	// research / feedback template code editor
+    	surveyTemplateEditor = CodeMirror.fromTextArea(document.getElementById("raw_media_html"), {        
+            mode: "htmlmixed",           
+            lineNumbers: true ,
+            smartIndent: true ,
+            lineWrapping : true,
+            matchBrackets : true,
+            matchTags: {bothTags: true},
+            extraKeys: {"Ctrl-Space": "autocomplete"}
+        });
+        surveyTemplateEditor.setSize($('#raw_media_container').width()-18, 1);
+        
+     	// html_body_code editor
+    	bodyHtmlEditor = CodeMirror.fromTextArea(document.getElementById("html_body_code"), {        
+            mode: "htmlmixed",           
+            lineNumbers: true ,
+            smartIndent: true ,
+            lineWrapping : true,
+            matchBrackets : true,
+            matchTags: {bothTags: true},
+            extraKeys: {"Ctrl-Space": "autocomplete"}
+        });
+    	bodyHtmlEditor.setSize($('#html_body_code_container').width()-18, 1);
+        
+        // load data from server
+    	loadFeedbackFormEditor(params);
+    }
+    
+    var updateFeedbackFormIframePreview = function(){
+    	if(typeof feedbackModel.id === "string"){
+    		var url = "https://" + baseLeoObserverDomain + "/webform?preview=1&tplid=" + feedbackModel.id + "&cb=" + new Date().getTime();
+     		$('#feedback_form_preview').attr('src',url).parent().show();
+     		$('#preview_url_feedback_form').attr('href',url).text(url);
+     		
+     		$("#feedback_form_preview_holder").show();
+    	}
+    }
+
+    function loadFeedbackFormEditor(params) {
+        if (params) {
+            itemId = params.itemId;
+            groupId = params.groupId;
+            categoryId = params.categoryId;
+            
+            console.log('=====> load template editor for id ' + itemId);
+
+            var urlStr = baseLeoAdminUrl + '/cdp/asset-item/get';
+
+            LeoAdminApiUtil.callPostAdminApi(urlStr, params, function (json) {
+                if (json.httpCode === 0 && json.errorMessage === '') {
+                    feedbackModel = json.data;
+                    
+                    document.title = feedbackModel.title ? 'Feedback Form Editor - ' + feedbackModel.title : 'New Feedback Form Template';
+                    var templateType = feedbackModel.templateType;
+                    var isLongHtmlForm = templateType === 0 || templateType === 1;
+                    var jsonMetadata = (feedbackModel.jsonMetadata != "" && feedbackModel.jsonMetadata != null) ? feedbackModel.jsonMetadata : "{}"
+                    
+                 	// breadcrumb link update
+        	        updateBreadcrumbInAssetPost(feedbackModel.assetCategories, feedbackModel.assetGroups, feedbackModel.title );
+                 	
+                    var form = $('#item_editor_form');
+                    for (var k in feedbackModel) {
+                        var value = feedbackModel[k];
+                        var fieldType = typeof value;
+
+                        if (fieldType === 'number' || fieldType === 'string') {
+                        	if (k === 'headCode') {
+                            	headHtmlEditor.setValue(value);
+                                CodeMirrorAutoFormat(headHtmlEditor);
+                            } 
+                        	else if (k === 'mediaInfo' && isLongHtmlForm) {
+                            	surveyTemplateEditor.setValue(value);
+                                CodeMirrorAutoFormat(surveyTemplateEditor);
+                                var surveyEditorHeight = 720;
+                                surveyTemplateEditor.setSize(null, surveyEditorHeight);
+                                $('#embedded_html_form_wrapper').hide();
+                                
+                                console.log("jsonMetadata ",jsonMetadata)
+                                var model = JSON.parse(jsonMetadata);
+                                if(typeof model.Language === "string" ){
+                                	$('input[name="surveyLanguage"][value="'+model.Language+'"]').prop('checked', true);
+                                }
+                            }
+                            else if (k === 'bodyCode' && !isLongHtmlForm ) {
+                            	bodyHtmlEditor.setValue(value);
+                                CodeMirrorAutoFormat(bodyHtmlEditor);
+                                bodyHtmlEditor.setSize(null, 500);
+                                $('#survey_form_editor_wrapper').hide()
+                            } 
+                            else if (k === 'description') {
+                                form.find("textarea[name='description']").val(value);
+                            } 
+                            else if (k === 'templateType') {
+                                form.find('input:radio[name=templateType][value="'+value+'"]').attr('checked', true);
+                            }                       
+                            else {
+                                form.find("input[name='" + k + "']").val(value);
+                            }
+                        }
+                        console.log(k + " : " + value + " fieldType :" + fieldType)
+                    }
+                    
+                    if(feedbackModel.qrCodeUrl !== "") {
+                    	updateFeedbackFormIframePreview();
+                    	
+                    	var autoSaveAction = function(){
+                    		if(window.autoSaveFeedbackForm){
+                    			window.autoSaveFeedbackForm = false;
+                    			saveFeedbackFormData(function(){
+                             		updateFeedbackFormIframePreview();
+                             	}, false);
+                    		}
+                    	}
+                    	
+                    	if(feedbackModel.templateType > 0) {
+                    		headHtmlEditor.on("change",function(){
+                        		if(! window.autoSaveFeedbackForm ) {
+                        			window.autoSaveFeedbackForm = true;
+                        			setTimeout(autoSaveAction,8000);
+                        		}
+                            });
+                    		bodyHtmlEditor.on("change",function(){
+                        		if(! window.autoSaveFeedbackForm ) {
+                        			window.autoSaveFeedbackForm = true;
+                        			setTimeout(autoSaveAction,8000);
+                        		}
+                            });
+                    	} else {
+                    		surveyTemplateEditor.on("change",function(){
+                        		if(! window.autoSaveFeedbackForm ) {
+                        			window.autoSaveFeedbackForm = true;
+                        			setTimeout(autoSaveAction,8000);
+                        		}
+                            });
+                    	}
+                    	
+                    } else {
+                    	$('#feedback_form_url_holder').hide()
+                    }
+                    
+                    var isNewItem = typeof feedbackModel.id !== "string";
+                 	if(isNewItem){
+                 		// update UI when switching templateType in create mode only
+                 		$('input[type=radio][name="templateType"]').change(function() {
+           	        	   	var tplType = $(this).val();
+           	        	   	if(tplType == 0 || tplType == 1){
+           	        	   		$('#embedded_html_form_wrapper').hide()
+           	        	   		$('#survey_form_editor_wrapper').show()
+           	        	   		surveyTemplateEditor.setSize(null, 500);
+           	        	   	}
+           	        	   	else {
+           	        	   		$('#survey_form_editor_wrapper').hide()
+           	        	   		$('#embedded_html_form_wrapper').show()
+           	        	   		bodyHtmlEditor.setSize(null, 500);
+           	        	   	}
+           	        	});
+                 	} 
+                 	else {
+                 		// disable when in edit mode
+                 		$('input[type=radio][name="templateType"]:not(:checked)').parent().hide();
+                 		$('input[type=radio][name="templateType"]:checked').parent().addClass('radio-inline-selected')
+                 	}
+                 	$('#feedback_form_editor_div').css('visibility',"visible")
+                 	
+                } else {
+                    LeoAdminApiUtil.logErrorPayload(json);
+                }
+            });
+        }
+    }
+
+    function saveFeedbackFormData(callback, showLoader) {
+        if (feedbackModel) {
+            feedbackModel.itemId = itemId;
+            feedbackModel.groupId = groupId;
+            feedbackModel.categoryId = categoryId;
+            var templateType = feedbackModel.templateType;
+   
+            console.log('=====> saveFeedbackFormData itemId ' + itemId);
+
+            //get DOM view and set into feedbackModel
+            var form = $('#item_editor_form');
+            feedbackModel.title = form.find('input[name="title"]').val().trim();
+            feedbackModel.description = form.find('textarea[name="description"]').val();
+            feedbackModel.templateType = parseInt(form.find('input:radio[name=templateType]:checked').val());
+            feedbackModel.assetType = 13; // template
+            
+            feedbackModel.headCode = headHtmlEditor.getValue().trim();
+            if(templateType > 1) {
+            	// rating forms
+                feedbackModel.bodyCode = bodyHtmlEditor.getValue().trim();
+                feedbackModel.mediaInfo = "_";
+            } else {
+            	// survey or research
+            	feedbackModel.mediaInfo = surveyTemplateEditor.getValue().trim();
+            	feedbackModel.bodyCode = "";
+            }
+            
+            if(templateType === 0 || templateType === 1){
+            	// parsing LEO_SURVEY_FORM or LEO_CONTACT_FORM
+            	var lang = $('input[name="surveyLanguage"]:checked').val();
+            	var templateData = parseSurveyTemplate(feedbackModel.mediaInfo, lang);
+            	templateData["Language"] = lang;
+                feedbackModel.jsonMetadata = JSON.stringify(templateData);
+            } else {
+            	// skip parsing EMBEDDED_HTML
+            	feedbackModel.jsonMetadata = "{}";
+            }
+
+            if(feedbackModel.title === "" || feedbackModel.mediaInfo === "") {
+            	iziToast.error({title: 'Error', message: 'The title and template can not be empty !'});
+            } else {
+            	if (typeof callback === 'function' && showLoader === true) {
+            		// the final save
+            		$('#ajaxLoaderDialog').modal({
+                		backdrop: 'static',
+                		keyboard: false
+            		});
+            	}
+            	
+                //done set data model, POST to API
+                var urlStr = baseLeoAdminUrl + '/cdp/asset-item/save';
+                LeoAdminApiUtil.callPostAdminApi(urlStr, feedbackModel, function (json) {
+                    if (json.httpCode === 0 && json.errorMessage === '') {
+                        if (typeof callback === 'function') {
+                            if(json.data === ''){
+                                $('#error-on-save').html('Data is not valid !').show().delay(6000).fadeOut('slow');
+                            } else {
+                                callback(feedbackModel); // OK
+                            }                        
+                        }
+                    } else {
+                        $('#error-on-save').html(json.errorMessage).show().delay(6000).fadeOut('slow');
+                        LeoAdminApiUtil.logErrorPayload(json);
+                    }
+                });
+            }
+        }
+    }
+
+    function feedbackFormEditorSave() {
+        var onSaveOk = function (item) {
+        	notifySavedOK("Feedback Template")  
+            $('#ajaxLoaderDialog').modal('hide'); 
+            location.hash = "calljs-leoCdpRouter('Asset_Group_Details','"+item.groupId+"')";
+        }
+        saveFeedbackFormData(onSaveOk, true);
+    }
+    
+</script>

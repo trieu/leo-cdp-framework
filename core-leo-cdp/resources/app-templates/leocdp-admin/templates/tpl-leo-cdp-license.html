@@ -1,0 +1,55 @@
+############################## METADATA for CDP ##############################
+
+##### ##### ##### BUILD for RELEASE ##### ##### #####
+runtimeEnvironment=PRO
+minifySuffix=-min
+superAdminEmail={{superAdminEmail}}
+buildEdition={{buildEdition}}
+buildVersion={{buildVersion}}
+
+##### ##### ##### Default CDP database for free and pro version ##### ##### #####
+mainDatabaseConfig=localCdpDbConfigs
+
+##### ##### ##### Admin Dashboard ##### ##### #####
+adminLogoUrl={{adminLogoUrl}}
+httpAdminDomain={{httpAdminDomain}}
+
+##### ##### ##### Data Hub for Data Observer ##### ##### ##### #####
+httpObserverDomain={{httpObserverDomain}}
+
+##### ##### ##### LEO Bot for FAQ and Content Creator ##### ##### ##### #####
+httpLeoBotDomain={{httpLeoBotDomain}}
+
+##### ##### ##### CDN for static file ##### ##### #####
+httpStaticDomain={{httpStaticDomain}}
+
+##### ##### ##### CDP License Metadata ##### ##### #####
+leoCdpLicenseKey={{leoCdpLicenseKey}}
+leoCdpLicenseQuota={{leoCdpLicenseQuota}}
+
+##### ##### ##### CDP METADATA ##### ##### #####
+# COMMERCE, FINANCE, MEDIA, SERVICE
+industryDataModels=COMMERCE,MEDIA,SERVICE
+productType=CDP
+
+##### ##### ##### Runtime path to get configs ##### ##### #####
+runtimePath=.
+pathMaxmindDatabaseFile=data/GeoIP2-City-Asia-Pacific.mmdb
+
+##### ##### ##### Default HTTP routers ##### ##### #####
+httpRoutingConfigAdmin=localLeoMainAdminWorker
+httpRoutingConfigObserver=localLeoObserverWorker
+
+##### ##### ##### Global system configs ##### ##### #####
+profileMergeStrategy=automation
+messageQueueType=local
+enableCachingViewTemplates=false
+
+##### ##### ##### kafka configs ##### ##### #####
+kafkaBootstrapServer=localhost:9092
+kafkaTopicEvent=LeoCdpEvent
+kafkaTopicEventPartitions=2
+kafkaTopicProfile=LeoCdpProfile
+kafkaTopicProfilePartitions=2
+
+##########################################################################################

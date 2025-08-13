@@ -1,0 +1,65 @@
+[
+  {
+    "id": "1",
+    "title": "Unlocking Android",
+    "16:28 10/11/2019": 416,
+    "publishedDate": "2009-04-01" ,
+    "thumbnailUrl": "https://s3.amazonaws.com/AKIAJC5RLADLUMVRPFDQ.book-thumb-images/ableson.jpg",
+    "authors": "W. Frank Ableson, Charlie Collins, Robi Sen",
+    "categories": "Open Source; Mobile"
+  },
+  {
+    "id": "2",
+    "title": "Android in Action, Second Edition",
+    "pageCount": 592,
+    "publishedDate": "2011-01-14",
+    "thumbnailUrl": "https://s3.amazonaws.com/AKIAJC5RLADLUMVRPFDQ.book-thumb-images/ableson2.jpg",
+    "authors": "W. Frank Ableson, Robi Sen",
+    "categories": "Java"
+  },
+  {
+    "id": "3",
+    "title": "Flex 3 in Action",
+    "pageCount": 576,
+    "publishedDate": "2009-02-02",
+    "thumbnailUrl": "https://s3.amazonaws.com/AKIAJC5RLADLUMVRPFDQ.book-thumb-images/ahmed.jpg",
+    "authors": "Tariq Ahmed with Jon Hirschi, Faisal Abid",
+    "categories": "Internet"
+  },
+  {
+    "id": "4",
+    "title": "Flex 4 in Action",
+    "pageCount": 600,
+    "publishedDate": "2010-11-15",
+    "thumbnailUrl": "https://s3.amazonaws.com/AKIAJC5RLADLUMVRPFDQ.book-thumb-images/ahmed2.jpg",
+    "authors": "Tariq Ahmed, Dan Orlando, John C. Bland II, Joel Hooks",
+    "categories": "Internet"
+  },
+  {
+    "id": "5",
+    "title": "Collective Intelligence in Action",
+    "pageCount": 425,
+    "publishedDate": "2008-10-01",
+    "thumbnailUrl": "https://s3.amazonaws.com/AKIAJC5RLADLUMVRPFDQ.book-thumb-images/alag.jpg",
+    "authors": "Satnam Alag",
+    "categories": "Internet"
+  },
+  {
+    "id": "6",
+    "title": "Zend Framework in Action",
+    "pageCount": 432,
+    "publishedDate": "2008-12-01",
+    "thumbnailUrl": "https://s3.amazonaws.com/AKIAJC5RLADLUMVRPFDQ.book-thumb-images/allen.jpg",
+    "authors": "Rob Allen, Nick Lo, Steven Brown",
+    "categories": "Web Development"
+  },
+  {
+    "id": "7",
+    "title": "Flex on Java",
+    "pageCount": 265,
+    "publishedDate": "2010-10-15",
+    "thumbnailUrl": "https://s3.amazonaws.com/AKIAJC5RLADLUMVRPFDQ.book-thumb-images/allmon.jpg",
+    "authors": "Bernerd Allmon, Jeremy Anderson",
+    "categories": "Internet"
+  }
+]

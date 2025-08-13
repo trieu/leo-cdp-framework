@@ -1,0 +1,372 @@
+<!-- Segment Builder -->
+
+<div class="row">
+	<div class="col-lg-8">
+		<h5 class="page-header" id="page_breadcrumb" > </h5>
+	</div>
+	<div class="col-lg-4 text-right" style="padding: 10px">
+		<button type="button" class="btn btn-info" onclick="history.back()"> 
+			<i class="fa fa-arrow-circle-left" aria-hidden="true"></i> Back 
+		</button>
+		<button type="button" class="btn btn-do-now" onclick="location.reload()" title="Refresh data"  > 
+       		<i class="fa fa-refresh" aria-hidden="true"></i> Refresh
+       	</button>
+		<button type="button" class="btn btn-danger data-control-delete" title="Delete this segment"> 
+			<i class="fa fa-trash" aria-hidden="true"></i> Delete 
+		</button>
+		<button type="button" class="btn btn-goto-router" onclick="saveSegmentMetaData()" title="Save this segment" > 
+			<i class="fa fa-check-square-o" aria-hidden="true"></i> Save 
+		</button>
+	</div>
+</div>
+
+<div id="segment_builder_loader" class="loader"></div>
+
+<div id="segment_builder_div" style="display: none;" >
+	<h4 id="segment_name" class="highlight_text" >  </h4>
+	<p> Enter the name of segment and set query builder to search profiles </p>
+	
+	<div class="panel-group">
+		<!--  1 metadata  -->
+		<div class="panel panel-leoadmin">
+			<div class="panel-heading"> 
+				<b> <label class="label_box"> 
+				<i class="fa fa-info-circle" aria-hidden="true"></i> Segment Metadata 
+				</label></b> 
+			</div>
+			<div class="panel-body">
+				<div class="col-lg-12">
+				
+					<div id="error-on-save" class="alert alert-danger" style="display: none;"></div>
+					
+					<div class="form-group row">
+						<label class="control-label col-sm-3" for="sm_name">Name</label>
+						<div class="col-sm-9">
+							<input type="text" class="form-control" id="sm_name" placeholder="Enter segment name" name="name">
+						</div>
+					</div>
+					
+					<div class="form-group row">
+						<label class="control-label col-sm-3" for="sm_description">Description</label>
+						<div class="col-sm-9">
+							<textarea class="form-control" rows="2" id="sm_description" name="description"  placeholder="Enter segment description" ></textarea>
+						</div>
+					</div>
+					
+					<div class="form-group row" >
+						<label class="control-label col-sm-3" for="sm_realtimeQuery">Real-time query</label>
+						<div class="col-sm-9">
+							<div class="checkbox">
+								<label><input type="checkbox" id="sm_realtimeQuery" name="realtimeQuery"> 
+									Always utilize real-time queries to ensure access to the most up-to-date data
+								</label>
+							</div>
+						</div>
+					</div>
+					
+					<div class="form-group row" style="display: none;" >
+						<label class="control-label col-sm-3" for="type">Status</label>
+						<div id="sm_status" style="font-size: 12px;"  class="col-sm-9" >
+		                   <div class="radio">
+							  <label><input type="radio" name="status" value="1" checked="checked" >Active query for new profile data</label>
+						   </div>
+		                   <div class="radio" style="display: none;" >
+							  <label><input type="radio" name="status" value="0" >  </label>
+						   </div>
+		                </div>
+					</div>
+
+					<!-- TODO -->					
+					<div class="form-group row" style="display: none;">
+						<label class="control-label col-sm-3" for="type">Data segmentation method</label>
+						<div class="col-sm-9"  id="sm_type" >
+							<div class="radio" title="Ad hoc query segmentation" >
+							  <label><input type="radio" name="type" checked value="9" > Manually segmentation (Ad-Hoc Query) </label>
+							</div>
+							
+							<div class="radio" title="Geographic segmentation" >
+							  <label><input type="radio" name="type" value="1" > Geographic segmentation </label>
+							</div>
+							<div class="radio" title="Demographic segmentation" >
+							  <label><input type="radio" name="type" value="2" > Demographic segmentation </label>
+							</div>
+							<div class="radio" title="Behavioral segmentation" >
+							  <label><input type="radio" name="type" value="4" > Behavioral segmentation </label>
+							</div>
+							
+							<div class="radio" title="Psychographic segmentation (This feature is only on CDP Enterprise version)"  >
+							  <label class="input_disabled" ><input type="radio" name="type" value="3" disabled="disabled" > Psychographic segmentation </label>
+							</div>
+							<div class="radio" title="Re-marketing segmentation (This feature is only on CDP Enterprise version)" >
+							  <label class="input_disabled"><input type="radio" name="type" value="5" disabled="disabled" > Re-marketing segmentation </label>
+							</div>
+							<div class="radio" title="Look-alike segmentation (This feature is only on CDP Enterprise version)" >
+							  <label class="input_disabled"><input type="radio" name="type" value="6" disabled="disabled" > Look-alike segmentation </label>
+							</div>
+							
+							<div class="radio" title="RFM model segmentation (This feature is only on CDP Enterprise version)" >
+							  <label class="input_disabled"><input type="radio" name="type" value="7" disabled="disabled" > RFM model segmentation </label>
+							</div>
+							<div class="radio" title="Churn segmentation (This feature is only on CDP Enterprise version)" >
+							  <label class="input_disabled"><input type="radio" name="type" value="8" disabled="disabled" > Churn segmentation </label>
+							</div>
+						</div>
+					</div>
+					
+					<div class="form-group row" id="divSegmentViewers"  >
+						<label class="control-label col-sm-3" for="authorizedSegmentViewers">Authorized users can view data</label>
+						<div class="col-sm-9" >
+							<select id="authorizedSegmentViewers" multiple data-placeholder="Choose an authorized data viewer" class="select" style="display: none;" >
+							  	<!-- list of login accounts -->
+							</select>
+						</div>
+					</div>
+					
+					<div class="form-group row" id="divSegmentEditors" >
+						<label class="control-label col-sm-3" for="authorizedSegmentEditors">Authorized users can update data</label>
+						<div class="col-sm-9" >
+							<select id="authorizedSegmentEditors" multiple data-placeholder="Choose an authorized data editor" class="select" style="display: none;" >
+							  	<!-- list of login accounts -->
+							</select>
+						</div>
+					</div>
+					
+					<div class="form-group row" style="display: none;" >
+						<label class="control-label col-sm-3" for="sm_indexscore">Priority score for activation</label>
+						<div class="col-sm-9">
+							<input type="number" min="1" class="form-control" id="sm_indexscore" placeholder="Enter the ranking index score for activation, less score is more priority" name="indexScore" style="width:150px" >
+						</div>
+					</div>
+					
+					
+					
+				</div>
+			</div>
+		</div>
+		
+		<div class="panel panel-leoadmin"  >
+			<div class="panel-heading"> <b> <label class="label_box"> <i class="fa fa-info-circle" aria-hidden="true"></i> Purposes </label> </b>  </div>
+			<div class="panel-body">
+				<div class="col-lg-12">
+					<div class="form-group">
+					
+						<div class="col-sm-12" >
+							<label class="control-label col-sm-3 " for="sm_for3rdSynchronization"> Data Synchronization </label>
+							<div class="col-sm-9">
+								<div class="checkbox">
+									<label><input type="checkbox" id="sm_for3rdSynchronization" name="for3rdSynchronization"> To set-up the data connection API and ongoing process of synchronizing data
+										 from CDP to digital marketing platforms
+									</label>
+								</div>
+							</div>
+						</div>
+						
+						<div class="col-sm-12" >
+							<label class="control-label col-sm-3 " for="sm_forPersonalization"> Data Personalization </label>
+							<div class="col-sm-9">
+								<div class="checkbox">
+									<label><input type="checkbox" id="sm_forPersonalization" name="forPersonalization"> 
+										To suggest most personalized information directly to your customers (e.g: product items, content, video, voucher,...)
+									</label>
+								</div>
+							</div>
+						</div>
+						
+						<div class="col-sm-12" >
+							<label class="control-label col-sm-3 " for="sm_forDeepAnalytics"> Data Classification </label>
+							<div class="col-sm-9">
+								<div class="checkbox">
+									<label><input type="checkbox" id="sm_forDeepAnalytics" name="forDeepAnalytics"  > 
+										Using Jupyter Notebook or Google Colab to analyse raw data to get more customer insights and compute RFM and RFE
+									</label>
+								</div>
+							</div>
+						</div>
+						
+						<div class="col-sm-12" >
+							<label class="control-label col-sm-3 " for="sm_forPredictiveAnalytics"> Data Enrichment </label>
+							<div class="col-sm-9">
+								<div class="checkbox">
+									<label><input type="checkbox" id="sm_forPredictiveAnalytics" name="forPredictiveAnalytics" > 
+										To predict Customer Acquisition Cost (CAC), Customer Lifetime Value (CLV) and Credit Score from behavioral data 	
+									</label>
+								</div>
+							</div>
+						</div>
+						
+						<div class="col-sm-12" >
+							<label class="control-label col-sm-3 " for="sm_forEmailMarketing"> Marketing Automation </label>
+							<div class="col-sm-9">
+								<div class="checkbox">
+									<label><input type="checkbox" id="sm_forEmailMarketing" name="forEmailMarketing" > 
+										To target your customers through email, by providing useful content, product information, PR event and feedback survey
+									</label>
+								</div>
+							</div>
+						</div>
+						
+						<div class="col-sm-12"  style="display: none;" >
+							<label class="control-label col-sm-3 " for="sm_forRealtimeMarketing"> Sending SMS and Message Notification </label>
+							<div class="col-sm-9">
+								<div class="checkbox">
+									<label><input type="checkbox" id="sm_forRealtimeMarketing" name="forRealtimeMarketing" > 
+										To connect customers with the product or service that they need in real-time, by using push notification and mobile SMS
+									</label>
+								</div>
+							</div>
+						</div>
+						
+						
+						<div class="col-sm-12"  style="display: none;" >
+							<label class="control-label col-sm-3 " for="sm_forReTargeting"> Behavioral Re-targeting </label>
+							<div class="col-sm-9">
+								<div class="checkbox">
+									<label><input type="checkbox" id="sm_forReTargeting" name="forReTargeting" > 
+										Behavioral re-targeting is a form of online targeted advertising by which online advertising 
+										is targeted to consumers based on their previous Internet actions
+									</label>
+								</div>
+							</div>
+						</div>
+						
+						<div class="col-sm-12"  style="display: none;" >
+							<label class="control-label col-sm-3 " for="sm_forLookalikeTargeting"> Look-alike Targeting </label>
+							<div class="col-sm-9">
+								<div class="checkbox">
+									<label><input type="checkbox" id="sm_forLookalikeTargeting" name="forLookalikeTargeting" > 
+										Lookalike targeting is a form of audience targeting that uses lookalike audiences to increase your ROI. <br>
+	 									Lookalike targeting is used when you want to target an audience that is similar to your existing customer base
+									</label>
+								</div>
+							</div>
+						</div>
+						
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		<!--  2 query  -->
+		<div class="panel panel-leoadmin">
+			<div class="panel-heading"> 
+				<b> <label class="label_box"> <i class="fa fa-filter" aria-hidden="true"></i> Segment Query Rules </label> </b> 
+			</div>
+			<div class="panel-body row">
+				
+				<!-- Query Details -->
+				<div class="col-lg-9">
+					
+       				<ul  class="nav nav-tabs" data-tab-content="segment_query_tabs" >
+			         	<li class="active" >
+			          		<a href="javascript:" data-target-tab="panel_segment_builder" title="Segment Query Builder"> 
+			          			<i class="fa fa-filter" aria-hidden="true"></i> Visual Query Builder 
+			          		</a>
+			         	</li>
+         
+         				<li>
+          					<a href="javascript: handleSegmentCustomQueryFilter(false)" data-target-tab="panel_segment_custom_query" title="Segment Custom Query Editor" >
+          						 <i class="fa fa-info-circle" aria-hidden="true"></i> Custom Query Filter
+          					</a>
+         				</li>
+         			</ul>
+         			
+         			<!-- Tab Contents  -->
+       				<div class="tab-content row" id="segment_query_tabs"  >
+
+						<!-- tab 1 segment-builder  -->
+						<div class="tab-pane active" id="panel_segment_builder" >
+							<div id="segment-builder-holder" data-realtime-query="true"  data-with-last-events="false" ></div>
+						</div>
+						
+						<!-- tab 2 custom_query  -->
+						<div class="tab-pane" id="panel_segment_custom_query" style="margin-left: 10px">
+							<button type="button" class="btn btn-sm btn-goto-router" onclick="initLeoChatBot('segment')" title="Run Data Query Builder with Generative AI" style="margin-left: 16px; display: none;">  
+								<i class="fa fa-object-group" aria-hidden="true"></i> Query with LEO AI
+			       			</button>
+			       			<p class="small"> 
+			       				You are an AQL expert. You know what you are doing. <br>
+			       				Disallow keywords: <b> 'update', 'remove', 'insert', or 'replace' or 'cdp_profile' </b> <br>
+			       				The final query is  "FOR d in cdp_profile FILTER d.status > 0 " + [Generated AQL from Visual Query Builder] + <b> [Your Custom Query] </b> + " RETURN d" 
+			       			</p>
+			       			<hr>
+			       			<label class="control-label" for="segment_custom_aql_editor" style="margin-bottom: 8px;"> 
+			       				<mark> ArangoDB Query Editor </mark>
+			       			</label>
+			       			<div  id="segment_custom_query_holder" style="width: 98%; border-left: 1px dotted;">
+			       				<textarea id="segment_custom_aql_editor"  ></textarea>
+			       			</div>
+							
+						</div>
+					</div>
+					
+				</div>
+				
+				<!-- Query Summary -->
+				<div class="col-lg-3 text-center">
+					<div class="btn-group" style="margin-bottom: 20px;" >
+						<button type="button" class="btn btn-goto-router" id="btn-run-querybuilder"> 
+							<i class="fa fa-check" aria-hidden="true"></i> Run Query </button>
+						<button type="button" class="btn btn-danger" id="btn-reset-querybuilder"> 
+							<i class="fa fa-trash" aria-hidden="true"></i> Reset </button>
+					</div>
+					<div id="segment_size_chart" style="max-width: 300px; margin: auto;"></div>
+				</div>
+			</div>
+		</div>
+		
+		<div id="segment_profile_list_loader" class="loader" style="display: none;"></div>
+		
+		<!--  3 profiles  -->
+		<div class="panel panel-leoadmin" id="segment_profile_list"  >
+			<div class="panel-heading"> 
+				<b> <label class="label_box"> <i class="fa fa-list" aria-hidden="true"></i>  
+					All Matched Profiles 
+				</label> </b>  
+			</div>
+			<div class="panel-body">
+				<div class="table-responsive" id="profilelist_holder" >
+					<table id="profile_list_querybuilder" class="display" style="width:100%;">
+				    	<thead>
+				        	<tr>
+					            <th >Full Name</th>					            
+					            <th class="text-center">Profile Type</th>
+					            <th >Gender</th>
+					            <th class="text-center">Email</th>
+					            <th class="text-center">Phone</th>
+					            <th >Last-seen Touchpoint</th>
+					            <th class="text-center">Data Quality</th>
+					            <th class="text-center">Lead Score</th>
+					            <th class="text-center">CLV Score</th>					            
+					            <th class="text-center">Last Updated</th>					            
+				        	</tr>
+				    	</thead>
+				 	</table>
+				</div>
+			</div>
+		</div>
+		
+	</div>
+</div>
+
+
+<script>
+	var segmentDataModel = false;
+	var segmentDataStats = false;
+	var segmentCustomQueryEditor = false;
+	
+	var initSegmentBuilder = function(id) {
+		segmentDataModel = false;
+		
+		setupTabPanels();
+		
+		
+		// Date Range Filtering Controller
+		if(id === 'new'){
+			// init UI for new segment
+			$('button.data-control-delete').hide();
+			createNewSegmentModel();
+		} else {
+			getSegmentBuilderData(id);
+		}
+	}
+</script>

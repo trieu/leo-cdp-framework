@@ -1,0 +1,247 @@
+<!doctype html>
+<html>
+<head>
+	<title>LEO Click Tracking: {{{customData.srcTouchpointName}}}</title>
+	
+	<meta charset="UTF-8">
+	<meta name="author" content="Trieu Nguyen(Thomas) - trieu@leocdp.com">
+	
+	<meta content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=4, user-scalable=1" name="viewport"/>
+	<meta http-equiv="X-UA-Compatible" content="IE=100"/>
+	
+	<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+	<meta http-equiv="Pragma" content="no-cache" />
+	<meta http-equiv="Expires" content="0" />
+
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+	<script src="https://gcore.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+	
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	
+	<style type="text/css">
+		body {font-family: Arial, Helvetica, sans-serif;}
+		
+		.container {
+		  padding: 20px;
+		  background-color: #f1f1f1;
+		}		
+		input[type=text],input[type=email], input[type=submit] {
+		  width: 100%;
+		  padding: 12px;
+		  margin: 8px 0;
+		  display: inline-block;
+		  border: 1px solid #ccc;
+		  box-sizing: border-box;
+		}		
+		input[type=checkbox] {
+		  margin-top: 16px;
+		}		
+		input[type=submit] {
+		  background-color: #04AA6D;
+		  color: white;
+		  border: none;
+		  font-size: 1.1em;
+		  max-width: 420px;
+		}		
+		input[type=submit]:hover {
+		  opacity: 0.8;
+		}		
+		.form {
+		  border: 3px solid #f1f1f1;
+		  font-family: Arial;
+		}
+		#subscription_box {
+			margin: auto;
+			width: 98%;
+		}
+				
+		@media only screen and (min-width: 600px) {
+  			/* For tablets or Desktop: */
+  			#subscription_box {
+				margin: auto;
+				width: 70%;
+			}
+		}
+	</style>
+	
+</head>
+<body style="text-align: center;">
+	
+	<div id="page_loader" style="display: none;">
+		<i class="fa fa-cog fa-spin fa-5x fa-fw"></i>
+		<span class="sr-only">Loading...</span>
+	</div>
+	
+	<div id="subscription_box" style="display: none;" >
+		<h3> <i class="fa fa-envelope" aria-hidden="true"></i>  {{customData.newsletterHeader}} </h3>
+
+		<form id="form_subscription_box" class="form"  >
+		  <div class="container" >
+		    <p> <i class="fa fa-info-circle" aria-hidden="true"></i> {{customData.newsletterDescription}}</p>
+		  </div>
+		
+		  <div class="container" style="background-color:white">
+		    <input type="text" placeholder="Your name" id="firstName" required>
+		    <input type="email" placeholder="Your email" id="email" required>
+		  </div>
+		
+		  <div class="container">
+		    <input type="submit" value="{{customData.newsletterButtonText}}" >
+		  </div>
+		</form>
+	</div>
+	
+	<script type="text/javascript">
+		function submitedSubscription(){
+			if( window["localStorage"] != null ) {
+				return localStorage.getItem("submited_subscription") === null;
+			}
+			return false;
+		}
+	
+		var referer = "{{{customData.referer}}}";
+		var srcTouchpointName = "{{{customData.srcTouchpointName}}}";
+		var newsletterSubscription = "{{{customData.newsletterSubscription}}}" === "true" && submitedSubscription();
+		
+	    //LEO Web Observer for channel: 
+   		var leoObserverLogDomain = "{{{baseLeoObserverUrl}}}";
+   		var leoObserverCdnDomain = "{{{baseStaticUrl}}}";
+   		var leoObserverId = "{{customData.observerId}}";
+
+   		// product metadata
+   		var idType = "{{customData.productIdType}}";
+		var productIds = "{{customData.productId}}";
+		
+		// content
+		var contentId = "{{customData.contentId}}";
+		
+		// to set ID from server if refVisitorId is stored in the TargetMediaUnit 
+		var injectedVisitorId = "{{customData.injectedVisitorId}}".trim();
+		
+		// for click direction to landing page
+		var targetMediaUrl = "{{{customData.targetMediaUrl}}}";
+		
+		var pageLoader = $('#page_loader');
+		var subscriptionBox = $('#subscription_box');		
+	
+		(function() {
+			if(referer == '') {
+				window.srcTouchpointUrl = encodeURIComponent(referer); 
+			} else {
+				window.srcTouchpointUrl = encodeURIComponent(location.protocol + '//' + location.host + location.pathname);
+			}
+			var leoproxyJsPath = '/js/leo-observer/leo.proxy.min.js';
+		    var src = location.protocol + '//' + window.leoObserverCdnDomain + leoproxyJsPath;
+		    var jsNode = document.createElement('script');
+		    jsNode.async = true;
+		    jsNode.src = src;
+		    var s = document.getElementsByTagName('script')[0];
+		    s.parentNode.insertBefore(jsNode, s);
+		})();
+		
+		var landingPageParams = function(url){
+			var i = url.indexOf('?');
+			if(i > 0){
+				var search = url.substring(i+1);
+	        	var map = JSON.parse('{"' + decodeURI(search).replace(/"/g, '\\"').replace(/&/g, '","').replace(/=/g,'":"') + '"}');
+	        	return map;
+			}
+			return {};
+		}
+		
+		var submitShortLinkClickEvent = function(){
+			var map = landingPageParams(targetMediaUrl)
+			
+			// record event
+			var eventData = { "landingPageUrl" : targetMediaUrl };
+			
+			eventData['productIds'] = productIds;
+			eventData['idType'] = idType;			
+			eventData['contentId'] = contentId;
+			
+			eventData['adId'] = "{{{customData.adId}}}";
+			eventData['placementId'] = "{{{customData.placementId}}}";
+			eventData['campaignId'] = "{{{customData.campaignId}}}";
+			eventData['affiliateId'] = "{{{customData.affiliateId}}}";
+			eventData['newsletterSubscription'] = newsletterSubscription;
+			
+			// set UTM Google Analytics from landing Page Url into event
+			eventData['utm_id'] = map['utm_id'] || '';
+			eventData['utm_campaign'] = map['utm_campaign'] || '';
+			eventData['utm_content'] = map['utm_content'] || '';
+			eventData['utm_medium'] = map['utm_medium'] || '';
+			eventData['utm_source'] = map['utm_source'] || '';
+			eventData['utm_term'] = map['utm_term'] || '';
+			
+			LeoObserverProxy.recordActionEvent("short-link-click", eventData);
+		}
+		
+		var gotoTargetUrl = function(webVisitorId){
+			// redirect
+			// wait for event data is sent to server, then redirect to target URL
+			setTimeout(function(){
+				if( targetMediaUrl.indexOf('?') < 0 ) {
+					targetMediaUrl += '?';
+				} else {
+					targetMediaUrl += '&';
+				}
+				targetMediaUrl += ('leosyn='+webVisitorId);
+				
+				// redirect
+				location.href = targetMediaUrl;
+			},900)
+		}
+		
+		// handle click action of user
+		var doClickAction= function(webVisitorId){
+			submitShortLinkClickEvent();	
+			gotoTargetUrl(webVisitorId);
+		}
+		
+		var doNewsletterSubscription = function(webVisitorId){
+			submitShortLinkClickEvent();
+			injectedVisitorId = webVisitorId;
+		}
+		
+		$('#form_subscription_box').submit(function(e){
+			e.preventDefault(); 
+			
+			var name = $('#firstName').val().trim();
+			var email = $('#email').val().trim();
+			
+			if(name !== "" && email !== ""){
+				subscriptionBox.hide();
+				pageLoader.show();
+				localStorage.setItem("submited_subscription", email);
+				// submit data to server
+				var userData = {firstName: name, email: email, loginId : "" ,loginProvider: 'Newsletter_Subscription'};
+	        	LeoObserverProxy.updateProfileBySession(userData);
+				gotoTargetUrl(injectedVisitorId);
+			}			
+			return false;
+		});
+		
+		var leoIdSynCallback;
+		if(newsletterSubscription){
+			subscriptionBox.show();
+			leoIdSynCallback = doNewsletterSubscription;
+		}
+		else {
+			pageLoader.show();
+			leoIdSynCallback = doClickAction;
+		}
+		
+		function leoObserverProxyReady(session) {
+			if(typeof window.targetMediaUrl === 'string' && window.targetMediaUrl.indexOf('http') === 0 ){
+				if(injectedVisitorId === "") {
+					// if injectedVisitorId is empty, then load from localStoreage and synch
+					LeoObserverProxy.synchLeoVisitorId(leoIdSynCallback);
+				}
+				else {
+					leoIdSynCallback(injectedVisitorId);
+				}
+			} 
+		}
+	</script>
+</body>
+</html>

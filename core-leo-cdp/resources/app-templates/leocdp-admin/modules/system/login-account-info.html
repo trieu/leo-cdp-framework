@@ -1,0 +1,263 @@
+<div class="container-fluid" id="user_form">
+
+    <!-- MAIN BODY here -->
+    <div class="row">
+		<div class="col-lg-10">
+			<h5 class="page-header" id="page_breadcrumb" > </h5>
+		</div>
+		<div class="col-lg-2 text-right" style="padding: 10px">
+	     	<button type="button" class="btn btn-info" onclick="history.back()" title="Back"  > 
+	       		<i class="fa fa-arrow-circle-left" aria-hidden="true"></i> Back
+	       	</button>
+	       	<button type="button" class="btn btn-goto-router data-control-edit" onclick="saveMyLoginProfile()" title="Save Login Account"  > 
+	     		<i class="fa fa-check-square-o" aria-hidden="true"></i> Save 
+	     	</button>
+	     </div>
+	</div>
+	
+	<h4> My Login Account Editor </h4>
+	<hr>
+	<div id="error-on-save" class="alert alert-danger" style="display: none;"></div>
+
+    <!-- MAIN BODY here -->
+    <div class="row">
+        <div class="col-lg-12">
+        
+        	<!--  Tab Navigation Items -->
+		    <ul class="nav nav-tabs" data-tab-content="login_account_tabs" >
+				<li class="active" >
+					<a href="javascript:" data-target-tab="panel_login_account_tab_general" title="User Profile" > <i class="fa fa-info-circle" aria-hidden="true"></i> User Information </a>
+		       	</li>
+		       	<li>
+					<a href="javascript:" data-target-tab="panel_login_account_tab_permissions" title="Account Permission" > <i class="fa fa-lock" aria-hidden="true"></i> User's Role </a>
+		       	</li>
+		       	
+		  	</ul>
+		  	
+		  	<!-- Tab Contents  -->
+	    	<div id="login_account_tabs" class="tab-content" style="min-height: 750px;"  >
+	    	
+	    		<!-- tab 1 General Login Information  -->
+				<div class="tab-pane active" id="panel_login_account_tab_general" >
+					<div class="form-group">
+	                    <label> Display Name</label>
+	                    <input type="text" class="form-control" placeholder="Enter Display Name" name="displayName"
+	                        autocorrect="off" autocapitalize="off" autocomplete="off"  >
+	                </div>
+	                <div class="form-group">
+	                    <label> User Login</label>
+	                    <input data-validation="length alphanumeric" data-validation-length="min4" type="text" class="form-control"
+	                        placeholder="Enter User Name" name="userLogin" autocomplete="nope" autocorrect="off"
+	                        autocapitalize="none" spellcheck="false">
+	                </div>
+	                <div class="form-group">
+	                    <label> Contact Email </label>
+	                    <input data-validation="email" type="email" class="form-control" placeholder="Enter Email" name="userEmail"
+	                        autocorrect="off" autocapitalize="off" autocomplete="off">
+	                </div>
+	                <div class="form-group">
+	                    <label> Password </label>
+	                    <input type="text" class="form-control" placeholder="Enter new password to update" name="userPass" autocorrect="off"
+	                        autocapitalize="off" autocomplete="nope">
+	                </div>
+	                <div class="form-group">
+	                    <label> Profile Visitor ID 
+							<a id="systemUser_profileViewByVisitorId" href="javascript:" style="display: none;" target="_blank" > My Data Profile </a> </label>
+	                    <input type="text" class="form-control" placeholder="Enter Profile Visitor ID" name="profileVisitorId"
+	                        autocorrect="off" autocapitalize="off" autocomplete="off"  >
+	                        
+	                </div>
+	                <hr>
+	                 <div class="form-group" >
+	                    <label> Business Unit </label>
+	                    <input type="text" class="form-control" placeholder="Enter the name of business unit" name="businessUnit"
+	                        autocorrect="off" autocapitalize="off" autocomplete="off required ">
+	                </div>
+	                <div class="form-group">
+	                    <label> Departments / User Groups </label>
+	                    <select name="inGroups" data-placeholder="Select some departments or user-groups" class="select" multiple="multiple" >
+	                        <option value="bod"> Board of Directors (BOD) </option>
+	                        <option value="investor"> Investor </option>
+	                        <option value="data_engineering_team"> Data Engineering </option>
+	                        <option value="data_science_team"> Data Science </option>
+	                        <option value="devops_team"> DevOps / DataOps </option>
+	                        <option value="ai_team"> A.I team </option>
+	                        <option value="marketing"> Marketing </option>
+	                        <option value="market_research"> Market Research </option>
+	                        <option value="finance"> Finance </option>
+	                        <option value="accounting"> Accounting </option>
+	                        <option value="audit"> Auditing </option>
+	                        <option value="biz_operation"> Business Operation </option>
+	                        <option value="pr_operation"> PR Operation </option>
+	                        <option value="product_operation"> Product Operation </option>
+	                        <option value="engineering"> Product Engineering </option>
+	                        <option value="product_rnd"> Product R&D Development </option>
+	                        <option value="logistics"> Logistics / Product Delivery </option>
+	                        <option value="customer_support"> Customer Support </option>
+	                        <option value="trading"> Trading </option>
+	                        <option value="purchasing"> Purchasing </option>
+	                        <option value="sales_team"> Sales </option>
+	                        <option value="tech"> IT / Technology Support </option>
+	                        <option value="media_agency"> Media Marketing Agency </option>
+	                        <option value="sales_agent"> Sales Agent / Sales Representative </option>
+	                    </select>
+	                </div>
+	                <div class="form-group">
+	                     <label> Job Title / Job Position </label>
+	                    <input type="text" class="form-control" placeholder="Job Title / Job Position" name="customData_position"
+	                        autocorrect="off" autocapitalize="off" autocomplete="off">
+	                </div>
+	                
+	                
+				</div>
+				
+				<!-- tab 2 Account Permissions  -->
+				<div class="tab-pane" id="panel_login_account_tab_permissions" >
+					<div class="action-div">
+						<h4 class="highlight_text"> <i class="fa fa-lock" aria-hidden="true"></i> User's Role for Permission </h4>
+	                    <div class="radio" >
+	                        <label><input type="radio" name="role" value="0" disabled="disabled" > 
+	                        	REPORT VIEWER: the login account can access Unified Analytics Hub to view summary reports </label>
+	                    </div>
+	                    <div class="radio"  >
+	                        <label><input type="radio" name="role" value="1" disabled="disabled"> 
+	                        	CUSTOMER DATA VIEWER: the login account has permissions to view authorized customer data (profiles and segments)</label>
+	                    </div>
+	                    <div class="radio"  >
+	                        <label><input type="radio" name="role" value="2" disabled="disabled"> 
+	                        	STANDARD USER: the login account can access Unified Analytics Hub and view authorized customer data  </label>
+	                    </div>
+	                    <div class="radio">
+	                        <label><input type="radio" name="role" value="3" disabled="disabled"> 
+	                        	CUSTOMER DATA EDITOR: the login account has permissions to manage authorized customer data (profiles and segments)</label>
+	                    </div>
+	                    <div class="radio">
+	                        <label><input type="radio" name="role" value="4" disabled="disabled"> 
+	                        	DATA OPERATOR: the login account has access Unified Analytics Hub, manage Journey Data Hub and update authorized customer profiles </label>
+	                    </div>
+	                    <div class="radio">
+	                        <label><input type="radio" name="role" value="5" disabled="disabled"> 
+	                        	DATA ADMIN: the login account has full permissions to manage customer data, can manage Data Asset and Data Service </label>
+	                    </div>
+	                    <div class="radio">
+	                        <label><input type="radio" name="role" value="6" disabled="disabled"> 
+	                        	SUPER ADMIN: the login account has full of permissions to manage system and manage all user login accounts </label>
+	                    </div>
+	                </div>
+				</div>
+	
+			</div>
+
+        </div>
+        
+    </div>
+</div>
+
+<hr>
+
+<script>
+    var userLoginModel = false;
+
+    function initMyLoginInfo() {
+    	 setupTabPanels();
+   	  	 
+   	  	 if(window.currentUserProfile && window.currentUserProfile.profileVisitorId){
+  			var vid = window.currentUserProfile.profileVisitorId;
+  			$('input[name="profileVisitorId"]').val(vid);
+  			var url = "#calljs-leoCdpRouter('Customer_Profile_Info_By_Visitor_ID','"+vid+"')";
+  			$('#systemUser_profileViewByVisitorId').attr('href',url).show();
+  		 }
+    	
+    	 var key = currentUserProfile.key;
+         var urlStr = baseLeoAdminUrl + '/user/get';
+         var params = {'key': key || 'my-login-info' };
+         
+         LeoAdminApiUtil.callPostAdminApi(urlStr, params, function (json) {
+             if (json.httpCode === 0 && json.errorMessage === '') {
+                 if (json.data) {
+                     userLoginModel = json.data;
+                     var date = LeoAdminApiUtil.formater.toDateString(userLoginModel.creationTime);
+
+                     var node = $('#user_form');
+                     if (typeof userLoginModel.key === 'string') {
+                         node.find('input[name="userLogin"]').val(userLoginModel.userLogin).attr('disabled', '');
+                         node.find('input[name="status"][value=' + userLoginModel.status + ']').attr('checked', '');
+                         
+                         $('input[name="role"]').parent().parent().hide();
+                         $('input[name="role"][value=' + userLoginModel.role + ']').attr('checked', '').parent().css("font-weight","bolder").parent().show();
+                     } else {
+                         node.find('input[name="userLogin"]').val(userLoginModel.userLogin);
+                         node.find('input[name="status"][value=1]').attr('checked', '');
+                         node.find('input[name="role"][value=1]').attr('checked', '');
+                     }
+                     
+                     node.find('input[name="displayName"]').val(userLoginModel.displayName);
+                     node.find('input[name="userEmail"]').val(userLoginModel.userEmail);
+                                          
+                     //customData
+                     var position = userLoginModel.customData.position ? userLoginModel.customData.position : '';
+                     node.find('input[name="customData_position"]').val(position);
+                     
+                     // load businessUnit in java template
+                     var businessUnit = userLoginModel.businessUnit ? userLoginModel.businessUnit : '';
+                     node.find('input[name="businessUnit"]').val(userLoginModel.businessUnit);
+
+                  	 // inGroups
+                  	 var inGroupsNode = $('select[name="inGroups"]');
+                     var inGroups = typeof userLoginModel.inGroups === 'object' ? userLoginModel.inGroups : [];                     
+                     var inGroupsNode = $('select[name="inGroups"]');                                       	 
+                 	 inGroups.forEach(function(e){
+                 		inGroupsNode.find('option[value="' + e + '"]').attr('selected', 'selected');
+                     })
+                     inGroupsNode.chosen({ width: "100%", no_results_text: "Oops, nothing found!" }).trigger("chosen:updated");
+
+                     //can not delete superadmin
+                     if(userLoginModel.userLogin === 'superadmin'){
+                         $('#btn_delete').hide();                        
+                     }
+                 }
+             }
+         });
+    }
+
+    
+    function saveMyLoginProfile() {
+        var node = $('#user_form');
+        
+        userLoginModel.displayName = node.find('input[name="displayName"]').val();
+        userLoginModel.profileVisitorId = node.find('input[name="profileVisitorId"]').val();
+        userLoginModel.userEmail = node.find('input[name="userEmail"]').val();
+        userLoginModel.userPass = node.find('input[name="userPass"]').val();
+                
+        userLoginModel.businessUnit = node.find('input[name="businessUnit"]').val();
+        userLoginModel.inGroups = JSON.stringify(node.find('select[name="inGroups"]').val());
+        userLoginModel.customData.position = node.find('input[name="customData_position"]').val();
+
+        var urlStr = baseLeoAdminUrl + '/user/update';
+        var onSaveOk = function (data) {
+            iziToast.info({
+	    	    title: 'Login Account Information',
+	    	    onClosed: function(){
+	    	    	location.reload(true)
+	    	    },
+	    	    message: "Updated information successfully!",
+	    	    timeout: 2000
+	    	});
+        }
+
+        LeoAdminApiUtil.callPostAdminApi(urlStr, userLoginModel, function (json) {
+            if (json.httpCode === 0 && json.errorMessage === '') {
+                if (json.data === '') {
+                    $('#error-on-save').html('Data is not valid !').show().delay(6000).fadeOut('slow');
+                } else {
+                    onSaveOk(json.data);
+                }
+            } else {
+                $('#error-on-save').html(json.errorMessage).show().delay(6000).fadeOut('slow');
+                LeoAdminApiUtil.logErrorPayload(json);
+            }
+        });
+        console.log(userLoginModel);
+    }
+ 
+</script>
