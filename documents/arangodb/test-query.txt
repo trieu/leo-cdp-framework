@@ -1,0 +1,21 @@
+FOR e in cdp_trackingevent   
+FILTER e.refProfileId == '7TcIoVOVF4ip02tIgRQcVG'
+AND e.eventData['landingPageUrl'] LIKE '%1lhBhmzM1JUMk2CmtTzUxi%'
+SORT e.timestamp DESC  
+LIMIT 0,5
+RETURN e
+
+
+
+LET edgeList = ( 
+    FOR v, e, p IN 1..1 OUTBOUND @fromProfileId 
+    GRAPH cdp_content_graph 
+    FILTER p.edges[0].eventMetricId == 'recommend' 
+    LIMIT @startIndex,@numberResult 
+    RETURN p.edges[0] 
+)  
+FOR e IN edgeList  
+FOR t IN cdp_targetmediaunit
+FILTER e.targetMediaUnitId == t._key
+SORT e.indexScore
+RETURN {'score': e.indexScore, 'landingPageName' : t.landingPageName, 'key': t._key}

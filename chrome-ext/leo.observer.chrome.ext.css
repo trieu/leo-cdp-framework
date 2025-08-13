@@ -1,0 +1,48 @@
+.leocdp_iframe_container {
+  position: relative; width: 100%; overflow: hidden; padding-top: 56.25%; 
+}
+
+.leocdp_iframe {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  padding-top: 35%; 
+}
+
+.leocdp_iframe_responsive {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.leocdp_iframe_small {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  width: 100%;
+  height: 312px;
+  border: none;
+  overflow: hidden;
+}
+
+#img_overlay {
+  text-align: center;
+  position: fixed; /* Sit on top of the page content */
+  display: none; /* Hidden by default */
+  width: 100%; /* Full width (cover the whole page) */
+  height: 100%; /* Full height (cover the whole page) */
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #2F4F4F; /* Black background with opacity */
+  z-index: 100000; /* Specify a stack order in case you're using a different order for other elements */
+  cursor: pointer; /* Add a pointer on hover */
+}

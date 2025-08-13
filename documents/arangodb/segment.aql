@@ -1,0 +1,7 @@
+FOR s IN cdp_segment
+UPDATE s WITH {
+    forPersonalization: s.forRecommenderSystem,
+    forRecommenderSystem: null
+    }
+IN cdp_segment 
+OPTIONS { keepNull: false }

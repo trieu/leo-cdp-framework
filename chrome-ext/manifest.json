@@ -1,0 +1,53 @@
+{
+	"name": "LEO CDP - Data Observer Test Tool",
+	"manifest_version": 3,
+	"version": "0.9.6.10",
+	"description": "LEO CDP - Developer Tool for local event tracking",
+	"permissions": [
+		"webRequest",
+		"tabs",
+		"storage"
+	],
+	"host_permissions": [
+		"https://*/*",
+		"http://*/*"
+	],
+	"icons": {
+		"16": "icon16.png",
+		"48": "icon48.png",
+		"128": "icon128.png"
+	},
+	"content_scripts": [
+		{
+			"matches": [
+				"https://sachhay24h.com/*",
+				"https://*.netabooks.com/*",
+				"https://*.amazon.com/*",
+
+				"https://*.youtube.com/*",
+				"https://batdongsan.com.vn/*",
+				"https://*.klook.com/*",
+				"https://bonobos.com/*",
+				"https://*.pvcfc.com.vn/*"			
+			],
+			"js": [
+				"jquery-3.6.0.min.js",
+				"leo.proxy.chrome.ext.js",
+				"leo.observer.chrome.ext.js"
+			],
+			"css": [
+				"leo.observer.chrome.ext.css"
+			],
+			"run_at": "document_idle"
+		}
+	],
+	"action": {
+		"default_icon": {
+			"16": "icon16.png",
+			"32": "icon48.png",
+			"48": "icon48.png",
+			"128": "icon128.png"
+		},
+		"default_popup": "popup.html"
+	}
+}

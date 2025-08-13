@@ -1,0 +1,175 @@
+server {
+    server_name example.com;
+    location / {
+             proxy_pass http://127.0.0.1:8080/;
+             proxy_set_header X-Forwarded-Proto $scheme;
+             proxy_set_header X-Forwarded-Port $server_port;
+             proxy_set_header Host            $host;
+             proxy_set_header X-Forwarded-For "115.74.22.116";
+             expires 1M;
+             access_log off;
+             add_header Cache-Control "public";
+    }
+    listen [::]:443 ssl http2; 
+    listen 443 ssl http2; 
+    ssl_certificate /home/thomas/0-uspa/localhost-ssl/example.com+5.pem;
+    ssl_certificate_key /home/thomas/0-uspa/localhost-ssl/example.com+5-key.pem;
+}
+
+server {
+    if ($host = example.com) {
+        return 301 https://$host$request_uri;
+    } 
+    listen 80;
+    listen [::]:80;
+    server_name example.com;
+    return 404;
+}
+
+# LEO CDP admin
+server {
+    server_name leocdp.example.com;
+    location / {
+             proxy_pass http://127.0.0.1:9070/;
+             proxy_set_header X-Forwarded-Proto $scheme;
+             proxy_set_header X-Forwarded-Port $server_port;
+             proxy_set_header Host            $host;
+             proxy_set_header X-Forwarded-For "115.74.22.116";
+             expires 1M;
+             access_log off;
+             add_header Cache-Control "public";
+    }
+    listen [::]:443 ssl http2;
+    listen 443 ssl http2;
+    ssl_certificate /home/thomas/0-uspa/localhost-ssl/example.com+5.pem;
+    ssl_certificate_key /home/thomas/0-uspa/localhost-ssl/example.com+5-key.pem;
+}
+
+
+server {
+    if ($host = leocdp.example.com) {
+        return 301 https://$host$request_uri;
+    }
+    listen 80;
+    listen [::]:80;
+    server_name leocdp.example.com;
+    return 404;
+}
+
+# LEO CDP uploaded files
+server {
+    server_name static.example.com;
+    root /home/thomas/0-uspa/leo-cdp/public/uploaded-files/;
+    autoindex off;
+    location / {
+            try_files $uri $uri/ =404;
+    }
+    listen [::]:443 ssl; 
+    listen 443 ssl; 
+   	ssl_certificate /home/thomas/0-uspa/localhost-ssl/example.com+5.pem;
+    ssl_certificate_key /home/thomas/0-uspa/localhost-ssl/example.com+5-key.pem;
+}
+server {
+    if ($host = static.example.com) {
+        return 301 https://$host$request_uri;
+    } 
+    listen 80;
+    listen [::]:80;
+    server_name static.example.com;
+    return 404; # managed by Certbot
+}
+
+
+# LEO Data Observer
+
+server {
+    server_name obs.example.com;
+    location / {
+             proxy_pass http://127.0.0.1:9080/;
+             proxy_set_header X-Forwarded-Proto $scheme;
+             proxy_set_header X-Forwarded-Port $server_port;
+             proxy_set_header Host            $host;
+             proxy_set_header X-Forwarded-For "115.74.22.116";
+             expires 1M;
+             access_log off;
+             add_header Cache-Control "public";
+    }
+    listen [::]:443 ssl http2;
+    listen 443 ssl http2;
+    ssl_certificate /home/thomas/0-uspa/localhost-ssl/example.com+5.pem;
+    ssl_certificate_key /home/thomas/0-uspa/localhost-ssl/example.com+5-key.pem;
+}
+
+
+server {
+    if ($host = obs.example.com) {
+        return 301 https://$host$request_uri;
+    }
+    listen 80;
+    listen [::]:80;
+    server_name obs.example.com;
+    return 404;
+}
+
+
+# LEO Chatbot
+
+server {
+    server_name leobot.example.com;
+    location / {
+             proxy_pass http://127.0.0.1:8888/;
+             proxy_set_header X-Forwarded-Proto $scheme;
+             proxy_set_header X-Forwarded-Port $server_port;
+             proxy_set_header Host            $host;
+             proxy_set_header X-Forwarded-For "115.74.22.116";
+             expires 1M;
+             access_log off;
+             add_header Cache-Control "public";
+    }
+    listen [::]:443 ssl http2;
+    listen 443 ssl http2;
+    ssl_certificate /home/thomas/0-uspa/localhost-ssl/example.com+5.pem;
+    ssl_certificate_key /home/thomas/0-uspa/localhost-ssl/example.com+5-key.pem;
+}
+
+
+server {
+    if ($host = leobot.example.com) {
+        return 301 https://$host$request_uri;
+    }
+    listen 80;
+    listen [::]:80;
+    server_name leobot.example.com;
+    return 404;
+}
+
+# LEO DB
+
+server {
+    server_name host;
+    location / {
+             proxy_pass http://127.0.0.1:8601/;
+             proxy_set_header X-Forwarded-Proto $scheme;
+             proxy_set_header X-Forwarded-Port $server_port;
+             proxy_set_header Host            $host;
+             proxy_set_header X-Forwarded-For "115.74.22.116";
+             expires 1M;
+             access_log off;
+             add_header Cache-Control "public";
+    }
+    listen 80;
+    listen [::]:80;
+}
+
+# Sample for static website
+
+server {
+    root /build/test-html/;
+    index index.html;
+    server_name example.com;
+    location / {
+            try_files $uri $uri/ =404;
+    }
+}
+
+

@@ -1,0 +1,18 @@
+
+FOR s IN cdp_profile
+FILTER LENGTH(s.purchasedItemIds) == 1
+UPDATE s WITH {
+    journeyScore: 50,
+    funnelStage: 'new-customer'
+}
+IN cdp_profile 
+
+
+FOR s IN cdp_profile
+FILTER LENGTH(s.purchasedItemIds) > 1
+UPDATE s WITH {
+    journeyScore: 60,
+    funnelStage: 'engaged-customer'
+}
+IN cdp_profile 
+

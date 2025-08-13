@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>LEO CDP Extension for Event Observer</title>
+
+<script src="jquery-3.6.0.min.js"></script>
+<script src="popup.js"></script>
+
+<style type="text/css">
+.container {
+padding: 20px 20px 20px 20px; width: 400px
+}
+
+input {
+	width: 100%;
+}
+
+button {
+	color: #fff;
+    background: #009BA1;
+    border: 1px solid #009BA1;
+    font-family: "Nunito Bold" !important;
+    font-size: 18px;
+    line-height: 20px;
+    font-weight: normal !important;
+    padding: 13px 15px;
+    border-radius: 8px;
+    width: 100px;
+}
+button:hover {
+	color: #55F509;
+    background: #1B4D03;
+}
+
+</style>
+</head>
+<body>
+
+	<div class="container" >
+		<h3>Chrome Extension to test LEO CDP Event Observer</h3>
+		<p>Please enter the Data Observer ID:</p>
+		<input id="leoObserverId" placeholder="Data Observer ID" /> <br><br>
+		<p>Please enter the CX Rating Star Template ID:</p>
+		<input id="leoStarRatingTemplateId" placeholder="Star Rating Template ID" /> <br> <br>
+		
+		<h3 id="info" style="display: none; color: red;"></h3>
+		
+		<button id="ok_btn" type="button">Save</button>
+	</div>
+
+</body>
+</html>
