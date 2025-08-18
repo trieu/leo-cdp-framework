@@ -8,6 +8,10 @@
 
 Designed for developers, data scientists, marketers, and enterprises, LEO CDP enables unified data collection, real-time customer analytics, audience segmentation, and personalized marketing — all while remaining **self-hosted and privacy-friendly**.
 
+<div style="background-color: #F0F8FF; text-align:center; border-radius:8px;">
+	<img src="https://gcore.jsdelivr.net/gh/trieu/leo-cdp-framework@latest/core-leo-cdp/ai-first-customer360.png" alt="LEO CDP framework" >
+</div>
+
 ---
 
 # 🚀 Vision & Philosophy

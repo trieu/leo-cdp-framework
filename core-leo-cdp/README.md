@@ -1,124 +1,109 @@
+# LEO CDP – Core System
+
 <div style="background-color: #F0F8FF; text-align:center; border-radius:8px;">
-	<img src="https://gcore.jsdelivr.net/gh/USPA-Technology/leo-cdp-static-files@latest//images/leo-cdp-logo.png" alt="LEO CDP framework" style="width:640px;margin:auto;"/>
+	<img src="https://gcore.jsdelivr.net/gh/trieu/leo-cdp-framework@latest/core-leo-cdp/ai-first-customer360.png" alt="LEO CDP framework" >
 </div>
 
-# LEO CDP – The Open Source AI-first Customer Data Platform
-
-**LEO CDP** is an **Open Source AI-first Customer Data Platform (CDP)** framework that empowers organizations to build and operate their own fully customizable CDP infrastructure — with **machine learning and big data** at its core.
-
-Designed for developers, data scientists, marketers, and enterprises, LEO CDP enables unified data collection, real-time customer analytics, audience segmentation, and personalized marketing — all while remaining **self-hosted and privacy-friendly**.
+**LEO CDP (Customer Data Platform)** is a modular, extensible platform for real-time **customer data unification, segmentation, and activation**.
+This repository (`LeoTech-Core-System`) contains the **core engine** for event tracking, identity resolution, marketing automation, and analytics.
 
 ---
 
-# 🚀 Vision & Philosophy
+## 📂 Project Structure
 
-- **The philosophy of Dataism → USPA → LEO CDP**
-- Democratize AI-powered data platforms for **digital transformation**
-- Promote **data sovereignty**, **on-premise intelligence**, and **open collaboration**
-
----
-
-# 🔥 Key Features
-
-1. **Omnichannel Data Collection & Unification**  
-   Collect data from web, mobile, CRM, IoT, POS, social media, and APIs. Unify into rich customer profiles.
-
-2. **Real-Time Customer 360**  
-   Build a complete view of every customer using behavioral, transactional, and third-party data.
-
-3. **AI-based Segmentation & Scoring**  
-   Use clustering, RFM, CLV prediction, churn scoring, and dynamic audiences using ML models.
-
-4. **Behavioral Tracking & Journey Mapping**  
-   Track individual actions and interactions in real time. Map customer journeys across channels.
-
-5. **Predictive Analytics & Insights**  
-   Leverage machine learning pipelines with Jupyter/Colab for real-time insights.
-
-6. **Personalization & Activation**  
-   Using Agentic AI to deliver personalized experiences via email, push, SMS, and content based on customer intent.
-
-7. **Event-Driven Architecture with ETL/ELT**  
-   Built-in Apache Airflow integration to manage data ingestion, transformation, and orchestration.
-
-8. **Plug-in Ecosystem & API-First Design**  
-   Easy to extend, integrate, and automate via REST APIs and modular services.
-
-9. **Data Governance & Privacy**  
-   Built-in consent tracking, GDPR compliance, and on-prem hosting for full control over customer data.
-
-10. **DevOps Ready**  
-   Docker-based deployment, Prometheus + Grafana monitoring, scalable microservice architecture.
+```
+core-leo-cdp/
+├── bin/                        # Compiled binaries / scripts
+├── configs/                    # Environment-specific configurations
+│   ├── database-configs.json   # Default DB config
+│   └── PRO-database-configs.json (gitignored) 
+├── devops-script/              # Deployment / automation scripts
+├── ext-lib/                    # External libraries / dependencies
+├── public/                     # Public assets (if applicable)
+├── resources/                  # Static resources & templates
+│   ├── app-templates/          # Application templates
+│   ├── content-templates/      # Marketing content templates
+│   ├── database/               # Database initialization scripts
+│   ├── data-for-new-setup/     # Sample bootstrap data
+│   └── marketing-flow-templates/ # Marketing automation workflows
+├── src/
+│   ├── main/java/              # Core Java source code
+│   └── test/java/              # Unit & integration tests
+├── build.gradle                # Gradle build configuration
+├── build.sh                    # Shell script for local build
+├── leocdp-build.properties     # Build metadata
+├── leocdp-metadata.properties  # CDP metadata definitions
+├── NOTES-*.md                  # Developer and upgrade notes
+└── README.md                   # This file
+```
 
 ---
 
-# 🌍 Why Open Source?
+## 🚀 Key Features
 
-- Break away from SaaS lock-in. Full **customization** and **ownership** of your CDP.
-- Ideal for **agencies**, **startups**, **enterprises**, and **researchers** building AI-powered marketing stacks.
-- Open source encourages **transparency**, **innovation**, and **community-driven evolution**.
+* **Event Tracking**
+  Collects web & app events (page views, clicks, transactions, etc.) with attribution support.
 
----
+* **Identity Resolution**
+  Resolves customer identities across multiple channels into unified master profiles.
 
-# 📈 Roadmap 2025+
+* **Segmentation & Scoring**
+  Supports RFM, CLV, lead scoring, and persona-based segmentation.
 
-| Feature | Status |
-|--------|--------|
-| ✅ Core CDP Platform (Profiles, Events, Segmentation) | Complete |
-| ✅ CDP SDKs (JavaScript, Python) | Complete |
-| 🔄 Identity Resolution with Graph + Vector Matching | In Progress |
-| 🔄 AI Assistant (Chatbot for Audience Insights & Suggestions) | In Progress |
-| 🔄 Agentic AI: Personalizing the Customer Experience | In Progress |
-| 🔄 Embedding Model for Customer Vector Search (via Qdrant) | In Progress |
-| 🆕 CDP Mobile SDKs (Android, iOS, React Native) | Planned |
-| 🆕 Open Source Campaign Management UI | Planned |
-| 🆕 Integration Marketplace for Martech Tools | Planned |
-| 🆕 Webhook + Event Bus Support (Kafka / RabbitMQ / SQS) | Planned |
-| 🆕 Federated Identity Graph using OpenID & OAuth | Planned |
+* **Personalization Engine**
+  Powers content recommendations and real-time marketing workflows.
 
-Want to contribute? [Join the community](https://www.facebook.com/groups/bigdatavietnam.org)!
+* **Extensible Templates**
+  Includes ready-to-use templates for apps, content, and marketing flows.
+
+* **DevOps Ready**
+  Scripts for automated deployment, upgrades, and environment setup.
 
 ---
 
-# 🧪 System Demo
+## ⚙️ Getting Started
 
-- **URL**: https://dcdp.bigdatavietnam.org  
-- **Username**: `demo`  
-- **Password**: `123456`  
+### Prerequisites
 
----
+* **Java 11+**
+* **Gradle** (or use `build.sh`)
+* **ArangoDB 3.11** (default CDP database for LEO CDP version 1.0 since 2020)
+* **Kafka/Redis** (for event streaming and caching – optional but recommended)
 
-# 📚 Documents
+### Build & Run
 
-- [🇻🇳 Document bằng tiếng Việt](https://datahub4uspa.leocdp.net/ct/6iSPHWPFzywadKBpq3YJ6n)
-- [🧠 CDP Handbook 2023](https://datahub4uspa.leocdp.net/ct/2HtlqyYdyBjmEPJ4pkZwHZ)
-- [📊 Data Model & Journey Map](https://docs.google.com/spreadsheets/d/1hzSvkmTE8WuvUFqnpWNfsPMzpjF8gYOSJfkc9eJIjWk/edit?usp=sharing)
-- [⚙️ Analytics Core Functions](https://docs.google.com/document/d/1cavhFAs_uX-98qUvtXJI3v859I6h3knl0m_tSQ4235M/edit?usp=sharing)
-- [💡 Data Strategy with LEO CDP](https://docs.google.com/document/d/1la6mP21gfd2bHlpwj4hBTRQlxaPfhnpQRL6fV223Es0/edit?usp=sharing)
+```bash
+# Clone repo
+git clone https://github.com/your-org/leo-cdp-core.git
+cd leo-cdp-core
 
----
+# Build
+./build.sh
 
-# 🛠️ Tech Stack
+# Or use Gradle
+./gradlew build
+```
 
-- **Backend**: Java 11 (Amazon Corretto), Python 3.10
-- **Database**: ArangoDB 3.11 (Multi-model: Document + Graph + Search)
-- **Monitoring**: Prometheus 2 + Grafana 8
-- **Data Pipeline**: Apache Airflow
-- **Analytics & ML**: Jupyter Notebook / Google Colab
-- **Messaging**: Redis 6, OneSignal, Firebase
-- **Deployment**: Ubuntu 22 LTS, Docker, On-Prem / Cloud
+### Configurations
 
----
-
-# ☁️ Cloud Options
-
-- Google Cloud, AWS, VNG Cloud, or **your own private infrastructure**
+* Default configs are under `configs/database-configs.json`
+* **Production configs** (e.g., `PRO-database-configs.json`) are **gitignored** – maintain your own copy locally.
 
 ---
 
-# 🔧 Installation
+## 🧑‍💻 Development Notes
 
-See: [Installation Guide](core-leo-cdp/NOTES-FOR-NEW-SETUP.md)
+* See `NOTES-FOR-DEV.md` for developer setup.
+* See `NOTES-FOR-NEW-SETUP.md` for initializing a new environment.
+* See `NOTES-FOR-UPGRADE.md` for migration steps.
+
+---
+
+## 📊 Roadmap
+
+* [ ] From LEO CDP version 2.0, the main database is PostgreSQL 16+
+* [ ] Support multi-tenant deployments
+* [ ] Expand AI-powered segmentation & recommendation
 
 ---
 
@@ -127,20 +112,3 @@ See: [Installation Guide](core-leo-cdp/NOTES-FOR-NEW-SETUP.md)
 Created by: [Trieu Nguyen (Thomas)](https://www.facebook.com/dataism.one)  
 **License**: Open Source - MIT-style.  
 Use freely. Customize. Brand your own white-label CDP. Just respect the original creator 🙏.
-
----
-
-# 💬 Community & Support
-
-- Bugs or ideas? Email: **trieu@leocdp.com**
-- Join our learning group: [BigDataVietnam.org](https://www.facebook.com/groups/bigdatavietnam.org)
-- YouTube: [@bigdatavn](https://www.youtube.com/@bigdatavn)
-- Blog: [knowledge.leocdp.net](https://knowledge.leocdp.net/)
-
----
-
-# 📜 Historical Proof of Innovation
-
-- [2014 Concept](https://www.facebook.com/photo/?fbid=10158746916044506)
-- [2019 Code Launch](https://www.youtube.com/watch?v=tyASsGaE8jg)
-- [Data-Driven Marketing in Vietnam (2020)](https://www.brandsvietnam.com/congdong/topic/23444)

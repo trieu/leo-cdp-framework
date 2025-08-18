@@ -448,16 +448,10 @@ task CopyTechDocuments(type: Copy) {
 	from file('NOTES-FOR-NEW-SETUP.md')
   	into buildOutputFolderPath
   	
-  	from file('README.md')
-  	into buildOutputFolderPath
-  	
   	from file('ChangeLog.md')
   	into buildOutputFolderPath
   	
-  	from file('leo-cdp-version-1.0.png')
-  	into buildOutputFolderPath
-  	
-  	from file('leo-cdp-how-it-works.png')
+  	from file('ai-first-customer360.png')
   	into buildOutputFolderPath
   	
   	println '###  CopyTechDocuments OK !!!  ###'
