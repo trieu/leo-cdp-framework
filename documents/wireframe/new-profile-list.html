@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LEO CDP – Profile List Dashboard</title>
+
+    <!-- BOOTSTRAP 3 -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+
+    <style>
+        /* ===== Color System ===== */
+        :root {
+            --leo-navy: #0b2545;
+            /* primary */
+            --leo-emerald: #1db954;
+            /* success accent */
+            --leo-gold: #f2c14e;
+            /* highlight */
+            --leo-slate: #44546a;
+            /* text secondary */
+            --leo-bg: #f7f8fb;
+            /* app background */
+            --leo-danger: #e74c3c;
+        }
+
+        body {
+            background: var(--leo-bg);
+            color: #1b1f23;
+        }
+
+        /* Topbar */
+        .navbar-leo {
+            background: var(--leo-navy);
+            border: 0;
+        }
+
+        .navbar-leo .navbar-brand,
+        .navbar-leo .navbar-nav>li>a {
+            color: #fff;
+        }
+
+        .navbar-leo .navbar-brand:hover,
+        .navbar-leo .navbar-nav>li>a:hover {
+            color: #e5e9f0;
+        }
+
+        /* KPI Cards */
+        .kpi-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(13, 27, 42, .06);
+            height: 100%;
+        }
+
+        .kpi-title {
+            color: var(--leo-slate);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            margin-bottom: 6px;
+        }
+
+        .kpi-value {
+            font-size: 26px;
+            font-weight: 700;
+        }
+
+        .kpi-trend {
+            font-size: 12px;
+        }
+
+        .kpi-up {
+            color: var(--leo-emerald);
+        }
+
+        .kpi-down {
+            color: var(--leo-danger);
+        }
+
+        /* Filter Bar */
+        .filter-bar {
+            background: #fff;
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(13, 27, 42, .06);
+        }
+
+        .filter-bar .btn {
+            margin-right: 6px;
+        }
+
+        /* Table */
+        .table-responsive {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(13, 27, 42, .06);
+        }
+
+        .table>thead>tr>th {
+            border-bottom: 1px solid #e6eaf0;
+            color: var(--leo-slate);
+            font-weight: 600;
+        }
+
+        .progress {
+            margin-bottom: 0;
+            height: 22px;
+        }
+
+        .label-status {
+            font-size: 11px;
+            border-radius: 10px;
+            padding: 4px 8px;
+            display: inline-block;
+        }
+
+        .label-status.active {
+            background: rgba(29, 185, 84, .12);
+            color: #158a3a;
+        }
+
+        .label-status.pending {
+            background: #fff7e6;
+            color: #a66f00;
+        }
+
+        .label-status.risk {
+            background: rgba(231, 76, 60, .12);
+            color: #c0392b;
+        }
+
+        /* Right Drawer */
+        .drawer {
+            position: fixed;
+            top: 50px;
+            right: -480px;
+            width: 480px;
+            height: calc(100% - 50px);
+            background: #fff;
+            box-shadow: -2px 0 16px rgba(0, 0, 0, .08);
+            transition: right .3s ease;
+            z-index: 1030;
+            overflow-y: auto;
+        }
+
+        .drawer.open {
+            right: 0;
+        }
+
+        .drawer-header {
+            padding: 16px;
+            border-bottom: 1px solid #eef1f5;
+        }
+
+        .drawer-body {
+            padding: 16px;
+        }
+
+        .avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: #eef3fb;
+            color: var(--leo-navy);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+
+        /* Utilities */
+        .muted {
+            color: var(--leo-slate);
+        }
+
+        .btn-emerald {
+            background: var(--leo-emerald);
+            color: #fff;
+            border-color: var(--leo-emerald);
+        }
+
+        .btn-emerald:hover {
+            filter: brightness(0.95);
+            color: #fff;
+        }
+
+        .btn-gold {
+            background: var(--leo-gold);
+            color: #1b1f23;
+            border-color: var(--leo-gold);
+        }
+
+        /* Small helpers */
+        .table .actions .btn {
+            padding: 2px 8px;
+        }
+
+        .help-tip {
+            color: var(--leo-slate);
+            cursor: help;
+        }
+
+        .pointer {
+            cursor: pointer;
+        }
+
+        td.actions {
+            width: 168px;
+            text-align: right;
+        }
+
+        /* Chỉnh màu chữ khi dropdown đang mở */
+        .dropdown.open>a,
+        .dropdown.open>a:focus,
+        .dropdown.open>a:hover {
+            color: black !important;
+        }
+
+        .dropdown>a:focus,
+        .dropdown>a:hover {
+            color: black !important;
+        }
+
+
+        /* Footer Pager */
+        .pager-wrap {
+            margin-top: 12px;
+        }
+    </style>
+
+    <!-- jQuery + Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+</head>
+
+<body>
+    <!-- TOP BAR -->
+    <nav class="navbar navbar-leo navbar-fixed-top">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#top-nav">
+                    <span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span> </button>
+                <a class="navbar-brand" href="#"><i class="fa fa-line-chart"></i> LEO CDP </a>
+            </div>
+            <div class="collapse navbar-collapse" id="top-nav">
+                <form class="navbar-form navbar-left" role="search" onsubmit="return false;">
+                    <div class="input-group" style="min-width:420px;">
+                        <input id="globalSearch" type="text" class="form-control"
+                            placeholder="Search name, email, phone, account ID…" />
+                        <span class="input-group-btn">
+                            <button id="btnSearch" class="btn btn-default" type="button"><i
+                                    class="fa fa-search"></i></button>
+                        </span>
+                    </div>
+                </form>
+                <ul class="nav navbar-nav navbar-right">
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="fa fa-plus"></i> Add /
+                            Import <span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                            <li><a href="#" id="newProfile"><i class="fa fa-user-plus"></i> New Profile</a></li>
+                            <li><a href="#" id="importProfile"><i class="fa fa-upload"></i> Import Profiles</a></li>
+                            <li class="divider"></li>
+                            <li><a href="#" id="importEvent"><i class="fa fa-bolt"></i> Import Events</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#" id="btnRefresh"><i class="fa fa-refresh"></i> Refresh</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid" style="margin-top:70px;">
+        <!-- KPI ROW -->
+        <div class="row">
+            <div class="col-sm-3">
+                <div class="kpi-card">
+                    <div class="kpi-title">Total Leads</div>
+                    <div class="kpi-value" id="kpiLeads">12,340</div>
+                    <div class="kpi-trend kpi-up"><i class="fa fa-arrow-up"></i> 5.8% last 30d</div>
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="kpi-card">
+                    <div class="kpi-title">Active Customers</div>
+                    <div class="kpi-value" id="kpiCustomers">4,281</div>
+                    <div class="kpi-trend kpi-up"><i class="fa fa-arrow-up"></i> 2.1% last 30d</div>
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="kpi-card">
+                    <div class="kpi-title">Average CLV</div>
+                    <div class="kpi-value" id="kpiCLV">$8,240</div>
+                    <div class="kpi-trend kpi-down"><i class="fa fa-arrow-down"></i> 0.7% last 30d</div>
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="kpi-card">
+                    <div class="kpi-title">Conversion Rate</div>
+                    <div class="kpi-value" id="kpiCR">23%</div>
+                    <div class="kpi-trend kpi-up"><i class="fa fa-arrow-up"></i> 1.2% last 30d</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FILTERS -->
+        <div class="filter-bar clearfix">
+            <div class="pull-left">
+                <div class="btn-group" data-toggle="buttons">
+                    <label class="btn btn-default active" title="All stages">
+                        <input type="radio" name="stage" value="all" checked> Stage: All
+                    </label>
+                    <label class="btn btn-default">
+                        <input type="radio" name="stage" value="new"> New
+                    </label>
+                    <label class="btn btn-default">
+                        <input type="radio" name="stage" value="qualified"> Qualified
+                    </label>
+                    <label class="btn btn-default">
+                        <input type="radio" name="stage" value="converted"> Converted
+                    </label>
+                </div>
+                <div class="btn-group" style="margin-left:8px;" data-toggle="buttons">
+                    <label class="btn btn-default active"><input type="radio" name="segment" value="all" checked>
+                        Segment: All</label>
+                    <label class="btn btn-default"><input type="radio" name="segment" value="high"> High CLV</label>
+                    <label class="btn btn-default"><input type="radio" name="segment" value="mid"> Mid</label>
+                    <label class="btn btn-default"><input type="radio" name="segment" value="low"> Low</label>
+                </div>
+                <div class="btn-group" style="margin-left:8px;" data-toggle="buttons">
+                    <label class="btn btn-default active"><input type="radio" name="risk" value="all" checked> Risk:
+                        All</label>
+                    <label class="btn btn-default"><input type="radio" name="risk" value="low"> Low</label>
+                    <label class="btn btn-default"><input type="radio" name="risk" value="med"> Medium</label>
+                    <label class="btn btn-default"><input type="radio" name="risk" value="high"> High</label>
+                </div>
+            </div>
+            <div class="pull-right">
+                <div class="form-inline">
+                    <div class="form-group">
+                        <label class="muted">Date:</label>
+                        <input type="date" class="form-control input-sm" id="fromDate" />
+                        <span class="muted">to</span>
+                        <input type="date" class="form-control input-sm" id="toDate" />
+                    </div>
+                    <button id="btnFilter" class="btn btn-primary btn-sm"><i class="fa fa-filter"></i> Filter</button>
+                    <button id="btnReset" class="btn btn-default btn-sm"><i class="fa fa-undo"></i> Reset</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TABLE -->
+        <div class="table-responsive">
+            <table id="profilesTable" class="table table-hover">
+                <thead>
+                    <tr>
+                        <th style="width:34px;"></th>
+                        <th>Full Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Last Touchpoint <i class="fa fa-info-circle help-tip"
+                                title="Most recent interaction recorded"></i></th>
+                        <th style="width:140px;">Lead Score</th>
+                        <th style="width:110px;">CLV</th>
+                        <th style="width:100px;">Risk</th>
+                        <th style="width:110px;">Status</th>
+                        <th style="width:160px;" class="text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Rows injected by JS -->
+                </tbody>
+            </table>
+        </div>
+
+        <div class="row pager-wrap">
+            <div class="col-sm-6"><small class="muted" id="rowsInfo">Showing 1–10 of 52</small></div>
+            <div class="col-sm-6 text-right">
+                <ul class="pagination pagination-sm" id="pager"></ul>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- RIGHT DRAWER: Profile 360 -->
+    <div class="drawer" id="profileDrawer">
+        <div class="drawer-header">
+            <button type="button" class="close" id="closeDrawer"><span>&times;</span></button>
+            <div class="media">
+                <div class="media-left">
+                    <div class="avatar" id="drawerAvatar">JD</div>
+                </div>
+                <div class="media-body">
+                    <h4 class="media-heading" id="drawerName">John Doe</h4>
+                    <div class="muted" id="drawerEmail">john@doe.com</div>
+                    <div class="muted" id="drawerPhone">+84 900000000</div>
+                </div>
+            </div>
+        </div>
+        <div class="drawer-body">
+            <div class="row">
+                <div class="col-xs-4">
+                    <div class="kpi-card">
+                        <div class="kpi-title">Lead Score</div>
+                        <div class="kpi-value" id="drawerLead">78</div>
+                        <div class="kpi-trend kpi-up"><i class="fa fa-arrow-up"></i> +12% 30d</div>
+                    </div>
+                </div>
+                <div class="col-xs-4">
+                    <div class="kpi-card">
+                        <div class="kpi-title">Customer Lifetime Value</div>
+                        <div class="kpi-value" id="drawerCLV">$12,300</div>
+                        <div class="kpi-trend kpi-down"><i class="fa fa-arrow-down"></i> -1.1% 30d</div>
+                    </div>
+                </div>
+                <div class="col-xs-4">
+                    <div class="kpi-card">
+                        <div class="kpi-title">Risk Level</div>
+                        <div class="kpi-value" id="drawerRisk">Medium</div>
+                        <span class="label label-warning">Credit Score 640</span>
+                    </div>
+                </div>
+            </div>
+
+            <h4 style="margin-top:20px;">Journey Timeline</h4>
+            <ul id="drawerTimeline" class="list-unstyled">
+                <li><i class="fa fa-dot-circle-o text-primary"></i> Web Form – Requested Credit Card (2025-08-15)</li>
+                <li><i class="fa fa-dot-circle-o text-primary"></i> Mobile App – Login (2025-08-10)</li>
+                <li><i class="fa fa-dot-circle-o text-primary"></i> Email – Clicked Offer (2025-08-05)</li>
+            </ul>
+
+            <div class="text-right" style="margin-top:10px;">
+                <button class="btn btn-emerald" id="assignCampaign"><i class="fa fa-bullseye"></i> Assign
+                    Campaign</button>
+                <button class="btn btn-gold" id="sendOffer"><i class="fa fa-paper-plane"></i> Send Offer</button>
+                <button class="btn btn-default" id="openJourney"><i class="fa fa-share-alt"></i> View Full
+                    Journey</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODALS -->
+    <div class="modal fade" id="campaignModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                    <h4 class="modal-title">Assign Campaign</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Choose Campaign</label>
+                        <select class="form-control" id="campaignSelect">
+                            <option>CC Welcome – Cashback 5%</option>
+                            <option>Loan Up-sell – Rate 9.9%</option>
+                            <option>Investment – Portfolio Starter</option>
+                        </select>
+                    </div>
+                    <div class="checkbox"><label><input type="checkbox" id="campaignNotify" checked> Notify sales
+                            owner</label></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <button class="btn btn-primary" id="confirmCampaign">Assign</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="offerModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                    <h4 class="modal-title">Send Offer</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Offer Template</label>
+                        <select class="form-control" id="offerTemplate">
+                            <option>Credit Card – No Annual Fee</option>
+                            <option>Personal Loan – Pre-approved</option>
+                            <option>Wealth – Advisory Starter</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Channel</label>
+                        <select class="form-control" id="offerChannel">
+                            <option>Email</option>
+                            <option>SMS</option>
+                            <option>In-app</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <button class="btn btn-emerald" id="confirmOffer">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <script>
+        // ===== Demo dataset =====
+        var DATA = [
+            { id: 1, name: "Nguyen Trieu", email: "trieu@example.com", phone: "0903122290", touch: "Survey – Giao dịch", stage: "qualified", segment: "mid", risk: "low", lead: 78, clv: 12300, status: "active" },
+            { id: 2, name: "Zalo User", email: "zalo1@example.com", phone: "0903000111", touch: "Data Observer", stage: "new", segment: "low", risk: "med", lead: 32, clv: 2100, status: "pending" },
+            { id: 3, name: "Trieu (Thomas)", email: "", phone: "0903122280", touch: "LEO_CDP_ADMIN_FORM", stage: "qualified", segment: "high", risk: "low", lead: 85, clv: 20580, status: "active" },
+            { id: 4, name: "David Clay", email: "charlesjones@yahoo.com", phone: "0903112233", touch: "Everon Kinh Duong Vuong", stage: "converted", segment: "high", risk: "low", lead: 91, clv: 13910, status: "active" },
+            { id: 5, name: "UNKNOWN PROFILE", email: "", phone: "0903122280", touch: "Kinh Duong Vuong", stage: "new", segment: "low", risk: "high", lead: 24, clv: 0, status: "pending" },
+            { id: 6, name: "Anh Nguyen", email: "bill.john123@example.com", phone: "0903122271", touch: "Data Observer", stage: "qualified", segment: "mid", risk: "med", lead: 49, clv: 4920, status: "active" }
+        ];
+
+        var PAGE = 1, SIZE = 10;
+
+        function badgeStatus(st) {
+            if (st === 'active') return '<span class="label-status active">Active</span>';
+            if (st === 'pending') return '<span class="label-status pending">Pending</span>';
+            return '<span class="label-status risk">Risk</span>';
+        }
+
+        function riskLabel(r) {
+            if (r === 'low') return '<span class="label label-success">Low</span>';
+            if (r === 'med') return '<span class="label label-warning">Medium</span>';
+            return '<span class="label label-danger">High</span>';
+        }
+
+        function renderRows(list) {
+            var $tb = $('#profilesTable tbody').empty();
+            list.forEach(function (p) {
+                var initials = (p.name || '').split(' ').map(function (s) { return s[0]; }).join('').slice(0, 2).toUpperCase();
+                var $tr = $('<tr class="pointer"></tr>').data('profile', p);
+                $tr.append('<td><div class="avatar" title="' + p.name + '">' + initials + '</div></td>');
+                $tr.append('<td>' + p.name + '</td>');
+                $tr.append('<td>' + (p.email || '<span class="muted">—</span>') + '</td>');
+                $tr.append('<td>' + (p.phone || '<span class="muted">—</span>') + '</td>');
+                $tr.append('<td>' + p.touch + '</td>');
+                $tr.append('<td><div class="progress"><div class="progress-bar" role="progressbar" aria-valuenow="' + p.lead + '" aria-valuemin="0" aria-valuemax="100" style="width:' + p.lead + '%">' + p.lead + '</div></div></td>');
+                $tr.append('<td>$' + p.clv.toLocaleString() + '</td>');
+                $tr.append('<td>' + riskLabel(p.risk) + '</td>');
+                $tr.append('<td>' + badgeStatus(p.status) + '</td>');
+                $tr.append('<td class="actions text-right">\
+          <button class="btn btn-xs btn-default view"><i class="fa fa-eye"></i> View</button>\
+          <button class="btn btn-xs btn-primary edit"><i class="fa fa-pencil"></i> Edit</button>\
+          <button class="btn btn-xs btn-danger remove"><i class="fa fa-trash"></i></button>\
+        </td>');
+                $tb.append($tr);
+            });
+        }
+
+        function paginate(data) {
+            var total = data.length; var pages = Math.max(1, Math.ceil(total / SIZE));
+            PAGE = Math.min(PAGE, pages);
+            var start = (PAGE - 1) * SIZE; var end = start + SIZE;
+            var view = data.slice(start, end);
+            renderRows(view);
+            // render pager
+            var $pager = $('#pager').empty();
+            for (var i = 1; i <= pages; i++) {
+                var $li = $('<li ' + (i === PAGE ? 'class="active"' : '') + '><a href="#">' + i + '</a></li>');
+                (function (idx) { $li.on('click', function () { PAGE = idx; refresh(); }); })(i);
+                $pager.append($li);
+            }
+            $('#rowsInfo').text('Showing ' + (start + 1) + '–' + Math.min(end, total) + ' of ' + total);
+        }
+
+        function currentFilters() {
+            return {
+                stage: $("input[name='stage']:checked").val(),
+                segment: $("input[name='segment']:checked").val(),
+                risk: $("input[name='risk']:checked").val(),
+                q: $('#globalSearch').val().trim().toLowerCase()
+            };
+        }
+
+        function applyFilters(data, f) {
+            return data.filter(function (p) {
+                var ok = true;
+                if (f.stage !== 'all') ok = ok && p.stage === f.stage;
+                if (f.segment !== 'all') ok = ok && p.segment === f.segment;
+                if (f.risk !== 'all') ok = ok && p.risk === f.risk;
+                if (f.q) ok = ok && (p.name.toLowerCase().indexOf(f.q) > -1 || (p.email || '').toLowerCase().indexOf(f.q) > -1 || (p.phone || '').indexOf(f.q) > -1);
+                return ok;
+            });
+        }
+
+        function refresh() {
+            var f = currentFilters();
+            var filtered = applyFilters(DATA, f);
+            paginate(filtered);
+        }
+
+        function openDrawer(profile) {
+            $('#drawerName').text(profile.name);
+            $('#drawerEmail').text(profile.email || '—');
+            $('#drawerPhone').text(profile.phone || '—');
+            $('#drawerLead').text(profile.lead);
+            $('#drawerCLV').text('$' + profile.clv.toLocaleString());
+            $('#drawerRisk').text(profile.risk === 'low' ? 'Low' : profile.risk === 'med' ? 'Medium' : 'High');
+            var initials = (profile.name || '').split(' ').map(function (s) { return s[0]; }).join('').slice(0, 2).toUpperCase();
+            $('#drawerAvatar').text(initials);
+            $('#profileDrawer').addClass('open');
+        }
+
+        $(function () {
+            refresh();
+
+            // global search
+            $('#btnSearch').on('click', function () { PAGE = 1; refresh(); });
+            $('#globalSearch').on('keyup', function (e) { if (e.keyCode === 13) { PAGE = 1; refresh(); } });
+
+            // filters
+            $("input[name='stage'], input[name='segment'], input[name='risk']").on('change', function () { PAGE = 1; refresh(); });
+            $('#btnFilter').on('click', function () { PAGE = 1; refresh(); });
+            $('#btnReset').on('click', function () {
+                $("input[name='stage'][value='all']").parent().button('toggle');
+                $("input[name='segment'][value='all']").parent().button('toggle');
+                $("input[name='risk'][value='all']").parent().button('toggle');
+                $('#globalSearch, #fromDate, #toDate').val('');
+                PAGE = 1; refresh();
+            });
+
+            // row click -> drawer
+            $('#profilesTable').on('click', 'tr', function (e) {
+                if ($(e.target).closest('.actions').length) return; // ignore clicks on actions
+                var p = $(this).data('profile');
+                if (p) openDrawer(p);
+            });
+
+            $('#closeDrawer').on('click', function () { $('#profileDrawer').removeClass('open'); });
+
+            // actions
+            $('#profilesTable').on('click', '.actions .view', function (e) { e.stopPropagation(); openDrawer($(this).closest('tr').data('profile')); });
+            $('#profilesTable').on('click', '.actions .edit', function (e) { e.stopPropagation(); alert('Edit profile – integrate with your form.'); });
+            $('#profilesTable').on('click', '.actions .remove', function (e) { e.stopPropagation(); if (confirm('Delete this profile?')) { $(this).closest('tr').remove(); } });
+
+            // drawer CTAs
+            $('#assignCampaign').on('click', function () { $('#campaignModal').modal('show'); });
+            $('#confirmCampaign').on('click', function () { $('#campaignModal').modal('hide'); alert('Campaign assigned.'); });
+            $('#sendOffer').on('click', function () { $('#offerModal').modal('show'); });
+            $('#confirmOffer').on('click', function () { $('#offerModal').modal('hide'); alert('Offer sent.'); });
+        });
+    </script>
+</body>
+
+</html>
