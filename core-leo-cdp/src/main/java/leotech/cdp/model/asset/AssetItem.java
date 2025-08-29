@@ -253,7 +253,7 @@ public abstract class AssetItem extends PersistentObject implements Comparable<A
 		if(c) {
 			return true;
 		}
-		return assetType == AssetType.KNOWLEDGE_HUB || assetType == AssetType.CONTENT_ITEM_CATALOG || assetType == AssetType.SOCIAL_MEDIA_CONTENT || assetType == AssetType.VIDEO_CATALOG;
+		return assetType == AssetType.HTML_LANDING_PAGE || assetType == AssetType.CONTENT_ITEM_CATALOG || assetType == AssetType.SOCIAL_MEDIA_CONTENT || assetType == AssetType.VIDEO_CATALOG;
 	}
 
 	public boolean isProduct() {
@@ -717,7 +717,7 @@ public abstract class AssetItem extends PersistentObject implements Comparable<A
 		int type = paramJson.getInteger("type", ContentType.HTML_TEXT);
 		item.setType(type);
 		
-		int assetType = paramJson.getInteger("assetType", AssetType.KNOWLEDGE_HUB);
+		int assetType = paramJson.getInteger("assetType", AssetType.HTML_LANDING_PAGE);
 		item.setAssetType(assetType);
 		
 		// update slug Content URI for SEO or user-friendly URL

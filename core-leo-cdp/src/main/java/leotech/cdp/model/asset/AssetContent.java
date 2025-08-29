@@ -37,7 +37,7 @@ public class AssetContent extends MeasurableItem {
 	
 	public AssetContent() {
 		this.type = ContentType.HTML_TEXT;
-		this.assetType = AssetType.KNOWLEDGE_HUB;
+		this.assetType = AssetType.HTML_LANDING_PAGE;
 		this.contentClass = "creative";
 	}
 	

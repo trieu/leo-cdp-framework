@@ -404,11 +404,16 @@ public final class AssetItemManagement {
 	 * @return List<AssetTemplate>
 	 */
 	public static List<AssetTemplate> getLandingPageTemplates() {
-		AssetCategory cat = AssetCategoryManagement.getCategoryMapByAssetType().get(AssetType.WEB_HTML_CONTENT);
-		if(cat != null) {
-			return AssetTemplateDaoUtil.listByFilter(AssetType.WEB_HTML_CONTENT, cat.getId());
+		AssetCategory cat1 = AssetCategoryManagement.getCategoryMapByAssetType().get(AssetType.WEB_HTML_CONTENT);
+		AssetCategory cat2 = AssetCategoryManagement.getCategoryMapByAssetType().get(AssetType.HTML_LANDING_PAGE);
+		List<AssetTemplate> list = new ArrayList<>();
+		if(cat1 != null) {
+			list.addAll(AssetTemplateDaoUtil.listByFilter(AssetType.WEB_HTML_CONTENT, cat1.getId()));
 		}
-		return new ArrayList<>(0);
+		if(cat2 != null) {
+			list.addAll(AssetTemplateDaoUtil.listByFilter(AssetType.HTML_LANDING_PAGE, cat2.getId()));
+		}
+		return list;
 	}
 	
 	static ProductItem getOrCreate(String itemId, String itemIdType, OrderedItem orderedItem) {

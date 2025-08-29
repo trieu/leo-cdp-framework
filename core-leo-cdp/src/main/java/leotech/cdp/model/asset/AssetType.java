@@ -36,8 +36,8 @@ public class AssetType {
 	// Gamification creatives and mulmedia
 	public static final int VIDEO_CATALOG = 8;
 	
-	// knowledge space of organization for both internal and external access
-	public static final int KNOWLEDGE_HUB = 9;
+	// landing page of touchpoint
+	public static final int HTML_LANDING_PAGE = 9;
 	
 	// display banner for PC and mobile, e.g: remarketing in Affiliate marketing channels
 	public static final int AD_BANNER = 10;
