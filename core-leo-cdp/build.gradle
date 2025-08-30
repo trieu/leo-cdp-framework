@@ -461,8 +461,8 @@ task CopyTechDocuments(type: Copy) {
 // 8) Copy AQL code To Build
 task CopyDatabaseQueryTemplateToBuild(type: Copy) {  
   	
-  	from file('configs/database-query-template.aql')
-  	into buildOutputFolderPath + "/configs"
+  	from file('resources/database/database-query-template.aql')
+  	into buildOutputFolderPath + "/resources/database/"
   
   	println '###  CopyDatabaseQueryTemplateToBuild OK !!!  ###'
 }

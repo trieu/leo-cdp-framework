@@ -213,13 +213,12 @@ public final class FeedbackEvent extends FeedbackData {
 			}
 		} 
 		else if (CONTACT.equals(this.feedbackType)) {
-			hasAnswer = this.profileExtAttributes.size() > 0 && (StringUtil.isNotEmpty(this.profileEmail) || StringUtil.isNotEmpty(this.profilePhone));
+			hasAnswer = StringUtil.isNotEmpty(this.profileEmail) || StringUtil.isNotEmpty(this.profilePhone);
 		} 
 		else {
 			hasAnswer = this.feedbackScore >= 0 && this.feedbackScore <= 10;
 		}
-		return hasAnswer && this.createdAt != null && StringUtil.isNotEmpty(this.refProfileId) && StringUtil.isNotEmpty(this.header)
-				 && StringUtil.isNotEmpty(this.touchpointId) && StringUtil.isNotEmpty(this.touchpointUrl) && StringUtil.isNotEmpty(this.touchpointName);
+		return hasAnswer && this.createdAt != null && StringUtil.isNotEmpty(this.refProfileId)  && StringUtil.isNotEmpty(this.touchpointId) && StringUtil.isNotEmpty(this.touchpointUrl);
 	}
 
 	public boolean isOnSharedDevices() {
