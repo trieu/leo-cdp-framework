@@ -567,8 +567,7 @@ public final class FeedbackEvent extends FeedbackData {
 	}
 	
 	public BasicContactData getBasicContactData() {
-		BasicContactData contactData = new BasicContactData(profileEmail, profilePhone, profileFirstName, profileLastName);
-		return contactData;
+		return new BasicContactData(profileEmail, profilePhone, profileFirstName, profileLastName);
 	}
 
 	@Override

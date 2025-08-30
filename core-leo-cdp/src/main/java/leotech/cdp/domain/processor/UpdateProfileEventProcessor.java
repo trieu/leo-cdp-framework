@@ -38,6 +38,7 @@ import leotech.cdp.model.analytics.TrackingEvent;
 import leotech.cdp.model.analytics.UpdateProfileEvent;
 import leotech.cdp.model.asset.AssetContent;
 import leotech.cdp.model.asset.ProductItem;
+import leotech.cdp.model.customer.BasicContactData;
 import leotech.cdp.model.customer.ProfileSingleView;
 import leotech.cdp.model.journey.DataFlowStage;
 import leotech.cdp.model.journey.EventMetric;
@@ -142,7 +143,6 @@ public final class UpdateProfileEventProcessor {
 				profile.setObserverAndTouchpointHub(observerId, tpHub);
 				
 				
-				
 				logger.info("UpdateProfileEventProcessor for profileId: " + profileId );
 			}
 			else {		
@@ -173,6 +173,15 @@ public final class UpdateProfileEventProcessor {
 			// feedback event
 			if(updateEvent.isFeedbackEvent()) {		
 				FeedbackEvent feedbackEvent = updateEvent.getFeedbackEvent();
+				
+				BasicContactData contact = feedbackEvent.getBasicContactData();
+				if(contact.hasData()) {
+					profile.setFirstName(contact.firstName);
+					profile.setLastName(contact.lastName);
+					profile.setEmail(contact.email);
+					profile.setPhone(contact.phone);
+				}				
+				
 				ok = processFeedbackEvent(eventObserver, feedbackEvent, trackingEvent, metricName, eventMetric, funnelStage, profile, journeyId); 	
 			}
 			else {
