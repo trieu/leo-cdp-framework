@@ -1,5 +1,5 @@
 /*
- * LEO JS code for LEO CDP - version 0.8.9.5 - built on May 6, 2022
+ * LEO JS code for LEO CDP - version 0.9 - built on Sep 5, 2025
  */
 // ------------ LEO Proxy ------------------
 (function() {
@@ -90,7 +90,7 @@
         }
         
         bindEvent(window, 'message', function(e) {
-        	console.log("===> host.e.origin " + e.origin + " data " + e.data)
+        	console.log(" bindEvent.onmessage ===> e.origin " + e.origin + " targetPostMessage " + targetPostMessage + " data " + e.data)
         	if (e.origin !== targetPostMessage) {
         		return;
         	}  
