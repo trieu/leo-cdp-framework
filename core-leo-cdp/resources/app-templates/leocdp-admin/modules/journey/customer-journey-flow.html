@@ -214,18 +214,20 @@
     	setupTabPanels();
     	
     	// the journey map selection
-    	loadJourneyMapList();
+    	loadJourneyMapList(false,false , false, function(){
+    		// name editor
+    		initJourneyMapNameEditor();
+        	
+        	// event metrics for observer JS
+        	loadEventMetrics();
+        	
+        	// init data observer UI
+       		initDataObserverList();
+        	
+        	// the flow
+       		initJourneyMapAndTouchpointHubs();
+    	});
     	
-    	// name editor
-		initJourneyMapNameEditor();
     	
-    	// event metrics for observer JS
-    	loadEventMetrics();
-    	
-    	// init data observer UI
-   		initDataObserverList();
-    	
-    	// the flow
-   		initJourneyMapAndTouchpointHubs();
 	}
 </script>

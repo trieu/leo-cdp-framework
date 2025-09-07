@@ -490,18 +490,30 @@ LeoCdpAdmin.navFunctions.loadEmailCampaignEditor = function(id, breadcrumbHtml) 
 //###################### System Management navigation ######################
 
 LeoCdpAdmin.navFunctions.loadUserLoginManagement = function(breadcrumbHtml) {
-    LeoCdpAdmin.loadView('/view/modules/system/login-account-list.html?admin=1', pageDomSelector, function () {
-    	$('#page_breadcrumb').html(breadcrumbHtml);
-    	initUserLoginManagement();
-    });
+	if(currentUserProfile.role === 6){
+		LeoCdpAdmin.loadView('/view/modules/system/login-account-list.html?admin=1', pageDomSelector, function () {
+	    	$('#page_breadcrumb').html(breadcrumbHtml);
+	    	initUserLoginManagement();
+	    });
+	}
+	else {
+		notifyErrorMessage("You do not have permission to perform this action")
+	}
+    
 }
 
 LeoCdpAdmin.navFunctions.loadUserLoginEditor = function(id, breadcrumbHtml) {
-    LeoCdpAdmin.loadView('/view/modules/system/login-account-editor.html?admin=1', pageDomSelector, function () {
-        // load data from API
-    	$('#page_breadcrumb').html(breadcrumbHtml);
-    	initUserLoginEditor(id);
-    });
+	if(currentUserProfile.role === 6){
+		LeoCdpAdmin.loadView('/view/modules/system/login-account-editor.html?admin=1', pageDomSelector, function () {
+	        // load data from API
+	    	$('#page_breadcrumb').html(breadcrumbHtml);
+	    	initUserLoginEditor(id);
+	    });
+	}
+	else {
+		notifyErrorMessage("You do not have permission to perform this action")
+	}
+    
 }
 
 LeoCdpAdmin.navFunctions.loadMyLoginInfo = function(breadcrumbHtml) {
