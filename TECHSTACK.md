@@ -3,7 +3,8 @@
 ## **Slide 1 – LEO CDP tech stack**
 
 **LEO CDP Tech Stack Overview**
-Introduction to the core technologies powering **LEO CDP** for Customer 360 and AI-driven personalization.
+
+Introduction to the core open source technologies powering **LEO CDP** (https://leocdp.com) for Customer 360 and AI-driven personalization.
 
 ---
 
