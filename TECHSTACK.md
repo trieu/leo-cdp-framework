@@ -107,14 +107,16 @@ Introduction to the core technologies powering **LEO CDP** for Customer 360 and 
 
 ---
 
-## **Slide 11 – Spec Kit + MkDocs**
+## **Slide 11 – Markdown and MkDocs**
 
-**Introduction:** Documentation automation tools.
+**Introduction:** Automated documentation pipelines for modern AI-driven development.
 
 **Purpose:**
 
-* Generate **project documentation** directly from code.
-* Keep **AI agent specs and API contracts** always up to date.
+* Auto-generate project documentation straight from source code, tasks, and specs.
+* Ensure AI agent specifications, API contracts, and workflows are always synchronized with the codebase.
+* Provide a living knowledge base for engineers, product owners, and AI agents.
+* Enable continuous publishing with MkDocs → fast, searchable docs for both humans and machines.
 
 ---
 
@@ -126,5 +128,3 @@ Introduction to the core technologies powering **LEO CDP** for Customer 360 and 
 
 * Package and deploy AI agents and data services consistently.
 * Simplify **multi-service orchestration** for local dev and cloud deployment.
-
-
