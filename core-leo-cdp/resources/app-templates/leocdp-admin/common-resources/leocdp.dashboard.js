@@ -6,9 +6,6 @@ var dashboardFontSize = 14;
 var flowNetworkGraph = false;
 var dashboardDataModel = false;
 
-//select date
-var currentJourneyMapId = ""; 
-
 var initPrimaryDashboard = function () {
 	
 	window.mainDashboardFunnelHeight = 420;
@@ -16,11 +13,10 @@ var initPrimaryDashboard = function () {
 	window.dashboardFontSize = 14;
 	window.flowNetworkGraph = false;
 	window.dashboardDataModel = false;
-	window.currentJourneyMapId = ""; 
 	
 	// journeyMapList
 	loadJourneyMapList(false, function(id){
-		currentJourneyMapId = id;
+		window.currentJourneyMapId = id;
 		showDashboardReport(true);
     },true);
     	

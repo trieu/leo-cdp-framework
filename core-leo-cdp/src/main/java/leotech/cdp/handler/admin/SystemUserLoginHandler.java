@@ -74,7 +74,6 @@ public final class SystemUserLoginHandler extends SecuredHttpDataHandler {
 						//
 						if(systemUser != null) {
 							systemUser.removeSensitiveData();
-
 							return JsonDataPayload.ok(uri, systemUser, loginUser, SystemUser.class);
 						}
 						return JsonDataPayload.fail("No Authorization To Get User Login Data by Key: " + key, 504);

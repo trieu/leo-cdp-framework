@@ -214,26 +214,26 @@ function loadJourneyMapList(refresh, callbackUpdate, showAllDataOption, callback
 		listNode.find('option').remove().trigger("chosen:updated");
 	}
 	// request server
-	LeoAdminApiUtil.getSecuredData('/cdp/journeymap/list-all', { "_" : new Date().getTime() }, function(json){
+	LeoAdminApiUtil.getSecuredData('/cdp/journeymap/list', { "_" : new Date().getTime() }, function(json){
 		if (json.httpCode === 0 && json.errorMessage === '') {
         	var journeyMaps = json.data;
-        	// load list HTML
-        	if(showAllDataOption === true){
+
+			var selectedNodeValue = window.currentJourneyMapId;
+        	
+			// showAllDataOption only for admin
+        	if(showAllDataOption === true && currentUserProfile.role >= 5){
 				var option = '<option value="" > All Journey Maps </option>';
 				listNode.append(option);
 			}
-			journeyMaps.forEach(function(journey){
-				var option = '<option value="'+ journey.id +'" >' + journey.name + '</option>';
-				listNode.append(option);
-			})
 			
+			
+			journeyMaps.forEach(function(journey){
+				var option = '<option value="'+ journey.id +'" >' + journey.name + '</option>';						
+				listNode.append(option);	
+			})			
+
 			// set selected value
-			if(typeof window.currentJourneyMapId === "string") {
-				listNode.val(window.currentJourneyMapId).change();	
-			}
-			else {
-				listNode.val("").change();
-			}
+			listNode.val(selectedNodeValue).change();
 			
 			if(typeof callbackDataLoaded === "function"){
 				callbackDataLoaded(listNode.val(), listNode.find("option:selected").text())
@@ -247,10 +247,9 @@ function loadJourneyMapList(refresh, callbackUpdate, showAllDataOption, callback
 				if(typeof callbackUpdate === "function" ){
 					var seletedId = $(this).val()
 					var name = $(this).find("option:selected").text()
+					window.currentJourneyMapId = seletedId;
+					
 					callbackUpdate(seletedId, name);
-					if(typeof currentJourneyMapId === "string") {
-						currentJourneyMapId = seletedId;
-					}
 				}
 				else {
 					window.currentJourneyMapId = $(this).val();

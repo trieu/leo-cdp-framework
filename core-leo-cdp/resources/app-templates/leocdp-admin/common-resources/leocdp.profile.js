@@ -2171,7 +2171,7 @@ var getSelectedJourneyData = function(inJourneyMaps, checkJourney){
 var loadDataJourneyMapEditor = function(containerSelect, inJourneyMapsData) {
 	var listNode = $(containerSelect);
 	// request server
-	LeoAdminApiUtil.getSecuredData('/cdp/journeymap/list-all', {}, function(json){
+	LeoAdminApiUtil.getSecuredData('/cdp/journeymap/list', {}, function(json){
 		if (json.httpCode === 0 && typeof json.data === 'object') {
 			var loadedJourneyMaps = json.data;
         	

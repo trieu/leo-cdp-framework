@@ -41,8 +41,9 @@ public final class JourneyMapHandler extends SecuredHttpDataHandler {
 	private static final String P_JOURNEY_MAP_NAME = "journeyMapName";
 	
 	static final String URI_LIST_BY_FILTER = "/cdp/journeymaps/filter";
-	static final String URI_LIST_ALL_FOR_USER = "/cdp/journeymap/list-all";	
-	static final String URI_LIST_ALL_FOR_SEGMENTATION = "/cdp/journeymap/list-all-for-segmentation";	
+	
+	static final String URI_LIST_FOR_USER = "/cdp/journeymap/list";	
+	
 	
 	static final String URI_CREATE_NEW = "/cdp/journeymap/create-new";
 	static final String URI_SAVE = "/cdp/journeymap/save";
@@ -153,14 +154,11 @@ public final class JourneyMapHandler extends SecuredHttpDataHandler {
 			System.out.println("loginUser "+loginUser.getRole());
 			if (loginUser.hasOperationRole()) {
 				switch (uri) {
-					case URI_LIST_ALL_FOR_USER : {
+					case URI_LIST_FOR_USER : {
 						List<JourneyMap> list = JourneyMapManagement.getAllJourneyMapsForUser(loginUser);
 						return JsonDataPayload.ok(uri, list, loginUser, JourneyMap.class);
 					}
-					case URI_LIST_ALL_FOR_SEGMENTATION : {
-						List<JourneyMap> list = JourneyMapManagement.getAllJourneyMaps();
-						return JsonDataPayload.ok(uri, list, loginUser, JourneyMap.class);
-					}
+					
 					case URI_GET_BY_JOURNEY_ID : {
 						String journeyId = HttpWebParamUtil.getString(params, "id", "");
 						System.out.println("journeyId "+journeyId);

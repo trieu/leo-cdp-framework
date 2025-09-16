@@ -102,6 +102,12 @@ public final class SystemUser implements PersistentArangoObject {
 	@Expose
 	private List<Notification> notifications = new ArrayList<>();
 	
+	@Expose
+	private List<String> viewableJourneyMapIds = new ArrayList<>();
+	
+	@Expose
+	private List<String> editableJourneyMapIds = new ArrayList<>();
+	
 	public SystemUser() {
 
 	}
@@ -483,7 +489,24 @@ public final class SystemUser implements PersistentArangoObject {
 			this.notifications.add(notification);
 		}
 	}
-	
+
+
+	public List<String> getViewableJourneyMapIds() {
+		return viewableJourneyMapIds;
+	}
+
+	public void setViewableJourneyMapIds(List<String> viewableJourneyMapIds) {
+		this.viewableJourneyMapIds = viewableJourneyMapIds;
+	}
+
+	public List<String> getEditableJourneyMapIds() {
+		return editableJourneyMapIds;
+	}
+
+	public void setEditableJourneyMapIds(List<String> editableJourneyMapIds) {
+		this.editableJourneyMapIds = editableJourneyMapIds;
+	}
+
 	public void clearAllNotifications() {
 		this.notifications.clear();
 	}

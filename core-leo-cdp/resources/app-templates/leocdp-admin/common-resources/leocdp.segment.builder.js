@@ -1236,7 +1236,7 @@ const loadSegmentBuilder = function(touchpointHubs,  behavioralEventMap, assetGr
 	// end of getDataFilter
 	
 	// request server
-	LeoAdminApiUtil.getSecuredData('/cdp/journeymap/list-all-for-segmentation', {}, function(json){
+	LeoAdminApiUtil.getSecuredData('/cdp/journeymap/list', {}, function(json){
 		if (json.httpCode === 0 && json.errorMessage === '') {
 			var journeyMapsForSegmentation = json.data;
 			

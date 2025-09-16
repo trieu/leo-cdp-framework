@@ -224,6 +224,9 @@ public final class SystemUserDaoUtil extends AbstractCdpDatabaseUtil {
 		Map<String, Object> bindVars = new HashMap<>(1);
 		bindVars.put("userLogin", userLogin);
 		SystemUser user = new ArangoDbCommand<>(db, AQL_GET_USER_BY_USERLOGIN, bindVars, SystemUser.class).getSingleResult();
+		
+		// TODO load authorized data to access
+		
 		return user;
 	}
 	
