@@ -262,6 +262,9 @@ public final class AdminHttpRouter extends BaseWebRouter {
 			else if (uri.startsWith(CDP_ITEM_PREFIX)) {
 				payload = new AssetItemHandler(this).httpGetHandler(userSession, uri, urlParams);
 			}
+			
+			// ---------- API handler ----------
+			
 			// to create or update profile
 			else if (uri.startsWith(API_PROFILE)) {
 				payload = new ProfileApiHandler().handleGet(req, uri, urlParams);

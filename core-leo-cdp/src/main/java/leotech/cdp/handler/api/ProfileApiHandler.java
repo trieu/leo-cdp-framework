@@ -1,11 +1,17 @@
 package leotech.cdp.handler.api;
 
+import java.util.List;
+
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonObject;
+import leotech.cdp.dao.ProfileDaoUtil;
 import leotech.cdp.domain.ProfileDataManagement;
+import leotech.cdp.model.customer.Profile;
 import leotech.cdp.model.journey.EventObserver;
+import leotech.cdp.query.filters.ProfileFilter;
 import leotech.system.model.JsonDataPayload;
+import leotech.system.util.HttpWebParamUtil;
 import leotech.system.util.LogUtil;
 
 
@@ -24,6 +30,9 @@ public class ProfileApiHandler extends BaseApiHandler {
 	
 	@Override
 	protected JsonDataPayload handleGet(EventObserver observer, HttpServerRequest req, String uri, MultiMap urlParams) {
+		if (uri.equals(API_PROFILE_LIST)) {
+			return listProfiles(observer, uri, urlParams);
+		}
 		return NO_SUPPORT_HTTP_REQUEST;
 	}
 	
@@ -57,6 +66,17 @@ public class ProfileApiHandler extends BaseApiHandler {
 			payload = JsonDataPayload.fail(e.getMessage());
 		}
 		return payload;
+	}
+	
+	JsonDataPayload listProfiles(EventObserver observer, String uri, MultiMap urlParams ) {
+		String segmentId = HttpWebParamUtil.getString(urlParams, "segment_id", "");
+		int  start = HttpWebParamUtil.getInteger(urlParams, "start", 0);
+		int  limit = HttpWebParamUtil.getInteger(urlParams, "limit", 10);
+		
+		ProfileFilter filter = new ProfileFilter(true, segmentId, start, limit);	
+
+		List<Profile> list = ProfileDaoUtil.getProfilesByFilter(filter);
+		return JsonDataPayload.ok(uri, list);
 	}
 
 }

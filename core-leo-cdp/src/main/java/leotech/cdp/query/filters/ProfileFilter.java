@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import io.vertx.core.json.JsonObject;
+import leotech.cdp.model.customer.Profile;
 import leotech.system.model.SystemUser;
 import leotech.system.util.database.PersistentObject;
 import rfx.core.util.StringPool;
@@ -42,6 +43,19 @@ public final class ProfileFilter extends DataFilter {
 	String lastSeenIp;
 	String lastUsedDeviceId;
 	
+	
+	public ProfileFilter(boolean showAllActiveProfile, String segmentId, int start, int limit) {
+		super();
+		if(showAllActiveProfile) {
+			this.showVisitor = true;			
+			this.showLeadAndProspect = true;
+			this.showCustomer = true;
+			this.status = Profile.STATUS_ACTIVE;
+		}
+		this.setSegmentId(segmentId);		
+		this.setStart(start);
+		this.setLength(limit);
+	}
 	
 	public ProfileFilter() {
 		super();
@@ -138,10 +152,12 @@ public final class ProfileFilter extends DataFilter {
 		this.profileId = profileId;
 	}
 	
+	@Override
 	public String getSegmentId() {
 		return segmentId;
 	}
 
+	@Override
 	public void setSegmentId(String segmentId) {
 		this.segmentId = segmentId;
 	}
