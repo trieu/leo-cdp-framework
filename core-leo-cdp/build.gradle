@@ -8,11 +8,16 @@ file("./leocdp-build.properties").withReader {
    project.ext.leoCdpBuild = props
 }
 
-// the output for BUILD
-def buildOutputFolderPath = leoCdpBuild['buildOutputFolderPath'].trim()
+// the output for BUILD 
+// Read property from command line, or fallback to default
+def buildOutputFolderPath = project.hasProperty("buildOutputFolderPath") 
+    ? project.getProperty("buildOutputFolderPath").trim() 
+    :  leoCdpBuild['buildOutputFolderPath'].trim()
 
 // the output for STATIC files in CDN
-def staticOutputFolderPath = leoCdpBuild['staticOutputFolderPath'].trim()
+def staticOutputFolderPath = project.hasProperty("staticOutputFolderPath") 
+    ? project.getProperty("staticOutputFolderPath").trim() 
+    :  leoCdpBuild['staticOutputFolderPath'].trim()
 
 
 //-------------------------------------------------------------------------------
@@ -86,7 +91,7 @@ dependencies {
 	// MySQL, PostgreSQL, sqlite data connector
 	compile group: 'com.mysql', name: 'mysql-connector-j', version: '9.3.0'
 	compile group: 'org.postgresql', name: 'postgresql', version: '42.7.7'
-	compile group: 'org.xerial', name: 'sqlite-jdbc', version: '3.50.2.0'
+	compile group: 'org.xerial', name: 'sqlite-jdbc', version: '3.50.3.0'
 	
 	// Jdbi library provides convenient, idiomatic access to relational databases
 	compile group: 'org.jdbi', name: 'jdbi3-core', version: '3.49.5'
@@ -99,7 +104,7 @@ dependencies {
 	compile group: 'net.logicsquad', name: 'nanocaptcha', version: '2.1'
 	
 	// for parsing, formatting, and validating international phone numbers https://github.com/google/libphonenumber/
-	compile group: 'com.googlecode.libphonenumber', name: 'libphonenumber', version: '9.0.10'
+	compile group: 'com.googlecode.libphonenumber', name: 'libphonenumber', version: '9.0.14'
 	
 	// for job schedulers in data connectors
 	compile group: 'org.quartz-scheduler', name: 'quartz', version: '2.3.2'
@@ -343,38 +348,52 @@ task buildLeoUploadFileHttpStarter(type: Jar) {
 
 
 // 1) copy configs
-task CopyConfigsFolderToBUILD(type: Copy) {  
+task copyConfigsFolderToBuild(type: Copy) {  
 	from files('configs')
   	into buildOutputFolderPath + "/configs" 
   	exclude "**DEV**"
   	exclude "**PRO**"
   	
-  	println '###  CopyConfigsFolderToBUILD OK !!!  ###'
+  	println '###  copyConfigsFolderToBuild OK !!!  ###'
 }
 
 
 
 // 2) copy templates
-task CopyResourcesFolderToBUILD(type: Copy, dependsOn: minifyJsAdminResource) {  
+task copyResourcesToBuild(type: Copy, dependsOn: minifyJsAdminResource) {  
 	from files('resources')
   	into  buildOutputFolderPath + "/resources" 
   	
   	includeEmptyDirs = true
   	exclude "**/common-resources"
   	
-  	println '###  CopyResourcesFolderToBUILD OK !!!  ###'
+  	println '###  copyResourcesToBuild OK !!!  ###'
 }
 
-// 3) copy dependency system libs
-task CopyRuntimeLibsFolderToBUILD(type: Copy) {  
-	from configurations.compile  
-  	into  buildOutputFolderPath + "/deps" 
-  	
-  	println '###  CopyRuntimeLibsFolderToBUILD OK !!!  ###'
+// 3) clean and copy dependency system libs
+task copyRuntimeLibsToBuild(type: Copy) {
+    def depsDir = file("$buildOutputFolderPath/deps")
+
+    // first delete old jars
+    doFirst {
+        if (depsDir.exists()) {
+            depsDir.deleteDir()
+            println "### Deleted old jars in $depsDir ###"
+        }
+    }
+
+    // then copy fresh jars
+    from configurations.runtimeClasspath
+    into depsDir
+
+    doLast {
+        println "### copyRuntimeLibsToBuild OK !!! ###"
+    }
 }
+
 
 // 4) copy public folder to BUILD
-task CopyPublicFolderToBUILD(type: Copy) {  
+task copyPublicFilesToBuild(type: Copy) {  
 	from files('public')
   	into  buildOutputFolderPath + "/public"  
   	
@@ -391,7 +410,7 @@ task CopyPublicFolderToBUILD(type: Copy) {
   	exclude "**/qrcode/**.png"
   	exclude "**/sample-data"
   	
-  	println '###  CopyPublicFolderToBUILD OK !!!  ###'
+  	println '###  copyPublicFilesToBuild OK !!!  ###'
 }
 
 // 5) copy public folder to STATIC for public CDN at https://www.jsdelivr.com
@@ -443,7 +462,7 @@ task CopyDevOpsScriptToBUILD(type: Copy) {
 }
 
 // 7) copy README.md, data flow image and release notes
-task CopyTechDocuments(type: Copy) {  
+task copyDocuments(type: Copy) {  
 
 	from file('NOTES-FOR-NEW-SETUP.md')
   	into buildOutputFolderPath
@@ -454,49 +473,49 @@ task CopyTechDocuments(type: Copy) {
   	from file('ai-first-customer360.png')
   	into buildOutputFolderPath
   	
-  	println '###  CopyTechDocuments OK !!!  ###'
+  	println '###  copyDocuments OK !!!  ###'
 }
 
 
 // 8) Copy AQL code To Build
-task CopyDatabaseQueryTemplateToBuild(type: Copy) {  
+task CopyDbQueryTemplateToBuild(type: Copy) {  
   	
   	from file('resources/database/database-query-template.aql')
   	into buildOutputFolderPath + "/resources/database/"
   
-  	println '###  CopyDatabaseQueryTemplateToBuild OK !!!  ###'
+  	println '###  CopyDbQueryTemplateToBuild OK !!!  ###'
 }
 
 // 9) copy templates
-task CopyAirflowDagFolderToBUILD(type: Copy) {  
+task copyAirflowDagToBuild(type: Copy) {  
 	from files('../airflow-dags')
   	into  buildOutputFolderPath + "/airflow-dags" 
   	
   	exclude "**/logs"
   	exclude "**/__pycache__"
   	
-  	println '###  CopyAirflowDagFolderToBUILD OK !!!  ###'
+  	println '###  copyAirflowDagToBuild OK !!!  ###'
 }
 
 // 10) compile and copy key Leo CDP jars
 def mainJarTasks = [buildLeoMainHttpStarter, buildLeoDataObserverStarter, buildLeoScheduledJobStarter, buildLeoDataProcessingStarter]
-task AllBuildJarLeoCDP(dependsOn: mainJarTasks) {
-     println '###  AllBuildJarLeoCDP OK !!!  ###'
+task BuildAllJavaJars(dependsOn: mainJarTasks) {
+     println '###  BuildAllJavaJars OK !!!  ###'
 }
 
 // 11) Build all system
-def systemJarTasks = [ CopyRuntimeLibsFolderToBUILD, CopyConfigsFolderToBUILD ]
-def staticTasks = [CopyTechDocuments, CopyDevOpsScriptToBUILD, CopyPublicFolderToBUILD, CopyResourcesFolderToBUILD ]
-def allReleaseTasks = [CopyDatabaseQueryTemplateToBuild, mainJarTasks, CopyTechDocuments, CopyPublicFolderToBUILD, CopyResourcesFolderToBUILD, CopyRuntimeLibsFolderToBUILD ]
+def systemJarTasks = [ copyRuntimeLibsToBuild, copyConfigsFolderToBuild ]
+def staticTasks = [copyDocuments, CopyDevOpsScriptToBUILD, copyPublicFilesToBuild, copyResourcesToBuild ]
+def allReleaseTasks = [minifyJsAdminResource, mainJarTasks, copyDocuments, copyPublicFilesToBuild, copyResourcesToBuild, copyRuntimeLibsToBuild ]
 
-task AllBuildForOneLeoCDP(dependsOn: allReleaseTasks) {    
-     println '###  AllBuildForOneLeoCDP OK !!!  ###'
+task buildAllTasksForDeployment(dependsOn: allReleaseTasks) {    
+     println '###  buildAllTasksForDeployment OK !!!  ###'
 }
 
-defaultTasks 'AllBuildForOneLeoCDP'
+defaultTasks 'buildAllTasksForDeployment'
 
 build {
-    dependsOn AllBuildForOneLeoCDP
+    dependsOn buildAllTasksForDeployment
 }
 
 
@@ -505,7 +524,7 @@ build {
 /////////////////////////// END BUILD FOR DEPLOYED JAR ///////////////////////////////
 
 // deploy jar to Remote Servers and restart all
-task AutoBuildAndDeployToRemoteServers(type: Exec) {    
+task AutoBuildAndDeploy(type: Exec) {    
     commandLine 'sh', './shell-scripts/deploy-ad-server.sh'
 }
 

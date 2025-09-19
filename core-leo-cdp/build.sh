@@ -1,27 +1,16 @@
 #!/bin/sh
 
-gradle minifyJsAdminResource
+buildOutputFolderPath="/home/thomas/0-github/leo-cdp-free-edition/"
+staticOutputFolderPath="/home/thomas/0-github/leo-cdp-static-files"
+
+gradle minifyJsAdminResource \
+  -PstaticOutputFolderPath="$staticOutputFolderPath"
+
 echo "\n !!!!! minifyJsAdminResource DONE !!!!! \n"
 
-gradle AllBuildJarLeoCDP
-echo "\n !!!!! AllBuildJarLeoCDP DONE !!!!! \n"
+gradle buildAllTasksForDeployment \
+  -PbuildOutputFolderPath="$buildOutputFolderPath" \
+  -PstaticOutputFolderPath="$staticOutputFolderPath"
 
-gradle CopyResourcesFolderToBUILD
-echo "\n !!!!! CopyResourcesFolderToBUILD DONE !!!!! \n"
-
-gradle CopyDatabaseQueryTemplateToBuild
-echo "\n !!!!! CopyDatabaseQueryTemplateToBuild DONE !!!!! \n"
-
-gradle CopyRuntimeLibsFolderToBUILD
-echo "\n !!!!! CopyRuntimeLibsFolderToBUILD DONE !!!!! \n"
-
-gradle CopyPublicFolderToBUILD
-echo "\n !!!!! CopyPublicFolderToBUILD DONE !!!!! \n"
-
-gradle CopyPublicFolderToSTATIC
-echo "\n !!!!! CopyPublicFolderToSTATIC DONE !!!!! \n"
-
-gradle CopyTechDocuments
-echo "\n !!!!! CopyTechDocuments DONE !!!!! \n"
-
+echo "\n !!!!! build All Tasks For Deployment DONE !!!!! \n"
 echo "\n !!!!!!!!!!!!!!!!!!!! ALL BUILD DONE !!!!!!!!!!!!!!!!!!!!!!!!! \n"
