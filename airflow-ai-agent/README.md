@@ -19,19 +19,28 @@ It listens to customer and tracking events from LEO CDP, triggers Airflow DAGs, 
 
 ```
 airflow-ai-agent/
-├── airflow-dags/           # DAG definitions (Redis-triggered, AI workflows, etc.)
-├── airflow-output/         # Logs (webserver, scheduler, db-upgrade)
-├── airflow-venv/           # Python virtual environment (auto-created)
-├── requirements.txt        # Python dependencies
-├── install-airflow.sh       # Script to install Airflow in a virtual environment
-├── start-airflow.sh         # Script to start Airflow processes safely
-├── stop-airflow.sh         # Script to stop Airflow processes safely
-└── README.md               # You are here 🚀
+├── airflow-dags/             # DAG definitions (Redis-triggered, AI workflows, etc.)
+├── airflow-output/           # Logs (webserver, scheduler, db-upgrade)
+├── airflow-venv/             # Python virtual environment (auto-created)
+├── requirements.txt          # Python dependencies
+├── install-airflow.sh        # Script to install Airflow in a virtual environment
+├── start-airflow.sh          # Script to start Airflow processes safely
+├── stop-airflow.sh           # Script to stop Airflow processes safely
+├── trigger-ai-agent-jobs.sh  # Script to start or stop AI Agent trigger jobs using Redis PubSub
+└── README.md                 # You are here 🚀
 ```
 ---
 
-## ⚙️ Installation
+## ⚙️ Environment
 
+* Create .env file for Airflow
+* Run and edit your .env file 
+
+```bash
+cp sample.env.txt .env
+```
+
+## ⚙️ Installation
 
 ```bash
 cd airflow-ai-agent
@@ -73,54 +82,26 @@ Publish an event to trigger a DAG run:
 
 ```bash
 # Trigger a simple test DAG
-redis-cli -p 6480 publish airflow-events "{dag_id:'redis_airflow_dag', params:{'run_id':'test123'}}"
+redis-cli -p 6480 publish ai-agent-events '{"dag_id":"redis_airflow_dag", "params":{"run_id":"test123"}}'
 
 # Trigger an AI Agent DAG to process content keywords for a profile
-redis-cli -p 6480 publish airflow-events "{dag_id:'leo_aia_content_keywords', params:{'profile_id':'p123'}}"
+redis-cli -p 6480 publish ai-agent-events '{"dag_id":"leo_aia_content_keywords", "params":{"profile_id":"p123"}}'
 
 # Trigger another DAG with multiple params
-redis-cli -p 6480 publish airflow-events "{dag_id:'leo_aia_translate_text', params:{'profile_id':'p999','lang':'vi'}}"
+redis-cli -p 6480 publish ai-agent-events '{"dag_id":"leo_aia_translate_text", "params":{"profile_id":"p999","lang":"vi"}}'
 ```
 
 ---
 
 ### Example Listener (Python)
 
-The listener subscribes to the `airflow-events` channel and triggers DAGs dynamically based on the message payload.
+The listener subscribes to the `ai-agent-events` channel and triggers DAGs dynamically based on the message payload.
 
 👉 Full code is available in
-`airflow-ai-agent/airflow-dags/redis_trigger.py`
+`airflow-ai-agent/airflow-dags/ai_agent_trigger_leocdp.py`
 
-```python
-import redis, subprocess, json
-
-def trigger_airflow_dag(dag_id, params):
-    print(f"🚀 Triggering DAG: {dag_id} with params={params}")
-    subprocess.run([
-        "airflow", "dags", "trigger",
-        dag_id,
-        "--conf", json.dumps(params)
-    ])
-
-def main():
-    r = redis.Redis(host="localhost", port=6480, db=0)
-    pubsub = r.pubsub()
-    pubsub.subscribe("airflow-events")
-
-    print("📡 Listening to Redis channel: airflow-events")
-    for message in pubsub.listen():
-        if message["type"] == "message":
-            data = message["data"].decode("utf-8")
-            try:
-                payload = json.loads(data.replace("'", '"'))  # handle single quotes
-                dag_id = payload.get("dag_id")
-                params = payload.get("params", {})
-                trigger_airflow_dag(dag_id, params)
-            except Exception as e:
-                print(f"❌ Invalid payload: {data} ({e})")
-
-if __name__ == "__main__":
-    main()
+```bash 
+./trigger-ai-agent-jobs.sh start
 ```
 
 ---
