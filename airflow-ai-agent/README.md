@@ -148,14 +148,82 @@ Messages published to Redis should be valid JSON-like strings with the following
 
 ---
 
-
-
 ## 🔮 Roadmap
 
-* [ ] Add **AI workflow DAG templates** (translation, summarization, personalization).
-* [ ] Support **multi-tenant CDP events** with Airflow Variables.
-* [ ] Add **Dockerized deployment** for production.
-* [ ] Integrate ** PostgreSQL** for Airflow main database
+The following enhancements are planned to make **Airflow AI Agent** more powerful, production-ready, and developer-friendly:
+
+* [ ] **Prebuilt AI workflow DAG templates**
+
+  * Translation (multi-language content pipelines)
+  * Summarization (long text → short insights)
+  * Personalization (profile-based recommendations)
+  * Keyword extraction + embedding storage in `pgvector`
+
+* [ ] **Multi-tenant event handling**
+
+  * Pass `tenant_id` from **LEO CDP events** into Airflow DAGs
+  * Use **Airflow Variables / Connections** to isolate tenant configs
+  * Example: one Redis channel → multiple isolated workflows per tenant
+
+* [ ] **Production-ready deployment**
+
+  * Official **Docker Compose** + **Kubernetes Helm Chart**
+  * Configurable `AIRFLOW_HOME`, DAG folders, secrets, and Redis connection
+  * Example: deploy with `docker compose up airflow`
+
+* [ ] **Database Integration**
+
+  * Use **PostgreSQL 16** as the Airflow **metadata DB**
+  * Store embeddings in **pgvector** for semantic search
+  * Event-driven enrichment pipelines writing back to `cdp_master_profiles`
+
+* [ ] **Monitoring & Observability**
+
+  * Airflow **metrics in Prometheus/Grafana**
+  * Auto-log Redis event payloads into PostgreSQL
+  * Example dashboards: DAG latency, Redis events processed per second
+
+* [ ] **Developer Experience**
+
+  * Hot-reload DAGs during local dev (`airflow dags reload`)
+  * Example notebooks for testing DAG logic outside of Airflow
+  * Pre-configured `dev.env` for one-line bootstrap
+
+---
+
+## 🚀 Future AI Agent Use Cases
+
+These are forward-looking scenarios that extend Airflow beyond orchestration into **intelligent automation**:
+
+* [ ] **RAG with Gemini + pgvector**
+
+  * Orchestrate Retrieval-Augmented Generation (RAG) workflows
+  * Store embeddings in PostgreSQL `pgvector`
+  * Example: customer queries → semantic search → Gemini API → response
+
+* [ ] **Auto-segmentation in LEO CDP**
+
+  * Run scheduled clustering jobs on customer profiles
+  * Auto-generate dynamic customer segments (e.g., high-value travelers, churn risk)
+  * Push segments back to Redis for real-time personalization
+
+* [ ] **Email Marketing Pipelines**
+
+  * DAGs for generating personalized newsletters with AI templates
+  * Connect with CDP + CRM for recipient targeting
+  * Multi-variant (A/B/n) content generation and automatic performance tracking
+
+* [ ] **Multi-Agent Orchestration**
+
+  * Trigger multiple AI agents (Summarizer, Recommender, Translator) in one DAG
+  * Pass intermediate outputs through Redis / PostgreSQL
+  * Example: blog ingestion → summarization → translation → email campaign
+
+* [ ] **Travel & E-commerce Personalization**
+
+  * Enrich user sessions with CDP data + AI-driven itinerary recommendations
+  * Event-driven product recommendation workflows
+  * Example: Redis event “user searches Paris” → Airflow DAG → personalized travel plan → push to app
 
 ---
 
