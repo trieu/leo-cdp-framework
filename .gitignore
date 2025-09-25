@@ -28,3 +28,7 @@ core-leo-cdp/gradle/*
 # CDP database configs must be excluded in commit 
 ./core-leo-cdp/configs/database-configs.json
 ./core-leo-cdp/configs/PRO-database-configs.json
+
+# Airflow 
+./airflow-ai-env/airflow-venv
+**/airflow-venv

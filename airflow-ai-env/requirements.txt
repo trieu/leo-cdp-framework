@@ -1,0 +1,24 @@
+# === Core Airflow ===
+apache-airflow==2.11.0
+
+# PostgreSQL + Vector Search
+psycopg2-binary                  # PostgreSQL driver (works with PG16)
+pgvector                         # Vector similarity search with Postgres
+
+# ArangoDB
+python-arango                    # Python driver for ArangoDB
+
+# Utilities
+markdown                         # Markdown → HTML rendering
+jinja2                           # Templating engine (Airflow + custom rendering)
+
+# === Google Cloud AI & Translation ===
+google-cloud-translate           # Google Translate API v2
+google-api-core                  # Core support for Google Cloud APIs
+google-genai                     # Google Gemini SDK (Schema, GenerationConfig, etc.)
+
+# === LangChain ===
+langchain                        # Orchestration framework for LLM pipelines
+
+# === Data Validation & Models ===
+pydantic                         # Data validation and parsing
