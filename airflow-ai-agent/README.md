@@ -1,7 +1,3 @@
-Here’s a structured **README.md** draft for your **Airflow AI Agent** framework 👇
-
----
-
 # Airflow AI Agent Framework
 
 🚀 **Airflow AI Agent** is a development framework that integrates **LEO CDP events** with **Apache Airflow DAGs** to orchestrate AI-driven pipelines.
@@ -66,17 +62,91 @@ cd airflow-ai-agent
 
 ## 📡 Event-Driven Triggers
 
-We use **Redis Pub/Sub** to trigger DAGs externally.
+The **Airflow AI Agent** can run DAGs automatically when events are published to **Redis Pub/Sub**.
+This allows **LEO CDP** or any external service to notify Airflow when an AI workflow should start.
 
-### Example Publisher
+---
+
+### Example Publisher (Redis CLI)
+
+Publish an event to trigger a DAG run:
 
 ```bash
-redis-cli -p 6480 publish airflow-events "{dag_id:'redis_airflow_dag', params:'1234'}"
+# Trigger a simple test DAG
+redis-cli -p 6480 publish airflow-events "{dag_id:'redis_airflow_dag', params:{'run_id':'test123'}}"
+
+# Trigger an AI Agent DAG to process content keywords for a profile
+redis-cli -p 6480 publish airflow-events "{dag_id:'leo_aia_content_keywords', params:{'profile_id':'p123'}}"
+
+# Trigger another DAG with multiple params
+redis-cli -p 6480 publish airflow-events "{dag_id:'leo_aia_translate_text', params:{'profile_id':'p999','lang':'vi'}}"
 ```
+
+---
 
 ### Example Listener (Python)
 
-check code at airflow-ai-agent/airflow-dags/redis_trigger.py
+The listener subscribes to the `airflow-events` channel and triggers DAGs dynamically based on the message payload.
+
+👉 Full code is available in
+`airflow-ai-agent/airflow-dags/redis_trigger.py`
+
+```python
+import redis, subprocess, json
+
+def trigger_airflow_dag(dag_id, params):
+    print(f"🚀 Triggering DAG: {dag_id} with params={params}")
+    subprocess.run([
+        "airflow", "dags", "trigger",
+        dag_id,
+        "--conf", json.dumps(params)
+    ])
+
+def main():
+    r = redis.Redis(host="localhost", port=6480, db=0)
+    pubsub = r.pubsub()
+    pubsub.subscribe("airflow-events")
+
+    print("📡 Listening to Redis channel: airflow-events")
+    for message in pubsub.listen():
+        if message["type"] == "message":
+            data = message["data"].decode("utf-8")
+            try:
+                payload = json.loads(data.replace("'", '"'))  # handle single quotes
+                dag_id = payload.get("dag_id")
+                params = payload.get("params", {})
+                trigger_airflow_dag(dag_id, params)
+            except Exception as e:
+                print(f"❌ Invalid payload: {data} ({e})")
+
+if __name__ == "__main__":
+    main()
+```
+
+---
+
+### ✅ Supported Payload Format
+
+Messages published to Redis should be valid JSON-like strings with the following fields:
+
+```json
+{
+  "dag_id": "your_dag_id_here",
+  "params": {
+    "key": "value",
+    "profile_id": "p123"
+  }
+}
+```
+
+* `dag_id` → the Airflow DAG to run
+* `params` → custom parameters passed into `--conf`
+
+---
+
+⚡ This makes Airflow reactive: whenever **LEO CDP** detects a new event (like a profile update, translation request, or content processing job), it simply publishes a message to Redis, and the Airflow AI Agent takes care of running the right DAG.
+
+---
 
 
 
