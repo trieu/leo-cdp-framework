@@ -150,10 +150,10 @@ public abstract class DataServiceJob implements Job {
 	
 	// processing logic for sub class
 	abstract protected String processSegment(String segmentId, String segmentName, long segmentSize);
-	abstract protected String processProfileData(Profile profile);
+	abstract protected String processProfile(Profile profile);
 	
 	abstract protected String processTouchpointHub(String touchpointHubId, String touchpointHubName, long touchpointHubSize);
-	abstract protected String processTouchpointData(Touchpoint touchpoint);
+	abstract protected String processTouchpoint(Touchpoint touchpoint);
 	
 	/**
 	 * @return
@@ -188,7 +188,7 @@ public abstract class DataServiceJob implements Job {
 	protected final void processProfilesInSegment(String segmentId, long segmentSize) {
 		Segment segment = SegmentDaoUtil.getSegmentById(segmentId);
 		SegmentDataManagement.processProfilesInSegment(segment, BATCH_SIZE, (Profile profile)->{
-			processProfileData(profile);
+			processProfile(profile);
 		});
 	}
 

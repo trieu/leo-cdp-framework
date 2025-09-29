@@ -14,12 +14,12 @@ import rfx.core.util.StringUtil;
  * @since 2023
  *
  */
-public class ExternalDataService extends DataServiceJob {
+public class ExternalAgentService extends DataServiceJob {
 
 	String serviceProvider;
 	String serviceApiUrl, serviceApiKey, serviceApiToken;
 	
-	public ExternalDataService() {
+	public ExternalAgentService() {
 		super();
 	}
 
@@ -46,7 +46,7 @@ public class ExternalDataService extends DataServiceJob {
 	}
 
 	@Override
-	protected String processProfileData(Profile profile) {
+	protected String processProfile(Profile profile) {
 		System.out.println(" ExternalDataService.serviceProvider "+ serviceProvider);
 		System.out.println(" ExternalDataService.serviceApiUrl "+ serviceApiUrl);
 		System.out.println(" ExternalDataService.serviceApiKey "+ serviceApiKey);
@@ -72,7 +72,7 @@ public class ExternalDataService extends DataServiceJob {
 	}
 
 	@Override
-	protected String processTouchpointData(Touchpoint touchpoint) {
+	protected String processTouchpoint(Touchpoint touchpoint) {
 		// skip
 		return  StringPool.BLANK;
 	}

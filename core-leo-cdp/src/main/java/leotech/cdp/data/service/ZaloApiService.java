@@ -12,10 +12,13 @@ import rfx.core.configs.WorkerConfigs;
 import rfx.core.util.StringUtil;
 
 /**
+ * Move code to Python Airflow DAG
+ * 
  * @author Trieu Nguyen
  * @since 2024
  *
  */
+@Deprecated
 public class ZaloApiService {
 	public static final String ZALO_ACCESS_TOKEN = "zaloAccessToken";
 	public static final String URL_OPENAPI_ZALO_ME_V3_0_OA_USER_DETAIL = "https://openapi.zalo.me/v3.0/oa/user/detail";

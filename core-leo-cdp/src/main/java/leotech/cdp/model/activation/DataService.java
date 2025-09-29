@@ -14,7 +14,7 @@ import com.github.slugify.Slugify;
 import com.google.gson.Gson;
 import com.google.gson.annotations.Expose;
 
-import leotech.cdp.data.service.ExternalDataService;
+import leotech.cdp.data.service.ExternalAgentService;
 import leotech.system.exception.InvalidDataException;
 import leotech.system.model.SystemService;
 import leotech.system.util.LogUtil;
@@ -46,7 +46,7 @@ public final class DataService extends SystemService implements Serializable {
 
 	public static final String NEW_SERVICE_PREFIX = "new_service_";
 	public static final String DATA_SERVICE_JAVACLASS = "javaclass:";
-	public static final String DATA_SERVICE_EXTERNAL = ExternalDataService.class.getSimpleName();
+	public static final String DATA_SERVICE_EXTERNAL = ExternalAgentService.class.getSimpleName();
 	
 	public static final String COLLECTION_NAME = PersistentObject.getCdpCollectionName(DataService.class);
 	private static ArangoCollection instance;
@@ -181,7 +181,7 @@ public final class DataService extends SystemService implements Serializable {
 				}
 			}
 			else {				
-				clazz = ExternalDataService.class;
+				clazz = ExternalAgentService.class;
 				LogUtil.logInfo(DataService.class, "getClassForJobDetails using " + clazz.getName());
 			}
 		}

@@ -156,8 +156,7 @@ public final class DataServiceManagement {
 				throw new InvalidDataException(service.getId() + " is not ready to run, please set service_api_key");
 			}
 		} else {
-			throw new InvalidDataException(
-					" In-valid segmentId:" + segmentId + " or In-valid serviceId: " + dataServiceId);
+			throw new InvalidDataException(" In-valid segmentId:" + segmentId + " or In-valid serviceId: " + dataServiceId);
 		}
 	}
 

@@ -34,6 +34,7 @@ import rfx.core.util.StringUtil;
  * @since 2022
  *
  */
+@Deprecated
 public final class ZaloDataService extends DataServiceJob {
 
 	static final String API_KEY = "api-key";
@@ -63,7 +64,7 @@ public final class ZaloDataService extends DataServiceJob {
 	}
 
 	@Override
-	protected String processProfileData(Profile profile) {
+	protected String processProfile(Profile profile) {
 		String primaryPhone = profile.getPrimaryPhone();
 
 		System.out.println(profile.toString());
@@ -76,7 +77,7 @@ public final class ZaloDataService extends DataServiceJob {
 	}
 
 	@Override
-	protected String processTouchpointData(Touchpoint touchpoint) {
+	protected String processTouchpoint(Touchpoint touchpoint) {
 		// skip
 		return StringPool.BLANK;
 	}

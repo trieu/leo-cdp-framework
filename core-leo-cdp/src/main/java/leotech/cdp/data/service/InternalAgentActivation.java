@@ -6,16 +6,16 @@ import leotech.cdp.model.journey.Touchpoint;
 import rfx.core.util.StringPool;
 
 /**
- * Email Marketing Service: to send email with personalized contents and products directly to contact profiles
+ * read event data, profile data, update cdp_profile2content and cdp_profile2product
  * 
  * @author tantrieuf31
  * @since 2023
  *
  */
-public class EmailMarketingService extends DataServiceJob {
+public class InternalAgentActivation extends DataServiceJob {
 
 	
-	public EmailMarketingService() {
+	public InternalAgentActivation() {
 		super();
 	}
 
@@ -38,16 +38,16 @@ public class EmailMarketingService extends DataServiceJob {
 	}
 
 	@Override
-	protected String processProfileData(Profile profile) {
+	protected String processProfile(Profile profile) {
 		
-		System.out.println(" EmailAutomationService.processProfileData id: " + profile.getId() + " FullName " + profile.getFullName());
+		System.out.println(" InternalAgentActivation.processProfileData id: " + profile.getId() + " FullName " + profile.getFullName());
 		// TODO 
 	    return StringPool.BLANK;
 	}
 
 
 	@Override
-	protected String processTouchpointData(Touchpoint touchpoint) {
+	protected String processTouchpoint(Touchpoint touchpoint) {
 		// skip
 		return StringPool.BLANK;
 	}
