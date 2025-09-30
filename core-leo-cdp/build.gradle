@@ -508,14 +508,14 @@ def systemJarTasks = [ copyRuntimeLibsToBuild, copyConfigsFolderToBuild ]
 def staticTasks = [copyDocuments, CopyDevOpsScriptToBUILD, copyPublicFilesToBuild, copyResourcesToBuild ]
 def allReleaseTasks = [minifyJsAdminResource, mainJarTasks, copyDocuments, copyPublicFilesToBuild, copyResourcesToBuild, copyRuntimeLibsToBuild ]
 
-task buildAllTasksForDeployment(dependsOn: allReleaseTasks) {    
-     println '###  buildAllTasksForDeployment OK !!!  ###'
+task AutoBuildForDeployment(dependsOn: allReleaseTasks) {    
+     println '###  AutoBuildForDeployment OK !!!  ###'
 }
 
-defaultTasks 'buildAllTasksForDeployment'
+defaultTasks 'AutoBuildForDeployment'
 
 build {
-    dependsOn buildAllTasksForDeployment
+    dependsOn AutoBuildForDeployment
 }
 
 
@@ -524,12 +524,12 @@ build {
 /////////////////////////// END BUILD FOR DEPLOYED JAR ///////////////////////////////
 
 // deploy jar to Remote Servers and restart all
-task AutoBuildAndDeploy(type: Exec) {    
+task runDeployShellScript(type: Exec) {    
     commandLine 'sh', './shell-scripts/deploy-ad-server.sh'
 }
 
 // just restart all servers
-task RestartAllServers(type: Exec) {    
+task runRestartAllServers(type: Exec) {    
     commandLine 'sh', './shell-scripts/restart-all-ad-servers.sh'
 }
 
