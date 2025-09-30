@@ -8,7 +8,7 @@ public class TestUpgradeLeoCDP {
 	public static void main(String[] args) {
 
 		// test run test or update DEV
-		SystemControl.upgradeSystem(true, true, false, null);
+		SystemControl.upgradeSystem(true, false, true, false, null);
 		Utils.exitSystemAfterTimeout(3210);
 	}
 

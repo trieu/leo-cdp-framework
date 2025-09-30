@@ -25,6 +25,8 @@ public final class MainHttpStarter {
 	
 	public static final String UPGRADE_SYSTEM_AND_RESET_CONFIGS = "upgrade-system-and-reset-configs";
 	
+	public static final String UPGRADE_AI_AGENT_AND_RESET_CONFIGS = "upgrade-ai-agent-and-reset-configs";
+	
 	public static final String UPGRADE_SYSTEM_AND_DATA = "upgrade-system-and-data";
 	
 	public static final String UPGRADE_INDEX_DATABASE = "upgrade-index-database";
@@ -51,11 +53,15 @@ public final class MainHttpStarter {
 			if (length == 1) {
 				// start main worker with key in configs/http-routing-configs.json
 				if (UPGRADE_SYSTEM.equalsIgnoreCase(command)) {
-					SystemControl.upgradeSystem(true, false, false, null);
+					SystemControl.upgradeSystem(true, false, false, false, null);
 					return;
 				} 
 				if (UPGRADE_SYSTEM_AND_RESET_CONFIGS.equalsIgnoreCase(command)) {
-					SystemControl.upgradeSystem(true, true, false, null);
+					SystemControl.upgradeSystem(true, true, false, false, null);
+					return;
+				}  
+				else if (UPGRADE_AI_AGENT_AND_RESET_CONFIGS.equalsIgnoreCase(command)) {
+					SystemControl.upgradeSystem(true, false, true, false, null);
 					return;
 				}  
 				else if (UPGRADE_INDEX_DATABASE.equalsIgnoreCase(command)) {
@@ -78,7 +84,7 @@ public final class MainHttpStarter {
 				} 
 				else if (UPGRADE_SYSTEM_AND_DATA.equalsIgnoreCase(command)) {
 					String jobClasspath = args[1];
-					SystemControl.upgradeSystem(true, false, false, jobClasspath);
+					SystemControl.upgradeSystem(true, false, false, false, jobClasspath);
 					return;
 				}
 				else {

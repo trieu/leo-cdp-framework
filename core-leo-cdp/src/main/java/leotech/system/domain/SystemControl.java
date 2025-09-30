@@ -73,7 +73,7 @@ public final class SystemControl {
 	 * 
 	 * @param args
 	 */
-	public final static void upgradeSystem(boolean autoExitSystem, boolean resetAllConfigs,  boolean upgradeJourneyMap, String jobClasspath) {
+	public final static void upgradeSystem(boolean autoExitSystem, boolean resetAllSystemConfigs,  boolean resetAllAgentsConfigs, boolean upgradeJourneyMap, String jobClasspath) {
 		String editionCode = SystemMetaData.BUILD_EDITION;
 		String databaseKey = SystemMetaData.MAIN_DATABASE_CONFIG;
 		try {
@@ -81,10 +81,10 @@ public final class SystemControl {
 			InitDatabaseSchema.checkAndCreateDbCollections(editionCode, databaseKey, "", "");
 			
 			// system configs
-			SystemConfigsManagement.initDefaultSystemData(resetAllConfigs);
+			SystemConfigsManagement.initDefaultSystemData(resetAllSystemConfigs);
 			
-			// data service
-			DataServiceManagement.initDefaultSystemData();
+			// AI Agent service
+			DataServiceManagement.initDefaultSystemData(resetAllAgentsConfigs);
 			
 			// journey map
 			JourneyFlowSchema.upgradeDefaultSystemData(false);

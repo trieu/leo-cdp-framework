@@ -52,16 +52,13 @@ public final class DataServiceManagement {
 	/**
 	 * init default data for database
 	 */
-	public static void initDefaultSystemData() {
+	public static void initDefaultSystemData(boolean overideOldData) {
 		try {
-			boolean needToDeplay = true, overideOldData = false;
 			List<DataService> list = loadFromJsonFile();
 			for (DataService service : list) {
 				if (service.getStatus() >= 0) {
 					DataServiceManagement.save(service, overideOldData);
-					if (needToDeplay) {
-						Utils.sleep(500);
-					}
+					Utils.sleep(500);
 				}
 			}
 		} catch (Exception e) {

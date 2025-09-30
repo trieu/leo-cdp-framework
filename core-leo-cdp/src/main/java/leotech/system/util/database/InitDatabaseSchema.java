@@ -306,8 +306,8 @@ public class InitDatabaseSchema {
 			// 4 default segments for customer data management
 			SegmentDataManagement.initDefaultSystemData();
 			
-			// all data services and activation services
-			DataServiceManagement.initDefaultSystemData();
+			// all AI Agents services
+			DataServiceManagement.initDefaultSystemData(true);
 		
 			System.out.println(" =====> OK, DONE INIT DEFAULT SYSTEM DATA ===== ");
 			
