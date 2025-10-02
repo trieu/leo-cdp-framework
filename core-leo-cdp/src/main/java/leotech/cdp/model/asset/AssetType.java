@@ -62,4 +62,7 @@ public class AssetType {
 	
 	// HTML Web FORM
 	public static final int WEB_FORM = 17;
+	
+	// Trading Item
+	public static final int TRADING_ITEM_CATALOG = 18;
 }

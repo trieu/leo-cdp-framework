@@ -395,8 +395,7 @@ public final class ProfileModelUtil {
 	 * classify funnel stage of a profile in data funnel (visitor, lead, prospect,
 	 * customer, engaged, happy or unhappy)
 	 */
-	final static int classifyFunnelStageIndex(AbstractProfile p, DataFlowStage updateFunnelStage,
-			JourneyMapRefKey journeyRef, ScoreCX scoreCX) {
+	final static int classifyFunnelStageIndex(AbstractProfile p, DataFlowStage updateFunnelStage, JourneyMapRefKey journeyRef, ScoreCX scoreCX) {
 		// logger.info("==> classifyFunnelStageIndex");
 		// logger.info(updateFunnelStage);
 		// logger.info(journeyRef);

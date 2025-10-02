@@ -304,6 +304,9 @@ public final class TrackingEvent extends PersistentObject implements SingleViewA
 	@Expose
 	protected Set<ServiceItem> serviceItems = new HashSet<>();
 	
+	@Expose
+	protected Set<TradingItem> tradingItems = new HashSet<>();
+	
 	// ---------------- END: transaction ----------------
 
 	@Expose
@@ -981,6 +984,19 @@ public final class TrackingEvent extends PersistentObject implements SingleViewA
 			this.serviceItems = serviceItems;
 		}
 	}
+	
+	public Set<TradingItem> getTradingItems() {
+		if(tradingItems == null) {
+			tradingItems = new HashSet<>(0);
+		}
+		return tradingItems;
+	}
+
+	public void setTradingItems(Set<TradingItem> tradingItems) {
+		if(tradingItems != null) {
+			this.tradingItems = tradingItems;
+		}
+	}
 
 	public Set<String> getImageUrls() {
 		return imageUrls;
@@ -1078,12 +1094,16 @@ public final class TrackingEvent extends PersistentObject implements SingleViewA
 	 */
 	public void setOrderTransaction(boolean isConversion, OrderTransaction transaction) {
 		this.isConversion = isConversion;
+		
 		// in transaction of retail, the shopping items must be called as ordered items
 		Set<OrderedItem> orderedItems = transaction.getOrderedItems();	
 		this.setOrderedItems(orderedItems);
+		
 		// in transaction of service, the service items 
 		Set<ServiceItem> serviceItems = transaction.getServiceItems();
 		this.setServiceItems(serviceItems);
+		
+		
 		
 		String transactionId = transaction.getTransactionId();
 		String transactionStatus = transaction.getTransactionStatus();

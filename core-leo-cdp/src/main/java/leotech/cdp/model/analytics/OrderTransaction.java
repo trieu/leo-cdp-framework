@@ -74,6 +74,9 @@ public class OrderTransaction {
 		
 		// service items like Spa, Course, Training
 		setServiceItems(createdAt, jsonData, computeTotalTransactionValue);
+		
+		// trading items like Stock, Bond, Crypto, Asset
+		setServiceItems(createdAt, jsonData, computeTotalTransactionValue);
 	}
 
 	public String getTransactionId() {
@@ -195,6 +198,32 @@ public class OrderTransaction {
 	 */
 	public final void setServiceItems(Date createdAt, JsonObject formData, boolean computeTotalTransactionValue) {
 		JsonArray list = formData.getJsonArray(HttpParamKey.SERVICE_ITEMS);
+		if (list != null) {
+			int size = list.size();
+			double value = 0;
+			Set<ServiceItem> items = new HashSet<>(size);
+			for (int i = 0; i < size; i++) {
+				JsonObject obj = list.getJsonObject(i);
+				ServiceItem item = new ServiceItem(createdAt, obj);
+				if(item.isValid()) {
+					items.add(item);
+					value += item.getTransactionValue();
+				}
+			}
+			this.serviceItems = items;
+			if(computeTotalTransactionValue && this.totalTransactionValue == 0 && value != 0) {
+				this.totalTransactionValue = value;
+			}
+		}
+	}
+	
+	/**
+	 * @param createdAt
+	 * @param formData
+	 * @param computeTotalTransactionValue
+	 */
+	public final void setTradingItems(Date createdAt, JsonObject formData, boolean computeTotalTransactionValue) {
+		JsonArray list = formData.getJsonArray(HttpParamKey.TRADING_ITEMS);
 		if (list != null) {
 			int size = list.size();
 			double value = 0;

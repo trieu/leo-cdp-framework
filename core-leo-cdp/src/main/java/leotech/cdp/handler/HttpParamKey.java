@@ -104,6 +104,7 @@ public final class HttpParamKey {
     public static final String SHOPPING_CART_ITEMS = "scitems";
     public static final String SHOPPING_CART_ITEMS_FULL = "shoppingitems";
     public static final String SERVICE_ITEMS = "svitems";
+    public static final String TRADING_ITEMS = "tditems";
     
     public static final String FEEDBACK_TEXT = "feedback";
     public static final String MESSAGE_TEXT = "message";

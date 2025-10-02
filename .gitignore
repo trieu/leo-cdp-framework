@@ -26,8 +26,10 @@ core-leo-cdp/data-of-real-customer/*
 core-leo-cdp/gradle/*
 
 # CDP database configs must be excluded in commit 
-./core-leo-cdp/configs/database-configs.json
-./core-leo-cdp/configs/PRO-database-configs.json
+core-leo-cdp/configs/database-configs.json
+core-leo-cdp/configs/PRO-database-configs.json
+core-leo-cdp/sample-trading-data/*
+
 
 # Airflow 
 ./airflow-ai-env/airflow-venv
