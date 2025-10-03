@@ -221,7 +221,7 @@ public final class Analytics360Management {
 	 */
 	public static DashboardReport getDashboardReport(String journeyMapId, String beginFilterDate, String endFilterDate, String timeUnit) {
 	
-		// customer profile funnel
+		// FIXME customer profile funnel
 		List<StatisticCollector> profileFunnelData = Analytics360DaoUtil.collectProfileFunnelStatistics(journeyMapId, beginFilterDate, endFilterDate);
 		
 		// total event 
