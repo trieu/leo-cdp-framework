@@ -17,6 +17,7 @@ import leotech.cdp.dao.Analytics360DaoUtil;
 import leotech.cdp.dao.DailyReportUnitDaoUtil;
 import leotech.cdp.dao.JourneyMapDao;
 import leotech.cdp.domain.cache.RedisCache;
+import leotech.cdp.domain.schema.JourneyFlowSchema;
 import leotech.cdp.model.analytics.DashboardEventReport;
 import leotech.cdp.model.analytics.DashboardReport;
 import leotech.cdp.model.analytics.EventMatrixReport;
@@ -99,7 +100,7 @@ public final class Analytics360Management {
 		@Override
 		public DashboardReport load(DashboardReportCacheKey key) {
 			System.out.println("MISS CACHE DashboardReport");
-			return getDashboardReport(key.journeyMapId, key.beginFilterDate, key.endFilterDate, key.timeUnit);
+			return getDashboardReport(key.dataFunnelType , key.journeyMapId, key.beginFilterDate, key.endFilterDate, key.timeUnit);
 		}
 	};
 
@@ -155,6 +156,8 @@ public final class Analytics360Management {
 	 *
 	 */
 	public static final class DashboardReportCacheKey {
+		
+		public String dataFunnelType = JourneyFlowSchema.GENERAL_DATA_FUNNEL;
 		public final String journeyMapId;
 		public String beginFilterDate, endFilterDate;
 		public String timeUnit;
@@ -207,7 +210,7 @@ public final class Analytics360Management {
 		}
 		if(report == null) {
 			System.out.println("MISS CACHE DashboardReport");
-			report = getDashboardReport(key.journeyMapId, key.beginFilterDate, key.endFilterDate, key.timeUnit);
+			report = getDashboardReport(key.dataFunnelType, key.journeyMapId, key.beginFilterDate, key.endFilterDate, key.timeUnit);
 			cacheMainDashboard.put(key, report);
 		}
 		return report;
@@ -219,10 +222,10 @@ public final class Analytics360Management {
 	 * @param timeUnit
 	 * @return
 	 */
-	public static DashboardReport getDashboardReport(String journeyMapId, String beginFilterDate, String endFilterDate, String timeUnit) {
+	public static DashboardReport getDashboardReport(String dataFunnelType, String journeyMapId, String beginFilterDate, String endFilterDate, String timeUnit) {
 	
-		// FIXME customer profile funnel
-		List<StatisticCollector> profileFunnelData = Analytics360DaoUtil.collectProfileFunnelStatistics(journeyMapId, beginFilterDate, endFilterDate);
+		// customer profile funnel
+		List<StatisticCollector> profileFunnelData = Analytics360DaoUtil.collectProfileFunnelStatistics(dataFunnelType, journeyMapId, beginFilterDate, endFilterDate);
 		
 		// total event 
 		//List<StatisticCollector> eventTotalStats = Analytics360DaoUtil.collectTrackingEventTotalStatistics();

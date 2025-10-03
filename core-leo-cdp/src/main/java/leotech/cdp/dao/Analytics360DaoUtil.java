@@ -161,11 +161,11 @@ public final class Analytics360DaoUtil extends AbstractCdpDatabaseUtil {
 	 * @param endFilterDate
 	 * @return data for dashboard funnel
 	 */
-	public static List<StatisticCollector> collectProfileFunnelStatistics(String journeyMapId, String beginFilterDate, String endFilterDate){
+	public static List<StatisticCollector> collectProfileFunnelStatistics(String dataFunnelType, String journeyMapId, String beginFilterDate, String endFilterDate){
 		String aql = AQL_PROFILE_COLLECTOR_IN_DATE_RANGE;
 		CallbackQuery<StatisticCollector> callback = StatisticCollector.callbackProfileStatisticCollector();
 		
-		List<StatisticCollector> queriedList = collectTotalStatisticsInDateRange(journeyMapId, beginFilterDate, endFilterDate, aql, callback);
+		List<StatisticCollector> queriedList = collectTotalStatisticsInDateRange(dataFunnelType, journeyMapId, beginFilterDate, endFilterDate, aql, callback);
 		
 		// seeding empty data from defined funnel
 		List<DataFlowStage> stages = DataFlowManagement.getCustomerFunnelStages();
@@ -225,10 +225,10 @@ public final class Analytics360DaoUtil extends AbstractCdpDatabaseUtil {
 		return collectTotalStatistics(aql,callback);
 	}
 	
-	public static List<StatisticCollector> collectTrackingEventTotalStatistics(String journeyMapId, String beginFilterDate, String endFilterDate){
+	public static List<StatisticCollector> collectTrackingEventTotalStatistics(String dataFunnelType, String journeyMapId, String beginFilterDate, String endFilterDate){
 		String aql = AQL_EVENT_COLLECTOR_TOTAL_IN_DATE_RANGE;
 		CallbackQuery<StatisticCollector> callback = StatisticCollector.callbackEventStatisticCollector();
-		return collectTotalStatisticsInDateRange(journeyMapId, beginFilterDate, endFilterDate, aql, callback);
+		return collectTotalStatisticsInDateRange(dataFunnelType, journeyMapId, beginFilterDate, endFilterDate, aql, callback);
 	}
 	
 	public static List<StatisticCollector> collectEventHourlyStatistics(String beginFilterDate, String endFilterDate){
@@ -291,12 +291,13 @@ public final class Analytics360DaoUtil extends AbstractCdpDatabaseUtil {
 	 * @param callback
 	 * @return
 	 */
-	static List<StatisticCollector> collectTotalStatisticsInDateRange(String journeyMapId, String beginFilterDate, String endFilterDate, String aql, CallbackQuery<StatisticCollector> callback){
+	static List<StatisticCollector> collectTotalStatisticsInDateRange(String dataFunnelType, String journeyMapId, String beginFilterDate, String endFilterDate, String aql, CallbackQuery<StatisticCollector> callback){
 		ArangoDatabase db = getCdpDatabase();
-		Map<String, Object> bindVars = new HashMap<>(3);
+		Map<String, Object> bindVars = new HashMap<>(4);
+		bindVars.put("dataFunnelType", dataFunnelType);
 		bindVars.put("journeyMapId", journeyMapId);
 		bindVars.put("beginFilterDate", beginFilterDate);
-		bindVars.put("endFilterDate", endFilterDate);
+		bindVars.put("endFilterDate", endFilterDate);		
 		ArangoDbCommand<StatisticCollector> q = new ArangoDbCommand<StatisticCollector>(db, aql, bindVars, StatisticCollector.class,callback);
 		List<StatisticCollector> list = q.getResultsAsList();
 		Collections.sort(list);

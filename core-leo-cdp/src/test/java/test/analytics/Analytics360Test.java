@@ -6,14 +6,16 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import leotech.cdp.dao.Analytics360DaoUtil;
+import leotech.cdp.domain.schema.JourneyFlowSchema;
 import leotech.cdp.model.analytics.StatisticCollector;
 import rfx.core.util.Utils;
 
 public class Analytics360Test {
 
 	public static void main(String[] args) {
+		String dataFunnelType = JourneyFlowSchema.GENERAL_DATA_FUNNEL; 
 		String beginFilterDate = "2024-04-20";
-		String endFilterDate = "2024-09-05";
+		String endFilterDate = "2025-09-05";
 		
 		Gson gson = new GsonBuilder().setPrettyPrinting().create();
 		//DashboardReport d = Analytics360Service.getDashboardReport("2018-01-05T02:56:12.102Z", "2020-09-05T02:56:12.102Z");
@@ -34,7 +36,7 @@ public class Analytics360Test {
 		System.exit(1);
 		
 		System.out.println("collectProfileFunnelStatistics");
-		List<StatisticCollector> dailyStatsP = Analytics360DaoUtil.collectProfileFunnelStatistics("",beginFilterDate, endFilterDate);
+		List<StatisticCollector> dailyStatsP = Analytics360DaoUtil.collectProfileFunnelStatistics(dataFunnelType, "",beginFilterDate, endFilterDate);
 		System.out.println(gson.toJson(dailyStatsP));
 		
 		d = System.currentTimeMillis() - b;
@@ -64,7 +66,7 @@ public class Analytics360Test {
 		System.out.println("\n--------\n");
 		
 		System.out.println("collectTrackingEventTotalStatistics");
-		List<StatisticCollector> dailyStatsE = Analytics360DaoUtil.collectTrackingEventTotalStatistics("",beginFilterDate, endFilterDate);
+		List<StatisticCollector> dailyStatsE = Analytics360DaoUtil.collectTrackingEventTotalStatistics(dataFunnelType, "",beginFilterDate, endFilterDate);
 		System.out.println(gson.toJson(dailyStatsE));
 		
 		d = System.currentTimeMillis() - b;

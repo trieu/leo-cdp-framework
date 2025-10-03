@@ -142,6 +142,7 @@ public class DataFlowStage extends PersistentObject {
 			// ensure indexing key fields for fast lookup
 			dbCollection.ensurePersistentIndex(Arrays.asList("type"), new PersistentIndexOptions().unique(false));
 			dbCollection.ensurePersistentIndex(Arrays.asList("name"), new PersistentIndexOptions().unique(false));
+			dbCollection.ensurePersistentIndex(Arrays.asList("type","orderIndex"), new PersistentIndexOptions().unique(false));
 		}
 		return dbCollection;
 	}
