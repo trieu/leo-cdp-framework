@@ -61,7 +61,7 @@ public class EventApiHandler extends BaseApiHandler {
 		try {
 			switch (uri) {
 			case API_EVENT_SAVE:
-				String eventName = StringUtil.safeString(paramJson.getString(HttpParamKey.EVENT_METRIC_NAME));
+				String eventName = StringUtil.safeString(paramJson.getString(HttpParamKey.EVENT_METRIC_NAME)).toLowerCase();
 				String eventId = saveEventHandler(observer, req, eventName, paramJson);
 				payload = JsonDataPayload.ok(uri, eventId);
 				break;
