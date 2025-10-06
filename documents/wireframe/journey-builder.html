@@ -14,10 +14,11 @@
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- Mermaid.js -->
-    <script type="module">
-        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+     <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+    <script>
         mermaid.initialize({ startOnLoad: true });
     </script>
+
     <style>
         body {
             padding: 20px;
@@ -139,7 +140,7 @@
                         <h4>AI Generated Journey</h4>
                         <div class="mermaid" id="journeyDiagram">
                             %% Placeholder, AI will replace content
-                            graph TD
+                            graph LR
                             A[Start] --> B[Segment Audience]
                             B --> C[Personalize Message]
                             C --> D{Channel?}
