@@ -123,8 +123,9 @@ public final class ContextSession extends PersistentObject {
 			String userDeviceId, String ip, String refMediaHost,  String appId, String refTouchpointId,
 			String srcTouchpointId, String profileId, int profileType, String visitorId, String fingerprintId, String environment) {
 		super();
+		int hoursToDelete = 0; // to 
 		this.init(observerId, dateTime, dateTimeKey, locationCode, userDeviceId, ip, refMediaHost, appId, refTouchpointId,
-				srcTouchpointId, profileId, profileType, visitorId, fingerprintId,  0, environment);
+				srcTouchpointId, profileId, profileType, visitorId, fingerprintId,  hoursToDelete, environment);
 	}
 
 	private void init(String observerId, DateTime dateTime, String dateTimeKey, String locationCode,

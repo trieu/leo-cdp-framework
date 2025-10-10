@@ -1,10 +1,14 @@
 package leotech.system.common;
 
+import org.apache.http.HttpStatus;
+
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpHeaders;
+import io.vertx.core.http.HttpServerResponse;
 import io.vertx.ext.web.RoutingContext;
 import leotech.system.version.SystemMetaData;
+
 
 /**
  * Base Http Router
@@ -83,6 +87,8 @@ public abstract class BaseHttpRouter {
 		headers.set("Pragma", "no-cache");
 	}
 	
+
+	
 	/**
 	 * HTTP handle
 	 * 
@@ -91,6 +97,16 @@ public abstract class BaseHttpRouter {
 	 */
 	abstract public boolean handle() throws Exception;
 
+
+	protected boolean respond(HttpServerResponse resp, String body) {
+	    resp.setStatusCode(HttpStatus.SC_OK).end(body);
+	    return true;
+	}
+
+	protected boolean respondError(HttpServerResponse resp, int code, String body) {
+	    resp.setStatusCode(code).end(body);
+	    return false;
+	}
 
 	
 

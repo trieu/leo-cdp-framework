@@ -4,8 +4,8 @@ import static io.netty.handler.codec.http.HttpHeaderNames.CONNECTION;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
 
 import java.io.File;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.http.HttpStatus;
 import org.apache.http.entity.ContentType;
@@ -47,6 +47,8 @@ import rfx.core.util.StringUtil;
  */
 public final class MainHttpRouter extends BaseHttpRouter {
 
+	private static final String RESOURCES_APP_TEMPLATES = "./resources/app-templates";
+	private static final String _1 = "1";
 	private static final String ADS_TXT_CONTENT = WorkerConfigs.load().getCustomConfig("ADS_TXT_CONTENT");
 	private static final String MIME_TYPE_HTML = ContentType.TEXT_HTML.getMimeType();
 	
@@ -62,7 +64,7 @@ public final class MainHttpRouter extends BaseHttpRouter {
 	public static final String URI_VERSION = "/version";
 	public static final String URI_ADS_TXT = "/ads.txt";
 	
-	static final Map<String, String> STATIC_FILES = new HashMap<>(10000);
+	static final Map<String, String> STATIC_FILES = new ConcurrentHashMap<>(10000);
 
 	public MainHttpRouter(RoutingContext context) {
 		super(context);
@@ -74,6 +76,8 @@ public final class MainHttpRouter extends BaseHttpRouter {
 			HandlebarsTemplateUtil.disableUsedCache();
 		}
 	}
+	
+	
 
 	@Override
 	public boolean handle() throws Exception {
@@ -251,12 +255,12 @@ public final class MainHttpRouter extends BaseHttpRouter {
 			return staticFilePath;
 		}
 		else {			
-			boolean isAdminReq = admin.equals("1");
+			boolean isAdminReq = admin.equals(_1);
 			if (isAdminReq) {
 				networkDomain = SystemMetaData.DOMAIN_CDP_ADMIN;
 			}
 			String tplFolder = AppMetadataUtil.getWebTemplateFolder(networkDomain);
-			String relPath = "./resources/app-templates" + URI_DEFAULT_ROUTER + tplFolder;
+			String relPath = RESOURCES_APP_TEMPLATES + URI_DEFAULT_ROUTER + tplFolder;
 			staticFilePath = path.replace(URI_VIEW_ROUTER, relPath).replaceAll("%20", " ");
 			
 			File file = new File(staticFilePath);			
