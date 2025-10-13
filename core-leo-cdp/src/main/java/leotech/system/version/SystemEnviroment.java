@@ -9,7 +9,7 @@ import rfx.core.util.StringUtil;
 
 
 /**
- * System Meta-data about CDP instance
+ * System Meta-data about CDP instance to upgrade
  * 
  * @author tantrieuf31
  * @since 2021
@@ -24,7 +24,7 @@ public class SystemEnviroment {
 	 * 
 	 * @return
 	 */
-	public final static int checLicenseKey() {
+	public final static int checkLicenseKey() {
 		int rs = 0;
 		logger.info("------------------------------------------------");
 		logger.info("CDP BUILD_VERSION " + SystemMetaData.BUILD_VERSION);
@@ -60,7 +60,7 @@ public class SystemEnviroment {
 								rs++;
 							}
 						} else {
-							System.err.println("Inprivatevalid format when parsing licenseMetaData: " + licenseInCloud);
+							System.err.println("Invalid format when parsing licenseMetaData: " + licenseInCloud);
 							return 0;
 						}
 					}

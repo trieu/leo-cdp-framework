@@ -22,7 +22,6 @@ import leotech.system.config.HttpRoutingConfigs;
 import leotech.system.domain.WebSocketDataService;
 import leotech.system.util.LogUtil;
 import leotech.system.util.database.ArangoDbUtil;
-import leotech.system.version.SystemEnviroment;
 import leotech.system.version.SystemMetaData;
 import rfx.core.stream.node.worker.BaseWorker;
 
@@ -79,26 +78,21 @@ public final class HttpWorker extends BaseWorker {
 	public final static void start(String workerName) {
 		SystemMetaData.initTimeZoneGMT();
 		
-		boolean checkLicenseKey = SystemEnviroment.checLicenseKey()>0;
-		if(checkLicenseKey) {
-			LogUtil.setLogLevelToInfo();
-			System.setProperty("vertx.disableFileCPResolving", "true");
+		LogUtil.setLogLevelToInfo();
+		System.setProperty("vertx.disableFileCPResolving", "true");
 
-			instance = new HttpWorker(workerName);
-			
-			// check and init database
-			ArangoDbUtil.initActiveArangoDatabase(instance.httpRoutingConfigs.getDefaultDbConfig());
-			
-			// init profile model metadata
-			ProfileModelUtil.init();
-			
-			// start HTTP service
-			String host = instance.httpRoutingConfigs.getHost();
-			int port = instance.httpRoutingConfigs.getPort();
-			instance.start(host, port);
-		} else {
-			System.err.println("### INVALID leoCdpLicenseKey ### in file " + SystemMetaData.LEOCDP_METADATA_DEFAULT_VALUE);
-		}
+		instance = new HttpWorker(workerName);
+		
+		// check and init database
+		ArangoDbUtil.initActiveArangoDatabase(instance.httpRoutingConfigs.getDefaultDbConfig());
+		
+		// init profile model metadata
+		ProfileModelUtil.init();
+		
+		// start HTTP service
+		String host = instance.httpRoutingConfigs.getHost();
+		int port = instance.httpRoutingConfigs.getPort();
+		instance.start(host, port);
 		
 	}
 
