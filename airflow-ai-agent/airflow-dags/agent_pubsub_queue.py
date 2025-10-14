@@ -12,17 +12,20 @@ from redis_connection import connect_to_redis
 from dotenv import load_dotenv
 import os
 
-# --- Load .env ---
+# --- Constants ---
+LOG_FILE = "./airflow-output/agent_pubsub_queue.log"
+REDIS_CHANNEL = "agent_pubsub_queue"
+
+# --- Load .env as Constants ---
 load_dotenv(override=True)
 
+USE_API = os.getenv("USE_API", "true").lower() == "true"
 AIRFLOW_WEB_SERVER_HOST = os.getenv("AIRFLOW_WEB_SERVER_HOST", "0.0.0.0")
 AIRFLOW_WEB_SERVER_PORT = os.getenv("AIRFLOW_WEB_SERVER_PORT", "8080")
 AIRFLOW_BASE_URL = os.getenv("AIRFLOW_BASE_URL", f"http://{AIRFLOW_WEB_SERVER_HOST}:{AIRFLOW_WEB_SERVER_PORT}")
 AIRFLOW_USERNAME = os.getenv("AUTH_USER", "")
 AIRFLOW_PASSWORD = os.getenv("AUTH_PASSWORD", "")
-REDIS_CHANNEL = os.getenv("REDIS_CHANNEL", "ai-agent-events")
-USE_API = os.getenv("USE_API", "true").lower() == "true"
-LOG_FILE = "./airflow-output/ai_agent_trigger_code.log"
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -138,4 +141,4 @@ if __name__ == "__main__":
 
 
 # to test, send :
-# redis-cli -p 6480 publish ai-agent-events '{"dag_id":"redis_airflow_dag","params":{"foo":"1234"}}'
+# redis-cli -p 6480 publish agent_pubsub_queue '{"dag_id":"redis_airflow_dag","params":{"foo":"1234"}}'

@@ -12,7 +12,7 @@ import rfx.core.util.StringUtil;
 
 /**
  * Airflow Redis PubSub <br>
- * similar to: redis-cli -p 6480 publish ai-agent-events '{"dag_id":"redis_airflow_dag","params":{"foo":"1234"}}'
+ * similar to: redis-cli -p 6480 publish agent_pubsub_queue '{"dag_id":"redis_airflow_dag","params":{"foo":"1234"}}'
  * 
  * @author Trieu Nguyen
  * @since 2025
@@ -20,7 +20,7 @@ import rfx.core.util.StringUtil;
  */
 public final class AirflowRedisPubSub {
 	
-	public static final String AI_AGENT_EVENTS_TOPIC = "ai-agent-events";
+	public static final String AI_AGENT_EVENTS_TOPIC = "agent_pubsub_queue";
 	
 	static ShardedJedisPool jedisPool = RedisConfigs.load().get("pubSubQueue").getShardedJedisPool();
 	

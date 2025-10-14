@@ -82,23 +82,23 @@ Publish an event to trigger a DAG run:
 
 ```bash
 # Trigger a simple test DAG
-redis-cli -p 6480 publish ai-agent-events '{"dag_id":"redis_airflow_dag", "params":{"run_id":"test123"}}'
+redis-cli -p 6480 publish agent_pubsub_queue '{"dag_id":"redis_airflow_dag", "params":{"run_id":"test123"}}'
 
 # Trigger an AI Agent DAG to process content keywords for a profile
-redis-cli -p 6480 publish ai-agent-events '{"dag_id":"leo_aia_content_keywords", "params":{"profile_id":"p123"}}'
+redis-cli -p 6480 publish agent_pubsub_queue '{"dag_id":"leo_aia_content_keywords", "params":{"profile_id":"p123"}}'
 
 # Trigger another DAG with multiple params
-redis-cli -p 6480 publish ai-agent-events '{"dag_id":"leo_aia_translate_text", "params":{"profile_id":"p999","lang":"vi"}}'
+redis-cli -p 6480 publish agent_pubsub_queue '{"dag_id":"leo_aia_translate_text", "params":{"profile_id":"p999","lang":"vi"}}'
 ```
 
 ---
 
 ### Example Listener (Python)
 
-The listener subscribes to the `ai-agent-events` channel and triggers DAGs dynamically based on the message payload.
+The listener subscribes to the `agent_pubsub_queue` channel and triggers DAGs dynamically based on the message payload.
 
 👉 Full code is available in
-`airflow-ai-agent/airflow-dags/ai_agent_trigger_leocdp.py`
+`airflow-ai-agent/airflow-dags/agent_pubsub_queue.py`
 
 ```bash 
 ./trigger-ai-agent-jobs.sh start

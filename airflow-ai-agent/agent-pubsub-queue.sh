@@ -1,9 +1,9 @@
 #!/bin/bash
 
-APP_NAME="ai_agent_trigger_leocdp"
+APP_NAME="agent_pubsub_queue"
 PID_FILE="/tmp/${APP_NAME}.pid"
-APP_FILE="./airflow-dags/ai_agent_trigger_leocdp.py"
-LOG_FILE="./airflow-output/ai_agent_trigger_leocdp.log"
+APP_FILE="./airflow-dags/$APP_NAME.py"
+LOG_FILE="./airflow-output/$APP_NAME.log"
 
 start() {
     if [ -f "$PID_FILE" ] && kill -0 $(cat "$PID_FILE") 2>/dev/null; then
