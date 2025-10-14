@@ -28,20 +28,29 @@ var notifyLeoBotOk = function() {
 	$('#menu_ai_chatbot').show();
 }
 
-function checkLeoBotIsServerReady(profileVisitorId) {
-	if (USING_LEO_BOT_WITH_AI) {
-		var url = LEOBOT_URL_GET_INFO + "?visitor_id=" + profileVisitorId + "&_=" + new Date().getTime();
-		$.getJSON(url, function(data) {
-			var e = data.error_code;
-			var a = data.answer;
-			if (e === 0) {
-				notifyLeoBotOk()
-			}
-			else {
-				updateVisitorProfileAndActivateLeoBot(profileVisitorId)
-			}
-		});
-	}
+function checkLeoBotIsServerReady(profileVisitorId, visitorName = null, initTouchpointId = null) {
+	if (!USING_LEO_BOT_WITH_AI) return;
+
+	// Build query params dynamically
+	const params = new URLSearchParams({
+		visitor_id: profileVisitorId,
+		_: Date.now()
+	});
+
+	if (visitorName) params.append("name", visitorName);
+	if (initTouchpointId) params.append("touchpoint_id", initTouchpointId);
+
+	const url = `${LEOBOT_URL_GET_INFO}?${params.toString()}`;
+
+	$.getJSON(url, function (data) {
+		const errorCode = data.error_code;
+	
+		if (errorCode === 0) {
+			notifyLeoBotOk();
+		} else {
+			updateVisitorProfileAndActivateLeoBot(profileVisitorId);
+		}
+	});
 }
 
 function updateVisitorProfileAndActivateLeoBot(visitorId) {

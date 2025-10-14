@@ -1,55 +1,86 @@
-############################## METADATA for CDP ##############################
+# BEGIN ########################## REQUIRED METADATA for Admin Setup ##############################
 
-##### ##### ##### BUILD for RELEASE ##### ##### #####
-runtimeEnvironment=PRO
-minifySuffix=-min
+##### ##### ##### Super Admin Email, the account that can manage the entire CDP. 
+##### The password for the super admin is set when running setup-new-leocdp.sh
 superAdminEmail={{superAdminEmail}}
-buildEdition={{buildEdition}}
-buildVersion={{buildVersion}}
 
-##### ##### ##### Default CDP database for free and pro version ##### ##### #####
-mainDatabaseConfig=localCdpDbConfigs
-
-##### ##### ##### Admin Dashboard ##### ##### #####
-adminLogoUrl={{adminLogoUrl}}
-httpAdminDomain={{httpAdminDomain}}
-
-##### ##### ##### Data Hub for Data Observer ##### ##### ##### #####
+##### ##### ##### Data Hub for Data Observers ##### ##### ##### #####
 httpObserverDomain={{httpObserverDomain}}
 
-##### ##### ##### LEO Bot for FAQ and Content Creator ##### ##### ##### #####
+##### ##### ##### LEO Bot for FAQ and Content Creation ##### ##### ##### #####
 httpLeoBotDomain={{httpLeoBotDomain}}
+httpLeoBotApiKey={{httpLeoBotApiKey}}
 
-##### ##### ##### CDN for static file ##### ##### #####
-httpStaticDomain={{httpStaticDomain}}
+##### ##### ##### Admin Dashboard ##### ##### #####
+httpAdminDomain={{httpAdminDomain}}
+webSocketDomain={{webSocketDomain}}
+adminLogoUrl={{adminLogoUrl}} 
 
-##### ##### ##### CDP License Metadata ##### ##### #####
-leoCdpLicenseKey={{leoCdpLicenseKey}}
-leoCdpLicenseQuota={{leoCdpLicenseQuota}}
+##### ##### ##### SMTP / Email Server ##### ##### #####
+smtpHost={{smtpHost}}
+smtpPort={{smtpPort}}
+smtpUser={{smtpUser}}
+smtpPassword={{smtpPassword}}
+smtpFromAddress={{smtpFromAddress}}
+smtpFromName=CDP Admin
+smtpTls=true
 
-##### ##### ##### CDP METADATA ##### ##### #####
-# COMMERCE, FINANCE, MEDIA, SERVICE
-industryDataModels=COMMERCE,MEDIA,SERVICE
-productType=CDP
+##### ##### ##### Default CDP Database ##### ##### #####
+mainDatabaseConfig=cdpDbConfigs
 
-##### ##### ##### Runtime path to get configs ##### ##### #####
+##### ##### ##### Database Backup Configurations ##### ##### #####
+databaseBackupPeriodHours=24
+databaseBackupRetentionDays=7
+databaseBackupPath={{databaseBackupPath}}
+
+# END ########################## REQUIRED METADATA for Admin Setup ##############################
+
+############################## DEFAULT METADATA for CDP ##############################
+runtimeEnvironment=PRO
+minifySuffix=-min
+buildEdition=PRO
+buildVersion=v_0.9.0
+
+############################################################ 
+# Controls how user profiles are merged in your CDP system
+#| Value        | Meaning                                                                                              |
+#| ------------ | ------------------------------------------------------------------------------------------------------|
+#| `automation` | Automatically merges profiles based on rules or matching keys (email, phone, etc.)                    |
+#| `manually`   | Admins or operators must review and approve merges. Safer, but slower and requires human intervention.|
+#| `hybrid`     | Some automatic merging occurs, but certain conflicts require manual approval.    
+############################################################                     |
+profileMergeStrategy=manually
+
+##### ##### ##### CDN for Static Files ##### ##### #####
+httpStaticDomain=cdn.jsdelivr.net/gh/USPA-Technology/leo-cdp-static-files@v0.9
+
+##### ##### ##### Data Model Metadata ##### ##### #####
+industryDataModels=COMMERCE,MEDIA,SERVICE,FINANCE
+
+##### ##### ##### Runtime Path for Config Files ##### ##### #####
 runtimePath=.
 pathMaxmindDatabaseFile=data/GeoIP2-City-Asia-Pacific.mmdb
 
-##### ##### ##### Default HTTP routers ##### ##### #####
-httpRoutingConfigAdmin=localLeoMainAdminWorker
-httpRoutingConfigObserver=localLeoObserverWorker
+##### ##### ##### Default HTTP Routers ##### ##### #####
+httpRoutingConfigAdmin=leocdp-admin
+httpRoutingConfigObserver=datahub
 
-##### ##### ##### Global system configs ##### ##### #####
-profileMergeStrategy=automation
+##### ##### ##### Global System Configurations ##### ##### #####
 messageQueueType=local
-enableCachingViewTemplates=false
+enableCachingViewTemplates=true
 
-##### ##### ##### kafka configs ##### ##### #####
+##### ##### ##### Apache Kafka Configurations ##### ##### #####
 kafkaBootstrapServer=localhost:9092
 kafkaTopicEvent=LeoCdpEvent
 kafkaTopicEventPartitions=2
 kafkaTopicProfile=LeoCdpProfile
 kafkaTopicProfilePartitions=2
 
-##########################################################################################
+##### ##### ##### Data Policies ##### ##### #####
+numberOfDaysToKeepDeadVisitor=30
+maxSegmentSizeToRunInQueue=10000
+batchSizeOfSegmentDataExport=300
+
+##### ##### ##### Update Shell Script ##### ##### #####
+updateShellScriptPath=
+updateLeoSystemSecretKey=

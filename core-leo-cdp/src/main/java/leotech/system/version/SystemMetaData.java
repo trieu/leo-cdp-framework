@@ -163,6 +163,7 @@ public final class SystemMetaData {
 	public static final int NUMBER_OF_DAYS_TO_KEEP_DEAD_VISITOR = getInt("numberOfDaysToKeepDeadVisitor", 30);
 	public static final int MAX_SEGMENT_SIZE_TO_RUN_IN_QUEUE = getInt("maxSegmentSizeToRunInQueue", 10000);
 	public static final int BATCH_SIZE_OF_SEGMENT_DATA_EXPORT = getInt("batchSizeOfSegmentDataExport", 250);
+	public static final String DATABASE_BACKUP_PATH = metaDataMap.getOrDefault("databaseBackupPath","").trim();
 	
 	public static final boolean HAS_B2B_FEATURES = metaDataMap.getOrDefault("hasB2Bfeatures","false").trim().equalsIgnoreCase("true");
 	
