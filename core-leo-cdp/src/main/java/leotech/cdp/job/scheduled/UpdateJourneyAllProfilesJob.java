@@ -33,7 +33,7 @@ public class UpdateJourneyAllProfilesJob extends ScheduledJob {
 				//UpdateProfileEventProcessor
 				boolean ok = false;
 				try {
-					ok = ProfileDataManagement.updateProfileSingleDataView(profile, true, null);
+					ok = ProfileDataManagement.updateProfileFromEvents(profile, true, null);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}

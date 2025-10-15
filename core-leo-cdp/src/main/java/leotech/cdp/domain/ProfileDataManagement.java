@@ -776,8 +776,8 @@ public final class ProfileDataManagement {
 	 * @param newEvents as the list of TrackingEvent
 	 * @return true if update OK
 	 */
-	public final static boolean updateProfileSingleDataView(ProfileSingleView profile, List<TrackingEvent> newEvents) {
-		return updateProfileSingleDataView(profile, false, newEvents);
+	public final static boolean updateProfileFromEvents(ProfileSingleView profile, List<TrackingEvent> newEvents) {
+		return updateProfileFromEvents(profile, false, newEvents);
 	}
 
 	/**
@@ -785,8 +785,8 @@ public final class ProfileDataManagement {
 	 * @param newEvent as TrackingEvent
 	 * @return true if update OK
 	 */
-	public final static boolean updateProfileSingleDataView(ProfileSingleView profile, TrackingEvent newEvent) {
-		return updateProfileSingleDataView(profile, false, Arrays.asList(newEvent));
+	public final static boolean updateProfileFromEvents(ProfileSingleView profile, TrackingEvent newEvent) {
+		return updateProfileFromEvents(profile, false, Arrays.asList(newEvent));
 	}
 
 	/**
@@ -821,8 +821,7 @@ public final class ProfileDataManagement {
 	 * @param computeAllEventsInDatabase
 	 * @return
 	 */
-	public final static boolean updateProfileSingleDataView(final ProfileSingleView profile, boolean startAtBeginning,
-			List<TrackingEvent> eventDataList) {
+	public final static boolean updateProfileFromEvents(final ProfileSingleView profile, boolean startAtBeginning, List<TrackingEvent> eventDataList) {
 		String profileId = profile.getId();
 		int daysSinceLastUpdate = SystemDateTimeUtil.getDaysSinceLastUpdate(profile.getUpdatedAt());
 
@@ -888,6 +887,7 @@ public final class ProfileDataManagement {
 					String journeyId = event.getRefJourneyId();
 					String observerId = event.getObserverId();
 					String srcTouchpointId = event.getSrcTouchpointId();
+					Map<String, Object> eventData = event.getEventData();
 
 					EventObserver eventObserver = EventObserverManagement.getById(observerId);
 					Touchpoint srcTouchpoint = TouchpointManagement.getById(srcTouchpointId);
@@ -948,8 +948,9 @@ public final class ProfileDataManagement {
 						TrackingEventDao.updateProcessedStateForEvent(event);
 					}
 
-					// UTM tracking
-					profile.updateFromEventData(event.getEventData());
+					// UTM tracking and contact
+					profile.updateFromEventData(eventData);
+					
 
 					// update to Daily Report Unit of profile
 					profile.updateDailyReportUnit(event.getCreatedAt(), eventName, journeyId);

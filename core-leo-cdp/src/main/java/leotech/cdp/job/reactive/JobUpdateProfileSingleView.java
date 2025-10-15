@@ -46,7 +46,7 @@ public final class JobUpdateProfileSingleView extends ReactiveProfileDataJob<Str
 				public void run() {
 					ProfileSingleView profile = ProfileDaoUtil.getProfileById(profileId);
 					if (profile != null) {
-						ProfileDataManagement.updateProfileSingleDataView(profile, true, new ArrayList<>(0));
+						ProfileDataManagement.updateProfileFromEvents(profile, true, new ArrayList<>(0));
 						profileIdMap.remove(profileId);
 					}
 				}

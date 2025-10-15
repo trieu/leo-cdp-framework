@@ -25,6 +25,7 @@ import leotech.cdp.domain.schema.BehavioralEvent;
 import leotech.cdp.model.AutoSetData;
 import leotech.cdp.model.ExposeInSegmentList;
 import leotech.cdp.model.ProfileMetaDataField;
+import leotech.cdp.model.analytics.GoogleUTM;
 import leotech.cdp.model.analytics.LastTrackingEventMap;
 import leotech.cdp.model.analytics.TrackingEvent;
 import leotech.cdp.model.asset.AssetContent;
@@ -1753,6 +1754,31 @@ public class Profile extends AbstractProfile implements Comparable<Profile> {
 	}
 
 
+	/**
+	 * 
+	 * 
+	 * @param eventData
+	 */
+	public void updateFromEventData(Map<String, Object> eventData) {
+		// 
+		this.setCrmRefId(eventData.getOrDefault("user_id","").toString());
+		this.setCrmRefId(eventData.getOrDefault("crm_ref_id","").toString());
+		
+		this.setFirstName(eventData.getOrDefault("name","").toString());
+		this.setFirstName(eventData.getOrDefault("first_name","").toString());
+		this.setLastName(eventData.getOrDefault("last_name","").toString());
+		
+		this.setEmail(eventData.getOrDefault("email","").toString());
+		this.setPhone( eventData.getOrDefault("phone","").toString());
+		this.setPrimaryUsername(eventData.getOrDefault("user_name","").toString());
+		
+		// UTM data of Google Analytics
+		this.setEmail(eventData.getOrDefault("utm_email","").toString());
+		this.setPhone( eventData.getOrDefault("utm_phone","").toString());
+		this.updateReferrerChannel(eventData.getOrDefault("utm_source","").toString());
+		this.setContentKeywords(eventData.getOrDefault("utm_term","").toString());
+		this.setGoogleUtmData(new GoogleUTM(eventData));
+	}
 
 	/**
 	 * for export data to CSV row's format

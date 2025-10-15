@@ -896,7 +896,8 @@ public abstract class AbstractProfile extends PersistentObject {
 				this.setPrimaryEmail(email);
 			}
 			else {
-				this.setSecondaryEmails(email);
+				this.setSecondaryEmails(this.primaryEmail);
+				this.primaryEmail = email;
 			}
 			return true;
 		}
@@ -3094,13 +3095,7 @@ public abstract class AbstractProfile extends PersistentObject {
 		this.eventStatistics.clear();
 	}
 	
-	public void updateFromEventData(Map<String, Object> eventData) {
-		this.setEmail(eventData.getOrDefault("utm_email","").toString());
-		this.setPhone( eventData.getOrDefault("utm_phone","").toString());
-		this.updateReferrerChannel(eventData.getOrDefault("utm_source","").toString());
-		this.setContentKeywords(eventData.getOrDefault("utm_term","").toString());
-		this.setGoogleUtmData(new GoogleUTM(eventData));
-	}
+
 	
 	public void clearAllReportData() {
 		this.resetBehavioralEvent();

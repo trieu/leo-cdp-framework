@@ -191,7 +191,7 @@ public final class UpdateProfileEventProcessor {
 			ProfileSingleView updateProfile = profile;
 			TaskRunner.run(()->{
 				// update Profile and tracking event into database
-				ProfileDataManagement.updateProfileSingleDataView(updateProfile, trackingEvent);
+				ProfileDataManagement.updateProfileFromEvents(updateProfile, trackingEvent);
 			});
 	
 			if(ok) {

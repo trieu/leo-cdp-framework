@@ -29,7 +29,7 @@ public class ProfileSingleViewAllDataJob  extends ScheduledJob {
 		AtomicInteger count = new AtomicInteger();
 		while ( ! profiles.isEmpty() ) {
 			profiles.parallelStream().forEach( profile -> {
-				boolean ok = ProfileDataManagement.updateProfileSingleDataView(profile, true, null);
+				boolean ok = ProfileDataManagement.updateProfileFromEvents(profile, true, null);
 				if(ok) {
 					int c = count.incrementAndGet();
 					System.out.println(c+" ProfileSingleViewAllDataJob id: "+profile.getId());

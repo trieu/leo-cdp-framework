@@ -271,8 +271,7 @@ public final class ContextSessionManagement {
 	 * @param device
 	 * @return
 	 */
-	public static int updateProfileData(HttpServerRequest req, MultiMap params, ContextSession ctxSession,
-			DeviceInfo device) {
+	public static int updateProfileData(HttpServerRequest req, MultiMap params, ContextSession ctxSession,DeviceInfo device) {
 		String updatedProfileId = ctxSession.getProfileId();
 
 		String observerId = ctxSession.getObserverId();
