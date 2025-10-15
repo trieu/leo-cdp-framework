@@ -38,31 +38,34 @@ public class VngCloudUtil {
      */
     public String getToken() {
         try {
-            String token = null;
-            RequestBody body = RequestBody.create(VSTORAGE_GET_TOKEN_BODY, MediaType.get("application/json; charset=utf-8"));
+        	if(StringUtil.safeString(VSTORAGE_GET_TOKEN_URL).startsWith("http")) {
+        		 String token = null;
+                 RequestBody body = RequestBody.create(VSTORAGE_GET_TOKEN_BODY, MediaType.get("application/json; charset=utf-8"));
 
-            Request request = new Request.Builder()
-                    .url(VSTORAGE_GET_TOKEN_URL)
-                    .post(body)
-                    .build();
+                 Request request = new Request.Builder()
+                         .url(VSTORAGE_GET_TOKEN_URL)
+                         .post(body)
+                         .build();
 
-            Response response = httpClient.newCall(request).execute();
+                 Response response = httpClient.newCall(request).execute();
 
-            System.out.println("Got Vstorage get-token response !!");
-            System.out.println(response.code());
+                 System.out.println("Got Vstorage get-token response !!");
+                 System.out.println(response.code());
 
-            if (response.isSuccessful()) {
-                System.out.println("Vstorage token: " + response.header("x-subject-token"));
-                token = response.header("x-subject-token");
-            }
-            response.close();
+                 if (response.isSuccessful()) {
+                     System.out.println("Vstorage token: " + response.header("x-subject-token"));
+                     token = response.header("x-subject-token");
+                 }
+                 response.close();
 
-            return token;
+                 return token;
+        	}	
+           
         }
         catch (Exception e) {
             e.printStackTrace();
-            return null;
         }
+        return null;
     }
 
 
