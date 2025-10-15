@@ -505,8 +505,8 @@ task BuildAllJavaJars(dependsOn: mainJarTasks) {
 
 // 11) Build all system
 def systemJarTasks = [ copyRuntimeLibsToBuild, copyConfigsFolderToBuild ]
-def staticTasks = [copyDocuments, CopyDevOpsScriptToBUILD, copyPublicFilesToBuild, copyResourcesToBuild ]
-def allReleaseTasks = [minifyJsAdminResource, mainJarTasks, copyDocuments, copyPublicFilesToBuild, copyResourcesToBuild, copyRuntimeLibsToBuild ]
+def staticTasks = [CopyDevOpsScriptToBUILD, copyPublicFilesToBuild, copyResourcesToBuild ]
+def allReleaseTasks = [minifyJsAdminResource, mainJarTasks, copyPublicFilesToBuild, copyResourcesToBuild, copyRuntimeLibsToBuild ]
 
 task AutoBuildForDeployment(dependsOn: allReleaseTasks) {    
      println '###  AutoBuildForDeployment OK !!!  ###'

@@ -1492,9 +1492,7 @@ public class Profile extends AbstractProfile implements Comparable<Profile> {
 	
 	@Override
 	public final boolean hasContactData() {
-		boolean check = (StringUtil.isNotEmpty(this.primaryEmail) || StringUtil.isNotEmpty(this.primaryPhone));
-		check = check && (StringUtil.isNotEmpty(this.firstName) || StringUtil.isNotEmpty(this.lastName));
-		return check;
+		return StringUtil.isNotEmpty(this.primaryEmail) || StringUtil.isNotEmpty(this.primaryPhone);
 	}
 	
 	@Override
@@ -1771,6 +1769,11 @@ public class Profile extends AbstractProfile implements Comparable<Profile> {
 		this.setEmail(eventData.getOrDefault("email","").toString());
 		this.setPhone( eventData.getOrDefault("phone","").toString());
 		this.setPrimaryUsername(eventData.getOrDefault("user_name","").toString());
+		
+		if(this.hasContactData() && this.type == ProfileType.ANONYMOUS_VISITOR) {
+			// convert visitor into user login
+			this.type = ProfileType.CUSTOMER_CONTACT;
+		}
 		
 		// UTM data of Google Analytics
 		this.setEmail(eventData.getOrDefault("utm_email","").toString());

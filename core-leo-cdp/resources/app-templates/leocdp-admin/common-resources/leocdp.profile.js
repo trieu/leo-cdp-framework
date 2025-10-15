@@ -1616,6 +1616,11 @@ const loadProfileListByFilter = function(rowSelectHandlerName, containerDomSel, 
                      		rowTitle = rowTitle + s;
                      		cssClass = "datatable_text has_contact";
                      	}
+						else if(row.primaryEmail.length > 0 || row.primaryPhone.length > 0){
+							rowTitle = rowTitle + " Email: " + row.primaryEmail + " Phone: " + row.primaryPhone;
+                     		fullname = "SSO User Profile";
+                     		cssClass = "datatable_text has_contact";
+						}
                      	else {
 							rowTitle = rowTitle + fullname;
 						}

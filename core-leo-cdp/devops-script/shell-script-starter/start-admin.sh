@@ -1,22 +1,64 @@
-#!/bin/sh
+#!/usr/bin/env bash
+set -euo pipefail
 
-LEO_CDP_FOLDER="/build/leo-cdp"
+# === CONFIGURATION ===
+LEO_CDP_FOLDER="/build/cdp-instance"
 BUILD_VERSION="v_0.8.9"
+JAR_MAIN="leo-main-starter-${BUILD_VERSION}.jar"
 
-JAR_MAIN="leo-main-starter-$BUILD_VERSION.jar"
-ADMIN_HTTP_ROUTER_KEY="localLeoMainAdminWorker"
+# Define all admin router keys
+HTTP_ROUTER_KEYS=("admin1" "admin2" "admin3")
 
-if [ -z "$LEO_CDP_FOLDER" ]
-then
-      echo "Skip cd to LEO_CDP_FOLDER, just starting ..."
-else
-      echo "The path: $LEO_CDP_FOLDER is current folder"
-      cd $LEO_CDP_FOLDER
-fi
-
+# Java VM tuning
 JVM_PARAMS="-Xms256m -Xmx1G -XX:+TieredCompilation -XX:+UseCompressedOops -XX:+DisableExplicitGC -XX:+UseNUMA -server"
 
-kill -15 $(pgrep -f "$ADMIN_HTTP_ROUTER_KEY")
-sleep 4
+# === PREPARE ENVIRONMENT ===
+if [ -n "${LEO_CDP_FOLDER:-}" ]; then
+  echo "Switching to LEO_CDP_FOLDER: $LEO_CDP_FOLDER"
+  cd "$LEO_CDP_FOLDER" || { echo "Folder not found: $LEO_CDP_FOLDER"; exit 1; }
+else
+  echo "Skipping directory change. Using current folder..."
+fi
 
-java -jar $JVM_PARAMS $JAR_MAIN $ADMIN_HTTP_ROUTER_KEY >> admin-$ADMIN_HTTP_ROUTER_KEY.log 2>&1 &
+LOG_DIR="${LEO_CDP_FOLDER}/logs"
+mkdir -p "$LOG_DIR"
+
+# === START ADMIN OBSERVERS ===
+for ADMIN_KEY in "${HTTP_ROUTER_KEYS[@]}"; do
+  echo "--------------------------------------------------"
+  echo "Starting admin worker: $ADMIN_KEY"
+
+  # Kill existing process if running
+  PID=$(pgrep -f "$ADMIN_KEY" || true)
+  if [ -n "$PID" ]; then
+    echo "Found existing process for $ADMIN_KEY (PID: $PID), stopping..."
+    kill -15 "$PID" || true
+    sleep 3
+  fi
+
+  # Log file handling
+  LOG_FILE="${LOG_DIR}/admin-${ADMIN_KEY}.log"
+
+  # Rotate log daily (compress old one if modified > 1 day ago)
+  if [ -f "$LOG_FILE" ]; then
+    LAST_MODIFIED=$(date -r "$LOG_FILE" +%s)
+    NOW=$(date +%s)
+    AGE_DAYS=$(( (NOW - LAST_MODIFIED) / 86400 ))
+
+    if [ "$AGE_DAYS" -ge 1 ]; then
+      ARCHIVE="${LOG_FILE}.$(date '+%Y%m%d').gz"
+      echo "Rotating old log to $ARCHIVE"
+      gzip -c "$LOG_FILE" > "$ARCHIVE"
+      : > "$LOG_FILE"  # Truncate
+    fi
+  fi
+
+  # Start new admin worker in background
+  echo "Launching $ADMIN_KEY..."
+  nohup java $JVM_PARAMS -jar "$JAR_MAIN" "$ADMIN_KEY" >> "$LOG_FILE" 2>&1 &
+
+  echo "Admin worker '$ADMIN_KEY' started (PID: $!). Log: $LOG_FILE"
+done
+
+echo "--------------------------------------------------"
+echo "✅ All admin workers started successfully at $(date)"
