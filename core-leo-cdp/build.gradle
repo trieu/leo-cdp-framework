@@ -228,7 +228,7 @@ tasks.withType(Jar) {
 	destinationDir = file(buildOutputFolderPath)
 }
 
-// JS minification
+// JS minification for common-resources in Web Admin
 task minifyJsAdminResource(type: org.gradlewebtools.minify.JsMinifyTask) {
     srcDir = project.file("resources/app-templates/leocdp-admin/common-resources") 
     dstDir = project.file("resources/app-templates/leocdp-admin/common-resources-min")
@@ -236,6 +236,30 @@ task minifyJsAdminResource(type: org.gradlewebtools.minify.JsMinifyTask) {
     	originalFileNames = true 
     }
 }
+
+// JS minification for leo.observer.js
+task minifyLeoObserverJs(type: org.gradlewebtools.minify.JsMinifyTask) {
+    srcDir = project.file("public/js/leo-observer")
+    dstDir = project.file("public/js/leo-observer")
+
+
+
+    options {
+        originalFileNames = false   // we'll rename manually
+    
+    }
+
+    doLast {
+        def srcFile = new File(dstDir, "leo.observer.js.min")
+        def targetFile = new File(dstDir, "leo.observer.min.js")
+        if (srcFile.exists()) {
+            srcFile.renameTo(targetFile)
+            println "Minified: ${targetFile}"
+        }
+    }
+}
+
+
 
 def getClasspathStringJars() {
 	def baseFolder = 'deps/'

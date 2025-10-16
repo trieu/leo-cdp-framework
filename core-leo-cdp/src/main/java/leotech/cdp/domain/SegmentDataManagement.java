@@ -87,7 +87,6 @@ public final class SegmentDataManagement {
 	}
 	
 	// ------- BEGIN Cache Profile in Segment
-	
 
 	
 	static CacheLoader<SegmentFilter, JsonDataTablePayload> cacheLoaderSegments = new CacheLoader<>() {

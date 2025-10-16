@@ -483,7 +483,7 @@ public final class SegmentDaoUtil extends AbstractCdpDatabaseUtil {
 	}
 	
 	/**
-	 * @return
+	 * @return List<Segment>
 	 */
 	public static List<Segment> getAllActiveSegments() {
 		ArangoDatabase db = getCdpDatabase();

@@ -71,6 +71,10 @@ public final class SegmentFilter extends DataFilter {
 	public boolean isFilteringAndGetAll() {
 		return start == 0 && length == 0 && StringUtil.isEmpty(uri);
 	}
+	
+	public boolean isGetAll() {
+		return start == 0 && length == Integer.MAX_VALUE;
+	}
 
 	public SegmentFilter(SystemUser systemUser, String uri, JsonObject paramJson) {
 		super(systemUser, uri, paramJson);
@@ -144,6 +148,7 @@ public final class SegmentFilter extends DataFilter {
 		this.forLookalikeTargeting = forLookalikeTargeting;
 	}
 	
+
 	
 	
 	@Override

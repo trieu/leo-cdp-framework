@@ -141,7 +141,6 @@ public final class SystemMetaData {
 	public static final String SUPER_ADMIN_EMAIL = metaDataMap.getOrDefault("superAdminEmail","");
 
 	public static final String CDP_LICENSE_KEY = metaDataMap.getOrDefault("leoCdpLicenseKey",FREE_VERSION);
-	public static final long CDP_QUOTA = getLong("leoCdpLicenseQuota",5000000L);
 	public static final String PATH_MAXMIND_DATABASE_FILE = metaDataMap.getOrDefault("pathMaxmindDatabaseFile","");
 	
 	public static final String PROFILE_MERGE_STRATEGY = metaDataMap.getOrDefault("profileMergeStrategy","none").trim();

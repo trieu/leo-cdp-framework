@@ -6,12 +6,13 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import com.arangodb.ArangoDBException;
 import com.arangodb.ArangoDatabase;
 import com.arangodb.ArangoEdgeCollection;
 import com.arangodb.entity.EdgeDefinition;
-import com.arangodb.model.EdgeUpdateOptions;
 
 import leotech.cdp.dao.AbstractCdpDatabaseUtil;
 import leotech.cdp.dao.ProfileDaoUtil;
@@ -24,7 +25,6 @@ import leotech.cdp.model.graph.ProfileGraphEdge;
 import leotech.cdp.model.journey.EventMetric;
 import leotech.cdp.model.journey.TouchpointHub;
 import leotech.cdp.query.SegmentQuery;
-import leotech.system.util.TaskRunner;
 import leotech.system.util.database.ArangoDbCommand;
 import leotech.system.util.database.ArangoDbCommand.CallbackQuery;
 
@@ -36,6 +36,7 @@ import leotech.system.util.database.ArangoDbCommand.CallbackQuery;
 public final class GraphProfile2TouchpointHub extends AbstractCdpDatabaseUtil {
 
 	private static final String GRAPH_NAME = Profile2TouchpointHub.GRAPH_NAME;
+	private static final ExecutorService dataUpdateJob = Executors.newSingleThreadExecutor();
 	
 	/**
 	 * @param db
@@ -71,16 +72,14 @@ public final class GraphProfile2TouchpointHub extends AbstractCdpDatabaseUtil {
 			// loop from 1 to eventCount
 			final String key = insertedEdge.getKey();
 			for (int i = 0; i < eventCount; i++) {
-				TaskRunner.runInThreadPools(()->{
+				dataUpdateJob.execute(()->{
 					try {
 						Profile2TouchpointHub updatedEdge = arangoEdgeCollection.getEdge(key, Profile2TouchpointHub.class);
 						if(updatedEdge != null) {
 							updatedEdge.updateEventScore(eventMetric.getScore());
 							updatedEdge.setFunnelStage(profile.getFunnelStage());
 							updatedEdge.setUpdatedAt(new Date());
-							EdgeUpdateOptions options = new EdgeUpdateOptions();
-							options.waitForSync(true);
-							arangoEdgeCollection.updateEdge(key, updatedEdge, options );
+							arangoEdgeCollection.updateEdge(key, updatedEdge);
 						}
 						else {
 							arangoEdgeCollection.insertEdge(insertedEdge);

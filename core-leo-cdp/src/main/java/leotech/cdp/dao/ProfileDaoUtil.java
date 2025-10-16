@@ -17,6 +17,7 @@ import com.arangodb.ArangoCollection;
 import com.arangodb.ArangoDBException;
 import com.arangodb.ArangoDatabase;
 
+import leotech.cdp.domain.SegmentListManagement;
 import leotech.cdp.job.reactive.JobMergeDuplicatedProfiles;
 import leotech.cdp.model.RefKey;
 import leotech.cdp.model.analytics.TouchpointReport;
@@ -39,7 +40,6 @@ import leotech.system.util.LogUtil;
 import leotech.system.util.TaskRunner;
 import leotech.system.util.database.ArangoDbCommand;
 import leotech.system.util.database.ArangoDbCommand.CallbackQuery;
-import leotech.system.version.SystemMetaData;
 import rfx.core.util.StringUtil;
 import rfx.core.util.Utils;
 
@@ -51,8 +51,7 @@ import rfx.core.util.Utils;
  *
  */
 public final class ProfileDaoUtil extends AbstractCdpDatabaseUtil {
-	
-	private static final int BATCH_SIZE_UPDATE_SEGMENT_REF = 1500;
+
 
 	static Logger logger = LoggerFactory.getLogger(ProfileDaoUtil.class);
 
@@ -118,14 +117,7 @@ public final class ProfileDaoUtil extends AbstractCdpDatabaseUtil {
 	static final String AQL_REMOVE_INACTIVE_PROFILES = AqlTemplate.get("AQL_REMOVE_INACTIVE_PROFILES");
 	static final String AQL_DELETE_DATA_OF_DEAD_PROFILES = AqlTemplate.get("AQL_DELETE_DATA_OF_DEAD_PROFILES");
 	
-	
-	private static ExecutorService executor = Executors.newSingleThreadExecutor();
-	
-	// --------------------------------------------------------- //
-	private static final long QUOTA = SystemMetaData.CDP_QUOTA;
-	public static final boolean isValidForQuotaProfile() {
-		return QUOTA > 0 && countTotalContactProfiles() <= QUOTA;
-	}
+	private static final ExecutorService dataUpdateJob = Executors.newSingleThreadExecutor();
 	
 	/**
 	 * @return total of profiles in the database
@@ -253,11 +245,14 @@ public final class ProfileDaoUtil extends AbstractCdpDatabaseUtil {
 				
 				// check and run callback
 				if(callback != null) {
-					executor.execute(callback);
+					dataUpdateJob.execute(callback);
 				}
 				
-				checkAndUpdateSegmentRefKeys(profile);
+				dataUpdateJob.execute(()->{
+					checkAndUpdateSegmentRefKeys(profile.getId(), profile.getInSegments());
+				});
 				
+			
 				return profileId;
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -268,15 +263,14 @@ public final class ProfileDaoUtil extends AbstractCdpDatabaseUtil {
 		return null;
 	}
 
-	private static void checkAndUpdateSegmentRefKeys(Profile profile) {
+	private static void checkAndUpdateSegmentRefKeys(String profileId, Set<RefKey> inSegments) {
+		
+		List<Segment> segments = SegmentListManagement.getAllActiveSegments();
 		try {
-			String profileId = profile.getId();
-			Set<RefKey> inSegments = profile.getInSegments();
-			List<Segment> segments = SegmentDaoUtil.getAllActiveSegments();
 			ProfileDaoUtil.updateProfileSegmentRefs(profileId, segments, inSegments);
 		} catch (Exception e) {
 			e.printStackTrace();
-		}
+		} 
 	}
 	
 	
@@ -302,7 +296,10 @@ public final class ProfileDaoUtil extends AbstractCdpDatabaseUtil {
 						
 						col.updateDocument(profileId, srcProfileToMerge, getUpdateOptions());
 						
-						checkAndUpdateSegmentRefKeys(srcProfileToMerge);
+						dataUpdateJob.execute(()->{
+							checkAndUpdateSegmentRefKeys(srcProfileToMerge.getId(), srcProfileToMerge.getInSegments());
+						});
+						
 						return profileId;
 					}
 				}
@@ -333,18 +330,23 @@ public final class ProfileDaoUtil extends AbstractCdpDatabaseUtil {
 				
 				// check and run callback
 				if(callback != null) {
-					executor.execute(callback);
+					dataUpdateJob.execute(callback);
 				}
 				
-				checkAndUpdateSegmentRefKeys(profile);
+				dataUpdateJob.execute(()->{
+					// FIXME try a queue to update profile or field update when import events 
+					// Error: 1200 - write-write conflict;
+					checkAndUpdateSegmentRefKeys(profile.getId(), profile.getInSegments());
+				});
+				
+				
 			} catch (ArangoDBException e) {
 				if(e.getErrorNum() == 1202) {
 					// Error: 1202 - document not found, try to create a new profile in database
 					insert(profile);
 				}
 				else if(e.getErrorNum() == 1200) {
-					// FIXME try a queue to update profile or field update when import events 
-					// Error: 1200 - write-write conflict;
+					
 					System.err.println("write-write conflict " + profile.getId());
 				}
 				else {
@@ -375,8 +377,7 @@ public final class ProfileDaoUtil extends AbstractCdpDatabaseUtil {
 				}
 			};
 		}
-		String updateResult= updateProfile(profile, callback);
-		return updateResult;
+		return updateProfile(profile, callback);
 	}
 	
 
@@ -478,7 +479,7 @@ public final class ProfileDaoUtil extends AbstractCdpDatabaseUtil {
 			profileIds = new ArrayList<>(0);
 		}
 		//logger.info("setSegmentForProfiles.authorizedViewers" + authorizedViewers);
-		List<Segment> allActiveSegments = SegmentDaoUtil.getAllActiveSegments();
+		List<Segment> allActiveSegments = SegmentListManagement.getAllActiveSegments();
 		
 		// loop for each profiles to update inSegments
 		profileIds.parallelStream().forEach(profileId->{
@@ -490,74 +491,6 @@ public final class ProfileDaoUtil extends AbstractCdpDatabaseUtil {
 		
 		long done = System.currentTimeMillis() - begin;
 		LogUtil.logInfo(ProfileDaoUtil.class, "setSegmentRefForMatchedProfiles DONE TIME " + done + " millis, profileIds.size " + profileIds.size());
-	}
-	
-	/**
-	 * delete RefKey of segment
-	 * 
-	 * @param segmentId
-	 * @param profileId
-	 */
-	public static void removeSegmentRefKeyInProfile(String profileId, Set<String> removedSegmentIds) {
-		try {
-			Map<String, Object> bindVars = new HashMap<>(4);
-			bindVars.put("removedSegmentIds", removedSegmentIds);
-			bindVars.put("profileId", profileId);
-			new ArangoDbCommand<String>(getCdpDatabase(), AQL_REMOVE_SEGMENT_REF_KEY_FOR_PROFILE, bindVars).update();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-
-	/**
-	 * @param segmentId
-	 * @param segmentName
-	 * @param indexScore
-	 * @param authorizedViewers
-	 * @param authorizedEditors
-	 * @param updatedProfileIdSet
-	 * @param refKey
-	 * @param profileId
-	 * @param profileInSegments
-	 */
-	public static void updateSegmentRefForProfile(String segmentId, String segmentName, int indexScore,
-			Set<String> authorizedViewers, Set<String> authorizedEditors, 
-			RefKey refKey, String profileId, Set<RefKey> profileInSegments) {
-		// params
-		Map<String, Object> bindVars = new HashMap<>(10);
-		bindVars.put("segmentId", segmentId);
-		bindVars.put("segmentName", segmentName);
-		bindVars.put("segmentIndexScore", indexScore);
-		bindVars.put("authorizedViewers", authorizedViewers);
-		bindVars.put("authorizedEditors", authorizedEditors);
-		bindVars.put("queryHashedId", refKey.getQueryHashedId());
-		bindVars.put("profileId", profileId);
-
-		try {
-
-			// database instance
-			ArangoDatabase db = getCdpDatabase();
-			
-			if(profileInSegments.size() == 0) {
-				// insert new list with RefKey
-				new ArangoDbCommand<String>(db, AQL_INSERT_SEGMENT_REF_KEY_FOR_PROFILE, bindVars).update();
-			} else {
-				
-				if(profileInSegments.contains(refKey)) {
-					// update RefKey
-					new ArangoDbCommand<String>(db, AQL_UPDATE_SEGMENT_REF_KEY_FOR_PROFILE, bindVars).update();
-				}
-				else {
-					// append new RefKey
-					new ArangoDbCommand<String>(db, AQL_APPEND_SEGMENT_REF_KEY_FOR_PROFILE, bindVars).update();
-				}
-			}
-			
-		} catch (ArangoDBException e) {
-			System.out.println("ERROR updateSegmentRefForProfile profileId " + profileId);
-			e.printStackTrace();
-		}
 	}
 	
 
@@ -586,15 +519,86 @@ public final class ProfileDaoUtil extends AbstractCdpDatabaseUtil {
 			if(updateSegmentRef) {
 				System.out.println("\n ====> profileId " + profileId + " in segment " + segment.getName());
 				updateSegmentRefForProfile(segmentIdToCheck, segmentName, indexScore, authorizedViewers, authorizedEditors, refKey, profileId, currentSegmentRefs);
-				Utils.sleep(100);
 			}
 			else if(currentSegmentRefs.contains(refKey)){
 				// if profile is not matching , check is in the current segments, then remove
 				removedSegmentIds.add(segmentIdToCheck);
 			}
 		});
+		
+		Utils.sleep(500);
 		removeSegmentRefKeyInProfile(profileId, removedSegmentIds);
 	}
+	
+	/**
+	 * @param segmentId
+	 * @param segmentName
+	 * @param indexScore
+	 * @param authorizedViewers
+	 * @param authorizedEditors
+	 * @param updatedProfileIdSet
+	 * @param refKey
+	 * @param profileId
+	 * @param profileInSegments
+	 */
+	public static void updateSegmentRefForProfile(String segmentId, String segmentName, int indexScore,
+			Set<String> authorizedViewers, Set<String> authorizedEditors, 
+			RefKey refKey, String profileId, Set<RefKey> profileInSegments) {
+		// params
+		Map<String, Object> bindVars = new HashMap<>(10);
+		bindVars.put("segmentId", segmentId);
+		bindVars.put("segmentName", segmentName);
+		bindVars.put("segmentIndexScore", indexScore);
+		bindVars.put("authorizedViewers", authorizedViewers);
+		bindVars.put("authorizedEditors", authorizedEditors);
+		bindVars.put("queryHashedId", refKey.getQueryHashedId());
+		bindVars.put("profileId", profileId);
+
+	
+		try {
+			
+			// database instance
+			ArangoDatabase db = getCdpDatabase();
+			
+			if(profileInSegments.size() == 0) {
+				// insert new list with RefKey
+				new ArangoDbCommand<String>(db, AQL_INSERT_SEGMENT_REF_KEY_FOR_PROFILE, bindVars).update();
+			} else {
+				
+				if(profileInSegments.contains(refKey)) {
+					// update RefKey
+					new ArangoDbCommand<String>(db, AQL_UPDATE_SEGMENT_REF_KEY_FOR_PROFILE, bindVars).update();
+				}
+				else {
+					// append new RefKey
+					new ArangoDbCommand<String>(db, AQL_APPEND_SEGMENT_REF_KEY_FOR_PROFILE, bindVars).update();
+				}
+			}
+			
+		} catch (ArangoDBException e) {
+			System.out.println("ERROR updateSegmentRefForProfile profileId " + profileId);
+			e.printStackTrace();
+		} 
+		
+	}
+	
+	/**
+	 * delete RefKey of segment
+	 * 
+	 * @param segmentId
+	 * @param profileId
+	 */
+	public static void removeSegmentRefKeyInProfile(String profileId, Set<String> removedSegmentIds) {
+		try {
+			Map<String, Object> bindVars = new HashMap<>(4);
+			bindVars.put("removedSegmentIds", removedSegmentIds);
+			bindVars.put("profileId", profileId);
+			new ArangoDbCommand<String>(getCdpDatabase(), AQL_REMOVE_SEGMENT_REF_KEY_FOR_PROFILE, bindVars).update();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
 	
 	/**
 	 * delete all invalid profiles

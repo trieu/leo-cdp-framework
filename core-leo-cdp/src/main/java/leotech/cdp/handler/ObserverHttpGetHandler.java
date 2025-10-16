@@ -80,10 +80,10 @@ public final class ObserverHttpGetHandler {
 	public final static boolean process(RoutingContext context, HttpServerRequest req, String urlPath, MultiMap reqHeaders, MultiMap params,
 			HttpServerResponse resp, MultiMap outHeaders, DeviceInfo device, String origin) {
 		String eventName = StringUtil.safeString(params.get(HttpParamKey.EVENT_METRIC_NAME)).toLowerCase();
-		String clientSessionKey = StringUtil.safeString(params.get(HttpParamKey.CTX_SESSION_KEY));
+		String ctxSessionKey = StringUtil.safeString(params.get(HttpParamKey.CTX_SESSION_KEY));
 		
 		// init web session
-		if (urlPath.equalsIgnoreCase(PREFIX_CONTEXT_SESSION_PROFILE_INIT) && StringUtil.isEmpty(clientSessionKey)) {
+		if (urlPath.equalsIgnoreCase(PREFIX_CONTEXT_SESSION_PROFILE_INIT) && StringUtil.isEmpty(ctxSessionKey)) {
 			outHeaders.set(CONTENT_TYPE, BaseHttpHandler.CONTENT_TYPE_JSON);
 			BaseHttpRouter.setCorsHeaders(outHeaders, origin);
 
@@ -104,7 +104,7 @@ public final class ObserverHttpGetHandler {
 			BaseHttpRouter.setCorsHeaders(outHeaders, origin);
 
 			// synch ContextSession with event tracking
-			ContextSession ctxSession = ContextSessionManagement.get(clientSessionKey, req, params, device);
+			ContextSession ctxSession = ContextSessionManagement.get(ctxSessionKey, req, params, device);
 			System.out.println("tracking event in real-time for ctxSessionKey " + ctxSession.getSessionKey());
 
 			int status = 404;

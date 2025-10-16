@@ -38,7 +38,6 @@
         var PREFIX_EVENT_FEEDBACK_URL = LEO_LOG_URL + "/efb";
         
         // configs
-        var SESSION_CACHE_MINUTES = 30;
         var OBSERVE_WITH_FINGERPRINT = true;
         
          // addEventListener support for IE8
@@ -150,8 +149,8 @@
     		});
     	}
 
-  		var cbKey = "20231107";
-	   	var leoObserverJsUrl = "https://gcore.jsdelivr.net/gh/USPA-Technology/leo-cdp-static-files@v0.8.9.22/js/leo-observer/leo.observer.min.js?cb="+cbKey;
+  		var cbKey = "20251016";
+	   	var leoObserverJsUrl = "https://gcore.jsdelivr.net/gh/USPA-Technology/leo-cdp-static-files@v0.9.1/js/leo-observer/leo.observer.min.js?cb="+cbKey;
 	   	var isDev = ROOT_DOMAIN === "obs.example.com";
   		if(isDev) { 
 			leoObserverJsUrl = "https://obs.example.com/public/js/leo-observer/leo.observer.js?cb="+(new Date().getTime());

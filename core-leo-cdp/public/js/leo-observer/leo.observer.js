@@ -1,5 +1,5 @@
 /**
- * LeoEventObserver version 1.0.0 - built on 2023.11.07
+ * LeoEventObserver version 0.9.1 - built on 2025.10.16
  */
 
 // ------------------------------ LeoCorsRequest ----------------------------------------//
@@ -574,11 +574,14 @@ var leoVisitorIdStringKey = "leocdp_vid";
     
     function setSessionKey(key){
     	sessionKey = key;
-    	lscache.set(leoSessionStringKey, sessionKey, SESSION_CACHE_MINUTES);
+    	lscache.set(leoSessionStringKey, sessionKey);
     }
     
-    function getSessionKey(){
+    function getSessionKey(autoResfresh){
     	sessionKey = lscache.get(leoSessionStringKey);
+		if(typeof sessionKey !== 'string' && autoResfresh === true){
+			sessionKey = "";
+		}
     	return sessionKey;
     }
     
@@ -642,43 +645,43 @@ var leoVisitorIdStringKey = "leocdp_vid";
     }
 
     var doTracking = function(eventType, params, callback) {
-        var h = function(resHeaders, text) {
-            //var data = JSON.parse(text);
+		var localSessionKey = getSessionKey(true);
+        var trackingAjaxHandler = function(resHeaders, text) {
+            var data = JSON.parse(text);
+	 		if(data.sessionKey && localSessionKey !== data.sessionKey){
+	        	setSessionKey(data.sessionKey);
+	        }
+        }
+
+		params["visid"] = getVisitorId();
+        var queryStr = objectToQueryString(params);
+		var isHttpPost = false;
+	
+    	var prefixUrl = PREFIX_EVENT_VIEW_URL;
+        if(eventType === "action"){
+        	prefixUrl = PREFIX_EVENT_ACTION_URL;
+        	isHttpPost = true;
+        } 
+        else if(eventType === "conversion"){
+        	prefixUrl = PREFIX_EVENT_CONVERSION_URL;
+        	isHttpPost = true;
+        } 
+        else if(eventType === "feedback"){
+        	prefixUrl = PREFIX_EVENT_FEEDBACK_URL;
+        	isHttpPost = true;
         }
         
-        params["visid"] = getVisitorId();
-        var queryStr = objectToQueryString(params);
-        var sessionKey = getSessionKey();
-        if(sessionKey){
-        	var isHttpPost = false;
-        	
-        	var prefixUrl = PREFIX_EVENT_VIEW_URL;
-	        if(eventType === "action"){
-	        	prefixUrl = PREFIX_EVENT_ACTION_URL;
-	        	isHttpPost = true;
-	        } 
-	        else if(eventType === "conversion"){
-	        	prefixUrl = PREFIX_EVENT_CONVERSION_URL;
-	        	isHttpPost = true;
-	        } 
-	        else if(eventType === "feedback"){
-	        	prefixUrl = PREFIX_EVENT_FEEDBACK_URL;
-	        	isHttpPost = true;
-	        }
-	        
-	        var url = "";
-	        if(isHttpPost) {
-	        	url = prefixUrl + '?ctxsk=' + sessionKey;
-	        	LeoCorsRequest.post(false, url , [], queryStr , h);
-	        } else {
-	        	url = prefixUrl + '?' + queryStr + '&ctxsk=' + sessionKey;
-	        	LeoCorsRequest.get(false, url, [], h);
-	        }
-	       
-	        console.log("LeoCorsRequest url " + url)
+        var url = "";
+        if(isHttpPost) {
+        	url = prefixUrl + '?ctxsk=' + localSessionKey;
+        	LeoCorsRequest.post(false, url , [], queryStr , trackingAjaxHandler);
         } else {
-        	console.log("sessionKey is NULL")
+        	url = prefixUrl + '?' + queryStr + '&ctxsk=' + localSessionKey;
+        	LeoCorsRequest.get(false, url, [], trackingAjaxHandler);
         }
+       
+        console.log("LeoCorsRequest url " + url)
+		
     }
     
     var updateProfile = function(params) {
@@ -722,7 +725,7 @@ var leoVisitorIdStringKey = "leocdp_vid";
 
     var getContextSession = function(params) {
     	var leoctxsk = getSessionKey();
-    	var isExpired = typeof leoctxsk !== 'string';
+    	var isExpired = typeof leoctxsk !== 'string' || leoctxsk === '';
     	//isExpired = true; // TODO to debug, uncomment this line
     	
     	if( isExpired ){

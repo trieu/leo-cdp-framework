@@ -53,8 +53,7 @@ public final class ContextSessionManagement {
 	 * @param dateTimeKey
 	 * @return
 	 */
-	public final static ContextSession createWebContextSession(String sourceIP, MultiMap params, DeviceInfo deviceInfo,
-			DateTime dateTime, String dateTimeKey) {
+	public final static ContextSession createWebContextSession(String sourceIP, MultiMap params, DeviceInfo deviceInfo, DateTime dateTime, String dateTimeKey) {
 		// profile params
 		String visitorId = StringUtil.safeString(params.get(HttpParamKey.VISITOR_ID));
 		if (StringUtil.isEmpty(visitorId)) {
@@ -190,6 +189,7 @@ public final class ContextSessionManagement {
 	public static ContextSession get(final String clientSessionKey, HttpServerRequest req, MultiMap params,
 			DeviceInfo device) {
 		if (!device.isWebCrawler()) {
+			
 			RedisCommand<ContextSession> cmd = new RedisCommand<ContextSession>(jedisPool) {
 				@Override
 				protected ContextSession build() throws JedisException {
@@ -197,15 +197,17 @@ public final class ContextSessionManagement {
 					if (StringUtil.isNotEmpty(clientSessionKey)) {
 						json = jedis.get(clientSessionKey);
 					}
-					ContextSession ctxSession = null;
+					
+					// the session is expired, so create a new one and commit to database
 					DateTime dateTime = new DateTime();
+					String dateTimeKey = ContextSession.getSessionDateTimeKey(dateTime);
+					String ip = HttpWebParamUtil.getRemoteIP(req);
+					ContextSession ctxSession = null;
 
-					if (json == null) {
+					if (StringUtil.isEmpty(json)) {
 						// the session is expired, so create a new one and commit to database
-						String dateTimeKey = ContextSession.getSessionDateTimeKey(dateTime);
-						String ip = HttpWebParamUtil.getRemoteIP(req);
 						ctxSession = createWebContextSession(ip, params, device, dateTime, dateTimeKey);
-
+			
 						if (ctxSession != null) {
 							String newSessionKey = ctxSession.getSessionKey();
 							String sessionJson = new Gson().toJson(ctxSession);
