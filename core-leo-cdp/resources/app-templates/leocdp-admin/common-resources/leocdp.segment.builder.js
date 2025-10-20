@@ -19,6 +19,7 @@ const getOperators = function(){
 	
 	ops.push({ type: "contains_any", optgroup: 'List Operator', nb_inputs: 1, multiple: true, apply_to: ['string','number','boolean'] });
 	ops.push({ type: "not_contains_any", optgroup: 'List Operator', nb_inputs: 1, multiple: true, apply_to: ['string','number','boolean'] });
+	ops.push({ type: "has_event_statistics", optgroup: 'Data Filter', nb_inputs: 2, multiple: true, apply_to: ['number'] });
 	
 	ops.push({ type: "has_key", optgroup: 'Key Operator', nb_inputs: 1, multiple: true, apply_to: ['string'] });
 	ops.push({ type: "not_has_key", optgroup: 'Key Operator', nb_inputs: 1, multiple: true, apply_to: ['string'] });
@@ -127,6 +128,35 @@ const buildSegmentDateFilter = function(fieldId, fieldLabel, fieldGroupLabel) {
 	    	orientation: 'bottom'
 	    },
 		operators: getOperatorsForDateField(),
+	    optgroup : fieldGroupLabel
+	};
+}
+
+const buildEventStatisticsFilter = function(fieldId, fieldLabel, fieldGroupLabel) {
+	return {
+	    id: fieldId,
+	    label: fieldLabel,
+	    type: 'string',
+	    placeholder: '',
+	    valueSetter: function(rule, selectedDates) {
+			console.log("buildEventStatisticsFilter.valueSetter ", selectedDates)
+			
+	    },
+	    valueGetter: function(rule) {	
+			var selectedNumber = [];
+		    var sel = rule.$el.find('.rule-value-container input').each(function() {
+				var v = $(this).css('width','100px').val().trim();
+				if(v !== '') {				
+					selectedNumber.push(parseInt(v));
+				}
+		    });
+			console.log("buildEventStatisticsFilter.valueGetter ", selectedNumber)
+			
+	      
+	      	return selectedNumber.length === 1 ? selectedNumber[0] : selectedNumber;
+	    },
+
+		operators : [ "has_event_statistics"],
 	    optgroup : fieldGroupLabel
 	};
 }
@@ -988,6 +1018,7 @@ const loadSegmentBuilder = function(touchpointHubs,  behavioralEventMap, assetGr
 			    operators: ["contains_any", "not_contains_any"],
 			    optgroup : "Behavioural Event"
 			},
+			//buildEventStatisticsFilter("event_statistics","Event Statistics","Behavioural Event"),
 			{
 			    id: 'cdp_trackingevent__metricName',
 			    label: 'Event Metric Name',
