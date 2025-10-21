@@ -1725,7 +1725,7 @@ AQL_EVENT_MATRIX_REPORT =>
 	    FILTER o.journeyMapId == @refJourneyId OR @refJourneyId == "" OR o.touchpointHubId == "leo_data_observer"
 		FOR s in stats
 		FILTER o._key == s.groupKey
-		RETURN { "labelY":o.name, "labelX": s.metricName, "value": s.eventCount, "journeyMapId": o.journeyMapId, "touchpointHubId": o.touchpointHubId} 
+		RETURN { "labelY": s.metricName , "labelX": o.name, "value": s.eventCount, "journeyMapId": o.journeyMapId, "touchpointHubId": o.touchpointHubId} 
 ;	    
 
 ###########  FEEDBACK DATA: EVENT AND REPORT ########################################################################################################;

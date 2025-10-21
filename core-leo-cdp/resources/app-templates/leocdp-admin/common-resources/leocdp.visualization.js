@@ -1179,7 +1179,7 @@ const renderMatrixChart = function(titleText, containerId, xDataLabels, yDataLab
 	          },
 	          label(context) {
 	            var obj = context.dataset.data[context.dataIndex];
-	            var tooltipLabel = obj.x + " from " + obj.y + ': ' + obj.v;
+	            var tooltipLabel = " [" + obj.y + ': ' + obj.v +"] - " + obj.x ;
 	            return [tooltipLabel];
 	          }
 	        }
