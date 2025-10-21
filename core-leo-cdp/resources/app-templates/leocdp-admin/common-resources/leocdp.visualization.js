@@ -1117,96 +1117,101 @@ const renderDirectedGraph = function(containerId, graphElements, rootNodeId) {
 }
 
 const renderMatrixChart = function(titleText, containerId, xDataLabels, yDataLabels, dataList) {
-	var container = $('#' + containerId);
-	var xLabelSize = xDataLabels.length;
-	var yLabelSize = yDataLabels.length;
-	var fontSize = 19;
-	if(xLabelSize >= 18){
-		fontSize = 17;
-	}
-	else if(xLabelSize >= 24){
-		fontSize = 15;
-	}
-	
-	if(xLabelSize === 0 || yLabelSize === 0) {
-		container.html('<div class="list-group-item" > No data available </h4>').removeClass('event_matrix_active');
-		return;
-	}
-	else {
-		container.html('<div class="loader"></div>')
-	}
-	
-	var data = {
-	  datasets: [{
-	    label: '',
-	    data: dataList,
-	    backgroundColor(context) {
-	    	var item = context.dataset.data[context.dataIndex];
-	    	var value = typeof item === "object" ? item.v : 0;
-	    	value = (value > 0 && value < 10) ? 10 : value;
-	    	const alpha = value / 180;
-	    	return chroma('#313866').alpha(alpha).toString();
-	    },
-	    borderColor: [ 'rgb(0, 0, 0)'],
-	    borderWidth: 0,
-	    width: ({chart}) => (chart.chartArea || {}).width / xLabelSize - 1,
-	    height: ({chart}) => ((chart.chartArea || {}).height + 80) / yLabelSize - 1,
-	    datalabels: {      	
-        	formatter : function(value, context){
-				var v = context.chart.data.datasets[0].data[context.dataIndex].v;
-				if(typeof v === "number"){
-					return v.toLocaleString();
-				}
-				return v;	
-			},
-			color: '#FF533F',
-			font: { weight: 'bold', size: fontSize }
-      	}
-	  }]
-	}
-	
-	var config = {
-	  type: 'matrix',
-	  data: data,
-	  options: {
-	    plugins: {
-    	 legend: false,
-         title: {text: titleText, display: true, font: { size: 20}, color: "#3300ff"},
-	     tooltip: {
-	        callbacks: {
-	          title() {
-	            return '';
-	          },
-	          label(context) {
-	            var obj = context.dataset.data[context.dataIndex];
-	            var tooltipLabel = " [" + obj.y + ': ' + obj.v +"] - " + obj.x ;
-	            return [tooltipLabel];
-	          }
-	        }
-	      }
-	    },
-	    scales: {
-	      x: {
-	        type: 'category',
-	        labels: xDataLabels,
-	        ticks: { display: true, font: { size: 13.5 } },
-	        grid: { display: false }	        
-	      },
-	      y: {
-	        type: 'category',
-	        labels: yDataLabels,
-	        offset: true,
-	        ticks: { display: true, font: { size: 12.5 } },
-	        grid: { display: false }
-	      }
-	    }
-	    
-	  },
-	  plugins: [ChartDataLabels]
-	}
-	
-	var canvasNode = $('<canvas/>');
-	container.find("canvas").remove();
-	container.html(canvasNode).addClass('event_matrix_active');
-	return new Chart(canvasNode[0],config);
-}
+  const container = $('#' + containerId);
+  const xLabelSize = xDataLabels.length;
+  const yLabelSize = yDataLabels.length;
+  let fontSize = 19;
+
+  if (xLabelSize >= 24) fontSize = 15;
+  else if (xLabelSize >= 18) fontSize = 17;
+
+  if (xLabelSize === 0 || yLabelSize === 0) {
+    container.html('<div class="list-group-item">No data available</div>').removeClass('event_matrix_active');
+    return;
+  } else {
+    container.html('<div class="loader"></div>');
+  }
+
+  // --- Dynamic height calculation ---
+  // Rough heuristic: each row gets ~35px, plus 120px base padding for title + labels
+  const minRowHeight = 35;
+  const chartHeight = Math.max(300, yLabelSize * minRowHeight + 120);
+  // -----------------------------------
+
+  const canvasNode = $('<canvas/>')
+    .attr('height', chartHeight) // <<--- key line
+    .css('height', chartHeight + 'px');
+
+  container.find('canvas').remove();
+  container.html(canvasNode).addClass('event_matrix_active');
+
+  const data = {
+    datasets: [{
+      label: '',
+      data: dataList,
+      backgroundColor(context) {
+        const item = context.dataset.data[context.dataIndex];
+        let value = typeof item === 'object' ? item.v : 0;
+        value = (value > 0 && value < 10) ? 10 : value;
+        const alpha = value / 180;
+        return chroma('#313866').alpha(alpha).toString();
+      },
+      borderColor: 'rgb(0, 0, 0)',
+      borderWidth: 0,
+      width: ({ chart }) => (chart.chartArea || {}).width / xLabelSize - 1,
+      height: ({ chart }) => ((chart.chartArea || {}).height + 80) / yLabelSize - 1,
+      datalabels: {
+        formatter(value, context) {
+          const v = context.chart.data.datasets[0].data[context.dataIndex].v;
+          return typeof v === 'number' ? v.toLocaleString() : v;
+        },
+        color: '#FF533F',
+        font: { weight: 'bold', size: fontSize }
+      }
+    }]
+  };
+
+  const config = {
+    type: 'matrix',
+    data,
+    options: {
+      maintainAspectRatio: false, // <--- crucial for responsive height
+      plugins: {
+        legend: false,
+        title: {
+          text: titleText,
+          display: true,
+          font: { size: 20 },
+          color: "#3300ff"
+        },
+        tooltip: {
+          callbacks: {
+            title: () => '',
+            label(context) {
+              const obj = context.dataset.data[context.dataIndex];
+              return [`[${obj.y}: ${obj.v}] - ${obj.x}`];
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          type: 'category',
+          labels: xDataLabels,
+          ticks: { display: true, font: { size: 13.5 } },
+          grid: { display: false }
+        },
+        y: {
+          type: 'category',
+          labels: yDataLabels,
+          offset: true,
+          ticks: { display: true, font: { size: 12.5 } },
+          grid: { display: false }
+        }
+      }
+    },
+    plugins: [ChartDataLabels]
+  };
+
+  return new Chart(canvasNode[0], config);
+};
