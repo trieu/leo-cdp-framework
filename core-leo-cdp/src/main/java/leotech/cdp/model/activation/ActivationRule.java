@@ -489,7 +489,7 @@ public class ActivationRule extends PersistentObject implements Comparable<Activ
 	 * @param service
 	 * @param timer
 	 */
-	public final JobDetail getJobDetail(String activationJobId, DataService dataService) {
+	public final JobDetail getJobDetail(String activationJobId, Agent dataService) {
 		JobDataMap jobDataMap = new JobDataMap();
 		jobDataMap.put("activationRule", this);
 		jobDataMap.put("dataService", dataService);

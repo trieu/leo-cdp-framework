@@ -17,7 +17,7 @@ import com.google.common.collect.Sets;
 
 import leotech.cdp.model.RefKey;
 import leotech.cdp.model.activation.ActivationRule;
-import leotech.cdp.model.activation.DataService;
+import leotech.cdp.model.activation.Agent;
 import leotech.cdp.model.asset.AssetTemplate;
 import leotech.cdp.model.customer.Segment;
 import leotech.cdp.model.customer.Segment.SegmentRef;
@@ -446,7 +446,7 @@ public final class SegmentDaoUtil extends AbstractCdpDatabaseUtil {
 				}
 				String dataServiceId = rule.getDataServiceId();
 				if(StringUtil.isNotEmpty(dataServiceId)) {
-					DataService c = DataServiceDaoUtil.getDataServiceById(dataServiceId);
+					Agent c = AgentDaoUtil.getById(dataServiceId);
 					if(c != null) {
 						rule.setDataServiceName(c.getName());
 					}

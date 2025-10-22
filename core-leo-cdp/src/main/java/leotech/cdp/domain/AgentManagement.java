@@ -7,10 +7,10 @@ import java.util.List;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
-import leotech.cdp.dao.DataServiceDaoUtil;
+import leotech.cdp.dao.AgentDaoUtil;
 import leotech.cdp.model.activation.ActivationRule;
 import leotech.cdp.model.activation.ActivationRuleType;
-import leotech.cdp.model.activation.DataService;
+import leotech.cdp.model.activation.Agent;
 import leotech.cdp.model.customer.Segment;
 import leotech.system.exception.InvalidDataException;
 import leotech.system.model.SystemUser;
@@ -19,24 +19,24 @@ import rfx.core.util.StringUtil;
 import rfx.core.util.Utils;
 
 /**
- * data service management
+ * AI Agent Management
  * 
  * @author tantrieuf31
- * @since 2022
+ * @since 2025
  *
  */
-public final class DataServiceManagement {
+public final class AgentManagement {
 
-	public static final String INIT_DATA_SERVICE_JSON = "./resources/data-for-new-setup/init-data-service-configs.json";
+	public static final String INIT_DATA_SERVICE_JSON = "./resources/data-for-new-setup/init-agent-configs.json";
 
 
 	/**
 	 * @return List<DataService> from file
 	 */
-	static List<DataService> loadFromJsonFile() {
-		List<DataService> list = null;
+	static List<Agent> loadFromJsonFile() {
+		List<Agent> list = null;
 		try {
-			Type listType = new TypeToken<ArrayList<DataService>>() {
+			Type listType = new TypeToken<ArrayList<Agent>>() {
 			}.getType();
 			String json = FileUtils.readFileAsString(INIT_DATA_SERVICE_JSON);
 			list = new Gson().fromJson(json, listType);
@@ -52,12 +52,12 @@ public final class DataServiceManagement {
 	/**
 	 * init default data for database
 	 */
-	public static void initDefaultSystemData(boolean overideOldData) {
+	public static void initDefaultData(boolean overideOldData) {
 		try {
-			List<DataService> list = loadFromJsonFile();
-			for (DataService service : list) {
+			List<Agent> list = loadFromJsonFile();
+			for (Agent service : list) {
 				if (service.getStatus() >= 0) {
-					DataServiceManagement.save(service, overideOldData);
+					AgentManagement.save(service, overideOldData);
 					Utils.sleep(500);
 				}
 			}
@@ -73,8 +73,8 @@ public final class DataServiceManagement {
 	 * @param overideOldData
 	 * @return
 	 */
-	public static String save(DataService service, boolean overideOldData) {
-		return DataServiceDaoUtil.save(service, overideOldData);
+	public static String save(Agent service, boolean overideOldData) {
+		return AgentDaoUtil.save(service, overideOldData);
 	}
 
 	/**
@@ -83,8 +83,8 @@ public final class DataServiceManagement {
 	 * @param id
 	 * @return DataService
 	 */
-	public static DataService getById(String id) {
-		return DataServiceDaoUtil.getDataServiceById(id);
+	public static Agent getById(String id) {
+		return AgentDaoUtil.getById(id);
 	}
 
 	/**
@@ -94,7 +94,7 @@ public final class DataServiceManagement {
 	 * @return
 	 */
 	public static String deleteById(String id) {
-		return DataServiceDaoUtil.deleteDataServiceById(id);
+		return AgentDaoUtil.deleteById(id);
 	}
 
 	/**
@@ -102,18 +102,18 @@ public final class DataServiceManagement {
 	 * 
 	 * @return List<DataService>
 	 */
-	public static List<DataService> getAllActiveDataServices() {
-		return DataServiceDaoUtil.getAllActiveDataServices();
+	public static List<Agent> getAllActiveAgents() {
+		return AgentDaoUtil.getAllActiveAgents();
 	}
 
 	/**
 	 * @param keywords
 	 * @return
 	 */
-	public static List<DataService> getDataServices(int startIndex, int numberResult, String keywords,
+	public static List<Agent> list(int startIndex, int numberResult, String keywords,
 			String filterServiceValue, boolean forSynchronization, boolean forDataEnrichment,
 			boolean forPersonalization) {
-		return DataServiceDaoUtil.getDataServices(startIndex, numberResult, keywords, filterServiceValue,
+		return AgentDaoUtil.list(startIndex, numberResult, keywords, filterServiceValue,
 				forSynchronization, forDataEnrichment, forPersonalization);
 	}
 
@@ -121,39 +121,37 @@ public final class DataServiceManagement {
 	 * open the service, then activate segment data with an event
 	 * 
 	 * @param purpose
-	 * @param dataServiceId
+	 * @param agentId
 	 * @param delayMinutes
 	 * @param schedulingTime
 	 * @param segmentId
 	 * @param eventName
 	 * @return
 	 */
-	public static String activateDataService(SystemUser loginUser, String purpose, String dataServiceId,
-			String timeToStart, int schedulingTime, String segmentId, String triggerEventName) {
+	public static String activate(SystemUser loginUser, String purpose, String agentId, String timeToStart, int schedulingTime, String segmentId, String triggerEventName) {
 		String userLogin = loginUser.getUserLogin();
 
-		DataService service = DataServiceDaoUtil.getDataServiceById(dataServiceId);
+		Agent agent = AgentDaoUtil.getById(agentId);
 		Segment segment = SegmentDataManagement.getSegmentWithActivationRulesById(segmentId);
-		if (service != null && segment != null) {
-			if (service.isReadyToRun()) {
-				String activationType = ActivationRuleType.RUN_DATA_SERVICE;
+		if (agent != null && segment != null) {
+			if (agent.isReadyToRun()) {
+				String activationType = ActivationRuleType.RUN_AGENT;
 				int priority = segment.getIndexScore();
-				String defaultName = StringUtil.join("-", purpose, dataServiceId, segmentId);
+				String defaultName = StringUtil.join("-", purpose, agentId, segmentId);
 				String description = "";
 				ActivationRule activationRule = ActivationRule.create(userLogin, purpose, activationType, defaultName,
-						description, priority, dataServiceId, segmentId, timeToStart, schedulingTime, triggerEventName);
+						description, priority, agentId, segmentId, timeToStart, schedulingTime, triggerEventName);
 				String activationRuleId = ActivationRuleManagement.save(activationRule);
 				if (activationRuleId != null) {
 					return activationRuleId;
 				} else {
-					throw new InvalidDataException(
-							"Can not create DataServiceScheduler from serviceId: " + dataServiceId);
+					throw new InvalidDataException("Can not create DataServiceScheduler from agentId: " + agentId);
 				}
 			} else {
-				throw new InvalidDataException(service.getId() + " is not ready to run, please set service_api_key");
+				throw new InvalidDataException(agent.getId() + " is not ready to run, please set service_api_key");
 			}
 		} else {
-			throw new InvalidDataException(" In-valid segmentId:" + segmentId + " or In-valid serviceId: " + dataServiceId);
+			throw new InvalidDataException(" In-valid segmentId:" + segmentId + " or In-valid agentId: " + agentId);
 		}
 	}
 

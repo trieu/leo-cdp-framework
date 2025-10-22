@@ -124,7 +124,7 @@ public final class AssetItemHandler extends SecuredHttpDataHandler {
 					}
 				}
 				else if (uri.equalsIgnoreCase(URI_IMPORT_PRODUCT)) {
-					if(isAuthorizedToUpdateData(loginUser, Profile.class)) {
+					if(isDataOperator(loginUser, Profile.class)) {
 						String groupId = paramJson.getString("groupId", "");
 						String importFileUrl = paramJson.getString("importFileUrl", "");
 						if(StringUtil.isNotEmpty(importFileUrl)) {
@@ -149,7 +149,7 @@ public final class AssetItemHandler extends SecuredHttpDataHandler {
 		SystemUser loginUser = initSystemUser(userSession, uri, params);
 		if (loginUser != null) {
 			if (uri.equalsIgnoreCase(URI_IMPORT_PRODUCT_PREVIEW)) {
-				if(isAuthorizedToUpdateData(loginUser, AssetItem.class)) {
+				if(isDataOperator(loginUser, AssetItem.class)) {
 					String groupId = StringUtil.safeString(params.get("groupId"), "");
 					String importFileUrl = HttpWebParamUtil.getString(params,"importFileUrl", "");
 					if(StringUtil.isNotEmpty(importFileUrl)) {

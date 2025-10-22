@@ -8,7 +8,7 @@ import java.util.function.Consumer;
 
 import io.vertx.core.json.JsonObject;
 import leotech.cdp.domain.AssetCategoryManagement;
-import leotech.cdp.domain.DataServiceManagement;
+import leotech.cdp.domain.AgentManagement;
 import leotech.cdp.domain.JourneyMapManagement;
 import leotech.cdp.domain.schema.JourneyFlowSchema;
 import leotech.system.dao.SystemUserDaoUtil;
@@ -84,7 +84,7 @@ public final class SystemControl {
 			SystemConfigsManagement.initDefaultSystemData(resetAllSystemConfigs);
 			
 			// AI Agent service
-			DataServiceManagement.initDefaultSystemData(resetAllAgentsConfigs);
+			AgentManagement.initDefaultData(resetAllAgentsConfigs);
 			
 			// journey map
 			JourneyFlowSchema.upgradeDefaultSystemData(false);

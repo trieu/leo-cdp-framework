@@ -8,9 +8,9 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.json.JsonObject;
 import leotech.cdp.data.DataServiceJob;
 import leotech.cdp.domain.ActivationRuleManagement;
-import leotech.cdp.domain.DataServiceManagement;
+import leotech.cdp.domain.AgentManagement;
 import leotech.cdp.model.activation.ActivationRule;
-import leotech.cdp.model.activation.DataService;
+import leotech.cdp.model.activation.Agent;
 import leotech.system.common.BaseHttpRouter;
 import leotech.system.common.SecuredHttpDataHandler;
 import leotech.system.model.JsonDataPayload;
@@ -23,25 +23,25 @@ import rfx.core.util.StringUtil;
  * @since 2020
  *
  */
-public final class DataServiceHandler extends SecuredHttpDataHandler {
+public final class AgentHandler extends SecuredHttpDataHandler {
 
 	// for Admin, only for ROLE_SUPER_ADMIN
-	static final String CONFIG_OAUTH2_CALLBACK = "/cdp/data-service/config/oauth2-callback";
+	static final String CONFIG_OAUTH2_CALLBACK = "/cdp/agent/config/oauth2-callback";
 
-	static final String LIST = "/cdp/data-service/list";
-	static final String SAVE = "/cdp/data-service/save";
-	static final String GET = "/cdp/data-service/get";
-	static final String DELETE = "/cdp/data-service/delete";
+	static final String LIST = "/cdp/agent/list";
+	static final String SAVE = "/cdp/agent/save";
+	static final String GET = "/cdp/agent/get";
+	static final String DELETE = "/cdp/agent/delete";
 	
-	static final String CREATE_ACTIVATION = "/cdp/data-service/create-activation";
-	static final String STOP_ACTIVATION = "/cdp/data-service/stop-activation";
-	static final String START_ACTIVATION = "/cdp/data-service/start-activation";
-	static final String REMOVE_ACTIVATION = "/cdp/data-service/remove-activation";
-	static final String MANUALLY_RUN_ACTIVATION = "/cdp/data-service/manually-run-activation";
+	static final String CREATE_ACTIVATION = "/cdp/agent/create-activation";
+	static final String STOP_ACTIVATION = "/cdp/agent/stop-activation";
+	static final String START_ACTIVATION = "/cdp/agent/start-activation";
+	static final String REMOVE_ACTIVATION = "/cdp/agent/remove-activation";
+	static final String MANUALLY_RUN_ACTIVATION = "/cdp/agent/manually-run-activation";
 
 	
 	
-	public DataServiceHandler(BaseHttpRouter baseHttpRouter) {
+	public AgentHandler(BaseHttpRouter baseHttpRouter) {
 		super(baseHttpRouter);
 	}
 
@@ -49,17 +49,17 @@ public final class DataServiceHandler extends SecuredHttpDataHandler {
 	public JsonDataPayload httpPostHandler(String userSession, String uri, JsonObject paramJson) throws Exception {
 		SystemUser loginUser = initSystemUser(userSession, uri, paramJson);
 		if (loginUser != null) {
-			if (isAdminRole(loginUser)) {
+			if (isAuthorized(loginUser, Agent.class)) {
 				switch (uri) {
 				case SAVE: {
 					String objectJson = paramJson.getString("objectJson", "");
 					if (StringUtil.isNotEmpty(objectJson)) {
-						DataService c = new Gson().fromJson(objectJson, DataService.class);
+						Agent c = new Gson().fromJson(objectJson, Agent.class);
 						String id;
 						try {
-							id = DataServiceManagement.save(c, true);
+							id = AgentManagement.save(c, true);
 							if(c.getId().equals(id)) {
-								return JsonDataPayload.ok(uri, id, loginUser, DataService.class);
+								return JsonDataPayload.ok(uri, id, loginUser, Agent.class);
 							}
 							return JsonDataPayload.fail("Can not save DataService.id: " + id, 500);
 						} catch (Exception e) {
@@ -71,9 +71,9 @@ public final class DataServiceHandler extends SecuredHttpDataHandler {
 				case DELETE: {
 					String dataServiceId = paramJson.getString("dataServiceId", "");
 					if (StringUtil.isNotEmpty(dataServiceId)) {
-						String id = DataServiceManagement.deleteById(dataServiceId);
+						String id = AgentManagement.deleteById(dataServiceId);
 						if(dataServiceId.equals(id)) {
-							return JsonDataPayload.ok(uri, id, loginUser, DataService.class);
+							return JsonDataPayload.ok(uri, id, loginUser, Agent.class);
 						}
 						else {
 							return JsonDataPayload.fail("Can not delete dataServiceId "+id, 500);
@@ -106,9 +106,9 @@ public final class DataServiceHandler extends SecuredHttpDataHandler {
 					}
 					
 					// ok, ready to run
-					String activationRuleId = DataServiceManagement.activateDataService(loginUser, purpose, dataServiceId, timeToStart, schedulingTime, segmentId, triggerEventName);
-					if (activationRuleId != null) {
-						return JsonDataPayload.ok(uri, activationRuleId, loginUser, DataService.class);
+					String id = AgentManagement.activate(loginUser, purpose, dataServiceId, timeToStart, schedulingTime, segmentId, triggerEventName);
+					if (id != null) {
+						return JsonDataPayload.ok(uri, id, loginUser, Agent.class);
 					}
 					return JsonDataPayload.fail("Create Activation Rule is failed for the dataServiceId: " + dataServiceId, 500);
 				}
@@ -169,22 +169,22 @@ public final class DataServiceHandler extends SecuredHttpDataHandler {
 		}
 		SystemUser loginUser = initSystemUser(userSession, uri, params);
 		if (loginUser != null) {
-			if (isAdminRole(loginUser)) {
+			if (isAuthorized(loginUser, Agent.class)) {
 				switch (uri) {
 				case GET: {
 					String dataServiceId = HttpWebParamUtil.getString(params, "dataServiceId");
 					String dataServiceName = HttpWebParamUtil.getString(params, "dataServiceName");
-					DataService c;
+					Agent c;
 					if (StringUtil.isNotEmpty(dataServiceId)) {
-						c = DataServiceManagement.getById(dataServiceId);
+						c = AgentManagement.getById(dataServiceId);
 					} 
 					else if (StringUtil.isNotEmpty(dataServiceName)) {
-						c = new DataService(dataServiceName);
+						c = new Agent(dataServiceName);
 					}
 					else {
-						c = new DataService();
+						c = new Agent();
 					}
-					return JsonDataPayload.ok(uri, c, loginUser, DataService.class);
+					return JsonDataPayload.ok(uri, c, loginUser, Agent.class);
 				}
 				case LIST: {
 					String keywords = HttpWebParamUtil.getString(params, "keywords");
@@ -195,8 +195,8 @@ public final class DataServiceHandler extends SecuredHttpDataHandler {
 					int startIndex = HttpWebParamUtil.getInteger(params, "startIndex", 0);
 					int numberResult  = HttpWebParamUtil.getInteger(params, "numberResult", 2000);
 					
-					List<DataService> services = DataServiceManagement.getDataServices(startIndex,numberResult, keywords, filterServiceValue, forSynchronization, forDataEnrichment, forPersonalization);
-					return JsonDataPayload.ok(uri, services, loginUser, DataService.class);
+					List<Agent> services = AgentManagement.list(startIndex,numberResult, keywords, filterServiceValue, forSynchronization, forDataEnrichment, forPersonalization);
+					return JsonDataPayload.ok(uri, services, loginUser, Agent.class);
 				}
 				default:
 					return JsonErrorPayload.NO_HANDLER_FOUND;

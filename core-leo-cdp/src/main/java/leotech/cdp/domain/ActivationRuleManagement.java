@@ -14,10 +14,10 @@ import org.quartz.Trigger;
 import org.quartz.impl.StdSchedulerFactory;
 
 import leotech.cdp.dao.ActivationRuleDao;
-import leotech.cdp.dao.DataServiceDaoUtil;
+import leotech.cdp.dao.AgentDaoUtil;
 import leotech.cdp.model.activation.ActivationRule;
 import leotech.cdp.model.activation.ActivationRuleType;
-import leotech.cdp.model.activation.DataService;
+import leotech.cdp.model.activation.Agent;
 import leotech.cdp.model.journey.EventObserver;
 import leotech.system.domain.AirflowService;
 import leotech.system.util.LogUtil;
@@ -32,7 +32,7 @@ import leotech.system.util.ReflectionUtil;
  */
 public final class ActivationRuleManagement {
 	
-	private static final int TIME_REFRESH_DATA_SERVICES = 10000;
+	private static final int TIME_REFRESH_AGENTS = 10000;
 	static final String WRITE_DATA_FOLDER = "write_data_folder";
 	static final int BASE_1_SECOND = 1000;
 	static final int BASE_1_HOUR = 3600 * BASE_1_SECOND;
@@ -100,7 +100,7 @@ public final class ActivationRuleManagement {
 			Map<String, String> accessTokens = eventObserver.getAccessTokens();
 			String dataServiceId = activationRule.getDataServiceId();
 			String segmentId = activationRule.getSegmentId();
-			DataService service = DataServiceManagement.getById(dataServiceId);
+			Agent service = AgentManagement.getById(dataServiceId);
 			String dagId = service.getDagId();
 			Map<String, Object> params = service.buildConfParamsAirflowDagForSegment(segmentId, accessTokens);
 			boolean ok = AirflowService.triggerDagJob(dagId, params);
@@ -153,7 +153,7 @@ public final class ActivationRuleManagement {
 	 * @param action
 	 */
 	protected static void processActionForActivationRules(ActivationRule ar, String action) {
-		DataService service = DataServiceDaoUtil.getDataServiceById(ar.getDataServiceId());
+		Agent service = AgentDaoUtil.getById(ar.getDataServiceId());
 		
 		// validation
 		if (service == null) {
@@ -186,7 +186,7 @@ public final class ActivationRuleManagement {
 				public void run() {
 					loadActiveDataServicesAndTrigger(jobScheduler);
 				}
-			}, 3000, TIME_REFRESH_DATA_SERVICES);
+			}, 3000, TIME_REFRESH_AGENTS);
 		} catch (SchedulerException e) {
 			LogUtil.logError(ActivationRuleManagement.class, e.getMessage());
 			e.printStackTrace();
@@ -198,9 +198,9 @@ public final class ActivationRuleManagement {
 	 */
 	static void loadActiveDataServicesAndTrigger(Scheduler scheduler)  {
 		try {
-			List<DataService> dataServices = DataServiceManagement.getAllActiveDataServices();
+			List<Agent> dataServices = AgentManagement.getAllActiveAgents();
 			LogUtil.logInfo(ActivationRuleManagement.class, "TimerTask.startAllActiveDataServices: " + dataServices.size() + " dataServices");
-			for (DataService service : dataServices) {					
+			for (Agent service : dataServices) {					
 				triggerDataService(scheduler, service);
 			}
 			scheduler.start();
@@ -246,12 +246,12 @@ public final class ActivationRuleManagement {
 	 * 
 	 * @param service
 	 */
-	static void triggerDataService(Scheduler scheduler, DataService service) {
+	static void triggerDataService(Scheduler scheduler, Agent service) {
 		// ready to run job
 		try {
 			// the datetime to get all active activation rules and start
 			service.setStartedAt(new Date());
-			DataServiceManagement.save(service, false);
+			AgentManagement.save(service, false);
 			
 			String dataServiceId = service.getId();
 			List<ActivationRule> activationRules = ActivationRuleManagement.getAllActiveActivationRulesByServiceId(dataServiceId);

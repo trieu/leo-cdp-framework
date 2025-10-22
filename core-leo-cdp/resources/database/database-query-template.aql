@@ -2116,24 +2116,24 @@ AQL_GET_ALL_SYSTEM_SERVICES =>
 	RETURN e
 ;
 
-########### DATA_SERVICE  ########################################################################################################;
+########### AGENT  ########################################################################################################;
 
-AQL_GET_DATA_SERVICE_BY_ID =>
-	FOR e in cdp_dataservice 
+AQL_GET_AGENT_BY_ID =>
+	FOR e in cdp_agent 
 	FILTER e._key == @id
 	RETURN e
 ;
 
-AQL_LIST_DATA_SERVICES =>
-	FOR e in cdp_dataservice 
+AQL_LIST_AGENTS =>
+	FOR e in cdp_agent 
 	FILTER (LOWER(e.name) LIKE LOWER(@keywords) OR LOWER(e.description) LIKE LOWER(@keywords) OR @keywords == "")
 	SORT e.updatedAt DESC
 	LIMIT @startIndex, @numberResult
 	RETURN e
 ;
 
-AQL_LIST_DATA_SERVICES_WITH_FILTER =>
-	FOR e in cdp_dataservice   
+AQL_LIST_AGENTS_WITH_FILTER =>
+	FOR e in cdp_agent   
 	FILTER (LOWER(e.name) LIKE LOWER(@keywords) OR LOWER(e.description) LIKE LOWER(@keywords) OR @keywords == "") 
 		AND e.status == 1   
 		AND ( (e.forSynchronization == @forSynchronization AND @forSynchronization == true)
@@ -2144,9 +2144,9 @@ AQL_LIST_DATA_SERVICES_WITH_FILTER =>
 	RETURN e
 ;
 
-AQL_LIST_ALL_ACTIVE_DATA_SERVICES =>
-	FOR e in cdp_dataservice 
-	FILTER LENGTH(e.configs['service_api_key']) > 0 AND e.status == 1
+AQL_LIST_ALL_ACTIVE_AGENTS =>
+	FOR e in cdp_agent 
+	FILTER e.status == 1
 	RETURN e
 ;
 
@@ -2183,7 +2183,7 @@ AQL_REMOVE_ACTIVATION_RULE_BY_ID =>
 AQL_IS_ACTIVATION_RULE_READY_TO_RUN =>
 	RETURN LENGTH(
 		FOR e IN cdp_activationrule
-			FOR d IN cdp_dataservice
+			FOR d IN cdp_agent
 			FILTER e.dataServiceId == d._key AND e._key == @activationRuleId
 			AND e.active == TRUE AND d.status == 1 AND CHAR_LENGTH(d.configs['service_api_key']) > 0
 		RETURN e._key

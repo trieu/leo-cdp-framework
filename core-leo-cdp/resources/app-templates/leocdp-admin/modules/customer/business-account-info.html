@@ -638,7 +638,7 @@
 			iziToast.info({ title: 'Information',message: info });
 			$('#dialogDataSynchronization').modal('hide');
 			
-			LeoAdminApiUtil.callPostAdminApi('/cdp/data-service/trigger',{"accountId" : accountId, "dataServiceId" : dataServiceId}, function(json) { 
+			LeoAdminApiUtil.callPostAdminApi('/cdp/agent/trigger',{"accountId" : accountId, "dataServiceId" : dataServiceId}, function(json) { 
 				if(json.data === dataServiceId){
 					var info =  'Data Synchronization is OK for the account [' + accountName + ']';
 					iziToast.success({title: 'OK', message: info});

@@ -422,10 +422,10 @@ LeoCdpAdmin.navFunctions.deleteItemAsset = function(itemModel) {
 
 //---  Activation Service functions ---
 
-LeoCdpAdmin.navFunctions.loadDataServiceList = function (breadcrumbHtml) {
-    LeoCdpAdmin.loadView('/view/modules/activation/data-service-list.html?admin=1', pageDomSelector, function () {
+LeoCdpAdmin.navFunctions.loadAgentList = function (breadcrumbHtml) {
+    LeoCdpAdmin.loadView('/view/modules/activation/agent-list.html?admin=1', pageDomSelector, function () {
     	$('#page_breadcrumb').html(breadcrumbHtml);
-    	initDataServiceList()
+    	initAgentManagement()
     });
 }
 

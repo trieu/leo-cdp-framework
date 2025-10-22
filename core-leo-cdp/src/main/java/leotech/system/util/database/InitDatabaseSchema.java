@@ -18,13 +18,13 @@ import leotech.cdp.dao.graph.GraphProfile2Product;
 import leotech.cdp.dao.graph.GraphProfile2Profile;
 import leotech.cdp.dao.graph.GraphProfile2TouchpointHub;
 import leotech.cdp.domain.AssetCategoryManagement;
-import leotech.cdp.domain.DataServiceManagement;
+import leotech.cdp.domain.AgentManagement;
 import leotech.cdp.domain.DeviceManagement;
 import leotech.cdp.domain.JourneyMapManagement;
 import leotech.cdp.domain.SegmentDataManagement;
 import leotech.cdp.domain.schema.JourneyFlowSchema;
 import leotech.cdp.model.activation.ActivationRule;
-import leotech.cdp.model.activation.DataService;
+import leotech.cdp.model.activation.Agent;
 import leotech.cdp.model.analytics.ContextSession;
 import leotech.cdp.model.analytics.DailyReportUnit;
 import leotech.cdp.model.analytics.FeedbackData;
@@ -95,7 +95,7 @@ public class InitDatabaseSchema {
 		
 		// D
 		cdpCollections.add(DailyReportUnit.COLLECTION_NAME); // 10
-		cdpCollections.add(DataService.COLLECTION_NAME); // 11
+		cdpCollections.add(Agent.COLLECTION_NAME); // 11
 		cdpCollections.add(DataFlowStage.COLLECTION_NAME); // 12
 		cdpCollections.add(Device.COLLECTION_NAME); // 13
 		
@@ -307,7 +307,7 @@ public class InitDatabaseSchema {
 			SegmentDataManagement.initDefaultSystemData();
 			
 			// all AI Agents services
-			DataServiceManagement.initDefaultSystemData(true);
+			AgentManagement.initDefaultData(true);
 		
 			System.out.println(" =====> OK, DONE INIT DEFAULT SYSTEM DATA ===== ");
 			

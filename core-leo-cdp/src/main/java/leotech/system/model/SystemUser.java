@@ -14,7 +14,7 @@ import com.arangodb.entity.Key;
 import com.arangodb.model.PersistentIndexOptions;
 import com.google.gson.annotations.Expose;
 
-import leotech.cdp.model.activation.DataService;
+import leotech.cdp.model.activation.Agent;
 import leotech.cdp.model.asset.AssetGroup;
 import leotech.cdp.model.asset.AssetItem;
 import leotech.cdp.model.customer.AbstractProfile;
@@ -382,7 +382,7 @@ public final class SystemUser implements PersistentArangoObject {
 		}
 		else if(this.role == SystemUserRole.DATA_OPERATOR || this.role == SystemUserRole.CUSTOMER_DATA_EDITOR ) {
 			return (clazz.equals(Segment.class) || clazz.equals(Profile.class) || clazz.equals(AssetGroup.class) 
-					|| clazz.equals(AssetItem.class) || clazz.equals(DataService.class) );
+					|| clazz.equals(AssetItem.class) || clazz.equals(Agent.class) );
 		}
 		else if(this.role == SystemUserRole.STANDARD_USER ) {
 			return ( clazz.equals(AssetGroup.class) || clazz.equals(AssetItem.class));
@@ -402,7 +402,7 @@ public final class SystemUser implements PersistentArangoObject {
 			return true;
 		}
 		else if(this.role == SystemUserRole.DATA_OPERATOR || this.role == SystemUserRole.CUSTOMER_DATA_EDITOR ) {
-			return (clazz.equals(Segment.class) || clazz.equals(Profile.class) || clazz.equals(AssetGroup.class) || clazz.equals(AssetItem.class) || clazz.equals(DataService.class) );
+			return (clazz.equals(Segment.class) || clazz.equals(Profile.class) || clazz.equals(AssetGroup.class) || clazz.equals(AssetItem.class) || clazz.equals(Agent.class) );
 		}
 		else if(this.role == SystemUserRole.STANDARD_USER ) {
 			return ( clazz.equals(AssetGroup.class) || clazz.equals(AssetItem.class));

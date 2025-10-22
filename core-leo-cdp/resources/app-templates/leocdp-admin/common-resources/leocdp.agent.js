@@ -1,22 +1,20 @@
 // 
-var dataServiceStatusReadyHtml = '<i class="fa fa-check-square" aria-hidden="true" style="font-size:1.1em"></i> The service is active';
+var agentStatusReadyHtml = '<i class="fa fa-check-square" aria-hidden="true" style="font-size:1.1em"></i> The service is active';
 var dataServiceMap = {};
 
-var renderDataService = function(dataList){
-	var holder = $('#data_services_holder').empty().show();
+var renderAgent = function(dataList){
+	var holder = $('#agents_holder').empty().show();
 	dataServiceMap = {};
 	
 	_.forEach(dataList,function(e,i) {
 		var id = e.id;
 		dataServiceMap[id] = e;
 		var active = false;
-		if(e.configs.service_api_key && e.configs.service_api_key != ""){
-			e.service_api_key = e.configs.service_api_key.substr(0,5) + "...";
+		if(e.status == 1){
 			active = true;
-		} else{
-			e.service_api_key = "";
-		}
-		var boxTpl = _.template( $('#tpl_data_service_view').html() );
+		} 
+		e
+		var boxTpl = _.template( $('#tpl_agent_view').html() );
 		holder.append( boxTpl(e) );
 		holder.find('i.config_description').tooltip();
 		if(active){
@@ -25,7 +23,7 @@ var renderDataService = function(dataList){
 		}
 		// set label
 		if(e.status === 1){
-			var s = dataServiceStatusReadyHtml;
+			var s = agentStatusReadyHtml;
 			if(e.startedAt != null){
 				s += (' and working ')
 			}
@@ -42,34 +40,34 @@ var dataServiceLoader = function(keywords, filterServiceValue, forPersonalizatio
 	params['forDataEnrichment'] = forDataEnrichment;
 	params['forSynchronization'] = forSynchronization;
 	// call server
-	LeoAdminApiUtil.getSecuredData('/cdp/data-service/list', params, function(json) { 
+	LeoAdminApiUtil.getSecuredData('/cdp/agent/list', params, function(json) { 
 		if(typeof renderCallback === "function" && typeof json.data === "object" ) {
     		renderCallback(json.data)
     	}
 	});
 }
 
-var loadDataServices = function(keywords, filterServiceValue){
-	$('#data_services_pagination').empty();
-	$('#data_services_loader').show();
-	$('#data_services_holder').hide();	
-	$('#filter_data_services_keywords').on('keyup', function (e) {
+var loadAgents = function(keywords, filterServiceValue){
+	$('#agents_pagination').empty();
+	$('#agents_loader').show();
+	$('#agents_holder').hide();	
+	$('#filter_agents_keywords').on('keyup', function (e) {
 		// enter to search
         if (e.keyCode === 13) {
-        	loadAllDataServices()
+        	loadAllAgents()
         }
     });	
 	
 	var startIndex = 0, numberResult = 10000;	
 	var callback = function(data) {
-		$('#data_services_loader').hide();
+		$('#agents_loader').hide();
 		if(data.length > 0){
-			$('#data_services_pagination').pagination({
+			$('#agents_pagination').pagination({
 				dataSource: data,
 				className: "paginationjs paginationjs-big",
 			    pageSize: 6,
 			    callback: function(dataList, pagination) {
-			    	renderDataService(dataList)
+			    	renderAgent(dataList)
 			    },
 			    beforePageOnClick: function(){
 			    	
@@ -77,7 +75,7 @@ var loadDataServices = function(keywords, filterServiceValue){
 			});
 		}
 		else {
-			$('#data_services_holder').show().html('<div class="col-lg-12 row highlight_text"> <h3 style="text-align: center;" >No results found !</h3> </div>');
+			$('#agents_holder').show().html('<div class="col-lg-12 row highlight_text"> <h3 style="text-align: center;" >No results found !</h3> </div>');
 		}
 	};	
 	var forPersonalization = true, forDataEnrichment = true, forSynchronization = true;
@@ -96,20 +94,20 @@ var loadDataServices = function(keywords, filterServiceValue){
 	dataServiceLoader(keywords, filterServiceValue, forPersonalization, forDataEnrichment, forSynchronization, startIndex, numberResult, callback);
 }
 
-function resetDataServiceFilter() {
-	$('#filter_data_services_keywords').val('');
-	$('#select_filter_data_services').val('all');
-	loadAllDataServices();
+function resetAgentFilter() {
+	$('#filter_agents_keywords').val('');
+	$('#select_filter_agents').val('all');
+	loadAllAgents();
 }
 
-function loadAllDataServices(){	
-	var keywords = $('#filter_data_services_keywords').val();
-	var filterServiceValue = $('#select_filter_data_services').val();
-	loadDataServices(keywords, filterServiceValue)
+function loadAllAgents(){	
+	var keywords = $('#filter_agents_keywords').val();
+	var filterServiceValue = $('#select_filter_agents').val();
+	loadAgents(keywords, filterServiceValue)
 }
 
 
-function saveDataServiceInfo(node){
+function saveAgentInfo(node){
 	var id = $(node).data('id');
 	var data = dataServiceMap[id];
 	
@@ -137,7 +135,7 @@ function saveDataServiceInfo(node){
 		}
 	});
 	data.configs = configData;
-	data.status = $('#dataServiceStatus').prop('checked') ? 1 : 0;
+	data.status = $('#agentStatus').prop('checked') ? 1 : 0;
 	
 	if(data.name === '') {
 		notifyErrorMessage("Service name is empty, please enter a name")
@@ -147,14 +145,14 @@ function saveDataServiceInfo(node){
 	var callback = function(rs){
 		if(rs != null){
 			notifySavedOK('Activation Data Service', 'The data of "<b>'+data.name+'</b>" has been saved successfully')
-			$('#dialogSetDataServiceInfo').modal('hide');			
-			loadDataServices();
+			$('#dialogSetAgentInfo').modal('hide');			
+			loadAgents();
 		}
 		else {
-			console.error('saveDataServiceInfo ', rs)
+			console.error('saveAgentInfo ', rs)
 		}
 	};
-	LeoAdminApiUtil.callPostAdminApi('/cdp/data-service/save', {'objectJson':JSON.stringify(data) }, function (json) {
+	LeoAdminApiUtil.callPostAdminApi('/cdp/agent/save', {'objectJson':JSON.stringify(data) }, function (json) {
         if (json.httpCode === 0 && json.errorMessage === '') {
 			callback(json.data);
         } else {
@@ -163,25 +161,25 @@ function saveDataServiceInfo(node){
    	}, callback);
 }
 
-function newDataService(){
-	LeoAdminApiUtil.getSecuredData('/cdp/data-service/get',{"dataServiceName":"", "dataServiceId": ""}, function(json) { 
+function newAgent(){
+	LeoAdminApiUtil.getSecuredData('/cdp/agent/get',{"dataServiceName":"", "dataServiceId": ""}, function(json) { 
 		var data = json.data;
-		showDataServiceDialog(data);
+		showAgentDialog(data);
 		dataServiceMap[data.id] = data;
 	})
 }
 
-function loadDataService(id){
+function loadAgent(id){
 	var data = dataServiceMap[id];
 	if(typeof data === 'object'){
-		showDataServiceDialog(data);
+		showAgentDialog(data);
 	}
 	else {
 		notifyErrorMessage("Can not load data for service: " + id);
 	}
 }
 
-function resetDataService(id){
+function resetAgent(id){
 	
 	var doResetService = function(id){
 		$('#' + id + '_api_key').val('')
@@ -190,7 +188,6 @@ function resetDataService(id){
 		var data = dataServiceMap[id];
 		_.forOwn(data.configs,function(value, key) {
 			data.configs.service_api_url = "";
-			data.configs.service_api_key = "";
 			data.startedAt = null;
 		});
 		data.status = 0;
@@ -201,14 +198,14 @@ function resetDataService(id){
 		    	    message: 'The config of <b>'+data.name+'</b> is reset OK!',
 		    	    timeout: 3000,
 		    	});
-				loadDataServices();
+				loadAgents();
 			}
 			else {
-				console.error('resetDataService ', rs)
+				console.error('resetAgent ', rs)
 			}
 		};
 		var params = {'objectJson' : JSON.stringify(data) };
-		LeoAdminApiUtil.callPostAdminApi('/cdp/data-service/save', params, function (json) {
+		LeoAdminApiUtil.callPostAdminApi('/cdp/agent/save', params, function (json) {
 	        if (json.httpCode === 0 && json.errorMessage === '') {
 				callback(json.data);
 	        } else {
@@ -220,7 +217,7 @@ function resetDataService(id){
 	$('#delete_callback').val('');
 	$('#confirmDeleteDialog').modal({ focus: true });
 	if (id) {
-		 var resetCallback = "resetDataService_" + id;
+		 var resetCallback = "resetAgent_" + id;
 		 window[resetCallback] = function () {
 			doResetService(id)
 		 }
@@ -232,20 +229,20 @@ function resetDataService(id){
 	
 }
 
-function deleteDataService(id){
+function deleteAgent(id){
 	$('#delete_callback').val('');
 	$('#confirmDeleteDialog').modal({ focus: true });
 	if (id) {
-		 var callback = "deleteDataService_" + id;
+		 var callback = "deleteAgent_" + id;
 		 window[callback] = function () {
-			LeoAdminApiUtil.callPostAdminApi('/cdp/data-service/delete', {'dataServiceId' : id }, function (json) {
+			LeoAdminApiUtil.callPostAdminApi('/cdp/agent/delete', {'dataServiceId' : id }, function (json) {
 		    if (json.httpCode === 0 && json.errorMessage === '') {
 			    	if(json.data === id){
 						iziToast.success({ title: 'Data Service', message: 'The service <b>' + id +'</b> is successfully deleted!', timeout: 3000 });
-						loadDataServices();
+						loadAgents();
 					}
 					else {
-						console.error('deleteDataService ', json)
+						console.error('deleteAgent ', json)
 		    		}
 		        } else {
 		            LeoAdminApiUtil.logErrorPayload(json);
@@ -258,13 +255,13 @@ function deleteDataService(id){
 	}
 }
 
-function showDataServiceDialog(data) {
+function showAgentDialog(data) {
 	if(typeof data.id !== 'string'){
 		notifyErrorMessage("Invalid data service: " + data);
 		return;
 	}
 	
-	$('#dialogSetDataServiceInfo').modal({
+	$('#dialogSetAgentInfo').modal({
 		backdrop: 'static',
 		keyboard: false
 	});
@@ -275,7 +272,7 @@ function showDataServiceDialog(data) {
 	$('#dataServiceName').val(data.name); 
 	$('#dataServiceDescription').val(data.description); 
 	$('#dataServiceDagId').val(data.dagId || ''); 
-	$('#dataServiceStatus').prop('checked', data.status == 1);
+	$('#agentStatus').prop('checked', data.status == 1);
 	
 	$('#forPersonalization').prop('checked', data.forPersonalization);
 	$('#forDataEnrichment').prop('checked', data.forDataEnrichment);
@@ -288,12 +285,12 @@ function showDataServiceDialog(data) {
 		var time = new Date().getTime() + i;
 		i++;
 		var e = { serviceId : id, configName : key, configValue : value, time: time};
-		addNewConfigForDataService(id, e)
+		addNewConfigForAgent(id, e)
 	});
 }
 
 
-function addNewConfigForDataService(id, e){
+function addNewConfigForAgent(id, e){
 	var time = new Date().getTime() + randomInteger(0,10000);
 	var data = e != null ? e : {serviceId : id, configName : "", configValue : "", time: time};
 	console.log(data)
@@ -308,6 +305,6 @@ function addNewConfigForDataService(id, e){
 	$('#dataServiceConfigList').append(itemTpl(data)).find('input:last').focus();
 }
 
-function deleteConfigOfDataService(id){
+function deleteConfigOfAgent(id){
 	$('#' + id).remove();
 }

@@ -9,7 +9,7 @@ package leotech.cdp.model.activation;
 public class ActivationRuleType {
 
 	// FREE version can run data service only
-	public static final String RUN_DATA_SERVICE = "run-data-service";
+	public static final String RUN_AGENT = "run-agent";
 	public static final String AFFILIATE_SHARE_LINK = "affiliate-share-link";
 
 	// PAID version has email marketing rule by using campaign

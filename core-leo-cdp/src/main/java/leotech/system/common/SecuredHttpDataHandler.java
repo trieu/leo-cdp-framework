@@ -4,6 +4,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 
 import com.devskiller.friendly_id.FriendlyId;
 
@@ -56,6 +57,16 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 	public static final String ADMIN_HANDLER_SESSION_KEY = "leouss";
 	final static int MAX_NUMBER = 1000000;
 	
+	// Define classes requiring operational role
+	private static final Set<Class<?>> OPERATION_ROLE_CLASS = Set.of(
+        leotech.cdp.model.customer.Profile.class,
+        leotech.cdp.model.customer.Segment.class,
+        leotech.cdp.model.journey.JourneyMap.class,
+        leotech.cdp.model.asset.AssetCategory.class,
+        leotech.cdp.model.asset.AssetGroup.class,
+        leotech.cdp.model.asset.AssetItem.class,
+        leotech.cdp.model.activation.Agent.class
+    );
 	
 	private BaseHttpRouter baseHttpRouter;
 	
@@ -291,27 +302,31 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 
 	
 	/**
-	 * @param loginUser
-	 * @param clazz
-	 * @return
+	 * Checks if a user is authorized to access a given class type.
+	 *
+	 * @param loginUser the logged-in user
+	 * @param clazz     the target class to authorize
+	 * @return true if authorized, false otherwise
 	 */
 	public static boolean isAuthorized(SystemUser loginUser, Class<?> clazz) {
-		int role = loginUser.getRole();
-		int status = loginUser.getStatus();
-		if(status == SystemUser.STATUS_ACTIVE) {
-			if(clazz.equals(leotech.cdp.model.customer.Profile.class)) {
-				return loginUser.hasOperationRole();
-			}
-			else if(clazz.equals(leotech.cdp.model.customer.Segment.class)) {
-				return loginUser.hasOperationRole();
-			}
-			else if(clazz.equals(leotech.cdp.model.journey.JourneyMap.class)) {
-				return loginUser.hasOperationRole();
-			}
-			return role >= 0;
-		}
-		return false;
+	    if (loginUser == null || clazz == null) {
+	        return false;
+	    }
+
+	    // Must be active to proceed
+	    if (loginUser.getStatus() != SystemUser.STATUS_ACTIVE) {
+	        return false;
+	    }
+
+	    // If the class belongs to the operation set, check that role
+	    if (OPERATION_ROLE_CLASS.contains(clazz)) {
+	        return loginUser.hasOperationRole();
+	    }
+
+	    // Default authorization rule
+	    return loginUser.getRole() >= 0;
 	}
+
 	
 	/**
 	 * @param loginUser
@@ -326,7 +341,7 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 	 * @param loginUser
 	 * @return
 	 */
-	public static boolean isAuthorizedToUpdateData(SystemUser loginUser) {
+	public static boolean isDataOperator(SystemUser loginUser) {
 		return loginUser.hasOperationRole();
 	}
 	
@@ -335,8 +350,7 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 	 * @param loginUser
 	 * @return
 	 */
-	public static boolean isAuthorizedToUpdateData(SystemUser loginUser, Class<?> clazz) {
-		// TODO check for Class
+	public static boolean isDataOperator(SystemUser loginUser, Class<?> clazz) {
 		return loginUser.hasOperationRole();
 	}
 

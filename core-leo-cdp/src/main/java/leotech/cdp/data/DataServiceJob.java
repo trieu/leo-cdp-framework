@@ -14,7 +14,7 @@ import leotech.cdp.dao.SegmentDaoUtil;
 import leotech.cdp.domain.ActivationRuleManagement;
 import leotech.cdp.domain.SegmentDataManagement;
 import leotech.cdp.model.activation.ActivationRule;
-import leotech.cdp.model.activation.DataService;
+import leotech.cdp.model.activation.Agent;
 import leotech.cdp.model.customer.Profile;
 import leotech.cdp.model.customer.Segment;
 import leotech.cdp.model.journey.Touchpoint;
@@ -43,7 +43,7 @@ public abstract class DataServiceJob implements Job {
 	
 	protected String activationJobId;
 	protected ActivationRule activationRule;
-	protected DataService dataService;
+	protected Agent dataService;
 	
 	protected String name = NOTHING;
 	protected String apiKey = "";
@@ -195,7 +195,7 @@ public abstract class DataServiceJob implements Job {
 	/**
 	 * @return
 	 */
-	public final DataService getDataService() {
+	public final Agent getDataService() {
 		dataValidation();
 		return dataService;
 	}
@@ -236,7 +236,7 @@ public abstract class DataServiceJob implements Job {
 		this.apiKey = apiKey;
 	}
 
-	public void setDataService(DataService dataService) {
+	public void setDataService(Agent dataService) {
 		this.dataService = dataService;
 	}
 	

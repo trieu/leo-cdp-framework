@@ -29,7 +29,7 @@ import rfx.core.util.StringUtil;
  * @since 2021
  *
  */
-public final class DataService extends SystemService implements Serializable {
+public final class Agent extends SystemService implements Serializable {
 	
 	/**
 	 * 
@@ -48,7 +48,7 @@ public final class DataService extends SystemService implements Serializable {
 	public static final String DATA_SERVICE_JAVACLASS = "javaclass:";
 	public static final String DATA_SERVICE_EXTERNAL = ExternalAgentService.class.getSimpleName();
 	
-	public static final String COLLECTION_NAME = PersistentObject.getCdpCollectionName(DataService.class);
+	public static final String COLLECTION_NAME = PersistentObject.getCdpCollectionName(Agent.class);
 	private static ArangoCollection instance;
 
 	@Override
@@ -105,7 +105,7 @@ public final class DataService extends SystemService implements Serializable {
 		return StringUtil.isNotEmpty(id) && StringUtil.isNotEmpty(name) && configs != null;
 	}
 
-	public DataService() {
+	public Agent() {
 		// default
 		super();
 		this.id = NEW_SERVICE_PREFIX + System.currentTimeMillis(); 
@@ -115,7 +115,7 @@ public final class DataService extends SystemService implements Serializable {
 		this.configs.put(SERVICE_API_KEY, "");
 	}
 	
-	public DataService(String name) {
+	public Agent(String name) {
 		super();
 		this.name = name;
 		this.serviceUri = DATA_SERVICE_EXTERNAL;
@@ -125,7 +125,7 @@ public final class DataService extends SystemService implements Serializable {
 		buildHashedId();
 	}
 
-	public DataService(String name, Map<String, Object> configs) {
+	public Agent(String name, Map<String, Object> configs) {
 		super();
 		this.name = name;
 		this.configs = configs;
@@ -169,11 +169,11 @@ public final class DataService extends SystemService implements Serializable {
 		String serviceUri = this.getServiceUri();
 		Class<? extends Job> clazz = null;
 		if(StringUtil.isNotEmpty(serviceUri)) {
-			if(serviceUri.startsWith(DataService.DATA_SERVICE_JAVACLASS)) {
-				String classpath = serviceUri.replace(DataService.DATA_SERVICE_JAVACLASS, "");
+			if(serviceUri.startsWith(Agent.DATA_SERVICE_JAVACLASS)) {
+				String classpath = serviceUri.replace(Agent.DATA_SERVICE_JAVACLASS, "");
 				try {
 					clazz = (Class<Job>) Class.forName(classpath);		
-					LogUtil.logInfo(DataService.class, "getClassForJobDetails using " + clazz.getName());
+					LogUtil.logInfo(Agent.class, "getClassForJobDetails using " + clazz.getName());
 				} catch (Exception e) {
 					e.printStackTrace();
 					String s = "Failed to create " + classpath;
@@ -182,7 +182,7 @@ public final class DataService extends SystemService implements Serializable {
 			}
 			else {				
 				clazz = ExternalAgentService.class;
-				LogUtil.logInfo(DataService.class, "getClassForJobDetails using " + clazz.getName());
+				LogUtil.logInfo(Agent.class, "getClassForJobDetails using " + clazz.getName());
 			}
 		}
 		return clazz;

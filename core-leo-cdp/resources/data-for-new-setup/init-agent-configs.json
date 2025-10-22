@@ -4,11 +4,10 @@
 		"name": "Personalization Engine",
 		"description": "The default personalization engine of CDP",
 		"forPersonalization": true,
-		"status": 1,
+		"status": 0,
+		"dagId" : "leo_personalization",
 		"configs": {
-			"service_provider": "https://leocdp.com",
-			"service_api_url": "local-data-service",
-			"service_api_key": "default"
+			"service_provider": "https://leocdp.com"
 		},
 		"serviceUri": "javaclass:leotech.cdp.data.service.InternalAgentActivation"
 	},
@@ -17,11 +16,10 @@
 		"name": "CLV Computation Service",
 		"description": "The default Computation Service for Customer Lifetime Value (CLV)",
 		"forDataEnrichment": true,
-		"status": 1,
+		"status": 0,
+		"dagId" : "leo_compute_clv",
 		"configs": {
-			"service_provider": "https://leocdp.com",
-			"service_api_url": "local-data-service",		
-			"service_api_key": "default"
+			"service_provider": "https://leocdp.com"
 		},
 		"serviceUri": "javaclass:leotech.cdp.data.service.InternalAgentActivation"
 	},
@@ -31,10 +29,8 @@
 		"description": "The default email marketing engine of CDP",
 		"forPersonalization": true,
 		"status": 0,
+		"dagId" : "leo_email_marketing",
 		"configs": {
-			"service_provider": "https://leocdp.com",
-			"service_api_url": "",
-			"service_api_key": "",
 			"smtp_enabled": false,
 			"smtp_username": "",
 			"smtp_password": "",

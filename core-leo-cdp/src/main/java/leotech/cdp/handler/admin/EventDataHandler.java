@@ -5,7 +5,7 @@ import java.util.List;
 import io.vertx.core.MultiMap;
 import io.vertx.core.json.JsonObject;
 import leotech.cdp.domain.EventDataManagement;
-import leotech.cdp.model.activation.DataService;
+import leotech.cdp.model.activation.Agent;
 import leotech.cdp.model.analytics.TrackingEvent;
 import leotech.cdp.model.analytics.TrackingEventCsvData;
 import leotech.system.common.BaseHttpRouter;
@@ -79,7 +79,7 @@ public final class EventDataHandler extends SecuredHttpDataHandler {
 	public JsonDataPayload httpGetHandler(String userSession, String uri, MultiMap params) throws Exception {
 		SystemUser loginUser = initSystemUser(userSession, uri, params);
 		if (loginUser != null) {
-			if (isAuthorized(loginUser, DataService.class)) {
+			if (isAuthorized(loginUser, Agent.class)) {
 				switch (uri) {
 				case IMPORT_EVENTS_PREVIEW : {
 					if(loginUser.hasOperationRole()) {

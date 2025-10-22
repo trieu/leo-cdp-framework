@@ -124,7 +124,7 @@ public final class ProfileDataHandler extends SecuredHttpDataHandler {
 				}
 				
 				case PROFILE_DEDUPLICATE_FOR_ONE_PERSON : {
-					if(isAuthorizedToUpdateData(loginUser, Profile.class)) {
+					if(isDataOperator(loginUser, Profile.class)) {
 						String profileId = paramJson.getString(PROFILE_ID, "");
 						if(! profileId.isBlank() ) {
 							ResolutioResult c = JobMergeDuplicatedProfiles.doDeduplicationManually(loginUser, profileId);
@@ -138,7 +138,7 @@ public final class ProfileDataHandler extends SecuredHttpDataHandler {
 				}
 				
 				case PROFILE_UPDATE : {
-					if(isAuthorizedToUpdateData(loginUser, Profile.class)) {
+					if(isDataOperator(loginUser, Profile.class)) {
 						String json = paramJson.getString("objectJson", "{}");
 						try {
 							String profileId = ProfileDataManagement.updateFromJson(loginUser, json);
@@ -157,7 +157,7 @@ public final class ProfileDataHandler extends SecuredHttpDataHandler {
 				
 				case PROFILE_REMOVE : {
 					String id = paramJson.getString("id", "");
-					if(isAuthorizedToUpdateData(loginUser, Profile.class)) {
+					if(isDataOperator(loginUser, Profile.class)) {
 						
 						try {
 							boolean rs = ProfileDataManagement.checkAndRemove(loginUser, id);
@@ -231,7 +231,7 @@ public final class ProfileDataHandler extends SecuredHttpDataHandler {
 				}
 				
 				case PROFILE_UPDATE_ITEM_RANKING : {
-					if(isAuthorizedToUpdateData(loginUser, Profile.class)) {
+					if(isDataOperator(loginUser, Profile.class)) {
 						String profileId = paramJson.getString(PROFILE_ID);
 						int recommendationModel = paramJson.getInteger("recommendationModel");
 						String graphName = paramJson.getString("graphName");

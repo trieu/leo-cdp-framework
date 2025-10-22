@@ -907,7 +907,7 @@ const activateDataService = function(buttonNode) {
 		params['schedulingTime'] = schedulingTime;
 		params['timeToStart'] = timeToStart;
 		
-		LeoAdminApiUtil.callPostAdminApi('/cdp/data-service/create-activation', params, function(json) { 
+		LeoAdminApiUtil.callPostAdminApi('/cdp/agent/create-activation', params, function(json) { 
 			if(json.data !== ''){
 				var info =  'The segment [' + segmentName + '] is successfully activated for ' + purpose.replace('_',' ');
 				notifySuccessMessage(info, function(){
@@ -928,7 +928,7 @@ const stopActivationForSegment = function(node){
 	var id = $(node).data("activation-rule-id");
 	var serviceName = $(node).data("activation-service-name");
 	var params = {"activationRuleId": id};
-	LeoAdminApiUtil.callPostAdminApi('/cdp/data-service/stop-activation', params, function(json) { 
+	LeoAdminApiUtil.callPostAdminApi('/cdp/agent/stop-activation', params, function(json) { 
 		if(json.data === true){
 			var info = 'The activation rule of service [' + serviceName + '] is successfully stopped ! ';
 			notifySuccessMessage(info, function(){
@@ -947,7 +947,7 @@ const startActivationForSegment = function(node){
 	var id = $(node).data("activation-rule-id");
 	var serviceName = $(node).data("activation-service-name");
 	var params = {"activationRuleId": id};
-	LeoAdminApiUtil.callPostAdminApi('/cdp/data-service/start-activation', params, function(json) { 
+	LeoAdminApiUtil.callPostAdminApi('/cdp/agent/start-activation', params, function(json) { 
 		if(json.data === true){
 			var info =  'The activation rule of service [' + serviceName + '] is successfully started ! ';
 			notifySuccessMessage(info, function(){
@@ -965,7 +965,7 @@ const removeActivationForSegment = function(node){
 	var id = $(node).data("activation-rule-id");
 	var serviceName = $(node).data("activation-service-name");
 	var params = {"activationRuleId": id};
-	LeoAdminApiUtil.callPostAdminApi('/cdp/data-service/remove-activation', params, function(json) { 
+	LeoAdminApiUtil.callPostAdminApi('/cdp/agent/remove-activation', params, function(json) { 
 		if(json.data === true){
 			var info =  'The activation rule of service [' + serviceName + '] is successfully removed ! ';
 			notifySuccessMessage(info, function(){
@@ -994,7 +994,7 @@ const manuallyRunActivationOfSegment = function(node){
 	var id = $(node).data("activation-rule-id");
 	var serviceName = $(node).data("activation-service-name");
 	var params = {"activationRuleId": id};
-	LeoAdminApiUtil.callPostAdminApi('/cdp/data-service/manually-run-activation', params, function(json) { 
+	LeoAdminApiUtil.callPostAdminApi('/cdp/agent/manually-run-activation', params, function(json) { 
 		if(json.data === true){
 			var info =  'The activation rule of service [' + serviceName + '] is manually run ! ';
 			notifySuccessMessage(info, function(){

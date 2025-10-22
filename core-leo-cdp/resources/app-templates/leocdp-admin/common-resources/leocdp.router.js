@@ -269,6 +269,14 @@ LeoCdpAdmin.navRouters = {
 			"breadcrumb" : ["Data Activation Hub", "Digital Asset Management"],
 			"activeMenuItem" : "Digital_Asset_Management"
 		},
+		// 4.3 AI Agent for Data Activation 
+
+		"AI_Agent_Activation" : {
+			"menuName" : "AI Agent Activation",
+			"functionName" : "loadAgentList",
+			"breadcrumb" : ["Data Activation Hub", "AI Agent Activation"],
+			"activeMenuItem" : "AI_Agent_Activation"
+		},
 		
 		// Asset Group List
 		"Asset_Groups" : {
@@ -374,13 +382,7 @@ LeoCdpAdmin.navRouters = {
 			"activeMenuItem" : "Digital_Asset_Management"
 		},
 		
-		// 4.3 Customer Data Activation to synch data to another data platform 
-		"Data_Service_Management" : {
-			"menuName" : "Data Service Management",
-			"functionName" : "loadDataServiceList",
-			"breadcrumb" : ["Data Activation Hub", "Data Service Management"],
-			"activeMenuItem" : "Data_Service_Management"
-		},
+		
 		
 		
 		// 4.4 Marketing Activation Campaigns

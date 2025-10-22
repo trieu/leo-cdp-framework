@@ -4,6 +4,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
+import leotech.cdp.handler.admin.AgentHandler;
 import leotech.cdp.handler.admin.Analytics360Handler;
 import leotech.cdp.handler.admin.AssetCategoryHandler;
 import leotech.cdp.handler.admin.AssetGroupHandler;
@@ -11,7 +12,6 @@ import leotech.cdp.handler.admin.AssetItemHandler;
 import leotech.cdp.handler.admin.BusinessAccountHandler;
 import leotech.cdp.handler.admin.CampaignHandler;
 import leotech.cdp.handler.admin.DataFunnelHandler;
-import leotech.cdp.handler.admin.DataServiceHandler;
 import leotech.cdp.handler.admin.EventDataHandler;
 import leotech.cdp.handler.admin.EventObserverHandler;
 import leotech.cdp.handler.admin.JourneyMapHandler;
@@ -49,7 +49,7 @@ public final class AdminHttpRouter extends BaseWebRouter {
 	public static final String CDP_TOUCHPOINT_PREFIX = "/cdp/touchpoint";
 	public static final String CDP_ANALYTICS_360_PREFIX = "/cdp/analytics360";
 	public static final String CDP_CAMPAIGN_PREFIX = "/cdp/campaign";
-	public static final String CDP_DATA_SERVICE_PREFIX = "/cdp/data-service";
+	public static final String CDP_AI_AGENT_PREFIX = "/cdp/agent";
 	
 	// system handler for admin
 	public static final String CDP_SYSTEM_CONTROL= "/cdp/system-control";
@@ -142,8 +142,8 @@ public final class AdminHttpRouter extends BaseWebRouter {
 				payload = new CampaignHandler(this).httpPostHandler(userSession, uri, paramJson);
 			}
 			//
-			else if (uri.startsWith(CDP_DATA_SERVICE_PREFIX)) {
-				payload = new DataServiceHandler(this).httpPostHandler(userSession, uri, paramJson);
+			else if (uri.startsWith(CDP_AI_AGENT_PREFIX)) {
+				payload = new AgentHandler(this).httpPostHandler(userSession, uri, paramJson);
 			}
 			//
 			else if (uri.startsWith(CDP_CATEGORY_PREFIX)) {
@@ -247,8 +247,8 @@ public final class AdminHttpRouter extends BaseWebRouter {
 				payload = new CampaignHandler(this).httpGetHandler(userSession, uri, urlParams);
 			}
 			//
-			else if (uri.startsWith(CDP_DATA_SERVICE_PREFIX)) {
-				payload = new DataServiceHandler(this).httpGetHandler(userSession, uri, urlParams);
+			else if (uri.startsWith(CDP_AI_AGENT_PREFIX)) {
+				payload = new AgentHandler(this).httpGetHandler(userSession, uri, urlParams);
 			}
 			//
 			else if (uri.startsWith(CDP_CATEGORY_PREFIX)) {

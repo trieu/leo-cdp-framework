@@ -123,7 +123,7 @@ public final class UploaderHttpRouter extends BaseHttpRouter {
 			RoutingContext context,HttpServerRequest request, MultiMap reqHeaders, String refObjClass, String refObjKey) {
 		JsonDataPayload dataPayload = null;
 		
-		if (SecuredHttpDataHandler.isAuthorizedToUpdateData(loginUser)) {
+		if (SecuredHttpDataHandler.isDataOperator(loginUser)) {
 			FileUploaderData data = new FileUploaderData();
 			Set<FileUpload> fileUploads = context.fileUploads();
 			for (FileUpload uploadedFile : fileUploads) {
@@ -187,7 +187,7 @@ public final class UploaderHttpRouter extends BaseHttpRouter {
 	private static JsonDataPayload uploadUsingLocalStorage(SystemUser loginUser, RoutingContext context,
 			HttpServerRequest request, MultiMap reqHeaders, String refObjClass, String refObjKey) {
 		JsonDataPayload dataPayload = null;
-		if (SecuredHttpDataHandler.isAuthorizedToUpdateData(loginUser)) {
+		if (SecuredHttpDataHandler.isDataOperator(loginUser)) {
 			FileUploaderData data = new FileUploaderData();
 			Set<FileUpload> fileUploads = context.fileUploads();
 			for (FileUpload uploadedFile : fileUploads) {
