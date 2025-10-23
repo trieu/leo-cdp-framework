@@ -1,5 +1,15 @@
 package leotech.system.config;
 
+import static leotech.system.util.database.ArangoDbUtil.DEFAULT_ARANGO_DATABASE;
+import static leotech.system.util.database.ArangoDbUtil.DEFAULT_ARANGO_HOST;
+import static leotech.system.util.database.ArangoDbUtil.DEFAULT_ARANGO_PASSWORD;
+import static leotech.system.util.database.ArangoDbUtil.DEFAULT_ARANGO_PORT;
+import static leotech.system.util.database.ArangoDbUtil.DEFAULT_ARANGO_USERNAME;
+import static leotech.system.util.database.ArangoDbUtil.ENV_ARANGO_DATABASE;
+import static leotech.system.util.database.ArangoDbUtil.ENV_ARANGO_HOST;
+import static leotech.system.util.database.ArangoDbUtil.ENV_ARANGO_PASSWORD;
+import static leotech.system.util.database.ArangoDbUtil.ENV_ARANGO_PORT;
+
 import java.io.IOException;
 import java.io.Serializable;
 import java.sql.Connection;
@@ -12,6 +22,7 @@ import java.util.Map;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
+import leotech.system.util.database.ArangoDbUtil;
 import leotech.system.version.SystemMetaData;
 import rfx.core.util.CommonUtil;
 import rfx.core.util.FileUtils;
@@ -22,6 +33,8 @@ public class DatabaseConfigs implements Serializable {
 
 	private static final long serialVersionUID = 6185084071488833500L;
 
+	public static final String SYSTEM_ENV_VARS = "SYSTEM_ENV_VARS";
+	
 	public static final int MAX_CONNECTIONS = 100;
 	public static final int MIN_CONNECTIONS = 2;
 	public static final long MAX_WAIT = 15000;
@@ -63,9 +76,9 @@ public class DatabaseConfigs implements Serializable {
 	private boolean enabled = true;
 	private Map<String, Long> partitionMap;
 
-	static final Map<String, DatabaseConfigs> sqlDbConfigsCache = new HashMap<String, DatabaseConfigs>(6);
+	static final Map<String, DatabaseConfigs> dbConfigsPool = new HashMap<String, DatabaseConfigs>(6);
 	static final Map<String, Driver> driversCache = new HashMap<String, Driver>();
-	static String sqlDbConfigsJson = null;
+	static String dbConfigsJson = null;
 
 	public static DatabaseConfigs load(String dbId) {
 		String databaseConfigFile = CommonUtil.getDatabaseConfigFile();
@@ -78,7 +91,7 @@ public class DatabaseConfigs implements Serializable {
 
 	public static DatabaseConfigs loadConfigs(String sqlDbConfigsJson, String dbId) {
 		String k = dbId;
-		if (!sqlDbConfigsCache.containsKey(k)) {
+		if (!dbConfigsPool.containsKey(k)) {
 			DatabaseConfigs configs = null;
 			try {
 				DbConfigsMap map = new Gson().fromJson(sqlDbConfigsJson, DbConfigsMap.class);
@@ -90,24 +103,24 @@ public class DatabaseConfigs implements Serializable {
 				throw new IllegalArgumentException("CAN NOT LOAD SqlDbConfigs from JSON: " + sqlDbConfigsJson);
 			}
 			configs.setDbId(dbId);
-			sqlDbConfigsCache.put(k, configs);
+			dbConfigsPool.put(k, configs);
 		}
-		return sqlDbConfigsCache.get(k);
+		return dbConfigsPool.get(k);
 	}
 
 	public static DatabaseConfigs loadFromFile(String filePath, String dbId) {
 		String k = dbId;
-		if (sqlDbConfigsJson == null) {
+		if (dbConfigsJson == null) {
 			try {
-				sqlDbConfigsJson = FileUtils.readFileAsString(filePath);
+				dbConfigsJson = FileUtils.readFileAsString(filePath);
 			} catch (IOException e) {
 				throw new IllegalArgumentException("File is not found at " + filePath);
 			}
 		}
-		if (!sqlDbConfigsCache.containsKey(k)) {
+		if (!dbConfigsPool.containsKey(k)) {
 			DatabaseConfigs configs = null;
 			try {
-				DbConfigsMap map = new Gson().fromJson(sqlDbConfigsJson, DbConfigsMap.class);
+				DbConfigsMap map = new Gson().fromJson(dbConfigsJson, DbConfigsMap.class);
 				configs = map.getConfigs().get(dbId);
 			} catch (Exception e) {
 				if (e instanceof JsonSyntaxException) {
@@ -116,13 +129,24 @@ public class DatabaseConfigs implements Serializable {
 					e.printStackTrace();
 				}
 			}
+			
+			// 
+			if(DatabaseConfigs.SYSTEM_ENV_VARS.equalsIgnoreCase(dbId)) {
+				String username = System.getenv().getOrDefault(ArangoDbUtil.ENV_ARANGO_USERNAME, DEFAULT_ARANGO_USERNAME);
+		        String password = System.getenv().getOrDefault(ENV_ARANGO_PASSWORD, DEFAULT_ARANGO_PASSWORD);
+		        String database = System.getenv().getOrDefault(ENV_ARANGO_DATABASE, DEFAULT_ARANGO_DATABASE);
+		        String host     = System.getenv().getOrDefault(ENV_ARANGO_HOST, DEFAULT_ARANGO_HOST);
+		        int port = StringUtil.safeParseInt(System.getenv().getOrDefault(ENV_ARANGO_PORT, DEFAULT_ARANGO_PORT));
+		        configs = new DatabaseConfigs(username, password, database, host, port);
+			}
+			
 			if (configs == null) {
 				throw new IllegalArgumentException("CAN NOT LOAD DatabaseConfigs dbId " + dbId + " from " + filePath);
 			}
 			configs.setDbId(dbId);
-			sqlDbConfigsCache.put(k, configs);
+			dbConfigsPool.put(k, configs);
 		}
-		return sqlDbConfigsCache.get(k);
+		return dbConfigsPool.get(k);
 	}
 
 	public String getConnectionUrl() {
@@ -192,6 +216,36 @@ public class DatabaseConfigs implements Serializable {
 	}
 
 	public DatabaseConfigs() {
+	}
+	
+	
+
+	public DatabaseConfigs(String username, String password, String database, String host, int port) {
+		super();
+		this.username = username;
+		this.password = password;
+		this.database = database;
+		this.host = host;
+		this.port = port;
+		
+		if (StringUtil.isEmpty(username) || StringUtil.isEmpty(password)
+		  || StringUtil.isEmpty(database) || StringUtil.isEmpty(host) || port <= 0) {
+		    throw new IllegalArgumentException(
+	            "Invalid ArangoDB configuration. Required env variables: "
+	            + ArangoDbUtil.ENV_ARANGO_USERNAME + ", "
+	            + ArangoDbUtil.ENV_ARANGO_PASSWORD + ", "
+	            + ArangoDbUtil.ENV_ARANGO_DATABASE + ", "
+	            + ArangoDbUtil. ENV_ARANGO_HOST + ", "
+	            + ArangoDbUtil.ENV_ARANGO_PORT
+	            + ". Check your environment setup."
+	        );
+		}
+		
+		this.dbId = SYSTEM_ENV_VARS;
+		this.dbdriver = ARANGODB;
+		this.dbdriverclasspath = ArangoDbUtil.ARANGO_JAVA_DRIVER;
+		this.enabled = true;
+		this.partitionMap = Map.of("Profile", 1L);
 	}
 
 	public String getUsername() {

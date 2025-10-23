@@ -56,8 +56,6 @@ public final class JourneyFlowSchema {
 		defaultCustomerStages.add(FUNNEL_STAGE_UNHAPPY_CUSTOMER);
 		defaultCustomerStages.add(FUNNEL_STAGE_TERMINATED_CUSTOMER);
 
-		// delete old data
-		DataFlowStageDaoUtil.deleteByFlowName(STANDARD_CUSTOMER_FLOW);
 		
 		// insert new data
 		for (DataFlowStage flowStage : defaultCustomerStages) {
@@ -312,8 +310,6 @@ public final class JourneyFlowSchema {
 		eventMetrics.add(new EventMetric(flowName, "viral-negative-review", "Viral Negative Review", -66,
 				EventMetric.SCORING_DETRACTOR_METRIC, EventMetric.FIRST_PARTY_DATA,  FunnelMetaData.STAGE_UNHAPPY_CUSTOMER, -6, EventMetric.JOURNEY_STAGE_ADVOCACY));
 		
-		// delete old data
-		EventMetricDaoUtil.deleteByFlowName(flowName);
 		
 		// insert new
 		for (EventMetric metric : eventMetrics) {

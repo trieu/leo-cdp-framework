@@ -21,7 +21,23 @@ import rfx.core.util.Utils;
  *
  */
 public final class ArangoDbUtil {
+	
+	public static final String ARANGO_JAVA_DRIVER = "com.arangodb.ArangoDB";
 
+	 // Environment variable keys
+    public static final String ENV_ARANGO_USERNAME = "ARANGODB_USERNAME";
+    public static final String ENV_ARANGO_PASSWORD = "ARANGODB_PASSWORD";
+    public static final String ENV_ARANGO_DATABASE = "ARANGODB_DATABASE";
+    public static final String ENV_ARANGO_HOST     = "ARANGODB_HOST";
+    public static final String ENV_ARANGO_PORT     = "ARANGODB_PORT";
+
+    // Default values
+    public static final String DEFAULT_ARANGO_USERNAME = "root";
+    public static final String DEFAULT_ARANGO_PASSWORD = "";
+    public static final String DEFAULT_ARANGO_DATABASE = "leo_cdp_test";
+    public static final String DEFAULT_ARANGO_HOST     = "localhost";
+    public static final String DEFAULT_ARANGO_PORT     = "8529";
+	
 	static final int CHUNK_SIZE = 50000;
 	static final long CONNECTION_TTL = 5 * 60 * 1000;
 	static final int MAX_CONNECTIONS = 500;
@@ -38,11 +54,13 @@ public final class ArangoDbUtil {
 	 */
 	public final static DatabaseConfigs initDbConfigs() {
 		if (dbConfigs == null) {
-			dbConfigs = DatabaseConfigs.load(SystemMetaData.MAIN_DATABASE_CONFIG);
+			String mainDatabaseConfig = SystemMetaData.MAIN_DATABASE_CONFIG;
+			dbConfigs = DatabaseConfigs.load(mainDatabaseConfig);
 			if(dbConfigs == null) {
 				Utils.exitSystemAfterTimeout(2000);
-				throw new IllegalArgumentException(SystemMetaData.MAIN_DATABASE_CONFIG + " in ./configs/database-configs.json is not found ! ");
+				throw new IllegalArgumentException(mainDatabaseConfig + " in ./configs/database-configs.json is not found ! ");
 			}
+			
 		}
 		return dbConfigs;
 	}
@@ -104,18 +122,18 @@ public final class ArangoDbUtil {
 	public final synchronized static ArangoDatabase initActiveArangoDatabase(String dbConfigKey) {
 		ArangoDatabase dbInstance = arangoDbInstances.get(dbConfigKey);
 		if (dbInstance == null) {
-			DatabaseConfigs dbConfig = DatabaseConfigs.load(dbConfigKey);
+			DatabaseConfigs dbconfig = DatabaseConfigs.load(dbConfigKey);
 			
 			System.out.println("--------------------------------");
 			System.out.println("[DbConfigs] load dbConfigKey : " + dbConfigKey );
-			System.out.println("Host: "+dbConfig.getHost() + " Database: " + dbConfig.getDatabase() + " Port: " + dbConfig.getPort());
+			System.out.println("Host: "+dbconfig.getHost() + " Database: " + dbconfig.getDatabase() + " Port: " + dbconfig.getPort());
 			System.out.println("--------------------------------");
 			
-			String dbName = dbConfig.getDatabase();
-			String host = dbConfig.getHost();
-			int port = dbConfig.getPort();
-			String username = dbConfig.getUsername();
-			String pass = dbConfig.getPassword();
+			String dbName = dbconfig.getDatabase();
+			String host = dbconfig.getHost();
+			int port = dbconfig.getPort();
+			String username = dbconfig.getUsername();
+			String pass = dbconfig.getPassword();
 			ArangoDB arangoDB = buildDbInstance(host, port, username, pass);
 			
 			Collection<String> dbNames = arangoDB.getDatabases();

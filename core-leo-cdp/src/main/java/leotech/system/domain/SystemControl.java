@@ -7,8 +7,8 @@ import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 import io.vertx.core.json.JsonObject;
-import leotech.cdp.domain.AssetCategoryManagement;
 import leotech.cdp.domain.AgentManagement;
+import leotech.cdp.domain.AssetCategoryManagement;
 import leotech.cdp.domain.JourneyMapManagement;
 import leotech.cdp.domain.schema.JourneyFlowSchema;
 import leotech.system.dao.SystemUserDaoUtil;
@@ -86,8 +86,7 @@ public final class SystemControl {
 			// AI Agent service
 			AgentManagement.initDefaultData(resetAllAgentsConfigs);
 			
-			// journey map
-			JourneyFlowSchema.upgradeDefaultSystemData(false);
+			
 			
 			SystemUser superAdmin = SystemUserDaoUtil.getByUserLogin(SystemUser.SUPER_ADMIN_LOGIN);
 			AssetCategoryManagement.initDefaultSystemData(superAdmin);
@@ -96,6 +95,10 @@ public final class SystemControl {
 				// Journey Data Flow
 				JourneyFlowSchema.upgradeDefaultSystemData(true);
 				JourneyMapManagement.upgradeDefaultSystemData();
+			}
+			else {
+				// journey map
+				JourneyFlowSchema.upgradeDefaultSystemData(false);
 			}
 			
 			if(StringUtil.isNotEmpty(jobClasspath)) {
