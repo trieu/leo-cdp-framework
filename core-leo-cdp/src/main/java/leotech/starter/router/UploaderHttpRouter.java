@@ -19,7 +19,6 @@ import leotech.cdp.dao.FileMetadataDaoUtil;
 import leotech.cdp.model.asset.FileMetadata;
 import leotech.cdp.model.customer.Profile;
 import leotech.cdp.model.file.FileApiResponse;
-import leotech.cdp.utils.VngCloudUtil;
 import leotech.system.common.BaseHttpHandler;
 import leotech.system.common.BaseHttpHandler.JsonErrorPayload;
 import leotech.system.common.BaseHttpRouter;
@@ -47,7 +46,7 @@ public final class UploaderHttpRouter extends BaseHttpRouter {
 	
 	public static final String STATIC_BASE_URL = "//" + SystemMetaData.DOMAIN_STATIC_CDN;
 	public static final String UPLOADED_FILES_LOCATION = "/public/uploaded-files/";
-	static final boolean USE_LOCAL_STORAGE = ! VngCloudUtil.isReadyToUpload();
+	static final boolean USE_LOCAL_STORAGE = SystemMetaData.USE_LOCAL_STORAGE;
 
 	public UploaderHttpRouter(RoutingContext context) {
 		super(context);
@@ -143,9 +142,9 @@ public final class UploaderHttpRouter extends BaseHttpRouter {
 				File finalUploadedFile = new File("." + fileLocalPath);
 				file.renameTo(finalUploadedFile);
 
-				// get the Vstorage URL for the image
-				VngCloudUtil vstorageUtil = new VngCloudUtil();
-				FileApiResponse response = vstorageUtil.uploadFileToVstorage(finalUploadedFile.getPath());
+				// get the Cloud Storage 
+				// TODO 
+				FileApiResponse response = new FileApiResponse(200, finalUploadedFile.getPath(), "OK");
 				String fileUri = response.getFileUrl();
 
 				// delete the image saved in local ./public/uploaded-files

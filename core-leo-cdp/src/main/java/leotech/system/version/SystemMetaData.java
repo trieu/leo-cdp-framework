@@ -165,6 +165,7 @@ public final class SystemMetaData {
 	public static final String DATABASE_BACKUP_PATH = metaDataMap.getOrDefault("databaseBackupPath","").trim();
 	
 	public static final boolean HAS_B2B_FEATURES = metaDataMap.getOrDefault("hasB2Bfeatures","false").trim().equalsIgnoreCase("true");
+	public static final boolean USE_LOCAL_STORAGE = metaDataMap.getOrDefault("useLocalStorage","true").trim().equalsIgnoreCase("true");
 	
 	// constants
 	public static final String AUTOMATION = "automation";

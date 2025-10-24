@@ -35,7 +35,7 @@ import rfx.core.util.StringUtil;
  * @author SangNguyen, Trieu Nguyen
  * @since 2024
  */
-public class JobGoogleSheetExportForSegment implements ReactiveExportDataJob {
+public class JobGoogleSheetExportForSegment extends ReactiveExportDataJob {
 	
 	static final String className = JobGoogleSheetExportForSegment.class.getSimpleName();
 	static final String DATE_FORMAT_PATTERN = "yyyy-MM-dd'T'HH:mm:ss";
@@ -63,6 +63,7 @@ public class JobGoogleSheetExportForSegment implements ReactiveExportDataJob {
 
 	public static JobGoogleSheetExportForSegment job() {
 		try {
+			
 			if (instance == null) {
 				GoogleCredentials credentials = googleSheetUtils.getCredentials();
 				if(credentials != null) {
@@ -72,8 +73,9 @@ public class JobGoogleSheetExportForSegment implements ReactiveExportDataJob {
 			return instance;
 		} catch (Exception e) {
 			e.printStackTrace();
-			return null;
+			LogUtil.logError(JobGoogleSheetExportForSegment.class, e.toString());
 		}
+		return null;
 	}
 
 	/**

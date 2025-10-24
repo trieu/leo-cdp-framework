@@ -1,5 +1,8 @@
 package leotech.system.common;
 
+import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -18,6 +21,7 @@ import leotech.system.model.SystemUser;
 import leotech.system.util.CaptchaUtil;
 import leotech.system.util.CaptchaUtil.CaptchaData;
 import leotech.system.util.EncryptorAES;
+import leotech.system.util.IdGenerator;
 import leotech.system.util.LogUtil;
 import leotech.system.version.SystemMetaData;
 import redis.clients.jedis.Pipeline;
@@ -55,6 +59,8 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 	public static final String SESSION_SPLITER = "_";
 
 	public static final String ADMIN_HANDLER_SESSION_KEY = "leouss";
+	public static final String DATA_ACCESS_KEY = "dataAccessKey";
+	
 	final static int MAX_NUMBER = 1000000;
 	
 	// Define classes requiring operational role
@@ -477,6 +483,33 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 			}
 		}
 		return JsonErrorPayload.INVALID_CAPCHA_NUMBER;
+	}
+	
+	/**
+	 * @param segmentId
+	 * @param systemUserId
+	 * @param fullPath
+	 * @return accessUri
+	 */
+	public static String createAccessUriForExportedFile(String segmentId, String systemUserId, String fullPath) {
+	    if (segmentId == null || systemUserId == null || fullPath == null) {
+	        throw new IllegalArgumentException("segmentId, systemUserId, and fullPath must not be null");
+	    }
+
+	    // Generate key
+	    String dataAccessKey = IdGenerator.generateDataAccessKey(segmentId, systemUserId);
+
+	    try {
+	        // Ensure key is URL-safe
+	        String encodedKey = URLEncoder.encode(dataAccessKey, StandardCharsets.UTF_8.toString());
+
+	        // Build URI safely, preserving existing query params
+	        URI baseUri = URI.create(fullPath);
+	        String separator = (baseUri.getQuery() == null) ? "?" : "&";
+	        return fullPath + separator + DATA_ACCESS_KEY + "=" + encodedKey;
+	    } catch (Exception e) {
+	        throw new RuntimeException("Failed to build access URI for exported file", e);
+	    }
 	}
 
 

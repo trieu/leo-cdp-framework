@@ -8,11 +8,9 @@ import org.apache.http.entity.ContentType;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpServerResponse;
-import leotech.cdp.utils.VngCloudUtil;
 import leotech.system.model.SystemUser;
 import leotech.system.template.TemplateUtil;
 import leotech.system.util.HttpWebParamUtil;
-import rfx.core.util.StringUtil;
 
 /**
  * the handler for exported files
@@ -21,6 +19,7 @@ import rfx.core.util.StringUtil;
  *
  */
 public final class PublicFileHttpRouter {
+	
 	
 	public static final String MIME_TYPE_EXPORTED_FILE = ContentType.APPLICATION_OCTET_STREAM.getMimeType();
 	public static final String UNAUTHORIZED_ERROR = "UNAUTHORIZED_ERROR";
@@ -40,23 +39,16 @@ public final class PublicFileHttpRouter {
 	public static boolean handle(HttpServerResponse resp, MultiMap outHeaders, String path, MultiMap params) {
 		try {
 			if(path.startsWith(PUBLIC_EXPORTED_FILES_SEGMENT)) {
-				String dataAccessKey = HttpWebParamUtil.getString(params,"dataAccessKey", "");
+				String dataAccessKey = HttpWebParamUtil.getString(params, SecuredHttpDataHandler.DATA_ACCESS_KEY, "");
 				SystemUser loginUser = SecuredHttpDataHandler.getUserByDataAccessKey(dataAccessKey);
 				
-				VngCloudUtil vstorageUtil = new VngCloudUtil();
+				
 				if (loginUser != null) {
-					String fileName = vstorageUtil.getFileNameFromPath(path);
-					String token = vstorageUtil.getToken();
-					if(StringUtil.isNotEmpty(token)) {
-						resp = vstorageUtil.getFile(fileName, token, resp);
-					}
-					else {
-						String pathname = "." + path.replaceAll("%20", " ");
-						File file = new File(pathname);
-						if (file.isFile()) {
-							resp.sendFile(pathname);
-							return true;
-						}
+					String pathname = "." + path.replaceAll("%20", " ");
+					File file = new File(pathname);
+					if (file.isFile()) {
+						resp.sendFile(pathname);
+						return true;
 					}
 				} else {
 					resp.setStatusCode(HttpStatus.SC_UNAUTHORIZED);

@@ -92,7 +92,7 @@ public final class SegmentDataManagement {
 	static CacheLoader<SegmentFilter, JsonDataTablePayload> cacheLoaderSegments = new CacheLoader<>() {
 		@Override
 		public JsonDataTablePayload load(SegmentFilter filter) {
-			System.out.println("MISS CACHE cacheSegments");
+			logger.info("MISS CACHE cacheSegments");
 			return querySegmentsByFilter(filter);
 		}
 	};
@@ -278,7 +278,7 @@ public final class SegmentDataManagement {
 	 * @return
 	 */
 	public static JsonDataTablePayload querySegmentsByFilter(SegmentFilter filter) {
-		System.out.println("SET CACHE cacheSegments");
+		logger.info("SET CACHE cacheSegments");
 		int draw = filter.getDraw();
 		long recordsTotal = countTotalSegments();
 		long recordsFiltered = SegmentDaoUtil.getTotalRecordsFiltered(filter);
@@ -466,6 +466,11 @@ public final class SegmentDataManagement {
 		return deleted;
 	}
 	
+	/**
+	 * @param csvType
+	 * @param segment
+	 * @param exportDataUrl
+	 */
 	public static void saveExportedFileUrlCsvForSegment(int csvType, Segment segment, String exportDataUrl) {
 		// save CSV
 		if(csvType > 0) {
@@ -474,7 +479,7 @@ public final class SegmentDataManagement {
 		else {
 			segment.setExportedFileUrlCsvForExcel(exportDataUrl);
 		}
-		System.out.println("saveExportedFileUrlCsvForSegment csvType: " + csvType + " ; exportDataUrl: "+exportDataUrl);
+		logger.info("saveExportedFileUrlCsvForSegment csvType: " + csvType + " ; exportDataUrl: "+exportDataUrl);
 		SegmentDaoUtil.updateSegmentMetadata(segment);
 	}
 

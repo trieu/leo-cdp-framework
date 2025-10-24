@@ -12,7 +12,6 @@ import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.http.HttpStatus;
@@ -20,15 +19,13 @@ import org.apache.http.HttpStatus;
 import leotech.cdp.dao.ProfileDaoUtil;
 import leotech.cdp.dao.SegmentDaoUtil;
 import leotech.cdp.domain.SegmentDataManagement;
-import leotech.cdp.job.scheduled.RemoveFileFromVstorage;
 import leotech.cdp.model.customer.Profile;
 import leotech.cdp.model.customer.ProfileExportingDataUtil;
 import leotech.cdp.model.customer.Segment;
 import leotech.cdp.model.file.FileApiResponse;
 import leotech.cdp.query.SegmentQuery;
-import leotech.cdp.utils.LocalFileUtil;
-import leotech.cdp.utils.VngCloudUtil;
 import leotech.system.common.PublicFileHttpRouter;
+import leotech.system.common.SecuredHttpDataHandler;
 import leotech.system.domain.SystemUserManagement;
 import leotech.system.model.Notification;
 import leotech.system.util.TaskRunner;
@@ -37,10 +34,12 @@ import rfx.core.util.StringPool;
 import rfx.core.util.StringUtil;
 
 /**
+ * Segment Export as CSV data
+ * 
  * @author SangNguyen, Trieu Nguyen
  * @since 2024
  */
-public class JobCsvExportForSegment implements ReactiveExportDataJob {
+public class JobCsvExportForSegment extends ReactiveExportDataJob {
 	public static final String className = JobCsvExportForSegment.class.getSimpleName();
 	public static final String FILE_EXTENSION = ".csv";
 	public static final String DATE_FORMAT_PATTERN = "yyyy-MM-dd'T'HH:mm:ss";
@@ -54,7 +53,6 @@ public class JobCsvExportForSegment implements ReactiveExportDataJob {
 	public static final int DATA_EXPORT_BATCH_SIZE = SystemMetaData.BATCH_SIZE_OF_SEGMENT_DATA_EXPORT;
 	public static final int MIN_PERCENTAGE_TO_NOTIFY = 5;
 
-	final VngCloudUtil vstorageUtil = new VngCloudUtil();
 	private static volatile JobCsvExportForSegment instance = null;
 
 	public static JobCsvExportForSegment job() {
@@ -113,12 +111,11 @@ public class JobCsvExportForSegment implements ReactiveExportDataJob {
 	public FileApiResponse processAndReturnData(final Map<String, Object> data) {
 		// Use all thread for exporting and 1 thread for websocket notification
 		ExecutorService createFileExecutor = Executors.newFixedThreadPool(GET_SEGMENT_DATA_FOR_CSV_THREAD_POOL_SIZE);
-		ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
 		try {
 			String segmentId = data.get("segmentId").toString();
 			int csvType = StringUtil.safeParseInt(data.get("csvType"));
-			String userId = data.get("systemUserId").toString();
+			String systemUserId = data.get("systemUserId").toString();
 			Segment segment = SegmentDaoUtil.getSegmentById(segmentId);
 
 			if (segment != null) {
@@ -135,7 +132,7 @@ public class JobCsvExportForSegment implements ReactiveExportDataJob {
 					submittedTasks++;
 				}
 
-				List<String> rows = getAllDataRowsAndSendProcessNotificationToUser(submittedTasks, segment, userId, completionService);
+				List<String> rows = getAllDataRowsAndSendProcessNotificationToUser(submittedTasks, segment, systemUserId, completionService);
 
 				// stop create file thread
 				createFileExecutor.shutdown();
@@ -150,11 +147,10 @@ public class JobCsvExportForSegment implements ReactiveExportDataJob {
 							"",
 							""
 					);
-					SystemUserManagement.sendNotification(userId, notification);
+					SystemUserManagement.sendNotification(systemUserId, notification);
 				};
 
-				// send websocket notification every specific seconds to notify that this file is still being uploaded to cloud storage
-				scheduler.scheduleAtFixedRate(task, 0, FILE_CLOUD_UPLOADING_NOTIFICATION_DELAY_SECOND, TimeUnit.SECONDS);
+	
 
 				StringBuffer exportedDataStr = buildCsvContent(csvType, rows);
 				String fullFilePath = getLocalFilePath(segmentId);
@@ -171,17 +167,16 @@ public class JobCsvExportForSegment implements ReactiveExportDataJob {
 					fos.write(content.getBytes(StandardCharsets.UTF_8));
 				}
 
-				// upload local file into Cloud
-				FileApiResponse fileApiResponse = getUploadedFileUrl(fullLocalFilePath);
+				
+
+                
+                String securedAccessUrl = SecuredHttpDataHandler.createAccessUriForExportedFile(segmentId, systemUserId, fullLocalFilePath);
+            
+                SegmentDataManagement.saveExportedFileUrlCsvForSegment(csvType, segment, securedAccessUrl);
+                
+       
+				FileApiResponse fileApiResponse = new FileApiResponse(200, securedAccessUrl, "CSV file is ready");
                 fileApiResponse.setMessage(" Data of segment '" + segment.getName() + "' is ready.");
-
-                // SAVE FILE_EXTENSION DOWNLOAD URL into Segment
-                String csvDownloadUrl = fileApiResponse.getFileUrl();
-                SegmentDataManagement.saveExportedFileUrlCsvForSegment(csvType, segment, csvDownloadUrl);
-
-                // stop scheduler
-				scheduler.shutdown();
-
 				return fileApiResponse;
 			}
 
@@ -199,7 +194,7 @@ public class JobCsvExportForSegment implements ReactiveExportDataJob {
 			return new FileApiResponse(HttpStatus.SC_INTERNAL_SERVER_ERROR, null, "Error to upload file to Vstorage");
 		}
 		finally {
-			scheduler.shutdown();
+			
 
 			try {
 				if (!createFileExecutor.awaitTermination(60, TimeUnit.SECONDS)) {
@@ -236,35 +231,7 @@ public class JobCsvExportForSegment implements ReactiveExportDataJob {
 
 
 
-	/**
-	 * @param filePath the local file path to get the file for uploading to cloud storage
-	 * @return FileApiResponse contains cloud file URL
-	 */
-	private FileApiResponse getUploadedFileUrl(String filePath) {
-		try {
-			String fileName = vstorageUtil.getFileNameFromPath(filePath);
-			String token = vstorageUtil.getToken();
 
-			FileApiResponse response = vstorageUtil.uploadFileToVstorage(filePath);
-
-			// remove this file from local
-			LocalFileUtil localFileUtil = new LocalFileUtil();
-			localFileUtil.removeFile(filePath);
-
-			String fileUrl = response.getFileUrl();
-
-			if (fileUrl != null && !fileUrl.isBlank()) {
-				// start a scheduled task to remove the file from Vstorage after 15 min when dataAccessKey is expired
-				RemoveFileFromVstorage removeTask = new RemoveFileFromVstorage(fileName, token, 15);
-				removeTask.scheduleTask();
-			}
-
-			return response;
-		} catch (Exception e) {
-			e.printStackTrace();
-			return new FileApiResponse(HttpStatus.SC_INTERNAL_SERVER_ERROR, null, "Error to upload file to Vstorage");
-		}
-	}
 
 
 	/**
@@ -299,7 +266,7 @@ public class JobCsvExportForSegment implements ReactiveExportDataJob {
 
 			// get completed flagPercentage
 			int completedCount = completedCsvRows.size() * (i + 1);
-			int completedPercentage = (int) VngCloudUtil.calculateUploadingPercentage(
+			int completedPercentage = (int) calculateUploadingPercentage(
 					completedCount,
 					totalCount,
 					true

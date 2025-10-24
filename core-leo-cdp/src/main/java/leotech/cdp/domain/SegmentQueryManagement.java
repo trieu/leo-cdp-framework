@@ -33,10 +33,9 @@ import leotech.cdp.model.customer.ProfileIdentity;
 import leotech.cdp.model.customer.Segment;
 import leotech.cdp.query.SegmentQuery;
 import leotech.cdp.query.filters.DataFilter;
-import leotech.cdp.utils.VngCloudUtil;
 import leotech.system.common.PublicFileHttpRouter;
+import leotech.system.common.SecuredHttpDataHandler;
 import leotech.system.model.JsonDataTablePayload;
-import leotech.system.util.IdGenerator;
 import leotech.system.version.SystemMetaData;
 import rfx.core.util.FileUtils;
 
@@ -243,21 +242,22 @@ public class SegmentQueryManagement {
 			}
 			exportedStr.append("]");
 
-			String dataAccessKey = IdGenerator.generateDataAccessKey(segmentId, systemUserId);
+			
 			String fullPath = PublicFileHttpRouter.PUBLIC_EXPORTED_FILES_SEGMENT + segmentId + ".json";
 			FileUtils.writeStringToFile("." + fullPath, exportedStr.toString());
-			String accessUri = fullPath + "?dataAccessKey=" + dataAccessKey;
-			return accessUri;
+			
+			return SecuredHttpDataHandler.createAccessUriForExportedFile(segmentId, systemUserId, fullPath);
 		}
 		return "";
 	}
-	
 
+	
+	
 	
 	/**
 	 * @param segmentId
 	 * @param systemUserId
-	 * @param csvType
+	 * @param csvType (0 : Ads Custom Audience , 1 :  Excel or Google Sheets)
 	 * @return the downloading URL file in cloud 
 	 */
 	public static String createJobToExportCsvData(int csvType, String segmentId, String systemUserId, String dataFor, String exportType) {
@@ -269,14 +269,13 @@ public class SegmentQueryManagement {
 			data.put("dataFor", dataFor);
 			data.put("exportType", exportType);
 			
-			System.out.println("createJobToExportCsvData data: \n" + data);
+			logger.info("createJobToExportCsvData data: \n" + data);
 
 			ReactiveExportDataJob exportDataJob = ReactiveExportDataJobFactory.getReactiveExportDataJob(exportType);
 			if(exportDataJob != null) {
 				exportDataJob.sendToExportJobToQueue(data);
 				return IN_QUEUE;
-			}
-			
+			}			
 		}
 		catch (Exception e) {
 			e.printStackTrace();
@@ -298,7 +297,7 @@ public class SegmentQueryManagement {
 				int totalCount = (int) segment.getTotalCount();
 				
 				// too big, put into background jobs 
-				boolean inQueue = totalCount > MAX_SEGMENT_SIZE_TO_RUN_IN_QUEUE && VngCloudUtil.isReadyToUpload();
+				boolean inQueue = totalCount > MAX_SEGMENT_SIZE_TO_RUN_IN_QUEUE;
 				if(inQueue) {
 					return createJobToExportCsvData(csvType, segmentId, systemUserId, dataFor, exportType);
 					// return
@@ -348,7 +347,6 @@ public class SegmentQueryManagement {
 						c++;
 					}
 
-					String dataAccessKey = IdGenerator.generateDataAccessKey(segmentId, systemUserId);
 					LocalDateTime currentDateTime = LocalDateTime.now();
 					DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 					String fullPath = PublicFileHttpRouter.PUBLIC_EXPORTED_FILES_SEGMENT + segmentId + "_" + currentDateTime.format(formatter) + ".csv";
@@ -365,11 +363,12 @@ public class SegmentQueryManagement {
 						fos.write(content.getBytes(StandardCharsets.UTF_8));
 					}
 
-					String csvDownloadUrl = fullPath + "?dataAccessKey=" + dataAccessKey;
+		
+					String securedAccessUrl = SecuredHttpDataHandler.createAccessUriForExportedFile(segmentId, systemUserId, fullPath);
 					
-					SegmentDataManagement.saveExportedFileUrlCsvForSegment(csvType, segment, csvDownloadUrl);
+					SegmentDataManagement.saveExportedFileUrlCsvForSegment(csvType, segment, securedAccessUrl);
 					
-					return csvDownloadUrl;
+					return securedAccessUrl;
 				}
 			}
 		}

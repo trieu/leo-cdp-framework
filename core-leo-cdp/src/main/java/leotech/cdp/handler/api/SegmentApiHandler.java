@@ -117,9 +117,10 @@ public class SegmentApiHandler extends BaseApiHandler  {
 	 */
 	public static JsonDataPayload exportProfilesAsCsv(String uri, MultiMap params, SystemUser loginUser) {
 		int csvType = HttpWebParamUtil.getInteger(params, "csvType", 0);
-		String segmentId = HttpWebParamUtil.getString(params,SEGMENT_ID, "");
 		String dataFor = HttpWebParamUtil.getString(params,"dataFor", "");
 		String exportType = HttpWebParamUtil.getString(params,"exportType", "");
+		String segmentId = HttpWebParamUtil.getString(params,SEGMENT_ID, "");
+		
 		String exportedFileUri = "";
 		if ( ! segmentId.isEmpty() ) {
 			exportedFileUri = SegmentQueryManagement.exportAllProfilesInAsCSV(csvType, segmentId, loginUser.getKey(), dataFor, exportType);
