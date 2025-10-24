@@ -2,8 +2,6 @@ package leotech.cdp.handler;
 
 import org.apache.http.HttpStatus;
 
-import com.google.gson.Gson;
-
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
@@ -132,8 +130,6 @@ public final class ObserverWedHandler {
 					model.setCustomData("referer", referer);
 					model.setCustomData("landingPageName", media.getLandingPageName() );
 					model.setCustomData("targetMediaUrl", url);
-					
-					System.out.println(new Gson().toJson(media));
 					
 					String html = WebData.renderHtml(model);
 					resp.setStatusCode(HttpStatus.SC_OK);

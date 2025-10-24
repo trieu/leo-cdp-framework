@@ -65,8 +65,7 @@ public class ContentQueryDaoUtil {
 			results.put(keyword, list);
 		}
 
-		// System.out.println(aql.toString());
-
+		
 		return results;
 	}
 
@@ -112,7 +111,7 @@ public class ContentQueryDaoUtil {
 				for (String k : keywords) {
 					String keyword = k.trim();
 					if (!keyword.isEmpty() || !keyword.contains("@")) {
-						System.out.println(" keyword: " + keyword);
+						
 						bindVars.put("keyword" + c, keyword);
 						aql.append("@keyword").append(c).append(" IN p.keywords[*] ");
 						c++;
@@ -135,8 +134,6 @@ public class ContentQueryDaoUtil {
 			}
 			aql.append(" ) SORT p.modificationTime DESC RETURN p");
 
-			System.out.println(aql.toString());
-			System.out.println(bindVars);
 			cursor = db.query(aql.toString(), bindVars, null, MeasurableItem.class);
 			while (cursor.hasNext()) {
 				MeasurableItem p = cursor.next();
@@ -205,7 +202,6 @@ public class ContentQueryDaoUtil {
 		}
 		aql.append(" ) SORT p.modificationTime DESC RETURN p");
 
-		System.out.println(query + " ==> searchPost " + aql.toString());
 		bindVars.put("query", query.toString());
 
 		ArangoDbCommand.CallbackQuery<MeasurableItem> callback = new ArangoDbCommand.CallbackQuery<MeasurableItem>() {
@@ -256,7 +252,6 @@ public class ContentQueryDaoUtil {
 		}
 		aql.append(" ) SORT p.modificationTime DESC  LIMIT @startIndex,@numberResult RETURN p");
 
-		System.out.println(aql.toString());
 		ArangoDbCommand.CallbackQuery<AssetGroup> callback = new ArangoDbCommand.CallbackQuery<AssetGroup>() {
 			@Override
 			public AssetGroup apply(AssetGroup obj) {

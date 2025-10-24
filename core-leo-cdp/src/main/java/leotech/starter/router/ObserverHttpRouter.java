@@ -6,15 +6,16 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.ext.web.RoutingContext;
-import leotech.cdp.handler.WebhookDataHandler;
 import leotech.cdp.handler.ObserverHttpGetHandler;
 import leotech.cdp.handler.ObserverHttpPostHandler;
+import leotech.cdp.handler.WebhookDataHandler;
 import leotech.system.common.BaseHttpHandler;
 import leotech.system.common.BaseHttpRouter;
 import leotech.system.model.DeviceInfo;
 import leotech.system.template.HandlebarsTemplateUtil;
 import leotech.system.util.DeviceInfoUtil;
 import leotech.system.util.HttpTrackingUtil;
+import leotech.system.util.LogUtil;
 import leotech.system.version.SystemMetaData;
 import rfx.core.util.StringUtil;
 
@@ -89,7 +90,7 @@ public final class ObserverHttpRouter extends BaseHttpRouter {
 		DeviceInfo device = DeviceInfoUtil.getDeviceInfo(useragent);
 
 		try {
-			System.out.println("urlPath " + urlPath);
+			LogUtil.logInfo(this.getClass(), "urlPath " + urlPath);
 			String origin = StringUtil.safeString(reqHeaders.get(BaseHttpHandler.ORIGIN), "*");
 			
 			// WEBHOOK and Domain Verifier

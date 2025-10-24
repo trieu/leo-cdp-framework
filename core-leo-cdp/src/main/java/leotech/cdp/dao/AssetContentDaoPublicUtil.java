@@ -37,7 +37,6 @@ public class AssetContentDaoPublicUtil extends AssetItemDao {
 		ArangoDatabase db = ArangoDbUtil.getCdpDatabase();
 		Map<String, Object> bindVars = new HashMap<>(1);
 		bindVars.put("slug", slug);
-		System.out.println("AssetContent.getBySlug " + slug);
 		AssetContent p = new ArangoDbCommand<AssetContent>(db, AQL_GET_ASSET_CONTENT_BY_SLUG, bindVars, AssetContent.class, new CallbackQuery<AssetContent>() {
 			@Override
 			public AssetContent apply(AssetContent obj) {
@@ -153,7 +152,6 @@ public class AssetContentDaoPublicUtil extends AssetItemDao {
 			for (String k : keywords) {
 				String keyword = k.trim();
 				if (!keyword.isEmpty() || !keyword.contains("@")) {
-					System.out.println(" keyword: " + keyword);
 					bindVars.put("keyword" + c, keyword);
 					aql.append("@keyword").append(c).append(" IN p.keywords[*] ");
 					c++;
@@ -311,7 +309,6 @@ public class AssetContentDaoPublicUtil extends AssetItemDao {
 				BaseDocument.class);
 		while (cursor.hasNext()) {
 			BaseDocument doc = cursor.next();
-			System.out.println(doc.getProperties());
 			list = (List<String>) doc.getProperties().getOrDefault("keywords", new ArrayList<String>(0));
 			list = list.stream().distinct().filter(s -> {
 				return !s.isEmpty();
@@ -400,7 +397,6 @@ public class AssetContentDaoPublicUtil extends AssetItemDao {
 				return obj;
 			}
 		};
-		System.out.println("listPublicPostsByKeywords " + aql.toString());
 		list.addAll(new ArangoDbCommand<AssetContent>(db, aql.toString(), bindVars, AssetContent.class, callback).getResultsAsList());
 
 		// System.out.println(aql.toString());

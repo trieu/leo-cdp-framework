@@ -419,12 +419,7 @@ public final class ProfileSingleView extends Profile implements SingleViewAnalyt
 		
 		// daily statistics
 		String key = DailyReportUnit.buildMapKey(reportedDate, eventName, journeyMapId);
-		
-		System.out.println("updateDailyReportUnit reportedDate " + reportedDate);
-		System.out.println("updateDailyReportUnit key " + key);
 		DailyReportUnit reportUnit = this.dailyReportUnits.get(key);
-		
-		System.out.println("reportUnit " + reportUnit);
 		if(reportUnit == null) {
 			String profileId = this.id;
 			reportUnit = new DailyReportUnit(journeyMapId, COLLECTION_NAME, profileId, eventName, reportedDate);
@@ -516,8 +511,6 @@ public final class ProfileSingleView extends Profile implements SingleViewAnalyt
 		this.inCampaignsAsStr = transformSetOfRefKeysToStr(this.inCampaigns);
 		this.inAccountsAsStr = transformSetOfRefKeysToStr(this.inAccounts);
 		this.inJourneyMapsAsStr = transformSetOfRefKeysToStr(this.inJourneyMaps);
-		// System.out.println("createProfileFeaturesForVectorization contentKeywords.size = " + this.contentKeywords.size());
-		// TODO
 	}
 
 

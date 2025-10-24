@@ -14,7 +14,6 @@ import leotech.cdp.model.journey.TouchpointHub;
 import leotech.system.config.AqlTemplate;
 import leotech.system.util.database.ArangoDbCommand;
 import leotech.system.util.database.ArangoDbUtil;
-import rfx.core.util.Utils;
 
 /**
  * TouchpointHub Database Access Object
@@ -233,16 +232,7 @@ public class TouchpointHubDaoUtil extends AbstractCdpDatabaseUtil {
 		return finalList;
 	}
 	
-	/**
-	 * @param args
-	 */
-	public static void main(String[] args) {
-		List<TouchpointHubReport> list = getTouchpointHubDetailReport("6yD8rRImsBBXhEpNWHhcIF");
-		for (TouchpointHubReport tp : list) {
-			System.out.println(tp);
-		}
-		Utils.exitSystemAfterTimeout(3000);
-	}
+
 	
 	
 }

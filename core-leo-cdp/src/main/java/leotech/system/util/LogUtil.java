@@ -19,6 +19,16 @@ import com.google.gson.GsonBuilder;
  * @since 2022
  */
 public class LogUtil {
+	static Class<?> clazz = LogUtil.class;
+	static Logger logger = LoggerFactory.getLogger(clazz);
+	
+	public static void debug(Object obj) {
+		logger.debug(obj.toString());
+	}
+	
+	public static void println(Object obj) {
+		System.out.println(obj.toString());
+	}
 	
 	private static DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	
@@ -35,7 +45,7 @@ public class LogUtil {
 		Logger logger = LoggerFactory.getLogger(clazz.getClass());
 		logger.info(now() + message);
 	}
-
+	
 	public static void logError(Class<?> clazz, String message) {
 		Logger logger = LoggerFactory.getLogger(clazz.getClass());
 		logger.error(now() + message);

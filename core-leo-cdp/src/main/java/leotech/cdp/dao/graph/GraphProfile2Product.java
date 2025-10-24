@@ -8,6 +8,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.arangodb.ArangoDBException;
 import com.arangodb.ArangoDatabase;
 import com.arangodb.ArangoEdgeCollection;
@@ -39,6 +42,7 @@ import leotech.system.util.database.ArangoDbCommand.CallbackQuery;
  */
 public final class GraphProfile2Product extends AbstractCdpDatabaseUtil {
 
+	static Logger logger = LoggerFactory.getLogger(GraphProfile2Product.class);
 	
 	private static final String G_PROFILE2PRODUCT = Profile2Product.GRAPH_NAME;
 	
@@ -115,7 +119,7 @@ public final class GraphProfile2Product extends AbstractCdpDatabaseUtil {
 					}
 					
 					arangoEdgeCollection.updateEdge(key, updatedEdge);
-					System.out.println("batchUpdateEdgeData.updateEdge key: " + key);
+					logger.info("batchUpdateEdgeData.updateEdge key: " + key);
 				}
 				else {
 					// update for recommendation
@@ -123,7 +127,7 @@ public final class GraphProfile2Product extends AbstractCdpDatabaseUtil {
 						insertedEdge.setIndexScore(indexScore);
 					}
 					arangoEdgeCollection.insertEdge(insertedEdge);
-					System.out.println("batchUpdateEdgeData.insertEdge key: " + key);
+					logger.info("batchUpdateEdgeData.insertEdge key: " + key);
 				}
 			}
 		}
@@ -156,7 +160,7 @@ public final class GraphProfile2Product extends AbstractCdpDatabaseUtil {
 		Map<String, Object> bindVars = new HashMap<>(1);
 		bindVars.put("groupId", groupId );
 		db.query(aql, bindVars, Void.class);
-		System.out.println("removeAllGraphEdgesByGroupId "+aql);
+		logger.info("removeAllGraphEdgesByGroupId "+aql);
 	}
 	
 	/**
@@ -170,7 +174,7 @@ public final class GraphProfile2Product extends AbstractCdpDatabaseUtil {
 		bindVars.put("groupId", groupId );
 		bindVars.put("segmentId", segmentId );
 		db.query(aql, bindVars, Void.class);
-		System.out.println("removeAllGraphEdgesByGroupIdAndSegmentId "+aql);
+		logger.info("removeAllGraphEdgesByGroupIdAndSegmentId "+aql);
 	}
 	
 
@@ -187,7 +191,7 @@ public final class GraphProfile2Product extends AbstractCdpDatabaseUtil {
 			Map<String, Object> bindVars = new HashMap<>(1);
 			bindVars.put("fromProfileId", profileIdentity.getDocumentUUID() );
 			db.query(aql, bindVars, Void.class);
-			System.out.println("removeAllGraphEdgesBySegmentId "+aql);
+			logger.info("removeAllGraphEdgesBySegmentId "+aql);
 		};
 		return SegmentQueryManagement.applyConsumerForAllProfilesInSegment(segmentId, applyRemoveEdgeData);
 	}
@@ -222,7 +226,7 @@ public final class GraphProfile2Product extends AbstractCdpDatabaseUtil {
 					
 					// add connection to edge collection 
 					String key = insertedEdge.getKey();
-					System.out.println("createRecommendedEdgeData insertedEdge.key " + key);
+					logger.info("createRecommendedEdgeData insertedEdge.key " + key);
 					
 					Profile2Product updatedEdge = arangoEdgeCol.getEdge(key, Profile2Product.class);
 					if(updatedEdge != null) {
@@ -289,7 +293,7 @@ public final class GraphProfile2Product extends AbstractCdpDatabaseUtil {
 			}
 		};
 		String aql = ProfileGraphEdge.getGraphQueryRecommendation(G_PROFILE2PRODUCT);
-		System.out.println(" getRecommendedProductItemsForAdmin \n "+aql);
+		logger.info(" getRecommendedProductItemsForAdmin \n "+aql);
 		List<Profile2Product> rs = new ArangoDbCommand<Profile2Product>(db, aql, bindVars, Profile2Product.class, callback).getResultsAsList();
 		return rs;
 	}
@@ -335,7 +339,7 @@ public final class GraphProfile2Product extends AbstractCdpDatabaseUtil {
 		};
 		
 		String aql = ProfileGraphEdge.getGraphQueryRecommendation(G_PROFILE2PRODUCT);
-		System.out.println(" getRecommendedTargetMediaUnits \n "+aql);
+		logger.info(" getRecommendedTargetMediaUnits \n "+aql);
 		new ArangoDbCommand<Profile2Product>(db, aql, bindVars, Profile2Product.class, callback).applyCallback();
 		return targetMediaUnits;
 	}
@@ -360,7 +364,7 @@ public final class GraphProfile2Product extends AbstractCdpDatabaseUtil {
 				
 				String toProductId = obj.getToProductId();
 				
-				//System.out.println(toProductId);
+				//logger.info(toProductId);
 				
 				ProductItem product = AssetProductItemDaoUtil.getById(toProductId);
 				obj.setProduct(product);
@@ -384,7 +388,7 @@ public final class GraphProfile2Product extends AbstractCdpDatabaseUtil {
 		List<ProductItem> productItems = AssetProductItemDaoUtil.list("", groupId, 0, limit);
 		for (ProductItem product : productItems) {
 			int c = updateRecommendedEdgeForProduct(product, segmentId);
-			System.out.println(" updateRecommendedEdgeForProduct " + product.getTitle() + " countProfile " + c) ;
+			logger.info(" updateRecommendedEdgeForProduct " + product.getTitle() + " countProfile " + c) ;
 			countProfile += c;
 		}
 		return countProfile;

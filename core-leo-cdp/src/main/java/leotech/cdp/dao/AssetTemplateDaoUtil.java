@@ -128,7 +128,6 @@ public class AssetTemplateDaoUtil extends AssetItemDao {
 		ArangoCollection col = AssetTemplate.getCollectionInstance();
 		if (col != null) {
 			col.deleteDocument(id);
-			System.out.println("Deleted template id " + id);
 			return true;
 		}
 		return false;

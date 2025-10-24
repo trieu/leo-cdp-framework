@@ -7,6 +7,8 @@ import java.io.File;
 import java.util.Set;
 
 import org.apache.commons.io.FilenameUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpServerRequest;
@@ -38,6 +40,8 @@ import rfx.core.util.StringUtil;
  */
 public final class UploaderHttpRouter extends BaseHttpRouter {
 	
+	static Logger logger = LoggerFactory.getLogger(UploaderHttpRouter.class);
+	
 	static final String PROFILE = "profile";
 	static final String IMPORTER_PREFIX = "importer-";
 	
@@ -47,7 +51,7 @@ public final class UploaderHttpRouter extends BaseHttpRouter {
 
 	public UploaderHttpRouter(RoutingContext context) {
 		super(context);
-		System.out.println("init UploadFileHttpRouter");
+		logger.info("init UploadFileHttpRouter");
 	}
 
 	@Override
@@ -108,7 +112,7 @@ public final class UploaderHttpRouter extends BaseHttpRouter {
 	public static JsonDataPayload uploadHandler(SystemUser loginUser, RoutingContext context, HttpServerRequest request, MultiMap reqHeaders) {
 		String refObjClass = StringUtil.safeString(reqHeaders.get("refObjectClass"));
 		String refObjKey = StringUtil.safeString(reqHeaders.get("refObjectKey"));
-		System.out.println("refObjKey " + refObjKey);
+		logger.info("refObjKey " + refObjKey);
 		
 		if(USE_LOCAL_STORAGE || refObjKey.startsWith(IMPORTER_PREFIX)) {
 			return uploadUsingLocalStorage(loginUser, context, request, reqHeaders, refObjClass, refObjKey);
@@ -170,13 +174,12 @@ public final class UploaderHttpRouter extends BaseHttpRouter {
 						dataPayload = new JsonDataPayload(request.uri(), data, true);
 					}
 
-					System.out.println("uploadHandler.filename: " + name);
-					System.out.println(" fileSize: " + size);
-					System.out.println(" contentType: " + uploadedFile.contentType());
+					logger.info("uploadHandler.filename: " + name);
+					logger.info(" fileSize: " + size);
+					logger.info(" contentType: " + uploadedFile.contentType());
 				}
 				else {
-					System.out.println(response.getMessage());
-					System.out.println(response.getStatusCode());
+					logger.info(response.getMessage() + " StatusCode " + response.getStatusCode());
 					dataPayload = new JsonDataPayload(response.getMessage(), data, true);
 				}
 			}
@@ -224,9 +227,9 @@ public final class UploaderHttpRouter extends BaseHttpRouter {
 					dataPayload = new JsonDataPayload(request.uri(), data, true);
 				}
 				
-				System.out.println("uploadHandler.filename: " + name);
-				System.out.println(" fileSize: " + size);
-				System.out.println(" contentType: " + uploadedFile.contentType());
+				logger.info("uploadHandler.filename: " + name);
+				logger.info(" fileSize: " + size);
+				logger.info(" contentType: " + uploadedFile.contentType());
 			}
 		}
 		return dataPayload;

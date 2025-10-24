@@ -164,8 +164,6 @@ public class AssetContentDaoUtil extends AssetContentDaoPublicUtil {
 	public static JsonDataTablePayload filter(DataFilter filter) {
 		ArangoDatabase db = getCdpDatabase();
 
-		// System.out.println("==> before apply DataFilter " + filter);
-
 		// TODO dynamic query builder for filtering data
 		Map<String, Object> bindVars = new HashMap<>(2);
 		bindVars.put("startIndex", filter.getStart());

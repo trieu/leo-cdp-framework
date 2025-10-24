@@ -16,6 +16,7 @@ import leotech.cdp.job.scheduled.CdpProfileProcessingJob;
 import leotech.cdp.job.scheduled.CdpSegmentProcessingJob;
 import leotech.cdp.job.scheduled.RefreshAllSegmentsJob;
 import leotech.system.model.ImportingResult;
+import leotech.system.util.LogUtil;
 import leotech.system.util.TaskRunner;
 import leotech.system.version.SystemMetaData;
 import rfx.core.job.ScheduledJob;
@@ -73,7 +74,7 @@ public class DataProcessingStarter {
 					String funnelId =  CustomerFunnel.FUNNEL_STAGE_NEW_CUSTOMER.getId();
 
 					ImportingResult rs = ProfileDataManagement.importCsvAndSaveProfile(importFileUrl, observerId, dataLabelsStr, funnelId, overwriteOldData);
-					System.out.println(rs);
+					LogUtil.println(rs);
 					Utils.sleep(360000);
 				}
 			}
@@ -111,8 +112,7 @@ public class DataProcessingStarter {
 				}
 				else if(className.startsWith(CDP_REFRESH_SEGMENT_DATA_JOB)) {
 					String segmentId = args[1];
-					boolean ok = SegmentDataManagement.refreshSegmentData(segmentId);
-					System.out.println("refreshSegmentData ok: "+ok);
+					SegmentDataManagement.refreshSegmentData(segmentId);
 				}
 			} 
 			else {

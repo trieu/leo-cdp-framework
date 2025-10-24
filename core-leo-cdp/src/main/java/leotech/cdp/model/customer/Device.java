@@ -117,18 +117,13 @@ public final class Device extends PersistentObject {
 	}
 	
 	public Device(String userAgent) {
-		System.out.println("Device.userAgent " + userAgent);
-		
 		DeviceInfo dv = DeviceInfoUtil.getDeviceInfo(userAgent);
-		
-		System.out.println("DeviceInfo " + dv);
 		if(dv.isEmpty() || dv.isUnknownDevice()) {
 			initApiDevice(CDP_API, BACKEND_SYSTEM);
 		}
 		else {
 			setDeviceInfo(dv);
 		}
-		System.out.println("this.osName " + this.osName);
 		this.createdAt = new Date();
 		// create ID
 		this.buildHashedId();

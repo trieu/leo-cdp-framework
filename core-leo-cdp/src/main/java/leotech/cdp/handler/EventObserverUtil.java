@@ -52,7 +52,6 @@ public final class EventObserverUtil {
 		String environment = StringUtil.safeString(params.get(HttpParamKey.DATA_ENVIRONMENT),HttpParamKey.PRO_ENV);
 		Map<String, Object> eventData = HttpWebParamUtil.getEventData(params);
 
-		//System.out.println(new Gson().toJson(eventJsonData));
 		Date createdAt = new Date();
 
 		return EventObserverManagement.recordEventFromWeb(createdAt, ctxSession,srcObserverId, environment, fingerprintId, deviceId, sourceIP, device,

@@ -126,7 +126,6 @@ public class ContentQuery implements Serializable {
 		} else {
 			key = String.valueOf("ct:" + contentId).hashCode();
 		}
-		// System.out.println("AdQuery "+ key);
 		return key;
 	}
 

@@ -8,6 +8,7 @@ import leotech.system.dao.SystemUserDaoUtil;
 import leotech.system.domain.SystemUserManagement;
 import leotech.system.model.JsonDataPayload;
 import leotech.system.model.SystemUser;
+import leotech.system.util.LogUtil;
 
 public class UserApiHandler extends SecuredHttpDataHandler {
 	static final String API_CREATE = "/user/create";
@@ -24,12 +25,7 @@ public class UserApiHandler extends SecuredHttpDataHandler {
 	public JsonDataPayload httpPostHandler(String userSession, String uri, JsonObject paramJson)
 			throws Exception {
 		// input params
-		System.out.println(uri);
-
-		System.out.println(paramJson);
-
 		SystemUser loginUser = initSystemUser(userSession, uri, paramJson);
-		System.out.println("getUserFromSession " + loginUser);
 		if (loginUser == null) {
 			return userLoginHandler(userSession, uri, paramJson);
 		} else {
@@ -48,12 +44,12 @@ public class UserApiHandler extends SecuredHttpDataHandler {
 				}
 				case API_CREATE : {
 					String userId = SystemUserManagement.save(loginUser, paramJson, true);
-					System.out.println("API_CREATE.saveUserInfo " + userId);
+					LogUtil.logInfo(this.getClass(), "API_CREATE.saveUserInfo " + userId);
 					return JsonDataPayload.ok(uri, userId, true);
 				}
 				case API_UPDATE : {
 					String userId = SystemUserManagement.save(loginUser, paramJson, false);
-					System.out.println("API_UPDATE.saveUserInfo " + userId);
+					LogUtil.logInfo(this.getClass(),"API_UPDATE.saveUserInfo " + userId);
 					return JsonDataPayload.ok(uri, userId, true);
 				}
 				case API_ACTIVATE : {

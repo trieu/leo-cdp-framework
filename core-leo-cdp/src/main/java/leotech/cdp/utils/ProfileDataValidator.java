@@ -90,11 +90,4 @@ public final class ProfileDataValidator {
 	}
 
 	
-	public static void main(String[] args) {
-		System.out.println(isValidPhoneNumber("0903122290"));
-		System.out.println(isValidPhoneNumber("0948898262"));
-		System.out.println(isValidPhoneNumber("+84948898262"));
-		System.out.println(isValidPhoneNumber("1800 088 887"));
-		
-	}
 }

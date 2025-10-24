@@ -117,8 +117,8 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 			if(toks.length == 4) {
 				String savedCaptcha = toks[3];
 				int ran = StringUtil.safeParseInt(toks[2]);
-				System.out.println("savedCaptcha " + savedCaptcha);
-				System.out.println("captchaFromUser " + captchaFromUser);
+				logger.info("savedCaptcha " + savedCaptcha);
+				logger.info("captchaFromUser " + captchaFromUser);
 				
 				if(captchaFromUser.equals(savedCaptcha) && toks[0].equals(ADMIN_HANDLER_SESSION_KEY) && ran > 0 && ran <= MAX_NUMBER) {
 					return true;

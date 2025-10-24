@@ -85,13 +85,9 @@ public class XssFilterUtil {
 						if (fieldValue != null) {
 							String value = String.valueOf(fieldValue);
 							if (StringUtil.isNotEmpty(value)) {
-								// System.out.println(field.getName() + " BEFORE " + value);
-
 								// clean all HTML tags
 								value = clean(value);
 								field.set(obj, value);
-
-								// System.out.println(field.getName() + " AFTER " + value);
 							}
 						}
 					} catch (Exception e) {

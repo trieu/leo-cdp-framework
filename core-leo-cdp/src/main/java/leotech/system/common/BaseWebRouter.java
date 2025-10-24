@@ -89,17 +89,11 @@ public abstract class BaseWebRouter extends BaseHttpRouter {
 		String userAgent = DeviceManagement.getUserAgent(request);
 		String userIp = CookieUUIDUtil.getRemoteIP(request);
 		String userSessionHeader = StringUtil.safeString(reqHeaders.get(HEADER_SESSION));
-		System.out.println("HTTP "+httpMethod + " ==>> host: " + host + " uri: " + uri);
+		logger.info("HTTP "+httpMethod + " ==>> host: " + host + " uri: " + uri);
 
 		if (HTTP_METHOD_POST.equalsIgnoreCase(httpMethod)) {
 			String bodyStr = StringUtil.safeString(context.getBodyAsString(), "{}");
-			
-			//System.out.println("uri:"+ uri + "\n "+bodyStr);
-			
 			JsonObject paramJson = buildHttpPostParams(request, contentType, userAgent, userIp, bodyStr);
-			
-			//System.out.println("paramJson:"+ uri + "\n "+paramJson);
-			
 			String userSession =  StringUtil.safeString(paramJson.remove(P_USER_SESSION), userSessionHeader);
 			JsonDataPayload out = callHttpPostHandler(request, userSession, uri, paramJson);
 			if (out != null) {

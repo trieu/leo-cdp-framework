@@ -1,5 +1,8 @@
 package leotech.system.common;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import leotech.cdp.utils.EventTrackingUtil;
 import leotech.cdp.utils.RealtimeTrackingUtil;
 import leotech.system.model.JsonDataPayload;
@@ -7,6 +10,11 @@ import redis.clients.jedis.ShardedJedisPool;
 import rfx.core.configs.RedisConfigs;
 import rfx.core.util.DateTimeUtil;
 
+/**
+ * @author Trieu Nguyen
+ * @since 2025
+ *
+ */
 public abstract class BaseHttpHandler {
 
 	public static final String ORIGIN = "Origin";
@@ -25,6 +33,7 @@ public abstract class BaseHttpHandler {
 	public static final String CONTENT_TYPE_IMAGE_ICON = "image/x-icon";
 	
 	protected static ShardedJedisPool redisLocalCache = RedisConfigs.load().get("localCache").getShardedJedisPool();
+	protected static Logger logger = LoggerFactory.getLogger(BaseHttpHandler.class);
 
 	protected static void updateRealtimeEvent(String userId, String contentId, String categoryId, String groupId,
 			String networkId) {

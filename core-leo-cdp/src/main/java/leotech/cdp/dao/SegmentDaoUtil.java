@@ -108,7 +108,7 @@ public final class SegmentDaoUtil extends AbstractCdpDatabaseUtil {
             String aql = query.getCountingQueryWithDateTimeFilter();
             
             if(SystemMetaData.isDevMode()) {
-            	System.out.println(" ==> getSegmentSizeByQuery " + aql);
+            	logger.info(" ==> getSegmentSizeByQuery " + aql);
             }
             
             Long c = new ArangoDbCommand<Long>(db, aql, Long.class).getSingleResult();
@@ -132,7 +132,7 @@ public final class SegmentDaoUtil extends AbstractCdpDatabaseUtil {
         	 return false;
          }
          if(SystemMetaData.isDevMode()) {
-         	System.out.println(" ==> checkProfileInSegment " + aql);
+        	 logger.info(" ==> checkProfileInSegment " + aql);
          }
          
          Integer c = new ArangoDbCommand<>(db, aql, Integer.class).getSingleResult();

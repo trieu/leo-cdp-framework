@@ -4,6 +4,9 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.arangodb.ArangoCursor;
 import com.arangodb.ArangoDB;
 import com.arangodb.ArangoDatabase;
@@ -21,6 +24,8 @@ import rfx.core.util.Utils;
  *
  */
 public final class ArangoDbUtil {
+	
+	static Logger logger = LoggerFactory.getLogger(ArangoDbUtil.class);
 	
 	public static final String ARANGO_JAVA_DRIVER = "com.arangodb.ArangoDB";
 
@@ -124,10 +129,10 @@ public final class ArangoDbUtil {
 		if (dbInstance == null) {
 			DatabaseConfigs dbconfig = DatabaseConfigs.load(dbConfigKey);
 			
-			System.out.println("--------------------------------");
-			System.out.println("[DbConfigs] load dbConfigKey : " + dbConfigKey );
-			System.out.println("Host: "+dbconfig.getHost() + " Database: " + dbconfig.getDatabase() + " Port: " + dbconfig.getPort());
-			System.out.println("--------------------------------");
+			logger.info("--------------------------------");
+			logger.info("[DbConfigs] load dbConfigKey : " + dbConfigKey );
+			logger.info("Host: "+dbconfig.getHost() + " Database: " + dbconfig.getDatabase() + " Port: " + dbconfig.getPort());
+			logger.info("--------------------------------");
 			
 			String dbName = dbconfig.getDatabase();
 			String host = dbconfig.getHost();

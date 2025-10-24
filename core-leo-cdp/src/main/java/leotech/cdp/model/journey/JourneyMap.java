@@ -456,7 +456,6 @@ public final class JourneyMap extends PersistentObject {
 	 */
 	public static JourneyMap setTouchpointHubsForJourneyMap(JourneyMap map, List<TouchpointHub> touchpointHubs, List<TouchpointHubReport> reports, boolean validationInput) {
 		int size = touchpointHubs.size();
-		System.out.println("setTouchpointHubsForJourneyMap hub.size " + size + " map.getId: " + map.getId());
 		if(size >= 2 && map != null) {
 			String journeyMapId = map.getId();
 			

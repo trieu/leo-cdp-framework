@@ -117,9 +117,4 @@ public class SystemEnviroment {
 		return HashUtil.hashUrl128Bit(s1 + quota + adminDomain + adminEmail);
 	}
 
-
-	public static void main(String[] args) {
-		String leocdp_redis_info = System.getenv("leocdp_redis_info");
-		System.out.println(leocdp_redis_info);
-	}
 }

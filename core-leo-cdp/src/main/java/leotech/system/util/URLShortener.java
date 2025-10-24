@@ -12,7 +12,7 @@ public class URLShortener {
 	// storage for generated keys
 	private HashMap<String, String> keyMap; // key-url map
 	private HashMap<String, String> valueMap;// url-key map to quickly check whether an url is
-	
+
 	// already entered in our system
 	private String domain; // Use this attribute to generate urls for a custom
 							// domain name defaults to http://fkt.in
@@ -22,7 +22,7 @@ public class URLShortener {
 	private int keyLength; // the key length in URL defaults to 10
 
 	// Default Constructor
-	URLShortener() {
+	public URLShortener() {
 		keyMap = new HashMap<String, String>();
 		valueMap = new HashMap<String, String>();
 		myRand = new Random();
@@ -39,7 +39,7 @@ public class URLShortener {
 			}
 			myChars[i] = (char) j;
 		}
-		domain = "https://"+SystemMetaData.DOMAIN_CDP_OBSERVER;
+		domain = "https://" + SystemMetaData.DOMAIN_CDP_OBSERVER;
 	}
 
 	// Constructor which enables you to define tiny URL key length and base URL
@@ -123,7 +123,7 @@ public class URLShortener {
 			for (int i = 0; i <= keyLength; i++) {
 				key += myChars[myRand.nextInt(62)];
 			}
-			// System.out.println("Iteration: "+ counter + "Key: "+ key);
+
 			if (!keyMap.containsKey(key)) {
 				flag = false;
 			}
@@ -131,20 +131,4 @@ public class URLShortener {
 		return key;
 	}
 
-	// test the code
-	public static void main(String args[]) {
-		URLShortener u = new URLShortener();
-		
-		String urls[] = { "www.google.com/", "www.google.com",
-				"http://www.yahoo.com", "www.yahoo.com/", "www.amazon.com",
-				"www.amazon.com/page1.php", "www.amazon.com/page2.php",
-				"www.flipkart.in", "www.rediff.com", "www.techmeme.com",
-				"www.techcrunch.com", "www.lifehacker.com", "www.icicibank.com" };
-
-		for (int i = 0; i < urls.length; i++) {
-			System.out.println("URL:" + urls[i] + "\tTiny: "
-					+ u.shortenURL(urls[i]) + "\tExpanded: "
-					+ u.expandURL(u.shortenURL(urls[i])));
-		}
-	}
 }

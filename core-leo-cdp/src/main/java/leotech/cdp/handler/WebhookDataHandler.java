@@ -83,7 +83,6 @@ public final class WebhookDataHandler {
 	 */
 	static boolean processWebhookEvent(String observerId, String source, String payload) {
 		if (StringUtil.isNotEmpty(payload)) {
-			System.out.println(payload);
 			TouchpointHub tphub = TouchpointHubManagement.getByObserverId(observerId);
 			if (tphub != null) {
 				WebhookDataEvent e = new WebhookDataEvent(source, observerId, tphub.getId(), payload);

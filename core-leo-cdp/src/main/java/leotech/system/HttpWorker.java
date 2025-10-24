@@ -43,9 +43,6 @@ public final class HttpWorker extends BaseWorker {
 	final HttpRoutingConfigs httpRoutingConfigs;
 	final String defaultDbConfig;
 	
-	
-
-	
 	public final HttpRoutingConfigs getHttpRoutingConfigs() {
 		return httpRoutingConfigs;
 	}
@@ -98,7 +95,7 @@ public final class HttpWorker extends BaseWorker {
 
 	@Override
 	protected void onStartDone() {
-		System.out.println(name + " is loaded ...");
+		LogUtil.logInfo(this.getClass(),name + " is loaded ...");
 	}
 
 	public static HttpWorker getInstance() {

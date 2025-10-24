@@ -48,7 +48,6 @@ public final class FeedbackDataDao extends AbstractCdpDatabaseUtil {
 			ArangoCollection col = e.getDbCollection();
 			if (col != null) {
 				col.insertDocument(e, optionToUpsertInSilent());
-				System.out.println("save FeedbackEvent OK " + e.getHeader() + " " + e.getId());
 				return e.getId();
 			}
 		} else {
@@ -177,7 +176,6 @@ public final class FeedbackDataDao extends AbstractCdpDatabaseUtil {
 		FeedbackRatingReport fbReport = new FeedbackRatingReport(fromDate, toDate, feedbackDataType); 
 		
 		List<FeedbackGroupByDate> groups = getFeedbackGroupByDate(feedbackDataType, fromDate, toDate);
-		System.out.println(groups.size());
 
 		Set<String> positive = new HashSet<>();
 		Set<String> neutral = new HashSet<>();
@@ -220,16 +218,7 @@ public final class FeedbackDataDao extends AbstractCdpDatabaseUtil {
 					negative.remove(profileId);
 				}
 			}
-			
-//			System.out.println(dateKey + " " + dailyScoreCX.get(dateKey));
 		}
-		
-//		System.out.println();
-//		System.out.println("positive "+positive.size());
-//		System.out.println("neutral "+neutral.size());
-//		System.out.println("negative "+negative.size());
-
-		System.out.println(summaryScoreCX);
 		
 		fbReport.setScoreCX(summaryScoreCX);
 		fbReport.setDailyScoreCX(dailyScoreCX);

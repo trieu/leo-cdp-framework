@@ -501,10 +501,4 @@ public final class ProfileIdentity {
 	public String toString() {
 		return new Gson().toJson(this);
 	}
-	
-	public static void main(String[] args) {
-		ProfileIdentity p = new ProfileIdentity();
-		p.setApplicationIDs("[\"zaloid_by_app: 5866747742526567508\", \"zaloid_by_brand: 7443055895821075130\"]");
-		System.out.println(p.getApplicationIDs());
-	}
 }

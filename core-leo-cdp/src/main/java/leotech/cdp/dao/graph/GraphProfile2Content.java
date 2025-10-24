@@ -169,8 +169,6 @@ public final class GraphProfile2Content extends AbstractCdpDatabaseUtil {
 	public static List<TargetMediaUnit> getRecommendedAssetContents(String fromProfileId, int startIndex, int numberResult, boolean rankedByIndexScore) {
 		ArangoDatabase db = getCdpDatabase();
 		String aql = ProfileGraphEdge.getGraphQueryRecommendation(GRAPH_NAME);
-		System.out.println(" fromProfileId " + fromProfileId );
-		System.out.println(" getRecommendedAssetContents " + aql);
 		
 		Map<String, Object> bindVars = new HashMap<>(3);
 		bindVars.put("fromProfileId", Profile.COLLECTION_NAME + "/" + fromProfileId);
@@ -351,7 +349,6 @@ public final class GraphProfile2Content extends AbstractCdpDatabaseUtil {
 		Map<String, Object> bindVars = new HashMap<>(1);
 		bindVars.put("groupId", groupId );
 		db.query(aql, bindVars, Void.class);
-		System.out.println("removeAllGraphEdgesByGroupId "+aql);
 	}
 	
 	/**
@@ -365,7 +362,6 @@ public final class GraphProfile2Content extends AbstractCdpDatabaseUtil {
 		bindVars.put("groupId", groupId );
 		bindVars.put("segmentId", segmentId );
 		db.query(aql, bindVars, Void.class);
-		System.out.println("removeAllGraphEdgesByGroupIdAndSegmentId "+aql);
 	}
 	
 	
@@ -382,7 +378,6 @@ public final class GraphProfile2Content extends AbstractCdpDatabaseUtil {
 			Map<String, Object> bindVars = new HashMap<>(1);
 			bindVars.put("fromProfileId", profileIdentity.getDocumentUUID() );
 			db.query(aql, bindVars, Void.class);
-			System.out.println("removeAllGraphEdgesBySegmentId "+aql);
 		};
 		return SegmentQueryManagement.applyConsumerForAllProfilesInSegment(segmentId, applyRemoveEdgeData);
 	}

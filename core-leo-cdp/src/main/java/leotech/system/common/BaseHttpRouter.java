@@ -1,6 +1,8 @@
 package leotech.system.common;
 
 import org.apache.http.HttpStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.Cookie;
@@ -48,8 +50,8 @@ public abstract class BaseHttpRouter {
 	public static final String HTTP_METHOD_DELETE = "DELETE";
 	public static final String HTTP_GET_OPTIONS = "options";
 	public static final String HEADER_SESSION = "leouss";
-
-
+	
+	final protected static Logger logger = LoggerFactory.getLogger(BaseHttpRouter.class);
 	final protected RoutingContext context;
 	final static boolean CACHING_VIEW = SystemMetaData.isEnableCachingViewTemplates();
 

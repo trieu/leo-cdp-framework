@@ -105,7 +105,6 @@ public final class ObserverHttpGetHandler {
 
 			// synch ContextSession with event tracking
 			ContextSession ctxSession = ContextSessionManagement.get(ctxSessionKey, req, params, device);
-			System.out.println("tracking event in real-time for ctxSessionKey " + ctxSession.getSessionKey());
 
 			int status = 404;
 			String eventId = "", visitorId = "", sessionKey = "";

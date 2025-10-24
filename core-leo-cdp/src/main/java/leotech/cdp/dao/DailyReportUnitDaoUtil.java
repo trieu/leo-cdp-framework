@@ -14,6 +14,7 @@ import leotech.cdp.model.analytics.FeedbackEvent;
 import leotech.cdp.model.customer.Profile;
 import leotech.cdp.model.customer.Segment;
 import leotech.system.config.AqlTemplate;
+import leotech.system.util.LogUtil;
 import leotech.system.util.database.ArangoDbCommand;
 import leotech.system.util.database.ArangoDbCommand.CallbackQuery;
 import rfx.core.util.StringUtil;
@@ -175,7 +176,7 @@ public final class DailyReportUnitDaoUtil extends AbstractCdpDatabaseUtil {
 				long dailyCount = obj.getDailyCount();
 				report.addReportSummary(eventName, dailyCount);
 				report.addReportMap(eventName, obj);				
-				//System.out.println("objectName " + objectName + " objectId " + objectId + " eventName " + eventName + " dailyCount " + dailyCount);
+				LogUtil.debug("objectName " + objectName + " objectId " + objectId + " eventName " + eventName + " dailyCount " + dailyCount);
 				return obj;
 			}
 		};

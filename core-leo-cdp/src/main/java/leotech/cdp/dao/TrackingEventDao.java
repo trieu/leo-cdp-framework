@@ -105,7 +105,6 @@ public final class TrackingEventDao extends AbstractCdpDatabaseUtil {
 			bindVars.put("metricName", v);
 			aql = AQL_SEARCH_TRACKING_EVENTS_BY_PROFILE_ID_AND_KEYWORDS;
 		}
-		System.out.println(aql);
 		List<TrackingEvent> list = new ArangoDbCommand<>(db, aql, bindVars, TrackingEvent.class, callback).getResultsAsList();
 		return list;
 	}

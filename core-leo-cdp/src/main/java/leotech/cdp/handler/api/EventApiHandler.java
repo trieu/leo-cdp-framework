@@ -54,10 +54,8 @@ public class EventApiHandler extends BaseApiHandler {
 	@Override
 	protected JsonDataPayload handlePost(EventObserver observer, HttpServerRequest req, String uri,
 			JsonObject paramJson) {
-		System.out.println(paramJson);
 
 		JsonDataPayload payload = null;
-		
 		try {
 			switch (uri) {
 			case API_EVENT_SAVE:
@@ -134,8 +132,6 @@ public class EventApiHandler extends BaseApiHandler {
 
 		if (profile != null) {
 			String profileId = profile.getId();
-			System.out.println("PREFIX_API_EVENT_LIST profileId " + profileId);
-
 			int startIndex = HttpWebParamUtil.getInteger(urlParams, "startIndex", 0);
 			int result = HttpWebParamUtil.getInteger(urlParams, "numberResult", 20);
 			List<TrackingEvent> list = EventDataManagement.getTrackingEventsOfProfile(profileId, "", startIndex, result);

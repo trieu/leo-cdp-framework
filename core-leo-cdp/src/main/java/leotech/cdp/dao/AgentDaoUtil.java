@@ -120,12 +120,6 @@ public final class AgentDaoUtil extends AbstractCdpDatabaseUtil {
 			bindVars.put("forPersonalization", forPersonalization);
 		}
 		
-		System.out.println("keywords "+keywords);
-		System.out.println("filterServiceValue "+filterServiceValue);
-		System.out.println("forSynchronization "+forSynchronization);
-		System.out.println("forDataEnrichment "+forDataEnrichment);
-		System.out.println("forPersonalization "+forPersonalization);
-		System.out.println(aql);
 		List<Agent> list = new ArangoDbCommand<Agent>(db, aql, bindVars, Agent.class).getResultsAsList();
 		return list;
 	}

@@ -96,8 +96,7 @@ public final class MainHttpRouter extends BaseHttpRouter {
 		String userSession = StringUtil.safeString(reqHeaders.get(BaseWebRouter.HEADER_SESSION));
 
 		// ---------------------------------------------------------------------------------------------------
-		String absoluteURI = req.absoluteURI();
-		System.out.println("absoluteURI " + absoluteURI);
+		String absoluteURI = req.absoluteURI();;
 		
 		String path = req.path();
 		MultiMap params = req.params();

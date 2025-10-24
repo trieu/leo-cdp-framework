@@ -49,9 +49,4 @@ public class UrlUtil {
 		return "";
 	}
 	
-	public static void main(String[] args) {
-		String url = "https://www.amazon.com/Customer-Data-Platform-Marketing-Engagement/dp/B09T2KT88X/";
-		System.out.println(UrlUtil.getHostName(url));
-	}
-	
 }

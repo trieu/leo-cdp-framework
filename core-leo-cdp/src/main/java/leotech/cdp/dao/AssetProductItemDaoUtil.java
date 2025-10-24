@@ -64,7 +64,6 @@ public class AssetProductItemDaoUtil extends AssetItemDao {
 				item.setUpdatedAt(new Date());
 				col.insertDocument(item, optionToUpsertInSilent());
 				
-				System.out.println("AssetProductItemDaoUtil save " + id);
 				return id;
 			} else {
 				System.err.println("AssetProductItemDaoUtil save ArangoCollection is NULL");

@@ -2,6 +2,9 @@ package leotech.cdp.query;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import leotech.cdp.model.analytics.FeedbackData;
@@ -24,6 +27,7 @@ import rfx.core.util.StringUtil;
  *
  */
 public class ProfileQueryBuilder {
+	static Logger logger = LoggerFactory.getLogger(ProfileQueryBuilder.class);
 	
 	static final String PROFILE_LAST_EVENTS = " LET lastItemViewEvent = FIRST( FOR e IN cdp_trackingevent FILTER e.refProfileId == p._key AND e.metricName == 'item-view' SORT e.createdAt DESC LIMIT 1 RETURN UNSET(e, ['rawJsonData','partitionId','sessionKey','state','environment']) ) \n "
 			+ " LET lastPurchaseEvent = FIRST( FOR e IN cdp_trackingevent FILTER e.refProfileId == p._key AND (e.metricName == 'purchase' OR e.metricName == 'order-checkout') SORT e.createdAt DESC LIMIT 1 RETURN UNSET(e, ['rawJsonData','partitionId','sessionKey','state','environment']) ) \n "
@@ -115,7 +119,7 @@ public class ProfileQueryBuilder {
 		
 		if(SystemMetaData.isDevMode()) {
 			String s = aql.substring(0, aql.indexOf("RETURN DISTINCT"));
-			System.out.println(" buildArangoQueryString: \n" + s);
+			logger.info(" buildArangoQueryString: \n" + s);
 		}
 		
 		return aql;
@@ -179,7 +183,7 @@ public class ProfileQueryBuilder {
 		
 		if(SystemMetaData.isDevMode()) {
 			String l = aql.substring(0, a.indexOf("RETURN DISTINCT")+15);
-			System.out.println(" buildArangoQueryString: \n" + l);
+			logger.info(" buildArangoQueryString: \n" + l);
 		}
 		
 		return a;
@@ -265,11 +269,11 @@ public class ProfileQueryBuilder {
 		String aql;
 		if(filter.isForDeduplication()) {
 			aql = aqlToGetDuplicateProfiles(filter, countingTotal);
-			System.out.println("aqlToGetDuplicateProfiles \n" + aql);
+			logger.info("aqlToGetDuplicateProfiles \n" + aql);
 		}
 		else {
 			aql = aqlToGetProfiles(filter, countingTotal);
-			System.out.println("aqlToGetProfiles \n" + aql);
+			logger.info("aqlToGetProfiles \n" + aql);
 		}
 		return aql;
 	}

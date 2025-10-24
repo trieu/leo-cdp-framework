@@ -105,7 +105,6 @@ public final class ProfileModelUtil {
 	}
 
 	public final static int getMaxTotalDataQualityScore() {
-		System.out.println("maxTotalDataQualityScore " + maxTotalDataQualityScore);
 		return maxTotalDataQualityScore;
 	}
 

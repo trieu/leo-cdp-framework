@@ -88,7 +88,7 @@ public final class MainHttpStarter {
 					return;
 				}
 				else {
-					System.out.println("the first argument should be " + SETUP_NEW_SYSTEM);
+					LogUtil.println("the first argument should be " + SETUP_NEW_SYSTEM);
 				}
 			}  
 			else {
@@ -102,15 +102,15 @@ public final class MainHttpStarter {
 
 
 	protected static void printHelpInfo() {
-		System.out.println("Invalid arguments");
-		System.out.println("Please pass a valid argument from: ");
-		System.out.println("SETUP_NEW_SYSTEM: " + SETUP_NEW_SYSTEM);
+		LogUtil.println("Invalid arguments");
+		LogUtil.println("Please pass a valid argument from: ");
+		LogUtil.println("SETUP_NEW_SYSTEM: " + SETUP_NEW_SYSTEM);
 		
-		System.out.println("UPGRADE_SYSTEM: " + UPGRADE_SYSTEM);
-		System.out.println("UPGRADE_SYSTEM_AND_RESET_CONFIGS: " + UPGRADE_SYSTEM_AND_RESET_CONFIGS);
-		System.out.println("UPGRADE_INDEX_DATABASE: " + UPGRADE_INDEX_DATABASE);
+		LogUtil.println("UPGRADE_SYSTEM: " + UPGRADE_SYSTEM);
+		LogUtil.println("UPGRADE_SYSTEM_AND_RESET_CONFIGS: " + UPGRADE_SYSTEM_AND_RESET_CONFIGS);
+		LogUtil.println("UPGRADE_INDEX_DATABASE: " + UPGRADE_INDEX_DATABASE);
 		
-		System.out.println("UPGRADE_SYSTEM_AND_DATA: " + UPGRADE_SYSTEM_AND_DATA + " [jobClasspath]");
+		LogUtil.println("UPGRADE_SYSTEM_AND_DATA: " + UPGRADE_SYSTEM_AND_DATA + " [jobClasspath]");
 	}
 	
 }

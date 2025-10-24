@@ -483,7 +483,7 @@ public final class ProfileDaoUtil extends AbstractCdpDatabaseUtil {
 		
 		// loop for each profiles to update inSegments
 		profileIds.parallelStream().forEach(profileId->{
-			System.out.println(" \n [Update Profile Segment Refs] profileId: " + profileId );
+			logger.info(" \n [Update Profile Segment Refs] profileId: " + profileId );
 			ProfileIdentity profileIdx = getProfileIdentityById(profileId);
 			Set<RefKey> inSegments = profileIdx.getInSegments();
 			ProfileDaoUtil.updateProfileSegmentRefs(profileId, allActiveSegments, inSegments);
@@ -517,7 +517,7 @@ public final class ProfileDaoUtil extends AbstractCdpDatabaseUtil {
 			// if profile is matching query of segment, update it
 			boolean updateSegmentRef = SegmentDaoUtil.isProfileInSegment(profileId, segmentQuery);
 			if(updateSegmentRef) {
-				System.out.println("\n ====> profileId " + profileId + " in segment " + segment.getName());
+				logger.info("\n ====> profileId " + profileId + " in segment " + segment.getName());
 				updateSegmentRefForProfile(segmentIdToCheck, segmentName, indexScore, authorizedViewers, authorizedEditors, refKey, profileId, currentSegmentRefs);
 			}
 			else if(currentSegmentRefs.contains(refKey)){
@@ -554,9 +554,7 @@ public final class ProfileDaoUtil extends AbstractCdpDatabaseUtil {
 		bindVars.put("queryHashedId", refKey.getQueryHashedId());
 		bindVars.put("profileId", profileId);
 
-	
 		try {
-			
 			// database instance
 			ArangoDatabase db = getCdpDatabase();
 			
@@ -576,7 +574,7 @@ public final class ProfileDaoUtil extends AbstractCdpDatabaseUtil {
 			}
 			
 		} catch (ArangoDBException e) {
-			System.out.println("ERROR updateSegmentRefForProfile profileId " + profileId);
+			logger.error("ERROR updateSegmentRefForProfile profileId " + profileId);
 			e.printStackTrace();
 		} 
 		
@@ -595,7 +593,7 @@ public final class ProfileDaoUtil extends AbstractCdpDatabaseUtil {
 			bindVars.put("profileId", profileId);
 			new ArangoDbCommand<String>(getCdpDatabase(), AQL_REMOVE_SEGMENT_REF_KEY_FOR_PROFILE, bindVars).update();
 		} catch (Exception e) {
-			e.printStackTrace();
+			logger.error(e.toString());
 		}
 	}
 

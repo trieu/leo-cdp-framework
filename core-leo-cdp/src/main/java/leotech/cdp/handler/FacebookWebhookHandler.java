@@ -50,7 +50,6 @@ public final class FacebookWebhookHandler {
 		boolean isValidToken = observer.getAccessTokens().getOrDefault(observerId , "").equals(tokenValue);  
         
         String payload = StringUtil.safeString(context.getBodyAsString());
-        System.out.println(payload);
    
         String source = HttpWebParamUtil.getString(params, HttpParamKey.SOURCE);
 		TouchpointHub tphub = TouchpointHubManagement.getByObserverId(observerId);
