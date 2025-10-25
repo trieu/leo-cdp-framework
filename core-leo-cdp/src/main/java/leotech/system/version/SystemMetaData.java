@@ -47,7 +47,6 @@ public final class SystemMetaData {
 	public static final String BUILD_ID;	
 	static {
 		LogUtil.reloadConfig("./configs/log4j.xml");
-		LogUtil.setLogLevel("DEBUG");
 		BUILD_ID = readVersionInfoInManifest();
 		initSystem();
 	}

@@ -31,7 +31,7 @@ public class LogUtil {
      * Change root log level to INFO at runtime (Log4j2)
      */
     public static void setLogLevelToInfo() {
-        setLogLevel("DEBUG");
+        setLogLevel("INFO");
     }
 
     /**

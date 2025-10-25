@@ -152,9 +152,9 @@ dependencies {
 		
 		// log4j
 		,'org.slf4j:slf4j-api:2.0.3'
-		,'org.apache.logging.log4j:log4j-core:2.17.2'
-		,'org.apache.logging.log4j:log4j-api:2.17.2'
-		,'org.apache.logging.log4j:log4j-slf4j2-impl:2.17.2'
+		,'org.apache.logging.log4j:log4j-api:2.20.0'
+		,'org.apache.logging.log4j:log4j-core:2.20.0'
+		,'org.apache.logging.log4j:log4j-slf4j2-impl:2.20.0'
 		
 		// XSS filter
 		,'org.jsoup:jsoup:1.21.1'
