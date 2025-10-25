@@ -9,8 +9,6 @@ import io.vertx.ext.web.RoutingContext;
 import leotech.cdp.domain.ProfileGraphManagement;
 import leotech.cdp.handler.HttpParamKey;
 import leotech.cdp.model.marketing.TargetMediaUnit;
-import leotech.ssp.adserver.model.DisplayAdData;
-import leotech.ssp.adserver.service.AdsQueryService;
 import leotech.system.common.BaseWebRouter;
 import leotech.system.domain.SystemInfo;
 import leotech.system.model.JsonDataPayload;
@@ -119,21 +117,9 @@ public final class DeliveryHttpRouter extends BaseWebRouter {
 		JsonDataPayload payload = null;
 
 		try {
-			//////// Ads Server System ///////
-			if (uri.startsWith(ADS_QUERY)) {
-				// TODO SSP Bid Request processing
-				// AdBiddingHandler.handle(context);
-
-				List<String> pmIds = params.getAll(PLACEMENT_PARAM);
-				String vid = HttpWebParamUtil.getString(params, "vid", "");
-				String surl = HttpWebParamUtil.getString(params, "surl", "");
-
-				List<DisplayAdData> ads = AdsQueryService.getAds(pmIds, vid, surl);
-				payload = JsonDataPayload.ok(uri, ads);
-				payload.setReturnOnlyData(true);
-			}
+			
 			//////// Recommender for contents ///////
-			else if (uri.startsWith(RECOMMENDER_CONTENTS)) {
+			if (uri.startsWith(RECOMMENDER_CONTENTS)) {
 
 				String observerId = HttpWebParamUtil.getString(params, HttpParamKey.OBSERVER_ID, "");
 				String visid = HttpWebParamUtil.getString(params, HttpParamKey.VISITOR_ID, "");
