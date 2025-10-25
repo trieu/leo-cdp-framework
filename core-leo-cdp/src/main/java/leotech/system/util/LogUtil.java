@@ -2,11 +2,15 @@ package leotech.system.util;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.charset.Charset;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LoggerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +26,51 @@ public class LogUtil {
 	static Class<?> clazz = LogUtil.class;
 	static Logger logger = LoggerFactory.getLogger(clazz);
 	
+
+    /**
+     * Change root log level to INFO at runtime (Log4j2)
+     */
+    public static void setLogLevelToInfo() {
+        setLogLevel("DEBUG");
+    }
+
+    /**
+     * Change root log level at runtime using string input: DEBUG, INFO, WARN, ERROR, FATAL
+     */
+    public static void setLogLevel(String levelName) {
+        try {
+            LoggerContext context = (LoggerContext) LogManager.getContext(false);
+            org.apache.logging.log4j.core.config.Configuration config = context.getConfiguration();
+
+            Level level = Level.getLevel(levelName.toUpperCase());
+            if (level == null) {
+                logger.error("Invalid log level: {}", levelName);
+                return;
+            }
+
+            config.getRootLogger().setLevel(level);
+            context.updateLoggers(); // propagate changes
+
+            logger.info("Root log level changed to {}", level);
+        } catch (Exception e) {
+            logger.error("Failed to change log level at runtime", e);
+        }
+    }
+
+    /**
+     * Reload Log4j2 config file at runtime (advanced)
+     */
+    public static void reloadConfig(String configFilePath) {
+        try {
+            LoggerContext context = (LoggerContext) LogManager.getContext(false);
+            context.setConfigLocation(new URI(configFilePath));
+            context.reconfigure();
+            logger.info("Log4j2 config reloaded from {}", configFilePath);
+        } catch (Exception e) {
+            logger.error("Failed to reload Log4j2 config", e);
+        }
+    }
+	
 	public static void debug(Object obj) {
 		logger.debug(obj.toString());
 	}
@@ -30,10 +79,12 @@ public class LogUtil {
 		System.out.println(obj.toString());
 	}
 	
-	private static DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	private static final ThreadLocal<DateFormat> FORMATTER =
+	        ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
+
 	
 	static String now() {
-		return "[" + formatter.format(new Date()) + "] "; 
+		return "[" + FORMATTER.get().format(new Date()) + "] "; 
 	}
 
 	public static void logInfo(Class<?> clazz, Object message) {
@@ -52,9 +103,7 @@ public class LogUtil {
 	}
 
 
-	public static String toPrettyJson(Object obj) {
-		return new GsonBuilder().setPrettyPrinting().create().toJson(obj);
-	}
+	
 
 	public static String readLastRowsLog(String logFileUri, int maxRows) throws IOException {
 		StringBuilder log = new StringBuilder();
@@ -75,9 +124,14 @@ public class LogUtil {
 		return log.toString();
 	}
 	
-
-	public static void setLogLevelToInfo() {
-		// TODO Auto-generated method stub
+	public static final String toJson(Object obj) {
+		return new GsonBuilder().disableHtmlEscaping().create().toJson(obj);
 	}
+	
+	public static String toPrettyJson(Object obj) {
+		return new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create().toJson(obj);
+	}
+	
+	
 
 }

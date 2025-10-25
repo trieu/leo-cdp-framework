@@ -10,11 +10,12 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TimeZone;
 
-import com.google.common.collect.Maps;
-import com.google.gson.Gson;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import com.google.common.collect.Maps;
+
+import leotech.system.util.LogUtil;
 import rfx.core.util.DateTimeUtil;
 import rfx.core.util.StringUtil;
 
@@ -45,8 +46,20 @@ public final class SystemMetaData {
 	
 	public static final String BUILD_ID;	
 	static {
+		LogUtil.reloadConfig("./configs/log4j.xml");
+		LogUtil.setLogLevel("DEBUG");
 		BUILD_ID = readVersionInfoInManifest();
 		initSystem();
+	}
+	
+	
+	/**
+	 * set Time Zone GMT for system date time
+	 */
+	public final static void initTimeZoneGMT() {
+		// default system time is GMT
+		TimeZone timeZone = TimeZone.getTimeZone("GMT");
+		TimeZone.setDefault(timeZone);
 	}
 	
 	/**
@@ -75,7 +88,7 @@ public final class SystemMetaData {
 		if (StringUtil.isEmpty(runtimePath)) {
 			metaDataMap.put("runtimePath", Paths.get(".").toString());
 		}
-		logger.info(new Gson().toJson(metaDataMap));
+		logger.debug(LogUtil.toPrettyJson(metaDataMap));
 	}
 
 	private static void loadDefaultMetaDataMap() {
@@ -91,11 +104,11 @@ public final class SystemMetaData {
 	}
 	
 	
-	private static final int getInt(String name, int defaultValue) {
+	public static final int getInt(String name, int defaultValue) {
 		return StringUtil.safeParseInt(metaDataMap.get(name), defaultValue);
 	}
 	
-	private static final long getLong(String name, long defaultValue) {
+	public static final long getLong(String name, long defaultValue) {
 		return StringUtil.safeParseLong(metaDataMap.get(name), defaultValue);
 	}
 	
@@ -209,21 +222,11 @@ public final class SystemMetaData {
 		return HAS_B2B_FEATURES;
 	}
 
-	
-	
-	/**
-	 * set Time Zone GMT for system date time
-	 */
-	public final static void initTimeZoneGMT() {
-		// default system time is GMT
-		TimeZone timeZone = TimeZone.getTimeZone("GMT");
-		TimeZone.setDefault(timeZone);
-	}
+
 	
 	public final static boolean isDevMode() {
 		return DEV.equalsIgnoreCase(RUNTIME_ENVIRONMENT);
 	}
-
 
 
 }

@@ -52,7 +52,6 @@ import rfx.core.util.Utils;
  */
 public final class ProfileDaoUtil extends AbstractCdpDatabaseUtil {
 
-
 	static Logger logger = LoggerFactory.getLogger(ProfileDaoUtil.class);
 
 	static final String AQL_COUNT_TOTAL_ACTIVE_PROFILES = "RETURN LENGTH( FOR p in "+Profile.COLLECTION_NAME+" FILTER  p.status > 0 RETURN p._key)";
