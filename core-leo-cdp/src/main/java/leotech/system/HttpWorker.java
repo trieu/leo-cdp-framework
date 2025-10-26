@@ -75,7 +75,6 @@ public final class HttpWorker extends BaseWorker {
 	public final static void start(String workerName) {
 		SystemMetaData.initTimeZoneGMT();
 		
-		LogUtil.setLogLevelToInfo();
 		System.setProperty("vertx.disableFileCPResolving", "true");
 
 		instance = new HttpWorker(workerName);
