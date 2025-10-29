@@ -42,7 +42,16 @@ const initJourneyMapAndTouchpointHubs = function(){
 	var callback = function(journeyMap, touchpointCount){
 		containerNode.empty();
 		
-		loadJourneyMapEventMatrix(window.currentJourneyMapId, 'journey_map_event_matrix');
+		var reportNodeId = 'journey_map_event_matrix'
+		
+
+    	var wh = $(window).height();
+   		var h = wh - (Math.floor(wh/3)+50);
+   		$('#' + reportNodeId).html('<div class="loader"></div>').css('height',h+'px');
+   		
+		setTimeout(function(){
+    		loadJourneyMapEventMatrix(reportNodeId, currentJourneyMapId);
+    	}, 3000)
 		
 		// var maxSize = touchpointCount * 3;
 		// loadJourneyTouchpointHubReport(window.currentJourneyMapId, maxSize);
@@ -1427,8 +1436,8 @@ const loadDataJourneyMapsByFilter = function(rowSelectHandlerName, containerDomS
     }
 }
 
-var loadJourneyMapEventMatrix = function(journeyMapId, containerId, beginFilterDate, endFilterDate, callback){
-	var queryFilter = {'journeyMapId' : journeyMapId, 'beginFilterDate': beginFilterDate || "", 'endFilterDate': endFilterDate || ""};	    	
+var loadJourneyMapEventMatrix = function(containerId, journeyMapId, beginFilterDate, endFilterDate, callback){
+	var queryFilter = {'journeyMapId' : journeyMapId || "", 'beginFilterDate': beginFilterDate || "", 'endFilterDate': endFilterDate || ""};	    	
 	var urlStr = baseLeoAdminUrl + '/cdp/analytics360/event-matrix';
     LeoAdminApiUtil.getSecuredData(urlStr, queryFilter , function (json) {
     	var data = json.data;

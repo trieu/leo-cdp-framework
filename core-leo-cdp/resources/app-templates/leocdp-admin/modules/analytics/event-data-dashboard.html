@@ -135,7 +135,7 @@
     		var params = getDateFilterValues();
     		var beginFilterDate = params.beginFilterDate;
     		var endFilterDate = params.endFilterDate;
-    		loadJourneyMapEventMatrix(currentJourneyMapId, 'event_data_metrix_report', beginFilterDate, endFilterDate, function(data){
+    		loadJourneyMapEventMatrix('event_data_metrix_report', currentJourneyMapId, beginFilterDate, endFilterDate, function(data){
     			// event summary stats
 				var reportSummary = data.reportSummary;
 		   		var reportKeys = Object.keys(data.reportSummary);
@@ -152,7 +152,7 @@
 	    			$(sel).empty().html('<div class="text-center" style="padding: 10px"> No data available </div>');
 	    		}
     		})
-    	}, 1100)
+    	}, 2500)
     }
     
     window.eventTimeseriesChart = false;

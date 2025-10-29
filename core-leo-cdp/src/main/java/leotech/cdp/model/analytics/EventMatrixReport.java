@@ -65,8 +65,6 @@ public class EventMatrixReport {
 		this.value = value;
 	}
 	
-	
-	
 	public String getJourneyMapId() {
 		return journeyMapId;
 	}
@@ -110,8 +108,8 @@ public class EventMatrixReport {
 				yLabels.add(labelY);	
 			}
 			
-			long c = reportSummary.getOrDefault(labelX, 0L) + data.getValue();
-			reportSummary.put(labelX, c);
+			long c = reportSummary.getOrDefault(labelY, 0L) + data.getValue();
+			reportSummary.put(labelY, c);
 		}
 		
 		// update ordering 

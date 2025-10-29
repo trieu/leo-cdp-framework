@@ -1,7 +1,7 @@
 // LEOCHAT BOT configs
 const USING_LEO_BOT_WITH_AI = dnsDomainLeoBot !== "";
-const LEOBOT_URL_ASK = baseLeoBotUrl + '/ask';
-const LEOBOT_URL_GET_INFO = baseLeoBotUrl + '/get-visitor-info';
+const LEOBOT_URL_ASK = baseLeoBotUrl + '/_leoai/ask';
+const LEOBOT_URL_GET_INFO = baseLeoBotUrl + '/_leoai/visitor-info';
 
 var leoBotActionList = [];
 leoBotActionList.push({ text: 'Search profile', value: 'Search profile', icon: 'search' });

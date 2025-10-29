@@ -79,7 +79,7 @@
        		</li>
        		
        		<li>
-       			<a href="javascript:" data-target-tab="panel_summary_report"  > <i class="fa fa-bar-chart aria-hidden="true"></i> Touchpoint Hub Report  </a>
+       			<a href="javascript:" data-target-tab="panel_summary_report"  > <i class="fa fa-bar-chart aria-hidden="true"></i> Matrix Report  </a>
        		</li>
        		<li style="display: none">
        			<a href="javascript:loadJourneyFlowReport()" data-target-tab="panel_journey_flow_report" > 
@@ -143,8 +143,10 @@
 			</div>
 			
 			<!-- tab 4 Report Mode  -->
-			<div class="tab-pane" id="panel_journey_flow_report" >
-				 <div id="journeyFlowReport" class="experience_journey_flow" style="height: 720px;"></div>
+			<div class="tab-pane" id="panel_journey_flow_report" style="height: 720px;">
+				 <div id="journeyFlowReport" class="experience_journey_flow" style="height: 720px;">
+				 	<div class="loader"></div>
+				 </div>
 			</div>
 			
 			<!-- tab 5 User Authorization  -->
