@@ -9,7 +9,7 @@ public class UploadFileHttpStarter {
 	private static final String UPLOAD_FILE_WORKER = "uploadFileWorker";
 
 	public static void main(String[] args) throws Exception {
-		LogUtil.setLogLevelToInfo();
+		LogUtil.loadLoggerConfigs();
 		SystemMetaData.initTimeZoneGMT();
 		HttpWorker.start(UPLOAD_FILE_WORKER);
 	}

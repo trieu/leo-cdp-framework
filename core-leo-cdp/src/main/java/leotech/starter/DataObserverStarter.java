@@ -10,8 +10,8 @@ public class DataObserverStarter {
 	private static final String INPUT_DATA_SOURCE = "input_data_source";
 
 	public static void main(String[] args) throws Exception {
-		SystemMetaData.initTimeZoneGMT();
-		LogUtil.setLogLevelToInfo();
+		LogUtil.loadLoggerConfigs();
+		SystemMetaData.initTimeZoneGMT();		
 		boolean initPubSubObserver = false;
 		
 		if (args.length >= 1) {	

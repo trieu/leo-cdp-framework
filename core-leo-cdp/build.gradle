@@ -35,6 +35,7 @@ version leoCdpMetadata['buildVersion'] ///
 
 buildscript {
 	repositories {
+		mavenCentral()
     	maven {
       		url "https://plugins.gradle.org/m2/"
     	}
@@ -168,7 +169,7 @@ dependencies {
 		,'redis.clients:jedis:2.10.2'
 		
 		,'org.apache.httpcomponents:httpclient:4.5.13'
-		,'com.google.guava:guava:32.0.1-jre'
+
 		,'org.databene:contiperf:2.3.4'
 		,'com.google.javascript:closure-compiler:v20210302'
 		,'com.github.jknack:handlebars:4.3.1'

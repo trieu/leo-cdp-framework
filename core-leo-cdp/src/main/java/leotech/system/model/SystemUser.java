@@ -440,20 +440,7 @@ public final class SystemUser implements PersistentArangoObject {
 		return check;
 	}
 	
-	/**
-	 * @param segment
-	 * @return
-	 */
-	public boolean checkToEditSegment(Segment segment) {
-		if(segment != null) {
-			Set<String> authorizedEditors = segment.getAuthorizedEditors();
-			System.out.println("authorizedEditors " + authorizedEditors);
-			System.out.println("userLogin " + userLogin);
-			return this.hasAdminRole() || authorizedEditors.contains(this.userLogin);
-		}
-		return false;
-	}
-	
+
 	/**
 	 * @param segment
 	 * @return

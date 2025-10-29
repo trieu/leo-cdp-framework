@@ -147,6 +147,8 @@ function initJourneyMapNameEditor() {
 	}
 	
 	var nameNode = $('#journeyMapName');
+	nameNode.click(editJourneyMapName)
+	
 	$("#journeyMapNameEditor").blur(function () {
 		var name = $(this).val().trim();
 		name = name === "" ? defaultName : name;
@@ -686,7 +688,7 @@ var loadJourneyMapAndTouchpointHubs = function(journeyMapId, containerSelector, 
    		     		}
    		     	},
    		     	{ name: "url", title : "URL or Location Address", type: "text", itemTemplate: jsGridItemUrlTemplate , validate: "required", align: "center", sorting: false },
-   		     	{ type: "control",  deleteButton: canDeleteData, width: 22, sorting: false }
+   		     	{ type: "control",  deleteButton: canDeleteData,  editButton: canEditData,  width: 22, sorting: false }
    		    ]
    		}); 
 		$("#touchpoint_hub_table").jsGrid("sort", "journeyLevel");

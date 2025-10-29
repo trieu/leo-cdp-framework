@@ -36,8 +36,7 @@ public final class MainHttpStarter {
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
-		LogUtil.setLogLevelToInfo();
-		// FIXME add configs
+		LogUtil.loadLoggerConfigs();
 		SystemMetaData.initTimeZoneGMT();
 		AbstractArangoQueryRuleParser.setTimeZone(SystemMetaData.DEFAULT_TIME_ZONE);
 

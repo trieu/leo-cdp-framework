@@ -22,6 +22,7 @@ import leotech.cdp.model.activation.ActivationRule;
 import leotech.cdp.model.analytics.ConversionReport;
 import leotech.cdp.model.analytics.PerformanceReport;
 import leotech.cdp.query.SegmentQuery;
+import leotech.system.model.SystemUser;
 import leotech.system.util.database.PersistentObject;
 import rfx.core.util.StringUtil;
 
@@ -321,6 +322,22 @@ public final class Segment extends PersistentObject implements Comparable<Segmen
 		boolean ok = StringUtil.isNotEmpty(this.name) && StringUtil.isNotEmpty(this.jsonQueryRules) && this.selectedFields != null;
 		buildHashedId();
 		return ok;
+	}
+	
+	public final boolean isCreateNew() {
+		return StringUtil.isEmpty(this.id);
+	}
+	
+	/**
+	 * @param user
+	 * @return user.hasAdminRole() || authorizedEditors.contains(user.getUserLogin());
+	 */
+	public final boolean isEditable(SystemUser user) {
+		if(user != null) {
+			Set<String> authorizedEditors = this.getAuthorizedEditors();
+			return user.hasAdminRole() || authorizedEditors.contains(user.getUserLogin());
+		}
+		return false;
 	}
 	
 	@Override
@@ -627,7 +644,7 @@ public final class Segment extends PersistentObject implements Comparable<Segmen
 	
 	public Set<String> getAuthorizedEditors() {
 		if(this.authorizedEditors == null) {
-			this.authorizedEditors = new HashSet<>();
+			this.authorizedEditors = new HashSet<>(5);
 		}
 		return this.authorizedEditors;
 	}
@@ -644,7 +661,7 @@ public final class Segment extends PersistentObject implements Comparable<Segmen
 	
 	public Set<String> getAuthorizedViewers() {
 		if(authorizedViewers == null) {
-			authorizedViewers = new HashSet<>();
+			authorizedViewers = new HashSet<>(5);
 		}
 		return authorizedViewers;
 	}

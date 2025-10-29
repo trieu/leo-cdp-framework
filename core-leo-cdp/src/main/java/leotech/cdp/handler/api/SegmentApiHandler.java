@@ -179,7 +179,7 @@ public class SegmentApiHandler extends BaseApiHandler  {
 			// set JSON data payload
 			Map<String, Object> data = ImmutableMap.of("segmentData", segment, "segmentStats", stats, "behavioralEventMap", eventMap, "assetGroups" , assetGroups, "touchpointHubs", touchpointHubs);
 			JsonDataPayload result = JsonDataPayload.ok(uri, data, loginUser, Segment.class);
-			boolean checkToEditSegment = loginUser.checkToEditSegment(segment);
+			boolean checkToEditSegment = segment.isEditable(loginUser);
 			result.setCanEditData(checkToEditSegment);
 			result.setCanDeleteData(checkToEditSegment);
 			result.setCanSetAuthorization(loginUser);

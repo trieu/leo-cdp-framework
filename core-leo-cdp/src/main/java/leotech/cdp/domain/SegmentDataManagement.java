@@ -255,16 +255,20 @@ public final class SegmentDataManagement {
 	public static String saveFromJson(SystemUser loginUser, String json) {
 		Segment segment = new Gson().fromJson(json, Segment.class);
 		String segmentId = segment.getId();
-		if(loginUser.checkToEditSegment(segment)) {
-			
+		if(loginUser.hasOperationRole()) {
 			String userLoginName = loginUser.getUserLogin();
 			segment.setOwnerUsername(userLoginName);
-			if (StringUtil.isNotEmpty(segmentId)) {
-				return updateSegment(segment).getId();
-			} 
-			else {
+			if (segment.isCreateNew()) {
 				segment.buildHashedId();
 				return createSegment(segment).getId();
+			} 
+			else {
+				if(segment.isEditable(loginUser)) {
+					return updateSegment(segment).getId();
+				}
+				else {
+					throw new IllegalArgumentException("No authorization to update segment ID: " + segmentId);
+				}
 			}
 		}
 		else {
@@ -434,7 +438,7 @@ public final class SegmentDataManagement {
 		// query deleted segment ID
 		Segment sm = SegmentDaoUtil.getSegmentById(segmentId);
 		// check permission
-		if(loginUser.checkToEditSegment(sm)) {
+		if(sm.isEditable(loginUser)) {
 			boolean autoUpdateRefSegment = !deleteAllProfiles;// in delete case, no need to update ref 
 			
 			// if segment is not activated, delete else just set status is removed

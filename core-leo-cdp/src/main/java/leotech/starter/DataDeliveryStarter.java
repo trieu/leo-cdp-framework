@@ -13,7 +13,7 @@ import leotech.system.util.LogUtil;
 public class DataDeliveryStarter {
 
 	public static void main(String[] args) throws Exception {
-		LogUtil.setLogLevelToInfo();
+		LogUtil.loadLoggerConfigs();
 		if (args.length == 1) {
 			String workerName = args[0];
 			HttpWorker.start(workerName);

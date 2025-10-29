@@ -16,6 +16,9 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.GsonBuilder;
 
+import leotech.system.version.SystemMetaData;
+import rfx.core.util.Utils;
+
 /**
  * Log Util
  * 
@@ -30,8 +33,13 @@ public class LogUtil {
     /**
      * Change root log level to INFO at runtime (Log4j2)
      */
-    public static void setLogLevelToInfo() {
-        setLogLevel("INFO");
+    public static void loadLoggerConfigs() {
+    	LogUtil.reloadConfig("./configs/log4j.xml");
+    	
+    	 Utils.sleep(200);
+    	if(SystemMetaData.isDevMode()) {
+    		 setLogLevel("INFO");
+    	}       
     }
 
     /**
