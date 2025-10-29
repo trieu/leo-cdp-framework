@@ -188,11 +188,13 @@ public final class UpdateProfileEventProcessor {
 				ok = processTrackingEvent(eventObserver, trackingEvent, eventMetric, funnelStage, profile, journeyId);
 			}
 			
-			ProfileSingleView updateProfile = profile;
-			TaskRunner.run(()->{
-				// update Profile and tracking event into database
-				ProfileDataManagement.updateProfileFromEvents(updateProfile, trackingEvent);
-			});
+			if(profile != null) {
+				ProfileSingleView updateProfile = profile;
+				TaskRunner.run(()->{
+					// update Profile and tracking event into database
+					ProfileDataManagement.updateProfileFromEvents(updateProfile, trackingEvent);
+				});
+			}
 	
 			if(ok) {
 				result++;
