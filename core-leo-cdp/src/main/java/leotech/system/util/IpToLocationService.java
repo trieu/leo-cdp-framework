@@ -23,7 +23,7 @@ public class IpToLocationService {
 	
 	private static String callWebApi(String ip) {
 		String url = HTTP_API_PREFIX+ip;
-		String jsonStr = HttpClientGetUtil.call(url);
+		String jsonStr = StringUtil.safeString(HttpClientGetUtil.call(url));
 		return jsonStr;
 	}
 	
@@ -33,7 +33,7 @@ public class IpToLocationService {
 	 */
 	public static GeoLocation getGeoLocation(String ip) {
 		String jsonStr = callWebApi(ip);
-		if(StringUtil.isNotEmpty(jsonStr)) {
+		if(jsonStr.contains("success")) {
 			try {
 				JsonObject json = new JsonObject(jsonStr);
 				if(check(json)) {
@@ -41,7 +41,7 @@ public class IpToLocationService {
 					return geoLoc;
 				}
 			} catch (Exception e) {
-				e.printStackTrace();
+				LogUtil.logInfo(IpToLocationService.class, "getGeoLocation is failed for ["+ip+"]");
 			}
 		}
 		return null;

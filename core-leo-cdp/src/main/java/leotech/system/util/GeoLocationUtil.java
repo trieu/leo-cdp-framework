@@ -22,6 +22,7 @@ import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import com.google.openlocationcode.OpenLocationCode;
 import com.maxmind.geoip2.DatabaseReader;
+import com.maxmind.geoip2.exception.AddressNotFoundException;
 import com.maxmind.geoip2.model.CityResponse;
 import com.maxmind.geoip2.record.City;
 import com.maxmind.geoip2.record.Location;
@@ -243,7 +244,12 @@ public final class GeoLocationUtil {
 					}
 				}
 			} catch (Throwable e) {
-				e.printStackTrace();
+				if(e instanceof AddressNotFoundException) {
+					LogUtil.logInfo(GeoLocationUtil.class, "AddressNotFoundException ["+ip+"]");
+				}
+				else {
+					e.printStackTrace();
+				}				
 			}
 		}
 		else {
