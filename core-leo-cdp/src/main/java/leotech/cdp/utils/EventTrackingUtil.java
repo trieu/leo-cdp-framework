@@ -9,8 +9,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import com.google.gson.Gson;
 
+import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.Pipeline;
-import redis.clients.jedis.ShardedJedisPool;
 import redis.clients.jedis.exceptions.JedisException;
 import rfx.core.configs.RedisConfigs;
 import rfx.core.nosql.jedis.RedisCommand;
@@ -37,7 +37,7 @@ public class EventTrackingUtil {
 	public static final int AFTER_30_DAYS = ONE_DAY * 30;
 	public static final int AFTER_60_DAYS = ONE_DAY * 60;
 
-	static ShardedJedisPool jedisPool = RedisConfigs.load().get("realtimeDataStats").getShardedJedisPool();
+	static JedisPooled jedisPool = RedisConfigs.load().get("realtimeDataStats").getJedisClient();
 
 	public static boolean updateEvent(long unixtime, final String event) {
 		return updateEvent(unixtime, event, false);
@@ -70,7 +70,7 @@ public class EventTrackingUtil {
 
 			RedisCommand<Boolean> cmd = new RedisCommand<Boolean>(jedisPool) {
 				@Override
-				protected Boolean build() throws JedisException {
+				protected Boolean build(JedisPooled jedis) throws JedisException {
 					Pipeline p = jedis.pipelined();
 
 					p.hincrBy(EVENT_STATS, event, delta);
@@ -125,7 +125,7 @@ public class EventTrackingUtil {
 			final String dateHourStr = DateTimeUtil.formatDate(date, DateTimeUtil.DATE_HOUR_FORMAT_PATTERN);
 			RedisCommand<Boolean> cmd = new RedisCommand<Boolean>(jedisPool) {
 				@Override
-				protected Boolean build() throws JedisException {
+				protected Boolean build(JedisPooled jedis) throws JedisException {
 					Pipeline p = jedis.pipelined();
 
 					String keyH = PREFIX_VIEW + dateHourStr;
@@ -183,7 +183,7 @@ public class EventTrackingUtil {
 		if (key.startsWith(PREFIX_MONITOR)) {
 			String s = new RedisCommand<String>(jedisPool) {
 				@Override
-				protected String build() throws JedisException {
+				protected String build(JedisPooled jedis) throws JedisException {
 					Map<String, String> map = jedis.hgetAll(key);
 					return new Gson().toJson(map);
 				}
@@ -250,7 +250,7 @@ public class EventTrackingUtil {
 						final String dateHourStr = DateTimeUtil.formatDate(date, DateTimeUtil.DATE_HOUR_FORMAT_PATTERN);
 						RedisCommand<Boolean> cmd = new RedisCommand<Boolean>(jedisPool) {
 							@Override
-							protected Boolean build() throws JedisException {
+							protected Boolean build(JedisPooled jedis) throws JedisException {
 
 								String keyD = prefix + dateStr;
 								String keyH = prefix + dateHourStr;

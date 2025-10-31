@@ -3,7 +3,7 @@ package leotech.cdp.domain.cache;
 import com.google.gson.Gson;
 
 import leotech.system.version.SystemMetaData;
-import redis.clients.jedis.ShardedJedisPool;
+import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.exceptions.JedisException;
 import rfx.core.configs.RedisConfigs;
 import rfx.core.nosql.jedis.RedisCommand;
@@ -18,7 +18,7 @@ public class RedisCache {
 
 	public static final int DEFAULT_EXPIRATION = 60;
 	public static final String MASTER_CACHE = "masterCache";
-	static ShardedJedisPool jedisPool = RedisConfigs.load().get(MASTER_CACHE).getShardedJedisPool();
+	static JedisPooled jedisPool = RedisConfigs.load().get(MASTER_CACHE).getJedisClient();
 
 	static String buildKey(String key) {
 		return SystemMetaData.DOMAIN_CDP_ADMIN + "_" + key;
@@ -28,7 +28,7 @@ public class RedisCache {
 	public static void setCacheWithExpiry(String key, Object value, int expiryTimeInSeconds, boolean valueIsJsonStr) {
 		RedisCommand<Boolean> cmd = new RedisCommand<>(jedisPool) {
 			@Override
-			protected Boolean build() throws JedisException {
+			protected Boolean build(JedisPooled jedis) throws JedisException {
 				String v = null;
 				if (valueIsJsonStr) {
 					v = new Gson().toJson(value);
@@ -49,7 +49,7 @@ public class RedisCache {
 	public static String getCache(String key) {
 		RedisCommand<String> cmd = new RedisCommand<>(jedisPool) {
 			@Override
-			protected String build() throws JedisException {
+			protected String build(JedisPooled jedis) throws JedisException {
 				return jedis.get(buildKey(key));
 			}
 		};
@@ -64,7 +64,7 @@ public class RedisCache {
 	public static boolean shouldUpdateCache(String key, long minimumSecondsToLive) {
 		RedisCommand<Long> cmd = new RedisCommand<>(jedisPool) {
 			@Override
-			protected Long build() throws JedisException {
+			protected Long build(JedisPooled jedis) throws JedisException {
 				return jedis.ttl(buildKey(key));
 			}
 		};
@@ -81,7 +81,7 @@ public class RedisCache {
 	public static boolean cacheExists(String key) {
 		RedisCommand<Boolean> cmd = new RedisCommand<Boolean>(jedisPool) {
 			@Override
-			protected Boolean build() throws JedisException {
+			protected Boolean build(JedisPooled jedis) throws JedisException {
 				return jedis.exists(buildKey(key));
 			}
 		};
@@ -92,7 +92,7 @@ public class RedisCache {
 	public static void deleteCache(String key) {
 		RedisCommand<Void> cmd = new RedisCommand<>(jedisPool) {
 			@Override
-			protected Void build() throws JedisException {
+			protected Void build(JedisPooled jedis) throws JedisException {
 				jedis.del(buildKey(key));
 				return null;
 			}

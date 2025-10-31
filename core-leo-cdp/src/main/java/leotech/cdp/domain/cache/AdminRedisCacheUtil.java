@@ -1,11 +1,15 @@
 package leotech.cdp.domain.cache;
 
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 
 import leotech.cdp.dao.ProfileDaoUtil;
 import leotech.cdp.model.customer.Profile;
+import leotech.system.util.LogUtil;
 import leotech.system.util.TaskRunner;
-import redis.clients.jedis.ShardedJedisPool;
+import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.Protocol;
 import redis.clients.jedis.exceptions.JedisException;
 import rfx.core.configs.RedisConfigs;
 import rfx.core.nosql.jedis.RedisCommand;
@@ -18,26 +22,67 @@ import rfx.core.nosql.jedis.RedisCommand;
  */
 public final class AdminRedisCacheUtil {
 
-	static ShardedJedisPool jedisPool = RedisConfigs.load().get("pubSubQueue").getShardedJedisPool();
+	private static final JedisPooled jedisClient =
+            RedisConfigs.load().get("pubSubQueue").getJedisClient();
 
-	public static void clearCacheAllObservers() {
-		TaskRunner.run(() -> {
-			RedisCommand<Boolean> cmd = new RedisCommand<Boolean>(jedisPool) {
-				@Override
-				protected Boolean build() throws JedisException {
-					String pattern = ObserverRedisCacheUtil.LEO_OBSERVER + "*";
-					List<String> channels = jedis.pubsubChannels(pattern);
-					System.out.println("pubsub channels " + channels.size());
-					for (String channel : channels) {
-						System.out.println("Clear cache for the observer: " + channel);
-						jedis.publish(channel, ObserverRedisCacheUtil.RELOAD_ALL_CACHES);
-					}
-					return true;
-				}
-			};
-			cmd.execute();
-		});
-	}
+    /**
+     * Clears cache across all active observer Redis channels.
+     * Runs asynchronously via TaskRunner.
+     */
+    public static void clearCacheAllObservers() {
+        TaskRunner.run(() -> {
+            try {
+                new RedisCommand<Boolean>(jedisClient) {
+                    @Override
+                    protected Boolean build(JedisPooled jedis) throws JedisException {
+                        String pattern = ObserverRedisCacheUtil.LEO_OBSERVER + "*";
+
+                        List<String> activeChannels = getPubSubChannels(jedis, pattern);
+                        if (activeChannels.isEmpty()) {
+                            LogUtil.println("No active observer channels found for pattern: " + pattern);
+                            return false;
+                        }
+
+                        LogUtil.println("Found " + activeChannels.size() + " active observer channels.");
+                        for (String channel : activeChannels) {
+                            LogUtil.println("Publishing cache-clear event to " + channel);
+                            jedis.publish(channel, ObserverRedisCacheUtil.RELOAD_ALL_CACHES);
+                        }
+                        return true;
+                    }
+                }.execute();
+            } catch (Exception e) {
+                LogUtil.logError(AdminRedisCacheUtil.class, "Failed to clear observer caches: " + e.getMessage());
+            }
+        });
+    }
+
+    /**
+     * Utility method to get list of active pub/sub channels matching a pattern.
+     * Executes "PUBSUB CHANNELS <pattern>" manually since Jedis 7+ no longer provides a wrapper.
+     */
+    @SuppressWarnings("unchecked")
+    private static List<String> getPubSubChannels(JedisPooled jedis, String pattern) {
+        List<String> channels = new ArrayList<>();
+        try {
+            // JedisPooled#sendCommand returns Object, cast to List<Object>
+            List<Object> rawChannels = (List<Object>) jedis.sendCommand(
+                    Protocol.Command.PUBSUB,
+                    "CHANNELS", pattern
+            );
+
+            if (rawChannels != null) {
+                for (Object obj : rawChannels) {
+                    if (obj instanceof byte[]) {
+                        channels.add(new String((byte[]) obj, StandardCharsets.UTF_8));
+                    }
+                }
+            }
+        } catch (Exception e) {
+            LogUtil.logError(AdminRedisCacheUtil.class, "Error retrieving pub/sub channels: " + e.getMessage());
+        }
+        return channels;
+    }
 
 	/**
 	 * @param visitorId
@@ -59,9 +104,9 @@ public final class AdminRedisCacheUtil {
 	 * @param firstName
 	 */
 	public static void setLeoChatBotForProfile(String visitorId, String profileId, String firstName) {
-		RedisCommand<Void> cmd = new RedisCommand<>(jedisPool) {
+		RedisCommand<Void> cmd = new RedisCommand<>(jedisClient) {
 			@Override
-			protected Void build() throws JedisException {
+			protected Void build(JedisPooled jedis) throws JedisException {
 				jedis.hset(visitorId, "chatbot", "leobot");
 				jedis.hset(visitorId, "profile_id", profileId);
 				jedis.hset(visitorId, "name", firstName);

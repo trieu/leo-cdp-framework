@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 import leotech.cdp.utils.EventTrackingUtil;
 import leotech.cdp.utils.RealtimeTrackingUtil;
 import leotech.system.model.JsonDataPayload;
-import redis.clients.jedis.ShardedJedisPool;
+import redis.clients.jedis.JedisPooled;
 import rfx.core.configs.RedisConfigs;
 import rfx.core.util.DateTimeUtil;
 
@@ -32,7 +32,7 @@ public abstract class BaseHttpHandler {
 	public static final String CONTENT_TYPE_HTML = "text/html;charset=UTF-8";
 	public static final String CONTENT_TYPE_IMAGE_ICON = "image/x-icon";
 	
-	protected static ShardedJedisPool redisLocalCache = RedisConfigs.load().get("localCache").getShardedJedisPool();
+	protected static JedisPooled redisLocalCache = RedisConfigs.load().get("localCache").getJedisClient();
 	protected static Logger logger = LoggerFactory.getLogger(BaseHttpHandler.class);
 
 	protected static void updateRealtimeEvent(String userId, String contentId, String categoryId, String groupId,

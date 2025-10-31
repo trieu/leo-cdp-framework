@@ -1,164 +1,133 @@
 package leotech.system.util;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.JedisPoolConfig;
+import redis.clients.jedis.DefaultJedisClientConfig;
+import redis.clients.jedis.HostAndPort;
+import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.JedisPubSub;
-import redis.clients.jedis.JedisShardInfo;
-import redis.clients.jedis.ShardedJedis;
-import redis.clients.jedis.ShardedJedisPool;
 import redis.clients.jedis.exceptions.JedisException;
 import rfx.core.nosql.jedis.RedisCommand;
 
 /**
- * Redis Client
+ * Redis Client utility for Jedis 7.x
+ * 
+ * Thread-safe, uses JedisPooled internally
  * 
  * @author tantrieuf31
- * @since 2023
- *
  */
 public class RedisClient {
 
     private String host = "127.0.0.1";
     private int port = 6480;
-    
-    private Jedis jedis; 
-    private JedisPool jedisPool; 
-    private ShardedJedis shardedJedis; 
-    private ShardedJedisPool shardedJedisPool; 
 
+    private JedisPooled jedisPooled;
+
+    // Connection pool-like settings (for legacy semantics)
     private static Integer maxActive = 20;
     private static Integer maxIdle = 5;
-    private static Long maxWait = 1000l;
-    
-    public static interface RedisPubSubCallback {
-    	void process(String channel, String message);
-    	void log(String s);
-    }
- 
-    
-    public static RedisCommand<Void> commandSubscribe(ShardedJedisPool jedisPool, final String channelName, RedisPubSubCallback callback) {
-		return new RedisCommand<Void>(jedisPool) {
-			@Override
-			protected Void build() throws JedisException {
-				/* Creating JedisPubSub object for subscribing with channels */
-				JedisPubSub jedisPubSub = new JedisPubSub() {
-					@Override
-					public void onMessage(String channel, String message) {
-						callback.process(channelName, message);
-					}
-					@Override
-					public void onSubscribe(String channel, int subscribedChannels) {
-						callback.log("Subscribed Redis at channel : " + channel);
-						callback.log("Subscribed to " + subscribedChannels + " no. of channels");
-					}
-					@Override
-					public void onUnsubscribe(String channel, int subscribedChannels) {
-						callback.log("Unsubscribed Redis at channel : " + channel);
-						callback.log("Subscribed to " + subscribedChannels + " no. of channels");
-					}
-				};
-				jedis.subscribe(jedisPubSub, channelName);
-				return null;
-			}
-		};
-    }
-    
-    public static RedisCommand<Void> commandPubSub(String host, int port, final String channelName, RedisPubSubCallback callback) {
-    	ShardedJedisPool jedisPool = new RedisClient(host, port).getShardedJedisPool();
-		return RedisClient.commandSubscribe(jedisPool, channelName, callback);
-    }
-    
-    /**
-     * @param jedisPool
-     * @param queueName
-     * @param element
-     */
-    public static void enqueue(ShardedJedisPool jedisPool, final String queueName, final String element) {
-		new RedisCommand<Void>(jedisPool) {
-			@Override
-			protected Void build() throws JedisException {
-				jedis.lpush(queueName, element);
-				return null;
-			}
-		}.execute();
-    }
-    
-    /**
-     * @param jedisPool
-     * @param queueName
-     * @return
-     */
-    public static String dequeue(ShardedJedisPool jedisPool, final String queueName) {
-		return new RedisCommand<String>(jedisPool) {
-			@Override
-			protected String build() throws JedisException {
-				return jedis.lpop(queueName);
-			}
-		}.execute();
+    private static Long maxWait = 1000L;
+
+    public interface RedisPubSubCallback {
+        void process(String channel, String message);
+        void log(String s);
     }
 
+    // ------------------------------------------------------------------------
 
+    /** Create and configure the pooled client */
     public RedisClient(String host, int port) {
-    	this.host = host;
-    	this.port = port;
-        initPool();
-        initShardedPool();
+        this.host = host;
+        this.port = port;
+        initClient();
     }
 
-    private void initPool() {
-        JedisPoolConfig config = new JedisPoolConfig();
-        config.setMaxTotal(maxActive);
-        config.setMaxIdle(maxIdle);
-        config.setMaxWaitMillis(maxWait);
-        config.setTestOnBorrow(false);
-        jedisPool = new JedisPool(config, host, port);
+    private void initClient() {
+        // Build a JedisClientConfig instead.
+        DefaultJedisClientConfig clientConfig = DefaultJedisClientConfig.builder()
+                .connectionTimeoutMillis(maxWait.intValue())
+                .socketTimeoutMillis(maxWait.intValue())
+                .clientName("leotech-client")
+                .build();
+
+        this.jedisPooled = new JedisPooled(new HostAndPort(host, port), clientConfig);
     }
 
-    private void initShardedPool() {
-        JedisPoolConfig config = new JedisPoolConfig();
-        config.setMaxTotal(maxActive);
-        config.setMaxIdle(5);
-        config.setMaxWaitMillis(maxWait);
-        config.setTestOnBorrow(false);
-        List<JedisShardInfo> shards = new ArrayList<>();
-        shards.add(new JedisShardInfo(host, port, "master"));
-        shardedJedisPool = new ShardedJedisPool(config, shards);
+    // ------------------------------------------------------------------------
+    // Pub/Sub
+    // ------------------------------------------------------------------------
+
+    public static RedisCommand<Void> commandSubscribe(
+            JedisPooled jedisClient,
+            final String channelName,
+            RedisPubSubCallback callback) {
+
+        return new RedisCommand<Void>(jedisClient) {
+            @Override
+            protected Void build(JedisPooled jedis) throws JedisException {
+                JedisPubSub jedisPubSub = new JedisPubSub() {
+                    @Override
+                    public void onMessage(String channel, String message) {
+                        callback.process(channel, message);
+                    }
+
+                    @Override
+                    public void onSubscribe(String channel, int subscribedChannels) {
+                        callback.log("Subscribed Redis at channel: " + channel);
+                        callback.log("Subscribed to " + subscribedChannels + " channels");
+                    }
+
+                    @Override
+                    public void onUnsubscribe(String channel, int subscribedChannels) {
+                        callback.log("Unsubscribed Redis at channel: " + channel);
+                        callback.log("Remaining subscriptions: " + subscribedChannels);
+                    }
+                };
+                jedis.subscribe(jedisPubSub, channelName);
+                return null;
+            }
+        };
     }
 
-    public Jedis getJedis() {
-        return jedis;
+    public static RedisCommand<Void> commandPubSub(
+            String host, int port,
+            final String channelName,
+            RedisPubSubCallback callback) {
+        JedisPooled jedisClient = new RedisClient(host, port).getJedisPooled();
+        return RedisClient.commandSubscribe(jedisClient, channelName, callback);
     }
 
-    public void setJedis(Jedis jedis) {
-        this.jedis = jedis;
+    // ------------------------------------------------------------------------
+    // Simple queue operations
+    // ------------------------------------------------------------------------
+
+    public static void enqueue(JedisPooled jedisClient, final String queueName, final String element) {
+        new RedisCommand<Void>(jedisClient) {
+            @Override
+            protected Void build(JedisPooled jedis) throws JedisException {
+                jedis.lpush(queueName, element);
+                return null;
+            }
+        }.execute();
     }
 
-    public JedisPool getJedisPool() {
-        return jedisPool;
+    public static String dequeue(JedisPooled jedisClient, final String queueName) {
+        return new RedisCommand<String>(jedisClient) {
+            @Override
+            protected String build(JedisPooled jedis) throws JedisException {
+                return jedis.lpop(queueName);
+            }
+        }.execute();
     }
 
-    public void setJedisPool(JedisPool jedisPool) {
-        this.jedisPool = jedisPool;
+    // ------------------------------------------------------------------------
+    // Getters / setters
+    // ------------------------------------------------------------------------
+
+    public JedisPooled getJedisPooled() {
+        return jedisPooled;
     }
 
-    public ShardedJedis getShardedJedis() {
-        return shardedJedis;
-    }
-
-    public void setShardedJedis(ShardedJedis shardedJedis) {
-        this.shardedJedis = shardedJedis;
-    }
-
-    public ShardedJedisPool getShardedJedisPool() {
-        return shardedJedisPool;
-    }
-
-    public void setShardedJedisPool(ShardedJedisPool shardedJedisPool) {
-        this.shardedJedisPool = shardedJedisPool;
+    public void setJedisPooled(JedisPooled jedisPooled) {
+        this.jedisPooled = jedisPooled;
     }
 
     public static Integer getMaxActive() {
@@ -190,7 +159,7 @@ public class RedisClient {
     }
 
     public void setHost(String host) {
-    	this.host = host;
+        this.host = host;
     }
 
     public Integer getPort() {
@@ -198,6 +167,6 @@ public class RedisClient {
     }
 
     public void setPort(Integer port) {
-    	this.port = port;
+        this.port = port;
     }
 }

@@ -17,7 +17,7 @@ import leotech.system.util.RedisClient;
 import leotech.system.util.TaskRunner;
 import leotech.system.util.database.InitDatabaseSchema;
 import leotech.system.version.SystemMetaData;
-import redis.clients.jedis.ShardedJedisPool;
+import redis.clients.jedis.JedisPooled;
 import rfx.core.configs.RedisConfigs;
 import rfx.core.job.ScheduledJob;
 import rfx.core.util.StringPool;
@@ -36,7 +36,7 @@ public final class SystemControl {
 	private static final String REDIS_PUB_SUB_QUEUE = "pubSubQueue";
 	private static final String MAIN_CDP_QUEUE = "main-cdp-queue";
 	private static final String UPGRADE_SYSTEM = "upgrade-system";
-	static ShardedJedisPool jedisPool = RedisConfigs.load().get(REDIS_PUB_SUB_QUEUE).getShardedJedisPool();
+	static JedisPooled jedisPool = RedisConfigs.load().get(REDIS_PUB_SUB_QUEUE).getJedisClient();
 
 	/**
 	 * to set-up new database for a new  CDP system instances

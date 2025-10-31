@@ -6,7 +6,7 @@ import com.google.gson.Gson;
 
 import leotech.cdp.domain.ProfileQueryManagement;
 import leotech.cdp.model.customer.Profile;
-import redis.clients.jedis.ShardedJedisPool;
+import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.exceptions.JedisException;
 import rfx.core.configs.RedisConfigs;
 import rfx.core.nosql.jedis.RedisCommand;
@@ -14,7 +14,7 @@ import rfx.core.util.Utils;
 
 public class TestImportProfileByRedisPubSub {
 
-	static ShardedJedisPool jedisPool = RedisConfigs.load().get("pubSubQueue").getShardedJedisPool();
+	static JedisPooled jedisPool = RedisConfigs.load().get("pubSubQueue").getJedisClient();
 	
 	public static void main(String[] args) {
 		
@@ -31,7 +31,7 @@ public class TestImportProfileByRedisPubSub {
 		
 		RedisCommand<Boolean> cmd = new RedisCommand<Boolean>(jedisPool) {
 			@Override
-			protected Boolean build() throws JedisException {
+			protected Boolean build(JedisPooled jedis) throws JedisException {
 
 				String channel = "profile-import";
 				jedis.publish(channel, new Gson().toJson(profile));

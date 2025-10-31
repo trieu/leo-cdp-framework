@@ -27,8 +27,8 @@ import leotech.system.model.GeoLocation;
 import leotech.system.util.GeoLocationUtil;
 import leotech.system.util.HttpWebParamUtil;
 import leotech.system.util.UrlUtil;
+import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.Pipeline;
-import redis.clients.jedis.ShardedJedisPool;
 import redis.clients.jedis.exceptions.JedisException;
 import rfx.core.configs.RedisConfigs;
 import rfx.core.nosql.jedis.RedisCommand;
@@ -43,7 +43,7 @@ import rfx.core.util.StringUtil;
 public final class ContextSessionManagement {
 
 	public static final int AFTER_30_MINUTES = 1800;
-	static ShardedJedisPool jedisPool = RedisConfigs.load().get("realtimeDataStats").getShardedJedisPool();
+	static JedisPooled jedisPool = RedisConfigs.load().get("realtimeDataStats").getJedisClient();
 
 	/**
 	 * @param sourceIP
@@ -146,7 +146,7 @@ public final class ContextSessionManagement {
 		srcProfile.getContextSessionKeys().forEach((String sessionKey, Date updatedDate) -> {
 			RedisCommand<Boolean> cmd = new RedisCommand<Boolean>(jedisPool) {
 				@Override
-				protected Boolean build() throws JedisException {
+				protected Boolean build(JedisPooled jedis) throws JedisException {
 					String json = null;
 					if (StringUtil.isNotEmpty(sessionKey)) {
 						json = jedis.get(sessionKey);
@@ -192,7 +192,7 @@ public final class ContextSessionManagement {
 			
 			RedisCommand<ContextSession> cmd = new RedisCommand<ContextSession>(jedisPool) {
 				@Override
-				protected ContextSession build() throws JedisException {
+				protected ContextSession build(JedisPooled jedis) throws JedisException {
 					String json = null;
 					if (StringUtil.isNotEmpty(clientSessionKey)) {
 						json = jedis.get(clientSessionKey);
@@ -240,7 +240,7 @@ public final class ContextSessionManagement {
 		final String ip = HttpWebParamUtil.getRemoteIP(req);
 		RedisCommand<ContextSession> cmd = new RedisCommand<ContextSession>(jedisPool) {
 			@Override
-			protected ContextSession build() throws JedisException {
+			protected ContextSession build(JedisPooled jedis) throws JedisException {
 				ContextSession ctxSession = null;
 				
 				DateTime dateTime = new DateTime();

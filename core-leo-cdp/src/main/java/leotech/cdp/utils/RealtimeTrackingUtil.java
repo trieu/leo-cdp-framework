@@ -6,8 +6,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.Pipeline;
-import redis.clients.jedis.ShardedJedisPool;
 import redis.clients.jedis.exceptions.JedisException;
 import rfx.core.configs.RedisConfigs;
 import rfx.core.nosql.jedis.RedisCommand;
@@ -18,7 +18,7 @@ import rfx.core.util.DateTimeUtil;
  */
 public class RealtimeTrackingUtil {
 
-	final public static ShardedJedisPool redisAdDataStats = RedisConfigs.load().get("realtimeDataStats").getShardedJedisPool();
+	final public static JedisPooled redisAdDataStats = RedisConfigs.load().get("realtimeDataStats").getJedisClient();
 	public static final int AFTER_3_DAYS = 60 * 60 * 24 * 3;
 	public static final int AFTER_7_DAYS = 60 * 60 * 24 * 7;
 
@@ -86,7 +86,7 @@ public class RealtimeTrackingUtil {
 
 						new RedisCommand<Boolean>(redisAdDataStats) {
 							@Override
-							protected Boolean build() throws JedisException {
+							protected Boolean build(JedisPooled jedis) throws JedisException {
 								Pipeline p = jedis.pipelined();
 								String keyTotal = keyPrefix + "t";
 								String keyDaily = keyPrefix + dateStr + ":t";

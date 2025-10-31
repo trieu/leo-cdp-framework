@@ -8,7 +8,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.TopicPartition;
 
 import leotech.system.util.kafka.KafkaUtil;
-import redis.clients.jedis.ShardedJedisPool;
+import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.exceptions.JedisException;
 import rfx.core.configs.RedisConfigs;
 import rfx.core.nosql.jedis.RedisCommand;
@@ -28,7 +28,7 @@ public abstract class KafkaDataProcessor implements Runnable {
 	protected int partitionId = 0;
 	protected Consumer<String, String> consumer = null;
 	protected String kafkaBootstrapServer = null;
-	protected static final ShardedJedisPool REDIS_POOL = RedisConfigs.load().get("clusterInfoRedis").getShardedJedisPool();
+	protected static final JedisPooled REDIS_POOL = RedisConfigs.load().get("clusterInfoRedis").getJedisClient();
 
 
 	public KafkaDataProcessor(String kafkaBootstrapServer, String topicName, int partitionId) {
@@ -58,7 +58,7 @@ public abstract class KafkaDataProcessor implements Runnable {
 			String key = KAKFA_CONSUMER_PREFIX + "_" + this.topicName + "_" + this.partitionId;
 			long nextOffset = 1L + new RedisCommand<Long>(REDIS_POOL) {
 				@Override
-				protected Long build() throws JedisException {
+				protected Long build(JedisPooled jedis) throws JedisException {
 					String offset = jedis.get(key);
 					if(offset != null) {
 						return StringUtil.safeParseLong(offset);
@@ -113,7 +113,7 @@ public abstract class KafkaDataProcessor implements Runnable {
 			String key = KAKFA_CONSUMER_PREFIX + "_" + this.topicName + "_" + this.partitionId;
 			new RedisCommand<Void>(REDIS_POOL) {
 				@Override
-				protected Void build() throws JedisException {
+				protected Void build(JedisPooled jedis) throws JedisException {
 					jedis.set(key, String.valueOf(offset));
 					return null;
 				}

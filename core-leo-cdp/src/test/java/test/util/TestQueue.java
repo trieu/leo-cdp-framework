@@ -1,13 +1,13 @@
 package test.util;
 
 import leotech.system.util.RedisClient;
-import redis.clients.jedis.ShardedJedisPool;
+import redis.clients.jedis.JedisPooled;
 import rfx.core.configs.RedisConfigs;
 import rfx.core.util.Utils;
 
 public class TestQueue {
 	
-	static ShardedJedisPool jedisPool = RedisConfigs.load().get("pubSubQueue").getShardedJedisPool();
+	static JedisPooled jedisPool = RedisConfigs.load().get("pubSubQueue").getJedisClient();
 
 	public static void main(String[] args) {
 		String segmentId = "segment1";
@@ -17,7 +17,7 @@ public class TestQueue {
 		
 		String rs = RedisClient.dequeue(jedisPool, segmentId);
 		while (rs != null) {
-			System.out.println(rs);
+			System.out.println("dequeue "+rs);
 			rs = RedisClient.dequeue(jedisPool, segmentId);
 		}
 		

@@ -29,10 +29,11 @@ public final class JobUpdateProfileByEvent extends ReactiveProfileDataJob<Update
 
 	protected static final int TIME_TO_CLOSE_KAFKA = 2000;// milisecs
 	boolean usingKafkaQueue = SystemMetaData.isMessageQueueKafka();
+	boolean usingRedisQueue = SystemMetaData.isMessageQueueRedis();
 	
 	String topicName = SystemMetaData.KAFKA_TOPIC_EVENT;
 	int partitions = SystemMetaData.KAFKA_TOPIC_EVENT_PARTITIONS;
-	String kafkaBootstrapServer = SystemMetaData.KAFKA_BOOTSTRAP_SERVER;
+	String kafkaBootstrapServer = SystemMetaData.KAFKA_BOOTSTRAP_SERVER; 
 	
 	Producer<String, String> kafkaProducer = null;
 
@@ -47,6 +48,9 @@ public final class JobUpdateProfileByEvent extends ReactiveProfileDataJob<Update
 		super();
 		if (usingKafkaQueue) {
 			this.initKafkaProducer();
+		}
+		else if(usingRedisQueue) {
+			this.initRedisProducer();
 		}
 	}
 
@@ -88,6 +92,10 @@ public final class JobUpdateProfileByEvent extends ReactiveProfileDataJob<Update
 		if ( StringUtil.isNotEmpty(kafkaBootstrapServer) ) {
 			this.kafkaProducer = KafkaUtil.buildKafkaProducer(kafkaBootstrapServer);
 		}
+	}
+	
+	public void initRedisProducer() {
+		// TODO
 	}
 
 	void sendToKafka(UpdateProfileEvent e) {
