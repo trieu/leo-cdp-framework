@@ -34,7 +34,7 @@ public final class AdminRedisCacheUtil {
             try {
                 new RedisCommand<Boolean>(jedisClient) {
                     @Override
-                    protected Boolean build(JedisPooled jedis) throws JedisException {
+                    protected Boolean build() throws JedisException {
                         String pattern = ObserverRedisCacheUtil.LEO_OBSERVER + "*";
 
                         List<String> activeChannels = getPubSubChannels(jedis, pattern);
@@ -106,7 +106,7 @@ public final class AdminRedisCacheUtil {
 	public static void setLeoChatBotForProfile(String visitorId, String profileId, String firstName) {
 		RedisCommand<Void> cmd = new RedisCommand<>(jedisClient) {
 			@Override
-			protected Void build(JedisPooled jedis) throws JedisException {
+			protected Void build() throws JedisException {
 				jedis.hset(visitorId, "chatbot", "leobot");
 				jedis.hset(visitorId, "profile_id", profileId);
 				jedis.hset(visitorId, "name", firstName);

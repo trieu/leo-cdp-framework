@@ -40,7 +40,6 @@ import rfx.core.util.StringUtil;
 public final class JourneyMapManagement {
 
 	public static final String GOOGLE_COM = "https://google.com";
-	public static final String YOUTUBE_COM = "https://youtube.com";
 	
 	private static final int CACHE_TIME = 5;
 
@@ -48,6 +47,7 @@ public final class JourneyMapManagement {
 		@Override
 		public List<JourneyMap> load(String userLogin) {
 			System.out.println("MISS CACHE JourneyMap");
+			
 			if(userLogin.isEmpty()) {
 				return JourneyMapDao.getAllJourneyMaps();
 			}
@@ -191,8 +191,6 @@ public final class JourneyMapManagement {
 		TouchpointHub google = new TouchpointHub("Google", TouchpointType.SEARCH_ENGINE, false, GOOGLE_COM, 1);
 		hubs.add(google);
 		
-		TouchpointHub youtube = new TouchpointHub("YouTube", TouchpointType.VIDEO_CHANNEL, false, YOUTUBE_COM, 2);
-		hubs.add(youtube);
 
 		JourneyMap map = JourneyMap.buildDefaultJourneyMap(hubs);
 		JourneyMapManagement.saveJourney(map);

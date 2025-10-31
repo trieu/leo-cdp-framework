@@ -70,7 +70,7 @@ public class EventTrackingUtil {
 
 			RedisCommand<Boolean> cmd = new RedisCommand<Boolean>(jedisPool) {
 				@Override
-				protected Boolean build(JedisPooled jedis) throws JedisException {
+				protected Boolean build() throws JedisException {
 					Pipeline p = jedis.pipelined();
 
 					p.hincrBy(EVENT_STATS, event, delta);
@@ -125,7 +125,7 @@ public class EventTrackingUtil {
 			final String dateHourStr = DateTimeUtil.formatDate(date, DateTimeUtil.DATE_HOUR_FORMAT_PATTERN);
 			RedisCommand<Boolean> cmd = new RedisCommand<Boolean>(jedisPool) {
 				@Override
-				protected Boolean build(JedisPooled jedis) throws JedisException {
+				protected Boolean build() throws JedisException {
 					Pipeline p = jedis.pipelined();
 
 					String keyH = PREFIX_VIEW + dateHourStr;
@@ -183,7 +183,7 @@ public class EventTrackingUtil {
 		if (key.startsWith(PREFIX_MONITOR)) {
 			String s = new RedisCommand<String>(jedisPool) {
 				@Override
-				protected String build(JedisPooled jedis) throws JedisException {
+				protected String build() throws JedisException {
 					Map<String, String> map = jedis.hgetAll(key);
 					return new Gson().toJson(map);
 				}
@@ -250,7 +250,7 @@ public class EventTrackingUtil {
 						final String dateHourStr = DateTimeUtil.formatDate(date, DateTimeUtil.DATE_HOUR_FORMAT_PATTERN);
 						RedisCommand<Boolean> cmd = new RedisCommand<Boolean>(jedisPool) {
 							@Override
-							protected Boolean build(JedisPooled jedis) throws JedisException {
+							protected Boolean build() throws JedisException {
 
 								String keyD = prefix + dateStr;
 								String keyH = prefix + dateHourStr;

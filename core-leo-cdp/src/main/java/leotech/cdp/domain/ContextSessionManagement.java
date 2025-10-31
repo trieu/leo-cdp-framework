@@ -144,9 +144,9 @@ public final class ContextSessionManagement {
 
 		// update redis
 		srcProfile.getContextSessionKeys().forEach((String sessionKey, Date updatedDate) -> {
-			RedisCommand<Boolean> cmd = new RedisCommand<Boolean>(jedisPool) {
+			new RedisCommand<Boolean>(jedisPool) {
 				@Override
-				protected Boolean build(JedisPooled jedis) throws JedisException {
+				protected Boolean build() throws JedisException {
 					String json = null;
 					if (StringUtil.isNotEmpty(sessionKey)) {
 						json = jedis.get(sessionKey);
@@ -163,16 +163,12 @@ public final class ContextSessionManagement {
 						p.set(sessionKey, sessionJson);
 						p.expire(sessionKey, AFTER_30_MINUTES);
 						p.sync();
-						return true;
 					}
-					return false;
+					return null;
 				}
-			};
-			boolean rs = cmd.execute().booleanValue();
-			if (rs) {
-				// merge session
-				finalProfile.setContextSessionKey(sessionKey, updatedDate);
-			}
+			}.executeAsync();
+			// merge session
+			finalProfile.setContextSessionKey(sessionKey, updatedDate);
 		});
 		srcProfile.clearContextSessionKeys();
 	}
@@ -192,7 +188,7 @@ public final class ContextSessionManagement {
 			
 			RedisCommand<ContextSession> cmd = new RedisCommand<ContextSession>(jedisPool) {
 				@Override
-				protected ContextSession build(JedisPooled jedis) throws JedisException {
+				protected ContextSession build() throws JedisException {
 					String json = null;
 					if (StringUtil.isNotEmpty(clientSessionKey)) {
 						json = jedis.get(clientSessionKey);
@@ -212,10 +208,8 @@ public final class ContextSessionManagement {
 							String newSessionKey = ctxSession.getSessionKey();
 							String sessionJson = new Gson().toJson(ctxSession);
 
-							Pipeline p = jedis.pipelined();
-							p.set(newSessionKey, sessionJson);
-							p.expire(newSessionKey, AFTER_30_MINUTES);
-							p.sync();
+							jedis.set(newSessionKey, sessionJson);
+							jedis.expire(newSessionKey, AFTER_30_MINUTES);
 						}
 					} else {
 						// get from database for event recording
@@ -225,7 +219,9 @@ public final class ContextSessionManagement {
 					return ctxSession;
 				}
 			};
+			
 			return cmd.execute();
+		
 		}
 		return null;
 	}
@@ -240,7 +236,7 @@ public final class ContextSessionManagement {
 		final String ip = HttpWebParamUtil.getRemoteIP(req);
 		RedisCommand<ContextSession> cmd = new RedisCommand<ContextSession>(jedisPool) {
 			@Override
-			protected ContextSession build(JedisPooled jedis) throws JedisException {
+			protected ContextSession build() throws JedisException {
 				ContextSession ctxSession = null;
 				
 				DateTime dateTime = new DateTime();

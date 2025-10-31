@@ -58,7 +58,7 @@ public abstract class KafkaDataProcessor implements Runnable {
 			String key = KAKFA_CONSUMER_PREFIX + "_" + this.topicName + "_" + this.partitionId;
 			long nextOffset = 1L + new RedisCommand<Long>(REDIS_POOL) {
 				@Override
-				protected Long build(JedisPooled jedis) throws JedisException {
+				protected Long build() throws JedisException {
 					String offset = jedis.get(key);
 					if(offset != null) {
 						return StringUtil.safeParseLong(offset);
@@ -113,7 +113,7 @@ public abstract class KafkaDataProcessor implements Runnable {
 			String key = KAKFA_CONSUMER_PREFIX + "_" + this.topicName + "_" + this.partitionId;
 			new RedisCommand<Void>(REDIS_POOL) {
 				@Override
-				protected Void build(JedisPooled jedis) throws JedisException {
+				protected Void build() throws JedisException {
 					jedis.set(key, String.valueOf(offset));
 					return null;
 				}

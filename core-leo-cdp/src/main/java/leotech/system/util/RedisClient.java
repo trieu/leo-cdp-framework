@@ -62,7 +62,7 @@ public class RedisClient {
 
         return new RedisCommand<Void>(jedisClient) {
             @Override
-            protected Void build(JedisPooled jedis) throws JedisException {
+            protected Void build() throws JedisException {
                 JedisPubSub jedisPubSub = new JedisPubSub() {
                     @Override
                     public void onMessage(String channel, String message) {
@@ -102,7 +102,7 @@ public class RedisClient {
     public static void enqueue(JedisPooled jedisClient, final String queueName, final String element) {
         new RedisCommand<Void>(jedisClient) {
             @Override
-            protected Void build(JedisPooled jedis) throws JedisException {
+            protected Void build() throws JedisException {
                 jedis.lpush(queueName, element);
                 return null;
             }
@@ -112,7 +112,7 @@ public class RedisClient {
     public static String dequeue(JedisPooled jedisClient, final String queueName) {
         return new RedisCommand<String>(jedisClient) {
             @Override
-            protected String build(JedisPooled jedis) throws JedisException {
+            protected String build() throws JedisException {
                 return jedis.lpop(queueName);
             }
         }.execute();

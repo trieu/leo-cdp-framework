@@ -31,7 +31,7 @@ public class TestImportProfileByRedisPubSub {
 		
 		RedisCommand<Boolean> cmd = new RedisCommand<Boolean>(jedisPool) {
 			@Override
-			protected Boolean build(JedisPooled jedis) throws JedisException {
+			protected Boolean build() throws JedisException {
 
 				String channel = "profile-import";
 				jedis.publish(channel, new Gson().toJson(profile));

@@ -28,7 +28,7 @@ public final class AirflowRedisPubSub {
 		String jsonParams = new Gson().toJson(params);
 		RedisCommand<Boolean> cmd = new RedisCommand<Boolean>(jedisPool) {
 			@Override
-			protected Boolean build(JedisPooled jedis) throws JedisException {
+			protected Boolean build() throws JedisException {
 				Long rs = jedis.publish(dagId, jsonParams);
 				return StringUtil.safeParseLong(rs) > 0;
 			}

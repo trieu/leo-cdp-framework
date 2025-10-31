@@ -1,5 +1,9 @@
 package leotech.cdp.domain.cache;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import com.google.gson.Gson;
 
 import leotech.system.version.SystemMetaData;
@@ -10,145 +14,201 @@ import rfx.core.nosql.jedis.RedisCommand;
 import rfx.core.util.StringUtil;
 
 /**
- * @author Trieu Nguyen
- * @since 2024
+ * Thread-safe RedisCache using Java concurrent API.
+ * 
+ * Designed for Vert.x or any reactive environment to avoid blocking the event loop.
+ * Uses an internal ExecutorService to offload Redis I/O to worker threads.
  *
+ * @author Trieu
+ * @since 2025
  */
 public class RedisCache {
 
-	public static final int DEFAULT_EXPIRATION = 60;
-	public static final String MASTER_CACHE = "masterCache";
-	static JedisPooled jedisPool = RedisConfigs.load().get(MASTER_CACHE).getJedisClient();
+    public static final int DEFAULT_EXPIRATION = 60;
+    public static final String MASTER_CACHE = "masterCache";
+    private static final JedisPooled jedisClient = RedisConfigs.load().get(MASTER_CACHE).getJedisClient();
 
-	static String buildKey(String key) {
-		return SystemMetaData.DOMAIN_CDP_ADMIN + "_" + key;
-	}
+    // a lightweight thread pool for Redis I/O (you can tune this)
+    private static final ExecutorService redisExecutor = Executors.newFixedThreadPool(
+            Runtime.getRuntime().availableProcessors() * 2
+    );
 
-	// Set cache with expiration (in seconds)
-	public static void setCacheWithExpiry(String key, Object value, int expiryTimeInSeconds, boolean valueIsJsonStr) {
-		RedisCommand<Boolean> cmd = new RedisCommand<>(jedisPool) {
-			@Override
-			protected Boolean build(JedisPooled jedis) throws JedisException {
-				String v = null;
-				if (valueIsJsonStr) {
-					v = new Gson().toJson(value);
-				} else {
-					v = String.valueOf(value);
-				}
+    private static String buildKey(String key) {
+        return SystemMetaData.DOMAIN_CDP_ADMIN + "_" + key;
+    }
 
-				String k = buildKey(key);
-				jedis.set(k, v);
-				jedis.expire(k, expiryTimeInSeconds);
-				return true;
-			}
-		};
-		cmd.execute();
-	}
+    // -------------------------------------------------------------------------
+    // ASYNC METHODS — return CompletableFuture (non-blocking)
+    // -------------------------------------------------------------------------
 
-	// Retrieve data from cache
-	public static String getCache(String key) {
-		RedisCommand<String> cmd = new RedisCommand<>(jedisPool) {
-			@Override
-			protected String build(JedisPooled jedis) throws JedisException {
-				return jedis.get(buildKey(key));
-			}
-		};
-		return cmd.execute();
-	}
+    /** Async set cache with expiry */
+    public static CompletableFuture<Boolean> setCacheWithExpiryAsync(String key, Object value, int expirySeconds, boolean valueIsJson) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                String v = valueIsJson ? new Gson().toJson(value) : String.valueOf(value);
+                String k = buildKey(key);
+                jedisClient.setex(k, expirySeconds, v);
+                return true;
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw new JedisException("Failed to set cache asynchronously", e);
+            }
+        }, redisExecutor);
+    }
 
-	/**
-	 * @param key
-	 * @param minimumSecondsToLive
-	 * @return true if TTL of key is less than
-	 */
-	public static boolean shouldUpdateCache(String key, long minimumSecondsToLive) {
-		RedisCommand<Long> cmd = new RedisCommand<>(jedisPool) {
-			@Override
-			protected Long build(JedisPooled jedis) throws JedisException {
-				return jedis.ttl(buildKey(key));
-			}
-		};
-		long ttl = cmd.execute();
-		return ttl < minimumSecondsToLive;
-	}
+    /** Async get cache */
+    public static CompletableFuture<String> getCacheAsync(String key) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return jedisClient.get(buildKey(key));
+            } catch (Exception e) {
+                throw new JedisException("Failed to get cache asynchronously", e);
+            }
+        }, redisExecutor);
+    }
 
-	/**
-	 * Check if a key exists in the cache
-	 * 
-	 * @param key
-	 * @return true if cache is existed
-	 */
-	public static boolean cacheExists(String key) {
-		RedisCommand<Boolean> cmd = new RedisCommand<Boolean>(jedisPool) {
-			@Override
-			protected Boolean build(JedisPooled jedis) throws JedisException {
-				return jedis.exists(buildKey(key));
-			}
-		};
-		return cmd.execute();
-	}
+    /** Async check cache existence */
+    public static CompletableFuture<Boolean> cacheExistsAsync(String key) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return jedisClient.exists(buildKey(key));
+            } catch (Exception e) {
+                throw new JedisException("Failed to check cache asynchronously", e);
+            }
+        }, redisExecutor);
+    }
 
-	// Delete a key from cache
-	public static void deleteCache(String key) {
-		RedisCommand<Void> cmd = new RedisCommand<>(jedisPool) {
-			@Override
-			protected Void build(JedisPooled jedis) throws JedisException {
-				jedis.del(buildKey(key));
-				return null;
-			}
-		};
-		cmd.execute();
-	}
+    /** Async delete cache */
+    public static CompletableFuture<Void> deleteCacheAsync(String key) {
+        return CompletableFuture.runAsync(() -> {
+            try {
+                jedisClient.del(buildKey(key));
+            } catch (Exception e) {
+                throw new JedisException("Failed to delete cache asynchronously", e);
+            }
+        }, redisExecutor);
+    }
 
-	/////////////////////////////////////////////////////////////////
+    /** Async TTL check */
+    public static CompletableFuture<Long> ttlAsync(String key) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return jedisClient.ttl(buildKey(key));
+            } catch (Exception e) {
+                throw new JedisException("Failed to get TTL asynchronously", e);
+            }
+        }, redisExecutor);
+    }
 
-	public static long getCacheAsLong(String key) {
-		return StringUtil.safeParseLong(getCache(key));
-	}
+    // -------------------------------------------------------------------------
+    // SYNC METHODS — safe to call from background threads only
+    // -------------------------------------------------------------------------
 
-	public static int getCacheAsInteger(String key) {
-		return StringUtil.safeParseInt(getCache(key));
-	}
+    public static void setCacheWithExpiry(String key, Object value, int expirySeconds, boolean valueIsJson) {
+        new RedisCommand<Boolean>(jedisClient) {
+            @Override
+            protected Boolean build() {
+                String v = valueIsJson ? new Gson().toJson(value) : String.valueOf(value);
+                jedis.setex(buildKey(key), expirySeconds, v);
+                return true;
+            }
+        }.execute();
+    }
 
-	// Store data in cache
-	public static void setCache(String key, String value) {
-		setCacheWithExpiry(key, value, DEFAULT_EXPIRATION, false);
-	}
+    public static String getCache(String key) {
+        return new RedisCommand<String>(jedisClient) {
+            @Override
+            protected String build() {
+                return jedis.get(buildKey(key));
+            }
+        }.execute();
+    }
 
-	public static void setCache(String key, String value, int expiryTimeInSeconds) {
-		setCacheWithExpiry(key, value, expiryTimeInSeconds, false);
-	}
+    public static boolean cacheExists(String key) {
+        return new RedisCommand<Boolean>(jedisClient) {
+            @Override
+            protected Boolean build() {
+                return jedis.exists(buildKey(key));
+            }
+        }.execute();
+    }
 
-	public static void setCache(String key, long value, int expiryTimeInSeconds) {
-		setCacheWithExpiry(key, String.valueOf(value), expiryTimeInSeconds, false);
-	}
+    public static void deleteCache(String key) {
+        new RedisCommand<Void>(jedisClient) {
+            @Override
+            protected Void build() {
+                jedis.del(buildKey(key));
+                return null;
+            }
+        }.execute();
+    }
 
-	public static void setCache(String key, int value, int expiryTimeInSeconds) {
-		setCacheWithExpiry(key, String.valueOf(value), expiryTimeInSeconds, false);
-	}
+    // -------------------------------------------------------------------------
+    // UTILITY HELPERS
+    // -------------------------------------------------------------------------
 
-	/////////////////////////////////////////////////////////////////
+    public static boolean shouldUpdateCache(String key, long minSecondsToLive) {
+        long ttl = new RedisCommand<Long>(jedisClient) {
+            @Override
+            protected Long build() {
+                return jedis.ttl(buildKey(key));
+            }
+        }.execute();
+        return ttl < minSecondsToLive;
+    }
 
-	public static void main(String[] args) {
-		// Example usage of the RedisCache class
+    public static long getCacheAsLong(String key) {
+        return StringUtil.safeParseLong(getCache(key));
+    }
 
-		// Setting cache
-		RedisCache.setCache("user:1001", "John Doe");
+    public static int getCacheAsInteger(String key) {
+        return StringUtil.safeParseInt(getCache(key));
+    }
 
-		// Retrieving cache
-		String user = RedisCache.getCache("user:1001");
-		System.out.println("Cached value: " + user);
+    public static void setCache(String key, String value) {
+        setCacheWithExpiry(key, value, DEFAULT_EXPIRATION, false);
+    }
 
-		// Set cache with expiration
-		RedisCache.setCacheWithExpiry("session:12345", "active", 3600, false);
+    public static void setCache(String key, String value, int expiryTimeInSeconds) {
+        setCacheWithExpiry(key, value, expiryTimeInSeconds, false);
+    }
 
-		// Check if cache exists
-		if (RedisCache.cacheExists("session:12345")) {
-			System.out.println("Session is active.");
-		}
+    public static void setCache(String key, long value, int expiryTimeInSeconds) {
+        setCacheWithExpiry(key, String.valueOf(value), expiryTimeInSeconds, false);
+    }
 
-		// Delete cache
-		RedisCache.deleteCache("user:1001");
+    public static void setCache(String key, int value, int expiryTimeInSeconds) {
+        setCacheWithExpiry(key, String.valueOf(value), expiryTimeInSeconds, false);
+    }
 
-	}
+    // -------------------------------------------------------------------------
+    // GRACEFUL SHUTDOWN
+    // -------------------------------------------------------------------------
+    public static void shutdownExecutor() {
+        redisExecutor.shutdown();
+    }
+
+    // -------------------------------------------------------------------------
+    // DEMO
+    // -------------------------------------------------------------------------
+    public static void main(String[] args) {
+        // async write
+        setCacheWithExpiryAsync("user:1001", "John Doe", 120, false)
+                .thenRun(() -> System.out.println("Cache saved."));
+
+        // async read
+        getCacheAsync("user:1001")
+                .thenAccept(val -> System.out.println("Got from cache: " + val))
+                .exceptionally(e -> { e.printStackTrace(); return null; });
+
+        // async check
+        cacheExistsAsync("user:1001").thenAccept(exists ->
+                System.out.println("Cache exists? " + exists));
+
+        // async delete
+        deleteCacheAsync("user:1001").thenRun(() ->
+                System.out.println("Cache deleted."));
+
+        shutdownExecutor();
+    }
 }

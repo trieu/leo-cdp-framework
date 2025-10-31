@@ -86,7 +86,7 @@ public class RealtimeTrackingUtil {
 
 						new RedisCommand<Boolean>(redisAdDataStats) {
 							@Override
-							protected Boolean build(JedisPooled jedis) throws JedisException {
+							protected Boolean build() throws JedisException {
 								Pipeline p = jedis.pipelined();
 								String keyTotal = keyPrefix + "t";
 								String keyDaily = keyPrefix + dateStr + ":t";

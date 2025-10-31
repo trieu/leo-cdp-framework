@@ -47,7 +47,7 @@ public final class EmailSender {
 			String message = emailMsg.toString();
 			long rs = new RedisCommand<Long>(pubSubQueue) {
 				@Override
-				protected Long build(JedisPooled jedis) throws JedisException {
+				protected Long build() throws JedisException {
 					return jedis.publish(channel, message);
 				}
 			}.execute();
