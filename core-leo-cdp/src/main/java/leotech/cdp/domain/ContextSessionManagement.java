@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import org.joda.time.DateTime;
 
@@ -27,10 +28,11 @@ import leotech.system.model.GeoLocation;
 import leotech.system.util.GeoLocationUtil;
 import leotech.system.util.HttpWebParamUtil;
 import leotech.system.util.UrlUtil;
-import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Pipeline;
 import redis.clients.jedis.exceptions.JedisException;
-import rfx.core.configs.RedisConfigs;
+import rfx.core.nosql.jedis.RedisClientFactory;
 import rfx.core.nosql.jedis.RedisCommand;
 import rfx.core.util.StringUtil;
 
@@ -43,7 +45,8 @@ import rfx.core.util.StringUtil;
 public final class ContextSessionManagement {
 
 	public static final int AFTER_30_MINUTES = 1800;
-	static JedisPooled jedisPool = RedisConfigs.load().get("realtimeDataStats").getJedisClient();
+
+	static JedisPool jedisPool =  RedisClientFactory.buildRedisPool("realtimeDataStats");
 
 	/**
 	 * @param sourceIP
@@ -146,7 +149,7 @@ public final class ContextSessionManagement {
 		srcProfile.getContextSessionKeys().forEach((String sessionKey, Date updatedDate) -> {
 			new RedisCommand<Boolean>(jedisPool) {
 				@Override
-				protected Boolean build() throws JedisException {
+				protected Boolean build(Jedis jedis) throws JedisException {
 					String json = null;
 					if (StringUtil.isNotEmpty(sessionKey)) {
 						json = jedis.get(sessionKey);
@@ -188,7 +191,7 @@ public final class ContextSessionManagement {
 			
 			RedisCommand<ContextSession> cmd = new RedisCommand<ContextSession>(jedisPool) {
 				@Override
-				protected ContextSession build() throws JedisException {
+				protected ContextSession build(Jedis jedis) throws JedisException {
 					String json = null;
 					if (StringUtil.isNotEmpty(clientSessionKey)) {
 						json = jedis.get(clientSessionKey);
@@ -232,11 +235,11 @@ public final class ContextSessionManagement {
 	 * @param device
 	 * @return
 	 */
-	public static ContextSession initSession(HttpServerRequest req, MultiMap params, DeviceInfo device) {
+	public static void initSession(HttpServerRequest req, MultiMap params, DeviceInfo device, Consumer<ContextSession> callback) {
 		final String ip = HttpWebParamUtil.getRemoteIP(req);
 		RedisCommand<ContextSession> cmd = new RedisCommand<ContextSession>(jedisPool) {
 			@Override
-			protected ContextSession build() throws JedisException {
+			protected ContextSession build(Jedis jedis) throws JedisException {
 				ContextSession ctxSession = null;
 				
 				DateTime dateTime = new DateTime();
@@ -259,7 +262,9 @@ public final class ContextSessionManagement {
 			}
 		};
 
-		return cmd.execute();
+		cmd.executeAsync(callback, (e)->{
+			e.printStackTrace();
+		});
 	}
 
 	/**

@@ -90,12 +90,14 @@ public final class ObserverHttpGetHandler {
 			// synchronize session (when) with user's device (how), touchpoint's context (where) and profile (who)
 			// into one object for analytics (understand why)
 		
-			ContextSession session = ContextSessionManagement.initSession(req, params, device);
-			if(session != null) {
-				resp.end(new Gson().toJson(new ObserverResponse(session.getVisitorId(), session.getSessionKey(), OK, 101)));
-			} else {
-				resp.end(new Gson().toJson(new ObserverResponse("", "", FAILED, -101)));
-			}
+			ContextSessionManagement.initSession(req, params, device, (session)->{
+				if(session != null) {
+					resp.end(new Gson().toJson(new ObserverResponse(session.getVisitorId(), session.getSessionKey(), OK, 101)));
+				} else {
+					resp.end(new Gson().toJson(new ObserverResponse("", "", FAILED, -101)));
+				}
+			});
+			
 			return true;
 		} 
 		// tracking event in real-time

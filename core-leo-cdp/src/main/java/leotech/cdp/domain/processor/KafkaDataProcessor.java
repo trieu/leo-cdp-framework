@@ -8,9 +8,10 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.TopicPartition;
 
 import leotech.system.util.kafka.KafkaUtil;
-import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.exceptions.JedisException;
-import rfx.core.configs.RedisConfigs;
+import rfx.core.nosql.jedis.RedisClientFactory;
 import rfx.core.nosql.jedis.RedisCommand;
 import rfx.core.util.StringUtil;
 import rfx.core.util.Utils;
@@ -28,7 +29,9 @@ public abstract class KafkaDataProcessor implements Runnable {
 	protected int partitionId = 0;
 	protected Consumer<String, String> consumer = null;
 	protected String kafkaBootstrapServer = null;
-	protected static final JedisPooled REDIS_POOL = RedisConfigs.load().get("clusterInfoRedis").getJedisClient();
+
+	
+	static final JedisPool JEDIS_POOL =  RedisClientFactory.buildRedisPool("clusterInfoRedis");
 
 
 	public KafkaDataProcessor(String kafkaBootstrapServer, String topicName, int partitionId) {
@@ -56,9 +59,9 @@ public abstract class KafkaDataProcessor implements Runnable {
 	private long getNextKafkaOffset() {
 		try {
 			String key = KAKFA_CONSUMER_PREFIX + "_" + this.topicName + "_" + this.partitionId;
-			long nextOffset = 1L + new RedisCommand<Long>(REDIS_POOL) {
+			long nextOffset = 1L + new RedisCommand<Long>(JEDIS_POOL) {
 				@Override
-				protected Long build() throws JedisException {
+				protected Long build(Jedis jedis) throws JedisException {
 					String offset = jedis.get(key);
 					if(offset != null) {
 						return StringUtil.safeParseLong(offset);
@@ -111,9 +114,9 @@ public abstract class KafkaDataProcessor implements Runnable {
 	private void saveCurrentKafkaOffset(long offset) {
 		try {
 			String key = KAKFA_CONSUMER_PREFIX + "_" + this.topicName + "_" + this.partitionId;
-			new RedisCommand<Void>(REDIS_POOL) {
+			new RedisCommand<Void>(JEDIS_POOL) {
 				@Override
-				protected Void build() throws JedisException {
+				protected Void build(Jedis jedis) throws JedisException {
 					jedis.set(key, String.valueOf(offset));
 					return null;
 				}

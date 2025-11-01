@@ -4,9 +4,10 @@ import java.util.Map;
 
 import com.google.gson.Gson;
 
-import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.exceptions.JedisException;
-import rfx.core.configs.RedisConfigs;
+import rfx.core.nosql.jedis.RedisClientFactory;
 import rfx.core.nosql.jedis.RedisCommand;
 import rfx.core.util.StringUtil;
 
@@ -22,13 +23,14 @@ public final class AirflowRedisPubSub {
 	
 	public static final String AI_AGENT_EVENTS_TOPIC = "agent_pubsub_queue";
 	
-	static JedisPooled jedisPool = RedisConfigs.load().get("pubSubQueue").getJedisClient();
+
+	static JedisPool jedisPool =  RedisClientFactory.buildRedisPool("pubSubQueue");
 	
 	public static void triggerAgentUsingAirflowDAG(String dagId, Map<String,Object> params) {
 		String jsonParams = new Gson().toJson(params);
 		RedisCommand<Boolean> cmd = new RedisCommand<Boolean>(jedisPool) {
 			@Override
-			protected Boolean build() throws JedisException {
+			protected Boolean build(Jedis jedis) throws JedisException {
 				Long rs = jedis.publish(dagId, jsonParams);
 				return StringUtil.safeParseLong(rs) > 0;
 			}

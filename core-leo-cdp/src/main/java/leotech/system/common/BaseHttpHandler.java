@@ -3,12 +3,9 @@ package leotech.system.common;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import leotech.cdp.utils.EventTrackingUtil;
-import leotech.cdp.utils.RealtimeTrackingUtil;
 import leotech.system.model.JsonDataPayload;
 import redis.clients.jedis.JedisPooled;
 import rfx.core.configs.RedisConfigs;
-import rfx.core.util.DateTimeUtil;
 
 /**
  * @author Trieu Nguyen
@@ -34,18 +31,6 @@ public abstract class BaseHttpHandler {
 	
 	protected static JedisPooled redisLocalCache = RedisConfigs.load().get("localCache").getJedisClient();
 	protected static Logger logger = LoggerFactory.getLogger(BaseHttpHandler.class);
-
-	protected static void updateRealtimeEvent(String userId, String contentId, String categoryId, String groupId,
-			String networkId) {
-
-		String eventKey = "req-" + contentId + "-" + categoryId + "-" + groupId + "-" + networkId;
-
-		String[] events = new String[] { eventKey };
-		int unixTime = DateTimeUtil.currentUnixTimestamp();
-		EventTrackingUtil.updateEvent(unixTime, events, true);
-
-		RealtimeTrackingUtil.trackContentViewFromUser(unixTime, contentId, userId);
-	}
 	
 	
 	public final static class JsonErrorPayload {

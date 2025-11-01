@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.Set;
 
 import io.vertx.core.json.JsonObject;
-import leotech.cdp.domain.cache.AdminRedisCacheUtil;
 import leotech.cdp.utils.ProfileDataValidator;
 import leotech.system.dao.SystemUserDaoUtil;
 import leotech.system.exception.InvalidDataException;
@@ -14,7 +13,6 @@ import leotech.system.model.AppMetadata;
 import leotech.system.model.Notification;
 import leotech.system.model.SystemUser;
 import leotech.system.util.HttpWebParamUtil;
-import leotech.system.util.LogUtil;
 import rfx.core.util.StringUtil;
 
 /**
@@ -148,12 +146,6 @@ public final class SystemUserManagement {
 				userId = SystemUserDaoUtil.updateSystemUser(dbSystemUser);
 			}
 			
-			if(StringUtil.isNotEmpty(profileVisitorId)) {
-				boolean rs = AdminRedisCacheUtil.setLeoChatBotForProfile(profileVisitorId, displayName);
-				if(!rs) {
-					LogUtil.logError(SystemUserManagement.class, "Not found profile for profileVisitorId " + profileVisitorId);
-				}
-			}
 			
 			return userId;
 		}

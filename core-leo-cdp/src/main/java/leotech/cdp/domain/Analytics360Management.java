@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.cache.CacheBuilder;
@@ -29,7 +30,6 @@ import leotech.cdp.model.customer.Profile;
 import leotech.cdp.model.customer.Segment;
 import leotech.cdp.model.journey.JourneyMap;
 import leotech.system.util.IdGenerator;
-import leotech.system.util.TaskRunner;
 import rfx.core.util.StringUtil;
 
 /**
@@ -53,41 +53,51 @@ public final class Analytics360Management {
 	private static final int TIME_TO_UPDATE_CACHE = TTL_PROFILE_STATS - 900;
 	
 	// ------- BEGIN Cache Main Dashboard
-	static final CacheLoader<String, List<StatisticCollector> > cacheLoaderStatisticCollector = new CacheLoader<>() {
-		@Override
-		public List<StatisticCollector>  load(String key) {
-			List<StatisticCollector> profileTotalStats = null;
-			System.out.println("SET CACHE profileTotalStatistics");
-			
-			// get cache from Redis
-			String json = RedisCache.getCache(key);
-			if(StringUtil.isNotEmpty(json)) {
-				Type listType = new TypeToken<ArrayList<StatisticCollector>>() {}.getType();
-				profileTotalStats = new Gson().fromJson(json, listType);
-			}
-			
-			// compute profile statistics 
-			if( PROFILE_TOTAL_STATISTICS.equalsIgnoreCase(key)) {
-				if(profileTotalStats == null) {
-					// nothing in cache, try to query database
-					profileTotalStats = Analytics360DaoUtil.collectProfileTotalStatistics();
-					RedisCache.setCacheWithExpiry(key, profileTotalStats, TTL_PROFILE_STATS, true);
-					System.out.println("MISS REDIS CACHE profileTotalStatistics, try to query database");
-				}
-				else if(RedisCache.shouldUpdateCache(key, TIME_TO_UPDATE_CACHE)) {
-					TaskRunner.runInThreadPools(()->{
-						// run in background to update cache
-						List<StatisticCollector> newStats = Analytics360DaoUtil.collectProfileTotalStatistics();
-						RedisCache.setCacheWithExpiry(PROFILE_TOTAL_STATISTICS, newStats, TTL_PROFILE_STATS, true);
-						System.out.println("REFRESH CACHE profileTotalStatistics in background");
-					});
-				}
-				
-				return profileTotalStats;
-			}
-			return profileTotalStats == null? new ArrayList<StatisticCollector>(0) : profileTotalStats;
-		}
+	static final CacheLoader<String, List<StatisticCollector>> cacheLoaderStatisticCollector = new CacheLoader<>() {
+	    @Override
+	    public List<StatisticCollector> load(String key) {
+	        List<StatisticCollector> profileTotalStats = null;
+	        System.out.println("SET CACHE profileTotalStatistics");
+
+	        try {
+	            // Non-blocking get from Redis
+	            String json = RedisCache.getCacheAsync(key).get(2, TimeUnit.SECONDS);
+	            if (StringUtil.isNotEmpty(json)) {
+	                Type listType = new TypeToken<ArrayList<StatisticCollector>>() {}.getType();
+	                profileTotalStats = new Gson().fromJson(json, listType);
+	            }
+	        } catch (Exception e) {
+	            // timeout or Redis unavailable
+	            System.err.println("Redis async get failed: " + e.getMessage());
+	        }
+
+	        if (PROFILE_TOTAL_STATISTICS.equalsIgnoreCase(key)) {
+	            if (profileTotalStats == null) {
+	                // Cache miss — compute and asynchronously update Redis
+	                profileTotalStats = Analytics360DaoUtil.collectProfileTotalStatistics();
+	                RedisCache.setCacheWithExpiryAsync(key, profileTotalStats, TTL_PROFILE_STATS, true)
+	                        .exceptionally(err -> {
+	                            System.err.println("Async Redis set failed: " + err.getMessage());
+	                            return null;
+	                        });
+	                System.out.println("MISS REDIS CACHE profileTotalStatistics, query database");
+	            } else {
+	                // schedule async background refresh if TTL is low
+	                RedisCache.ttlAsync(key).thenAccept(ttl -> {
+	                    if (ttl < TIME_TO_UPDATE_CACHE) {
+	                        CompletableFuture.runAsync(() -> {
+	                            List<StatisticCollector> newStats = Analytics360DaoUtil.collectProfileTotalStatistics();
+	                            RedisCache.setCacheWithExpiryAsync(PROFILE_TOTAL_STATISTICS, newStats, TTL_PROFILE_STATS, true);
+	                            System.out.println("REFRESH CACHE profileTotalStatistics in background");
+	                        });
+	                    }
+	                });
+	            }
+	        }
+	        return profileTotalStats == null ? new ArrayList<>(0) : profileTotalStats;
+	    }
 	};
+
 
 	static final LoadingCache<String, List<StatisticCollector> > cacheStatisticCollector = CacheBuilder.newBuilder().maximumSize(CACHE_POOL_SIZE)
 			.expireAfterWrite(60, TimeUnit.SECONDS).build(cacheLoaderStatisticCollector);
@@ -145,9 +155,14 @@ public final class Analytics360Management {
 	}
 	
 	public static void clearCacheProfileReport() {
-		cacheStatisticCollector.invalidate(PROFILE_TOTAL_STATISTICS);
-		RedisCache.deleteCache(PROFILE_TOTAL_STATISTICS);
+	    cacheStatisticCollector.invalidate(PROFILE_TOTAL_STATISTICS);
+	    RedisCache.deleteCacheAsync(PROFILE_TOTAL_STATISTICS)
+	        .exceptionally(e -> {
+	            System.err.println("Async Redis delete failed: " + e.getMessage());
+	            return null;
+	        });
 	}
+
 	// ------ END Event Report
 	
 	/**

@@ -15,9 +15,9 @@ import leotech.cdp.model.analytics.TrackingEventState;
 import leotech.cdp.model.journey.TouchpointHub;
 import leotech.cdp.query.filters.DataFilter;
 import leotech.system.config.AqlTemplate;
+import leotech.system.util.LogUtil;
 import leotech.system.util.database.ArangoDbCommand;
 import leotech.system.util.database.ArangoDbCommand.CallbackQuery;
-import rfx.core.util.LogUtil;
 import rfx.core.util.StringUtil;
 
 /**
@@ -29,7 +29,7 @@ import rfx.core.util.StringUtil;
  */
 public final class TrackingEventDao extends AbstractCdpDatabaseUtil {
 
-	private static final String CLASS_NAME = TrackingEventDao.class.getSimpleName();
+	private static final Class<?> CLASS_NAME = TrackingEventDao.class;
 	
 	static final String AQL_GET_TRACKING_EVENTS_BY_PAGINATION = AqlTemplate.get("AQL_GET_TRACKING_EVENTS_BY_PAGINATION");
 	static final String AQL_GET_TRACKING_EVENTS_BY_PROFILE_ID = AqlTemplate.get("AQL_GET_TRACKING_EVENTS_BY_PROFILE_ID");
@@ -207,7 +207,7 @@ public final class TrackingEventDao extends AbstractCdpDatabaseUtil {
 			new ArangoDbCommand<TrackingEvent>(getCdpDatabase(), AQL_UPDATE_TRACKING_EVENT_STATE_PROCESSED, bindVars).update();
 		} else {
 			String json = new Gson().toJson(ev);
-			LogUtil.e(CLASS_NAME, "invalid TrackingEvent \n" + json);
+			LogUtil.logError(CLASS_NAME, "invalid TrackingEvent \n" + json);
 		}
 		return false;
 	}

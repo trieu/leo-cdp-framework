@@ -29,7 +29,7 @@ import com.google.auth.oauth2.GoogleCredentials;
 
 import leotech.cdp.model.file.FileApiResponse;
 import leotech.system.exception.InvalidDataException;
-import rfx.core.configs.WorkerConfigs;
+import leotech.system.version.SystemMetaData;
 import rfx.core.util.StringUtil;
 
 /**
@@ -42,8 +42,8 @@ public class GoogleSheetUtils {
     private static final String APPLICATION_NAME = "Google Sheet export segment";
     private static final List<String> SCOPES = List.of(SheetsScopes.DRIVE_READONLY, SheetsScopes.SPREADSHEETS_READONLY, SheetsScopes.DRIVE_FILE);
 
-    private static final String SERVICE_ACCOUNT_KEY_FILE_PATH = WorkerConfigs.load().getCustomConfig("SERVICE_ACCOUNT_KEY_FILE_PATH");
-    private static final String GOOGLE_SHEET_URL = WorkerConfigs.load().getCustomConfig("GOOGLE_SHEET_URL");
+    private static final String SERVICE_ACCOUNT_KEY_FILE_PATH = SystemMetaData.getString("SERVICE_ACCOUNT_KEY_FILE_PATH", "");
+    private static final String GOOGLE_SHEET_URL = SystemMetaData.getString("GOOGLE_SHEET_URL","");
     
     private static final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
     private static final String drivePermissionType = "anyone";

@@ -8,10 +8,11 @@ import leotech.cdp.dao.ProfileDaoUtil;
 import leotech.cdp.model.customer.Profile;
 import leotech.system.util.LogUtil;
 import leotech.system.util.TaskRunner;
-import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Protocol;
 import redis.clients.jedis.exceptions.JedisException;
-import rfx.core.configs.RedisConfigs;
+import rfx.core.nosql.jedis.RedisClientFactory;
 import rfx.core.nosql.jedis.RedisCommand;
 
 /**
@@ -22,8 +23,7 @@ import rfx.core.nosql.jedis.RedisCommand;
  */
 public final class AdminRedisCacheUtil {
 
-	private static final JedisPooled jedisClient =
-            RedisConfigs.load().get("pubSubQueue").getJedisClient();
+	static JedisPool jedisPool = RedisClientFactory.buildRedisPool("pubSubQueue");
 
     /**
      * Clears cache across all active observer Redis channels.
@@ -32,9 +32,9 @@ public final class AdminRedisCacheUtil {
     public static void clearCacheAllObservers() {
         TaskRunner.run(() -> {
             try {
-                new RedisCommand<Boolean>(jedisClient) {
+                new RedisCommand<Boolean>(jedisPool) {
                     @Override
-                    protected Boolean build() throws JedisException {
+                    protected Boolean build(Jedis jedis) throws JedisException {
                         String pattern = ObserverRedisCacheUtil.LEO_OBSERVER + "*";
 
                         List<String> activeChannels = getPubSubChannels(jedis, pattern);
@@ -62,7 +62,7 @@ public final class AdminRedisCacheUtil {
      * Executes "PUBSUB CHANNELS <pattern>" manually since Jedis 7+ no longer provides a wrapper.
      */
     @SuppressWarnings("unchecked")
-    private static List<String> getPubSubChannels(JedisPooled jedis, String pattern) {
+    private static List<String> getPubSubChannels(Jedis jedis, String pattern) {
         List<String> channels = new ArrayList<>();
         try {
             // JedisPooled#sendCommand returns Object, cast to List<Object>
@@ -104,9 +104,9 @@ public final class AdminRedisCacheUtil {
 	 * @param firstName
 	 */
 	public static void setLeoChatBotForProfile(String visitorId, String profileId, String firstName) {
-		RedisCommand<Void> cmd = new RedisCommand<>(jedisClient) {
+		RedisCommand<Void> cmd = new RedisCommand<>(jedisPool) {
 			@Override
-			protected Void build() throws JedisException {
+			protected Void build(Jedis jedis) throws JedisException {
 				jedis.hset(visitorId, "chatbot", "leobot");
 				jedis.hset(visitorId, "profile_id", profileId);
 				jedis.hset(visitorId, "name", firstName);

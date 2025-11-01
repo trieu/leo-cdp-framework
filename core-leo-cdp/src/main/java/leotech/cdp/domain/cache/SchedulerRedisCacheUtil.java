@@ -5,8 +5,8 @@ import org.slf4j.LoggerFactory;
 
 import leotech.system.util.RedisClient;
 import leotech.system.util.RedisClient.RedisPubSubCallback;
-import redis.clients.jedis.JedisPooled;
-import rfx.core.configs.RedisConfigs;
+import redis.clients.jedis.JedisPool;
+import rfx.core.nosql.jedis.RedisClientFactory;
 import rfx.core.util.Utils;
 
 /**
@@ -17,7 +17,7 @@ public final class SchedulerRedisCacheUtil {
 	
 	static Logger logger = LoggerFactory.getLogger(SchedulerRedisCacheUtil.class);
 	
-	static JedisPooled jedisPool = RedisConfigs.load().get("pubSubQueue").getJedisClient();
+	static JedisPool jedisPool = RedisClientFactory.buildRedisPool("pubSubQueue");
 	
 	static RedisPubSubCallback redisPubSubCallback = new RedisPubSubCallback() {
 		@Override

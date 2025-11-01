@@ -14,8 +14,6 @@ import leotech.cdp.model.analytics.ContextSession;
 import leotech.cdp.model.analytics.FeedbackEvent;
 import leotech.cdp.model.analytics.OrderTransaction;
 import leotech.cdp.model.analytics.OrderedItem;
-import leotech.cdp.utils.EventTrackingUtil;
-import leotech.cdp.utils.RealtimeTrackingUtil;
 import leotech.system.model.DeviceInfo;
 import leotech.system.util.HttpWebParamUtil;
 import leotech.system.util.UrlUtil;
@@ -150,14 +148,6 @@ public final class EventObserverUtil {
 				touchpointName, touchpointUrl, feedbackEvent);
 	}
 	
-	public final static void realtimeLogging(String metric, String cid, long loggedTime, int platformId, String uuid,
-			String locationId, boolean countUserReach) {
-		String kNew = metric + "-" + cid + "-" + platformId + "-" + "-" + locationId;
-		String[] events = new String[]{metric, metric + "-" + cid, kNew};
-		EventTrackingUtil.updateEvent(loggedTime, events, true);
-		if (countUserReach) {
-			RealtimeTrackingUtil.trackContentViewFromUser(loggedTime, cid, uuid);
-		}
-	}
+
 
 }

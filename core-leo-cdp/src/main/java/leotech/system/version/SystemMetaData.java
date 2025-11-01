@@ -110,6 +110,10 @@ public final class SystemMetaData {
 		return StringUtil.safeParseLong(metaDataMap.get(name), defaultValue);
 	}
 	
+	public static final String getString(String name, String defaultValue) {
+		return metaDataMap.getOrDefault(name, defaultValue);
+	}
+	
 	public static final String DEFAULT_DATA_REGION = metaDataMap.getOrDefault("defaultDataRegion", "VN");
 	public static final String DEFAULT_TIME_ZONE = metaDataMap.getOrDefault("defaultTimeZone", "Asia/Saigon");
 	
