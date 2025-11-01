@@ -35,7 +35,6 @@ import leotech.system.util.HttpTrackingUtil;
 import leotech.system.util.LogUtil;
 import leotech.system.version.SystemMetaData;
 import leotech.web.model.WebData;
-import rfx.core.configs.WorkerConfigs;
 import rfx.core.util.StringUtil;
 
 /**
@@ -49,7 +48,7 @@ public final class MainHttpRouter extends BaseHttpRouter {
 
 	private static final String RESOURCES_APP_TEMPLATES = "./resources/app-templates";
 	private static final String _1 = "1";
-	private static final String ADS_TXT_CONTENT = WorkerConfigs.load().getCustomConfig("ADS_TXT_CONTENT");
+
 	private static final String MIME_TYPE_HTML = ContentType.TEXT_HTML.getMimeType();
 	
 	public static final String URI_LEO_CDP_IMPORTER = "/LEO_CDP_IMPORTER";
@@ -162,11 +161,6 @@ public final class MainHttpRouter extends BaseHttpRouter {
 			resp.end(html);
 		}
 
-		// Ads.TXT
-		else if (path.equalsIgnoreCase(URI_ADS_TXT)) {
-			resp.setStatusCode(HttpStatus.SC_OK);
-			resp.end(ADS_TXT_CONTENT);
-		}
 
 		// Favicon
 		else if (path.equalsIgnoreCase(URI_FAVICON_ICO)) {

@@ -4,6 +4,7 @@ import static io.netty.handler.codec.http.HttpHeaderNames.CONNECTION;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
 
 import java.util.Set;
+import java.util.function.Consumer;
 
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpServerRequest;
@@ -55,10 +56,10 @@ public abstract class BaseWebRouter extends BaseHttpRouter {
 	}
 
 	// for implemented POST method
-	abstract protected JsonDataPayload callHttpPostHandler(HttpServerRequest request, String userSession, String uri, JsonObject paramJson);
+	abstract protected void callHttpPostHandler(HttpServerRequest request, String userSession, String uri, JsonObject paramJson, Consumer<JsonDataPayload> done);
 
 	// for implemented GET method
-	abstract protected JsonDataPayload callHttpGetHandler(HttpServerRequest request, String userSession, String uri, MultiMap params);
+	abstract protected void callHttpGetHandler(HttpServerRequest request, String userSession, String uri, MultiMap params, Consumer<JsonDataPayload> done);
 	
 	
 	public void enableAutoRedirectToHomeIf404() {
@@ -66,7 +67,7 @@ public abstract class BaseWebRouter extends BaseHttpRouter {
 		defaultDataHttpGet.setHttpCode(301);
 	}
 
-	protected boolean handle(RoutingContext context) {
+	protected void handle(RoutingContext context) {
 
 		HttpServerRequest request = context.request();
 		HttpServerResponse resp = context.response();
@@ -95,44 +96,44 @@ public abstract class BaseWebRouter extends BaseHttpRouter {
 			String bodyStr = StringUtil.safeString(context.getBodyAsString(), "{}");
 			JsonObject paramJson = buildHttpPostParams(request, contentType, userAgent, userIp, bodyStr);
 			String userSession =  StringUtil.safeString(paramJson.remove(P_USER_SESSION), userSessionHeader);
-			JsonDataPayload out = callHttpPostHandler(request, userSession, uri, paramJson);
-			if (out != null) {
-				if(out.getHttpCode() > 300) {
-					resp.setStatusCode(out.getHttpCode());
+			callHttpPostHandler(request, userSession, uri, paramJson, (JsonDataPayload payload)->{
+				if (payload != null) {
+					if(payload.getHttpCode() > 300) {
+						resp.setStatusCode(payload.getHttpCode());
+					}
+					resp.end(payload.toString());
+				
+				} else {
+					resp.setStatusCode(SYSTEM_ERROR_CODE);
+					defaultDataHttpPost.setUri(uri);
+					resp.end(defaultDataHttpPost.toString());
 				}
-				resp.end(out.toString());
-				return true;
-			} else {
-				resp.setStatusCode(SYSTEM_ERROR_CODE);
-				defaultDataHttpPost.setUri(uri);
-				resp.end(defaultDataHttpPost.toString());
-				return false;
-			}
+			});
+			
 
 		} else if (HTTP_METHOD_GET.equalsIgnoreCase(httpMethod)) {
 			String userSession = CookieUserSessionUtil.getUserSession(context, userSessionHeader );
 			MultiMap params = buildHttpGetParams(request, userAgent, userIp);
-			JsonDataPayload out = callHttpGetHandler(request, userSession, uri, params);
-			if (out != null) {
-				resp.end(out.toString());
-				return true;
-			} else {
-				if (defaultDataHttpGet.getHttpCode() == 301) {
-					resp.putHeader("Location", defaultDataHttpGet.getUri());
-					resp.setStatusCode(defaultDataHttpGet.getHttpCode());
-					resp.end();
+			callHttpGetHandler(request, userSession, uri, params, (JsonDataPayload payload)->{
+				if (payload != null) {
+					resp.end(payload.toString());
 				} else {
-					defaultDataHttpGet.setUri(uri);
-					resp.end(defaultDataHttpGet.toString());
+					if (defaultDataHttpGet.getHttpCode() == 301) {
+						resp.putHeader("Location", defaultDataHttpGet.getUri());
+						resp.setStatusCode(defaultDataHttpGet.getHttpCode());
+						resp.end();
+					} else {
+						defaultDataHttpGet.setUri(uri);
+						resp.end(defaultDataHttpGet.toString());
+					}
+			
 				}
-				return false;
-			}
+			});
+			
 		} else if (HTTP_GET_OPTIONS.equals(httpMethod)) {
 			resp.end("");
-			return true;
 		} else {
 			resp.end(JsonDataPayload.fail("Not HTTP handler found for uri:" + uri, 404).toString());
-			return false;
 		}
 	}
 

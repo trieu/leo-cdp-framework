@@ -8,7 +8,6 @@ import com.vng.zalo.sdk.APIException;
 import com.vng.zalo.sdk.oa.ZaloOaClient;
 
 import leotech.cdp.model.social.ZaloUserDetail;
-import rfx.core.configs.WorkerConfigs;
 import rfx.core.util.StringUtil;
 
 /**
@@ -25,7 +24,7 @@ public class ZaloApiService {
 	
 	public static class AccessTokenUtil {
 
-		static String accessToken = WorkerConfigs.load().getCustomConfig(ZALO_ACCESS_TOKEN).trim();
+		static String accessToken = "";// ZALO_ACCESS_TOKEN
 
 		public static final String getValue() {
 			return accessToken;

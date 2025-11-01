@@ -33,7 +33,7 @@ public final class SchedulerRedisCacheUtil {
 
 	public final static void start(String workerName) {
 		Utils.sleep(3000);
-		RedisClient.commandSubscribe(jedisPool,workerName, redisPubSubCallback).execute();
+		RedisClient.commandSubscribe(workerName, redisPubSubCallback);
 	}
 
 	final static void doJob(String jobName) {

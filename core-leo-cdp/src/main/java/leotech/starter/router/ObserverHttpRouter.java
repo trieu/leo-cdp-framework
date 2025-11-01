@@ -73,7 +73,7 @@ public final class ObserverHttpRouter extends BaseHttpRouter {
 	}
 
 	@Override
-	public boolean handle() throws Exception {
+	public void handle() throws Exception {
 		HttpServerRequest req = context.request();
 
 		String httpMethod = req.rawMethod();
@@ -94,28 +94,22 @@ public final class ObserverHttpRouter extends BaseHttpRouter {
 			String origin = StringUtil.safeString(reqHeaders.get(BaseHttpHandler.ORIGIN), "*");
 			
 			// WEBHOOK and Domain Verifier
-			boolean rs = WebhookDataHandler.process(this.context, req, urlPath, reqHeaders, params, resp, outHeaders, device, origin);
-			if(rs) {
-				return true;
-			}
-			// EVENT tracking for real user 
-			else if( device.isNotWebCrawler() ) {
+			boolean processed = WebhookDataHandler.process(this.context, req, urlPath, reqHeaders, params, resp, outHeaders, device, origin);
+			if(!processed) {
 				if(httpMethod.equalsIgnoreCase(HTTP_METHOD_GET)) {
-					return ObserverHttpGetHandler.process(this.context, req, urlPath, reqHeaders, params, resp, outHeaders, device, origin);
+					ObserverHttpGetHandler.process(this.context, req, urlPath, reqHeaders, params, resp, outHeaders, device, origin);
 				} 
 				else if(httpMethod.equalsIgnoreCase(HTTP_METHOD_POST) || httpMethod.equalsIgnoreCase(HTTP_METHOD_PUT)) {
-					return ObserverHttpPostHandler.process(this.context, req, urlPath, reqHeaders, params, resp, outHeaders, device, origin);
+					ObserverHttpPostHandler.process(this.context, req, urlPath, reqHeaders, params, resp, outHeaders, device, origin);
 				}
 			}
 			// no handler found
 			resp.end("CDP Observer_"+DEFAULT_RESPONSE_TEXT);
-			return false;
 		} catch (Exception e) {
 			// resp.end();
 			System.err.println("urlPath:" + urlPath + " error:" + e.getMessage());
 			e.printStackTrace();
 		}
-		return false;
 	}
 	
 }

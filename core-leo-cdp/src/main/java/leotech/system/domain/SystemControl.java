@@ -17,9 +17,9 @@ import leotech.system.util.RedisClient;
 import leotech.system.util.TaskRunner;
 import leotech.system.util.database.InitDatabaseSchema;
 import leotech.system.version.SystemMetaData;
-import redis.clients.jedis.JedisPooled;
-import rfx.core.configs.RedisConfigs;
+import redis.clients.jedis.JedisPool;
 import rfx.core.job.ScheduledJob;
+import rfx.core.nosql.jedis.RedisClientFactory;
 import rfx.core.util.StringPool;
 import rfx.core.util.StringUtil;
 import rfx.core.util.Utils;
@@ -36,7 +36,7 @@ public final class SystemControl {
 	private static final String REDIS_PUB_SUB_QUEUE = "pubSubQueue";
 	private static final String MAIN_CDP_QUEUE = "main-cdp-queue";
 	private static final String UPGRADE_SYSTEM = "upgrade-system";
-	static JedisPooled jedisPool = RedisConfigs.load().get(REDIS_PUB_SUB_QUEUE).getJedisClient();
+	static JedisPool jedisPool = RedisClientFactory.buildRedisPool(REDIS_PUB_SUB_QUEUE);
 
 	/**
 	 * to set-up new database for a new  CDP system instances
@@ -156,11 +156,11 @@ public final class SystemControl {
 		TaskRunner.timerSetScheduledJob(new ScheduledJob() {
 			@Override
 			public void doTheJob() {
-				String rs = RedisClient.dequeue(jedisPool, MAIN_CDP_QUEUE);
-				if(UPGRADE_SYSTEM.equals(rs)) {
-					runUpdateShellScript();
-				}
-				
+				RedisClient.dequeue(MAIN_CDP_QUEUE, rs->{
+					if(UPGRADE_SYSTEM.equals(rs)) {
+						runUpdateShellScript();
+					}
+				});
 			}
 		});
 		Utils.foreverLoop();

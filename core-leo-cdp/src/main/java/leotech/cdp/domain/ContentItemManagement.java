@@ -8,13 +8,11 @@ import java.util.stream.Collectors;
 import leotech.cdp.dao.AssetContentDaoPublicUtil;
 import leotech.cdp.dao.AssetContentDaoUtil;
 import leotech.cdp.model.asset.AssetContent;
-import rfx.core.configs.WorkerConfigs;
-import rfx.core.util.StringUtil;
+import leotech.system.version.SystemMetaData;
 
 public class ContentItemManagement {
 
-	private static final int NUMBER_SIMILAR_POSTS_IN_LIST = StringUtil
-			.safeParseInt(WorkerConfigs.load().getCustomConfig("NUMBER_SIMILAR_POSTS_IN_LIST"), 10);
+	private static final int NUMBER_SIMILAR_POSTS_IN_LIST = SystemMetaData.getInt("NUMBER_SIMILAR_POSTS_IN_LIST", 10);
 	
 	/**
 	 * @param slug

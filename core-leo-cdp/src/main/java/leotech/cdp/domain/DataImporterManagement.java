@@ -44,7 +44,7 @@ public final class DataImporterManagement {
 		
 		TaskRunner.run(() -> {
 			Utils.sleep(1000);
-			RedisClient.commandPubSub(host, port, channelName, redisPubSubCallback).execute();
+			RedisClient.commandSubscribe(channelName, redisPubSubCallback);
 		});
 	}
 

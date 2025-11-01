@@ -7,10 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import leotech.cdp.dao.WebhookDataEventDao;
-import leotech.cdp.domain.processor.FacebookWebhookProcessor;
-import leotech.cdp.domain.processor.KiotVietDataProcessor;
-import leotech.cdp.domain.processor.OmiCallDataProcessor;
-import leotech.cdp.domain.processor.PancakeDataProcessor;
 import leotech.cdp.domain.processor.ZaloWebhookProcessor;
 import leotech.cdp.model.analytics.WebhookDataEvent;
 import leotech.system.util.TaskRunner;
@@ -28,12 +24,7 @@ public class WebhookDataManagement {
 	
 	// Map sources to their corresponding event processor
 	private static final Map<String, Consumer<WebhookDataEvent>> PROCESSORS = Map.of(
-	    ZaloWebhookProcessor.ZALO, ZaloWebhookProcessor::processWebhookEvent,
-	    FacebookWebhookProcessor.FACEBOOK, FacebookWebhookProcessor::processWebhookEvent,
-	    KiotVietDataProcessor.KIOTVIET_UPDATE_PROFILE, KiotVietDataProcessor::processUpdateProfile,
-	    KiotVietDataProcessor.KIOTVIET_UPDATE_INVOICE, KiotVietDataProcessor::processUpdateInvoice,
-	    OmiCallDataProcessor.OMICALL_UPDATE_CALL, OmiCallDataProcessor::processUpdateCall,
-	    PancakeDataProcessor.PANCAKE_UPDATE, PancakeDataProcessor::processUpdate
+	    ZaloWebhookProcessor.ZALO, ZaloWebhookProcessor::processWebhookEvent
 	);
 
 

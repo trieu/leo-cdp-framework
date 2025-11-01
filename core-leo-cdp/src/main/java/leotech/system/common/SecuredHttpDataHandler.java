@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 import com.devskiller.friendly_id.FriendlyId;
 
@@ -25,6 +26,7 @@ import leotech.system.util.EncryptorAES;
 import leotech.system.util.IdGenerator;
 import leotech.system.util.LogUtil;
 import leotech.system.version.SystemMetaData;
+import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Pipeline;
 import redis.clients.jedis.Response;
 import redis.clients.jedis.exceptions.JedisException;
@@ -153,7 +155,7 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 		try {
 			new RedisCommand<Void>(redisLocalCache) {
 				@Override
-				protected Void build() throws JedisException {
+				protected Void build(Jedis jedis) throws JedisException {
 					Pipeline p = jedis.pipelined();
 					p.set(dataAccessKey,systemUserId);
 					p.expire(dataAccessKey, AFTER_15_MINUTES);
@@ -175,7 +177,7 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 			try {
 				return new RedisCommand<Boolean>(redisLocalCache) {
 					@Override
-					protected Boolean build() throws JedisException {
+					protected Boolean build(Jedis jedis) throws JedisException {
 						return jedis.exists(usersession);
 					}
 				}.execute();
@@ -198,7 +200,7 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 		try {
 			systemUser = new RedisCommand<SystemUser>(redisLocalCache) {
 				@Override
-				protected SystemUser build() throws JedisException {
+				protected SystemUser build(Jedis jedis) throws JedisException {
 					
 					String userId = jedis.get(dataAccessKey);
 					if(userId != null) {
@@ -239,7 +241,7 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 			try {
 				RedisCommand<SystemUser> cmd = new RedisCommand<SystemUser>(redisLocalCache) {
 					@Override
-					protected SystemUser build() throws JedisException {
+					protected SystemUser build(Jedis jedis) throws JedisException {
 						Pipeline p = jedis.pipelined();
 						Response<String> resp1 = p.hget(userSession, REDIS_KEY_USERLOGIN);
 						Response<String> resp2 = p.hget(userSession, REDIS_KEY_ENCKEY);
@@ -533,7 +535,7 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 		try {
 			new RedisCommand<Void>(redisLocalCache) {
 				@Override
-				protected Void build() throws JedisException {
+				protected Void build(Jedis jedis) throws JedisException {
 					Pipeline p = jedis.pipelined();
 					p.hset(usersession, REDIS_KEY_ENCKEY, encryptionKey);
 					p.hset(usersession, REDIS_KEY_USERLOGIN, userLogin);
@@ -558,7 +560,7 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	abstract public JsonDataPayload httpPostHandler(String userSession, String uri, JsonObject paramJson) throws Exception;
+	abstract public void httpPostHandler(String userSession, String uri, JsonObject paramJson, Consumer<JsonDataPayload> done) throws Exception;
 
 	/**
 	 * HTTP get data handler for JSON
@@ -569,6 +571,6 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	abstract public JsonDataPayload httpGetHandler(String userSession, String uri, MultiMap params) throws Exception;
+	abstract public void httpGetHandler(String userSession, String uri, MultiMap params, Consumer<JsonDataPayload> done) throws Exception;
 
 }

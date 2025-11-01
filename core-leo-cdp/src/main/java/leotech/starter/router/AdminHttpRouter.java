@@ -1,5 +1,7 @@
 package leotech.starter.router;
 
+import java.util.function.Consumer;
+
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonObject;
@@ -75,12 +77,13 @@ public final class AdminHttpRouter extends BaseWebRouter {
 	}
 
 	@Override
-	public boolean handle() throws Exception {
-		return this.handle(this.context);
+	public void handle() throws Exception {
+		this.handle(this.context);
 	}
 
 	@Override
-	protected JsonDataPayload callHttpPostHandler(HttpServerRequest req, String userSession, String uri, JsonObject paramJson) {
+	protected void callHttpPostHandler(HttpServerRequest req, String userSession, String uri, JsonObject paramJson, Consumer<JsonDataPayload> done) {
+		
 		JsonDataPayload payload = null;
 		try {			
 			
@@ -186,11 +189,11 @@ public final class AdminHttpRouter extends BaseWebRouter {
 				payload = JsonDataPayload.fail(e.getMessage(), 500);
 			}
 		} 
-		return payload;
+		done.accept(payload);
 	}
 
 	@Override
-	protected JsonDataPayload callHttpGetHandler(HttpServerRequest req, String userSession, String uri, MultiMap urlParams) {
+	protected void callHttpGetHandler(HttpServerRequest req, String userSession, String uri, MultiMap urlParams, Consumer<JsonDataPayload> done) {
 		JsonDataPayload payload = null;
 		try {
 			//////// Core System Management ///////
@@ -290,7 +293,7 @@ public final class AdminHttpRouter extends BaseWebRouter {
 			e.printStackTrace();
 			payload = JsonDataPayload.fail(e.getMessage(), 500);
 		}
-		return payload;
+		done.accept(payload);
 	}
 	
 }

@@ -4,8 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import leotech.system.model.JsonDataPayload;
-import redis.clients.jedis.JedisPooled;
-import rfx.core.configs.RedisConfigs;
+import redis.clients.jedis.JedisPool;
+import rfx.core.stream.cluster.ClusterDataManager;
 
 /**
  * @author Trieu Nguyen
@@ -29,7 +29,7 @@ public abstract class BaseHttpHandler {
 	public static final String CONTENT_TYPE_HTML = "text/html;charset=UTF-8";
 	public static final String CONTENT_TYPE_IMAGE_ICON = "image/x-icon";
 	
-	protected static JedisPooled redisLocalCache = RedisConfigs.load().get("localCache").getJedisClient();
+	protected static JedisPool redisLocalCache = ClusterDataManager.getJedisClient();
 	protected static Logger logger = LoggerFactory.getLogger(BaseHttpHandler.class);
 	
 	

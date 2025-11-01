@@ -97,17 +97,15 @@ public abstract class BaseHttpRouter {
 	 * @return
 	 * @throws Exception
 	 */
-	abstract public boolean handle() throws Exception;
+	abstract public void handle() throws Exception;
 
 
-	protected boolean respond(HttpServerResponse resp, String body) {
+	protected void respond(HttpServerResponse resp, String body) {
 	    resp.setStatusCode(HttpStatus.SC_OK).end(body);
-	    return true;
 	}
 
-	protected boolean respondError(HttpServerResponse resp, int code, String body) {
+	protected void respondError(HttpServerResponse resp, int code, String body) {
 	    resp.setStatusCode(code).end(body);
-	    return false;
 	}
 
 	

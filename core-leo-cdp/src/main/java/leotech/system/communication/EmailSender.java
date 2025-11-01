@@ -14,9 +14,11 @@ import org.apache.commons.validator.routines.EmailValidator;
 
 import leotech.cdp.model.marketing.EmailMessage;
 import leotech.system.config.ActivationChannelConfigs;
-import redis.clients.jedis.JedisPooled;
+import leotech.system.util.RedisClient;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.exceptions.JedisException;
-import rfx.core.configs.RedisConfigs;
+import rfx.core.nosql.jedis.RedisClientFactory;
 import rfx.core.nosql.jedis.RedisCommand;
 import rfx.core.util.StringUtil;
 
@@ -40,18 +42,21 @@ public final class EmailSender {
 	private static final String EMAIL_CONTENT_TEXT_HTML = "text/html";
 
 	protected static final class EmailSenderQueue {
-		final public static JedisPooled pubSubQueue = RedisConfigs.load().get("pubSubQueue").getJedisClient();
+		final public static JedisPool jedisPool = RedisClientFactory.buildRedisPool(RedisClient.PUB_SUB_QUEUE_REDIS);
 		static String channel = "leocdp_email_queue";
 
-		public static long publishToRedisPubSubQueue(EmailMessage emailMsg) {
+		public static void publishToRedisPubSubQueue(EmailMessage emailMsg) {
 			String message = emailMsg.toString();
-			long rs = new RedisCommand<Long>(pubSubQueue) {
+			
+			
+			
+			new RedisCommand<Long>(jedisPool) {
 				@Override
-				protected Long build() throws JedisException {
+				protected Long build(Jedis jedis) throws JedisException {
 					return jedis.publish(channel, message);
 				}
-			}.execute();
-			return rs;
+			}.executeAsync();
+			
 		}
 	}
 

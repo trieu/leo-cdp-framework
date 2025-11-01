@@ -8,8 +8,6 @@ import leotech.cdp.domain.EventObserverManagement;
 import leotech.system.util.RedisClient;
 import leotech.system.util.RedisClient.RedisPubSubCallback;
 import leotech.system.util.TaskRunner;
-import redis.clients.jedis.JedisPooled;
-import rfx.core.configs.RedisConfigs;
 import rfx.core.util.Utils;
 
 /**
@@ -20,8 +18,6 @@ import rfx.core.util.Utils;
  */
 public final class ObserverRedisCacheUtil {
 	
-	private static final String PUB_SUB_QUEUE_REDIS = "pubSubQueue";
-
 	static Logger logger = LoggerFactory.getLogger(ObserverRedisCacheUtil.class);
 
 	public static final String LEO_OBSERVER = "leo_observer_";
@@ -56,9 +52,8 @@ public final class ObserverRedisCacheUtil {
 		// start redis pubsub
 		TaskRunner.run(() -> {
 			Utils.sleep(4000);
-			JedisPooled jedisPool = RedisConfigs.load().get(PUB_SUB_QUEUE_REDIS).getJedisClient();
 			
-			RedisClient.commandSubscribe(jedisPool, channelName, redisPubSubCallback).execute();
+			RedisClient.commandSubscribe(channelName, redisPubSubCallback);
 		});
 	}
 

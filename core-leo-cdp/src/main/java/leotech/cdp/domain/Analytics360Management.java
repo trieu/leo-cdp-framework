@@ -75,15 +75,11 @@ public final class Analytics360Management {
 	            if (profileTotalStats == null) {
 	                // Cache miss — compute and asynchronously update Redis
 	                profileTotalStats = Analytics360DaoUtil.collectProfileTotalStatistics();
-	                RedisCache.setCacheWithExpiryAsync(key, profileTotalStats, TTL_PROFILE_STATS, true)
-	                        .exceptionally(err -> {
-	                            System.err.println("Async Redis set failed: " + err.getMessage());
-	                            return null;
-	                        });
+	                RedisCache.setCacheWithExpiryAsync(key, profileTotalStats, TTL_PROFILE_STATS, true);
 	                System.out.println("MISS REDIS CACHE profileTotalStatistics, query database");
 	            } else {
 	                // schedule async background refresh if TTL is low
-	                RedisCache.ttlAsync(key).thenAccept(ttl -> {
+	                RedisCache.ttlAsync(key, ttl -> {
 	                    if (ttl < TIME_TO_UPDATE_CACHE) {
 	                        CompletableFuture.runAsync(() -> {
 	                            List<StatisticCollector> newStats = Analytics360DaoUtil.collectProfileTotalStatistics();

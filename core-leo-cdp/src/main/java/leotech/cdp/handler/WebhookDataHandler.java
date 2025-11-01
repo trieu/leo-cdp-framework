@@ -27,34 +27,28 @@ import rfx.core.util.StringUtil;
  */
 public final class WebhookDataHandler {
 
-	public static final String PREFIX_WEBHOOK  = "/webhook";
+	public static final String PREFIX_WEBHOOK = "/webhook";
 	public static final String THE_BODY_IN_HTTP_IS_EMPTY = "The body in HTTP is empty";
 	public static final String OK = "ok";
 	public static final String INVALID_ACCESS_TOKEN_VALUE = "INVALID_ACCESS_TOKEN_VALUE";
 	public static final String DEFAULT_RESULT = "Observer Http Webhook Handler of " + DEFAULT_RESPONSE_TEXT;
 
 	public final static boolean process(RoutingContext context, HttpServerRequest req, String urlPath,
-			MultiMap reqHeaders, MultiMap params, HttpServerResponse resp, MultiMap outHeaders, DeviceInfo device, String origin) {
-		
+			MultiMap reqHeaders, MultiMap params, HttpServerResponse resp, MultiMap outHeaders, DeviceInfo device,
+			String origin) {
 
 		// In LEO CDP, the ACCESS_TOKEN_KEY is observerId
-		String observerId = HttpWebParamUtil.getString(params, HttpParamKey.ACCESS_TOKEN_KEY, EventObserver.DEFAULT_EVENT_OBSERVER_ID);
+		String observerId = HttpWebParamUtil.getString(params, HttpParamKey.ACCESS_TOKEN_KEY,
+				EventObserver.DEFAULT_EVENT_OBSERVER_ID);
 		EventObserver observer = EventObserverManagement.getById(observerId);
-		
-		// ZALO 
-		if( urlPath.startsWith(ZaloWebhookHandler.ZALO) ) {
+
+		// ZALO
+		if (urlPath.startsWith(ZaloWebhookHandler.ZALO)) {
 			return ZaloWebhookHandler.verify(urlPath, params, resp, outHeaders);
-		}
-		// FACEBOOK
-		else if(urlPath.startsWith(FacebookWebhookHandler.FACEBOOK) ) {
-			return FacebookWebhookHandler.handle(observer, context, req, urlPath, reqHeaders, params, resp, outHeaders, origin);
-		}
-		// TODO add more
-		// DEFAULT WEBHOOK
-		else if(urlPath.startsWith(PREFIX_WEBHOOK))  {
+		} else if (urlPath.startsWith(PREFIX_WEBHOOK)) {
 			outHeaders.set(CONTENT_TYPE, BaseHttpHandler.CONTENT_TYPE_TEXT);
 			BaseHttpRouter.setCorsHeaders(outHeaders, origin);
-			
+
 			String tokenValue = HttpWebParamUtil.getString(params, HttpParamKey.ACCESS_TOKEN_VALUE);
 			boolean isValidToken = observer.getAccessTokens().getOrDefault(observerId, "").equals(tokenValue);
 			if (isValidToken) {
@@ -71,7 +65,7 @@ public final class WebhookDataHandler {
 				resp.end(INVALID_ACCESS_TOKEN_VALUE);
 			}
 		}
-		
+
 		return false;
 	}
 

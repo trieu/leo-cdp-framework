@@ -38,12 +38,12 @@ import rfx.core.util.StringUtil;
  *
  */
 public final class UploaderHttpRouter extends BaseHttpRouter {
-	
+
 	static Logger logger = LoggerFactory.getLogger(UploaderHttpRouter.class);
-	
+
 	static final String PROFILE = "profile";
 	static final String IMPORTER_PREFIX = "importer-";
-	
+
 	public static final String STATIC_BASE_URL = "//" + SystemMetaData.DOMAIN_STATIC_CDN;
 	public static final String UPLOADED_FILES_LOCATION = "/public/uploaded-files/";
 	static final boolean USE_LOCAL_STORAGE = SystemMetaData.USE_LOCAL_STORAGE;
@@ -54,7 +54,7 @@ public final class UploaderHttpRouter extends BaseHttpRouter {
 	}
 
 	@Override
-	public boolean handle() throws Exception {
+	public void handle() throws Exception {
 		HttpServerRequest req = context.request();
 		HttpServerResponse resp = context.response();
 		// ---------------------------------------------------------------------------------------------------
@@ -70,62 +70,57 @@ public final class UploaderHttpRouter extends BaseHttpRouter {
 		// BaseApiHandler.CONTENT_TYPE_JSON);
 		String userSession = StringUtil.safeString(reqHeaders.get(BaseWebRouter.HEADER_SESSION));
 		String uri = req.path();
-		
+
 		SystemUser loginUser = SecuredHttpDataHandler.initSystemUser(userSession, uri, req.params());
 
 		// CORS Header
 		BaseHttpRouter.setCorsHeaders(outHeaders, origin);
 
-		String httpMethod = req.rawMethod();			
+		String httpMethod = req.rawMethod();
 
 		if (HTTP_METHOD_POST.equalsIgnoreCase(httpMethod)) {
-			boolean ok = false;
 			if (loginUser != null) {
 				JsonDataPayload dataPayload = uploadHandler(loginUser, context, req, reqHeaders);
-				if(dataPayload != null) {
+				if (dataPayload != null) {
 					resp.setStatusCode(201).end(dataPayload.toString());
 				} else {
 					resp.setStatusCode(500).end("Error on uploading file");
 				}
-				ok = true;
 			} else {
 				resp.setStatusCode(504).end(JsonErrorPayload.NO_AUTHORIZATION.toString());
 			}
 			resp.close();
-			return ok;
 		} else {
 			outHeaders.set(CONNECTION, HttpTrackingUtil.HEADER_CONNECTION_CLOSE);
 			outHeaders.set(BaseWebRouter.POWERED_BY, BaseWebRouter.SERVER_VERSION);
 			outHeaders.set(CONTENT_TYPE, BaseHttpHandler.CONTENT_TYPE_JSON);
-			
+
 			// CORS Header
 			BaseHttpRouter.setCorsHeaders(outHeaders, origin);
 			if (HTTP_GET_OPTIONS.equalsIgnoreCase(httpMethod) || HTTP_METHOD_GET.equalsIgnoreCase(httpMethod)) {
-				resp.end("CDP Uploader_"+DEFAULT_RESPONSE_TEXT);
+				resp.end("CDP Uploader_" + DEFAULT_RESPONSE_TEXT);
 			}
 		}
-		return false;
 	}
 
-	
-	public static JsonDataPayload uploadHandler(SystemUser loginUser, RoutingContext context, HttpServerRequest request, MultiMap reqHeaders) {
+	public static JsonDataPayload uploadHandler(SystemUser loginUser, RoutingContext context, HttpServerRequest request,
+			MultiMap reqHeaders) {
 		String refObjClass = StringUtil.safeString(reqHeaders.get("refObjectClass"));
 		String refObjKey = StringUtil.safeString(reqHeaders.get("refObjectKey"));
 		logger.info("refObjKey " + refObjKey);
-		
-		if(USE_LOCAL_STORAGE || refObjKey.startsWith(IMPORTER_PREFIX)) {
+
+		if (USE_LOCAL_STORAGE || refObjKey.startsWith(IMPORTER_PREFIX)) {
 			return uploadUsingLocalStorage(loginUser, context, request, reqHeaders, refObjClass, refObjKey);
+		} else {
+			return uploadUsingCloudCdn(loginUser, context, request, reqHeaders, refObjClass, refObjKey);
 		}
-		else {
-			return uploadUsingCloudCdn(loginUser, context, request, reqHeaders, refObjClass, refObjKey );
-		}
-		
+
 	}
 
-	private static JsonDataPayload uploadUsingCloudCdn(SystemUser loginUser, 
-			RoutingContext context,HttpServerRequest request, MultiMap reqHeaders, String refObjClass, String refObjKey) {
+	private static JsonDataPayload uploadUsingCloudCdn(SystemUser loginUser, RoutingContext context,
+			HttpServerRequest request, MultiMap reqHeaders, String refObjClass, String refObjKey) {
 		JsonDataPayload dataPayload = null;
-		
+
 		if (SecuredHttpDataHandler.isDataOperator(loginUser)) {
 			FileUploaderData data = new FileUploaderData();
 			Set<FileUpload> fileUploads = context.fileUploads();
@@ -142,22 +137,21 @@ public final class UploaderHttpRouter extends BaseHttpRouter {
 				File finalUploadedFile = new File("." + fileLocalPath);
 				file.renameTo(finalUploadedFile);
 
-				// get the Cloud Storage 
-				// TODO 
+				// get the Cloud Storage
+				// TODO
 				FileApiResponse response = new FileApiResponse(200, finalUploadedFile.getPath(), "OK");
 				String fileUri = response.getFileUrl();
 
 				// delete the image saved in local ./public/uploaded-files
 				finalUploadedFile.delete();
 
-				if(StringUtil.isNotEmpty(fileUri)) {
+				if (StringUtil.isNotEmpty(fileUri)) {
 					data.setFileUrl(fileUri);
 
 					String owner = loginUser.getUserLogin();
-					
 
-					if(PROFILE.equals(refObjClass)) {
-						if(loginUser.canInsertData(Profile.class)) {
+					if (PROFILE.equals(refObjClass)) {
+						if (loginUser.canInsertData(Profile.class)) {
 							FileMetadata fileMetadata = new FileMetadata(owner, fileUri, name, refObjClass, refObjKey);
 							FileMetadataDaoUtil.save(fileMetadata);
 							dataPayload = new JsonDataPayload(request.uri(), data, true);
@@ -176,8 +170,7 @@ public final class UploaderHttpRouter extends BaseHttpRouter {
 					logger.info("uploadHandler.filename: " + name);
 					logger.info(" fileSize: " + size);
 					logger.info(" contentType: " + uploadedFile.contentType());
-				}
-				else {
+				} else {
 					logger.info(response.getMessage() + " StatusCode " + response.getStatusCode());
 					dataPayload = new JsonDataPayload(response.getMessage(), data, true);
 				}
@@ -185,7 +178,7 @@ public final class UploaderHttpRouter extends BaseHttpRouter {
 		}
 		return dataPayload;
 	}
-	
+
 	private static JsonDataPayload uploadUsingLocalStorage(SystemUser loginUser, RoutingContext context,
 			HttpServerRequest request, MultiMap reqHeaders, String refObjClass, String refObjKey) {
 		JsonDataPayload dataPayload = null;
@@ -199,18 +192,18 @@ public final class UploaderHttpRouter extends BaseHttpRouter {
 				String keyHint = size + uploadedFile.uploadedFileName() + System.currentTimeMillis();
 				String newFileName = HashUtil.sha1(keyHint);
 				String fileUri = UPLOADED_FILES_LOCATION + newFileName + "." + extension;
-				
+
 				data.setFileUrl(fileUri);
-				
+
 				// rename the uploaded file
 				File file = new File("./" + uploadedFile.uploadedFileName());
 				File finalUploadedFile = new File("." + fileUri);
 				file.renameTo(finalUploadedFile);
 
 				String owner = loginUser.getUserLogin();
-				
-				if(PROFILE.equals(refObjClass)) {
-					if(loginUser.canInsertData(Profile.class)) {
+
+				if (PROFILE.equals(refObjClass)) {
+					if (loginUser.canInsertData(Profile.class)) {
 						FileMetadata fileMetadata = new FileMetadata(owner, fileUri, name, refObjClass, refObjKey);
 						FileMetadataDaoUtil.save(fileMetadata);
 						dataPayload = new JsonDataPayload(request.uri(), data, true);
@@ -225,7 +218,7 @@ public final class UploaderHttpRouter extends BaseHttpRouter {
 					// ImageUtil.resize(path, path, percent);
 					dataPayload = new JsonDataPayload(request.uri(), data, true);
 				}
-				
+
 				logger.info("uploadHandler.filename: " + name);
 				logger.info(" fileSize: " + size);
 				logger.info(" contentType: " + uploadedFile.contentType());
