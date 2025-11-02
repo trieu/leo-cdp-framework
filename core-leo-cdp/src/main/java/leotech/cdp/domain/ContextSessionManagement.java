@@ -54,19 +54,24 @@ public final class ContextSessionManagement {
 	private static final int TTL_PROFILE_STATS = 3600 * 12; // 12 hours
 	private static final int TIME_TO_UPDATE_CACHE = TTL_PROFILE_STATS - 900;
 
-	// ------- BEGIN Cache Main Dashboard
+	// ------- BEGIN Cache Session
 
-	// ------- BEGIN Cache Main Dashboard
 	static final CacheLoader<String, ContextSession> cacheLoaderSessions = new CacheLoader<>() {
 		@Override
-		public ContextSession load(String visitorId) {
-			// TODO
-			return null;
+		public ContextSession load(String sessionKey) throws Exception {
+			try (Jedis jedis = jedisPool.getResource()) {
+				String json = jedis.get(sessionKey);
+				if (StringUtil.isNotEmpty(json)) {
+					return new Gson().fromJson(json, ContextSession.class);
+				}
+				// no Redis hit → return null so upper logic can handle recreation
+				return null;
+			}
 		}
 	};
 
 	static final LoadingCache<String, ContextSession> localCacheSessions = CacheBuilder.newBuilder()
-			.maximumSize(CACHE_POOL_SIZE).expireAfterWrite(60, TimeUnit.SECONDS).build(cacheLoaderSessions);
+			.maximumSize(CACHE_POOL_SIZE).expireAfterAccess(2, TimeUnit.MINUTES).build(cacheLoaderSessions);
 
 	static JedisPool jedisPool = RedisClientFactory.buildRedisPool("realtimeDataStats");
 
@@ -179,61 +184,67 @@ public final class ContextSessionManagement {
 
 		return ctxSession;
 	}
-	
-	
+
 	/**
-	 * get or create new context session for a profile
-	 * 
 	 * @param clientSessionKey
 	 * @param req
 	 * @param params
 	 * @param device
 	 * @return
 	 */
-	public static ContextSession get(final String clientSessionKey, HttpServerRequest req, MultiMap params,
-			DeviceInfo device) {
-		if (!device.isWebCrawler()) {
+	public static ContextSession get(final String clientSessionKey, HttpServerRequest req, MultiMap params, DeviceInfo device) {
 
-			RedisCommand<ContextSession> cmd = new RedisCommand<ContextSession>(jedisPool) {
-				@Override
-				protected ContextSession build(Jedis jedis) throws JedisException {
-					String json = null;
-					if (StringUtil.isNotEmpty(clientSessionKey)) {
-						json = jedis.get(clientSessionKey);
-					}
+		if (device.isWebCrawler())
+			return null;
 
-					// the session is expired, so create a new one and commit to database
-					DateTime dateTime = new DateTime();
-					String dateTimeKey = ContextSession.getSessionDateTimeKey(dateTime);
-					String ip = HttpWebParamUtil.getRemoteIP(req);
-					ContextSession ctxSession = null;
+		try {
+			// 1. Fast path: try local cache
+			if (StringUtil.isNotEmpty(clientSessionKey)) {
+				ContextSession cached = localCacheSessions.getIfPresent(clientSessionKey);
+				if (cached != null)
+					return cached;
+			}
 
-					if (StringUtil.isEmpty(json)) {
-						// the session is expired, so create a new one and commit to database
-						ctxSession = createWebContextSession(ip, params, device, dateTime, dateTimeKey);
+			// 2. Use the LoadingCache, which tries Redis next
+			ContextSession ctxSession = null;
+			if (StringUtil.isNotEmpty(clientSessionKey)) {
+				ctxSession = localCacheSessions.get(clientSessionKey);
+			}
 
-						if (ctxSession != null) {
-							String newSessionKey = ctxSession.getSessionKey();
-							String sessionJson = new Gson().toJson(ctxSession);
+			// 3. If still null (not in Redis or expired), create new
+			if (ctxSession == null) {
+				DateTime dateTime = new DateTime();
+				String dateTimeKey = ContextSession.getSessionDateTimeKey(dateTime);
+				String ip = HttpWebParamUtil.getRemoteIP(req);
 
-							jedis.set(newSessionKey, sessionJson);
-							jedis.expire(newSessionKey, AFTER_30_MINUTES);
+				ctxSession = createWebContextSession(ip, params, device, dateTime, dateTimeKey);
+				if (ctxSession != null) {
+					// Update Redis asynchronously
+					final ContextSession finalSession = ctxSession;
+					new RedisCommand<Void>(jedisPool) {
+						@Override
+						protected Void build(Jedis jedis) throws JedisException {
+							String json = new Gson().toJson(finalSession);
+							Pipeline p = jedis.pipelined();
+							p.set(finalSession.getSessionKey(), json);
+							p.expire(finalSession.getSessionKey(), AFTER_30_MINUTES);
+							p.sync();
+							return null;
 						}
-					} else {
-						// get from database for event recording
-						ctxSession = new Gson().fromJson(json, ContextSession.class);
+					}.executeAsync();
 
-					}
-					return ctxSession;
+					// Update local cache
+					localCacheSessions.put(finalSession.getSessionKey(), finalSession);
 				}
-			};
+			}
 
-			return cmd.execute();
-
+			return ctxSession;
+		} catch (Exception e) {
+			System.err.println("ContextSessionManagement.get failed: " + e.getMessage());
+			e.printStackTrace();
+			return null;
 		}
-		return null;
 	}
-	
 
 	/**
 	 * @param req
@@ -289,8 +300,6 @@ public final class ContextSessionManagement {
 		});
 		srcProfile.clearContextSessionKeys();
 	}
-
-
 
 	/**
 	 * @param req
