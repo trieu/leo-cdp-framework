@@ -5,9 +5,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import org.joda.time.DateTime;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.gson.Gson;
 
 import io.vertx.core.MultiMap;
@@ -45,7 +49,62 @@ public final class ContextSessionManagement {
 
 	public static final int AFTER_30_MINUTES = 1800;
 
+	private static final int CACHE_POOL_SIZE = 2000000;
+	private static final int TEN_MINUTES = 2;
+	private static final int TTL_PROFILE_STATS = 3600 * 12; // 12 hours
+	private static final int TIME_TO_UPDATE_CACHE = TTL_PROFILE_STATS - 900;
+
+	// ------- BEGIN Cache Main Dashboard
+
+	// ------- BEGIN Cache Main Dashboard
+	static final CacheLoader<String, ContextSession> cacheLoaderSessions = new CacheLoader<>() {
+		@Override
+		public ContextSession load(String visitorId) {
+			// TODO
+			return null;
+		}
+	};
+
+	static final LoadingCache<String, ContextSession> localCacheSessions = CacheBuilder.newBuilder()
+			.maximumSize(CACHE_POOL_SIZE).expireAfterWrite(60, TimeUnit.SECONDS).build(cacheLoaderSessions);
+
 	static JedisPool jedisPool = RedisClientFactory.buildRedisPool("realtimeDataStats");
+
+	/**
+	 * @param req
+	 * @param params
+	 * @param device
+	 * @return
+	 */
+	public static ContextSession checkAndCreate(HttpServerRequest req, MultiMap params, DeviceInfo device) {
+
+		DateTime dateTime = new DateTime();
+		String dateTimeKey = ContextSession.getSessionDateTimeKey(dateTime);
+
+		// create a new one and commit to database
+		String ip = HttpWebParamUtil.getRemoteIP(req);
+		final ContextSession ctxSession = createWebContextSession(ip, params, device, dateTime, dateTimeKey);
+
+		if (ctxSession != null) {
+			new RedisCommand<Void>(jedisPool) {
+				@Override
+				protected Void build(Jedis jedis) throws JedisException {
+
+					String newSessionKey = ctxSession.getSessionKey();
+					String sessionJson = new Gson().toJson(ctxSession);
+
+					Pipeline p = jedis.pipelined();
+					p.set(newSessionKey, sessionJson);
+					p.expire(newSessionKey, AFTER_30_MINUTES);
+					p.sync();
+
+					return null;
+				}
+			}.executeAsync();
+		}
+
+		return ctxSession;
+	}
 
 	/**
 	 * @param sourceIP
@@ -120,6 +179,61 @@ public final class ContextSessionManagement {
 
 		return ctxSession;
 	}
+	
+	
+	/**
+	 * get or create new context session for a profile
+	 * 
+	 * @param clientSessionKey
+	 * @param req
+	 * @param params
+	 * @param device
+	 * @return
+	 */
+	public static ContextSession get(final String clientSessionKey, HttpServerRequest req, MultiMap params,
+			DeviceInfo device) {
+		if (!device.isWebCrawler()) {
+
+			RedisCommand<ContextSession> cmd = new RedisCommand<ContextSession>(jedisPool) {
+				@Override
+				protected ContextSession build(Jedis jedis) throws JedisException {
+					String json = null;
+					if (StringUtil.isNotEmpty(clientSessionKey)) {
+						json = jedis.get(clientSessionKey);
+					}
+
+					// the session is expired, so create a new one and commit to database
+					DateTime dateTime = new DateTime();
+					String dateTimeKey = ContextSession.getSessionDateTimeKey(dateTime);
+					String ip = HttpWebParamUtil.getRemoteIP(req);
+					ContextSession ctxSession = null;
+
+					if (StringUtil.isEmpty(json)) {
+						// the session is expired, so create a new one and commit to database
+						ctxSession = createWebContextSession(ip, params, device, dateTime, dateTimeKey);
+
+						if (ctxSession != null) {
+							String newSessionKey = ctxSession.getSessionKey();
+							String sessionJson = new Gson().toJson(ctxSession);
+
+							jedis.set(newSessionKey, sessionJson);
+							jedis.expire(newSessionKey, AFTER_30_MINUTES);
+						}
+					} else {
+						// get from database for event recording
+						ctxSession = new Gson().fromJson(json, ContextSession.class);
+
+					}
+					return ctxSession;
+				}
+			};
+
+			return cmd.execute();
+
+		}
+		return null;
+	}
+	
 
 	/**
 	 * @param req
@@ -176,94 +290,7 @@ public final class ContextSessionManagement {
 		srcProfile.clearContextSessionKeys();
 	}
 
-	/**
-	 * get or create new context session for a profile
-	 * 
-	 * @param clientSessionKey
-	 * @param req
-	 * @param params
-	 * @param device
-	 * @return
-	 */
-	public static ContextSession get(final String clientSessionKey, HttpServerRequest req, MultiMap params,
-			DeviceInfo device) {
-		if (!device.isWebCrawler()) {
 
-			RedisCommand<ContextSession> cmd = new RedisCommand<ContextSession>(jedisPool) {
-				@Override
-				protected ContextSession build(Jedis jedis) throws JedisException {
-					String json = null;
-					if (StringUtil.isNotEmpty(clientSessionKey)) {
-						json = jedis.get(clientSessionKey);
-					}
-
-					// the session is expired, so create a new one and commit to database
-					DateTime dateTime = new DateTime();
-					String dateTimeKey = ContextSession.getSessionDateTimeKey(dateTime);
-					String ip = HttpWebParamUtil.getRemoteIP(req);
-					ContextSession ctxSession = null;
-
-					if (StringUtil.isEmpty(json)) {
-						// the session is expired, so create a new one and commit to database
-						ctxSession = createWebContextSession(ip, params, device, dateTime, dateTimeKey);
-
-						if (ctxSession != null) {
-							String newSessionKey = ctxSession.getSessionKey();
-							String sessionJson = new Gson().toJson(ctxSession);
-
-							jedis.set(newSessionKey, sessionJson);
-							jedis.expire(newSessionKey, AFTER_30_MINUTES);
-						}
-					} else {
-						// get from database for event recording
-						ctxSession = new Gson().fromJson(json, ContextSession.class);
-
-					}
-					return ctxSession;
-				}
-			};
-
-			return cmd.execute();
-
-		}
-		return null;
-	}
-
-	/**
-	 * @param req
-	 * @param params
-	 * @param device
-	 * @return
-	 */
-	public static ContextSession checkAndCreate(HttpServerRequest req, MultiMap params, DeviceInfo device) {
-
-		DateTime dateTime = new DateTime();
-		String dateTimeKey = ContextSession.getSessionDateTimeKey(dateTime);
-
-		// create a new one and commit to database
-		String ip = HttpWebParamUtil.getRemoteIP(req);
-		final ContextSession ctxSession = createWebContextSession(ip, params, device, dateTime, dateTimeKey);
-
-		if (ctxSession != null) {
-			new RedisCommand<Void>(jedisPool) {
-				@Override
-				protected Void build(Jedis jedis) throws JedisException {
-
-					String newSessionKey = ctxSession.getSessionKey();
-					String sessionJson = new Gson().toJson(ctxSession);
-
-					Pipeline p = jedis.pipelined();
-					p.set(newSessionKey, sessionJson);
-					p.expire(newSessionKey, AFTER_30_MINUTES);
-					p.sync();
-
-					return null;
-				}
-			}.executeAsync();
-		}
-
-		return ctxSession;
-	}
 
 	/**
 	 * @param req
