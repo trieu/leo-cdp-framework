@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import com.arangodb.ArangoCursor;
@@ -188,24 +190,31 @@ public class ArangoDbCommand<T> {
 	 * @return
 	 */
 	public T getSingleResult() {
-		ArangoCursor<T> cursor = null;
-		T obj = null;
-		try {
-			cursor = arangoDb.query(aql, bindVars, null, type);
-			if (cursor.hasNext()) {
-				obj = cursor.stream().findFirst().get();
-				if (callback != null && obj != null) {
-					obj = callback.apply(obj);
-				}
-			}
-		} catch (Exception e) {
-			System.out.println("DEBUG ==> {AQL} "+aql);
-			handleException(e);
-		} finally {
-			closeArangoCursor(cursor);
-		}
-		return obj;
+	    ArangoCursor<T> cursor = null;
+	    T obj = null;
+
+	    try {
+	        cursor = arangoDb.query(aql, bindVars, null, type);
+	        if (cursor != null && cursor.hasNext()) {
+	            // Filter out null values to avoid Optional.of(null)
+	            Optional<T> findFirst = cursor.stream()
+	                                          .filter(Objects::nonNull)
+	                                          .findFirst();
+	            if (callback != null && findFirst.isPresent()) {
+	                obj = callback.apply(findFirst.get());
+	            } else if (findFirst.isPresent()) {
+	                obj = findFirst.get();
+	            }
+	        }
+	    } catch (Exception e) {
+	        System.out.println("DEBUG ==> {AQL} " + aql);
+	        handleException(e);
+	    } finally {
+	        closeArangoCursor(cursor);
+	    }
+	    return obj;
 	}
+
 
 	public void update() {
 		try {

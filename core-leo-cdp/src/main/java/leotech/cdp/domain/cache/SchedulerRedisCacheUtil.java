@@ -3,8 +3,8 @@ package leotech.cdp.domain.cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import leotech.system.util.RedisClient;
-import leotech.system.util.RedisClient.RedisPubSubCallback;
+import leotech.system.util.RedisPubSubClient;
+import leotech.system.util.RedisPubSubClient.RedisPubSubCallback;
 import redis.clients.jedis.JedisPool;
 import rfx.core.nosql.jedis.RedisClientFactory;
 import rfx.core.util.Utils;
@@ -33,7 +33,7 @@ public final class SchedulerRedisCacheUtil {
 
 	public final static void start(String workerName) {
 		Utils.sleep(3000);
-		RedisClient.commandSubscribe(workerName, redisPubSubCallback);
+		RedisPubSubClient.subscribeAsync(workerName, redisPubSubCallback);
 	}
 
 	final static void doJob(String jobName) {

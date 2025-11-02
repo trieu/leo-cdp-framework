@@ -5,8 +5,8 @@ import org.slf4j.LoggerFactory;
 
 import leotech.cdp.domain.EventMetricManagement;
 import leotech.cdp.domain.EventObserverManagement;
-import leotech.system.util.RedisClient;
-import leotech.system.util.RedisClient.RedisPubSubCallback;
+import leotech.system.util.RedisPubSubClient;
+import leotech.system.util.RedisPubSubClient.RedisPubSubCallback;
 import leotech.system.util.TaskRunner;
 import rfx.core.util.Utils;
 
@@ -53,7 +53,7 @@ public final class ObserverRedisCacheUtil {
 		TaskRunner.run(() -> {
 			Utils.sleep(4000);
 			
-			RedisClient.commandSubscribe(channelName, redisPubSubCallback);
+			RedisPubSubClient.subscribeAsync(channelName, redisPubSubCallback);
 		});
 	}
 

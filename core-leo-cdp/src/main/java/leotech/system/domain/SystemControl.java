@@ -13,7 +13,7 @@ import leotech.cdp.domain.JourneyMapManagement;
 import leotech.cdp.domain.schema.JourneyFlowSchema;
 import leotech.system.dao.SystemUserDaoUtil;
 import leotech.system.model.SystemUser;
-import leotech.system.util.RedisClient;
+import leotech.system.util.RedisPubSubClient;
 import leotech.system.util.TaskRunner;
 import leotech.system.util.database.InitDatabaseSchema;
 import leotech.system.version.SystemMetaData;
@@ -156,7 +156,7 @@ public final class SystemControl {
 		TaskRunner.timerSetScheduledJob(new ScheduledJob() {
 			@Override
 			public void doTheJob() {
-				RedisClient.dequeue(MAIN_CDP_QUEUE, rs->{
+				RedisPubSubClient.dequeue(MAIN_CDP_QUEUE, rs->{
 					if(UPGRADE_SYSTEM.equals(rs)) {
 						runUpdateShellScript();
 					}

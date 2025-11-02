@@ -3,8 +3,8 @@ package leotech.cdp.domain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import leotech.system.util.RedisClient;
-import leotech.system.util.RedisClient.RedisPubSubCallback;
+import leotech.system.util.RedisPubSubClient;
+import leotech.system.util.RedisPubSubClient.RedisPubSubCallback;
 import leotech.system.util.TaskRunner;
 import rfx.core.util.Utils;
 
@@ -44,7 +44,7 @@ public final class DataImporterManagement {
 		
 		TaskRunner.run(() -> {
 			Utils.sleep(1000);
-			RedisClient.commandSubscribe(channelName, redisPubSubCallback);
+			RedisPubSubClient.subscribeAsync(channelName, redisPubSubCallback);
 		});
 	}
 

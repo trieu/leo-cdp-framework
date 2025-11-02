@@ -3,7 +3,7 @@ package test.util;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import leotech.system.util.RedisClient;
+import leotech.system.util.RedisPubSubClient;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.exceptions.JedisException;
@@ -36,25 +36,25 @@ public class TestQueue {
             protected Void build(Jedis jedis) throws JedisException {
                 String segmentId = "segment1";
 
-                RedisClient.enqueue(segmentId, "job1", rs -> {
+                RedisPubSubClient.enqueue(segmentId, "job1", rs -> {
                     System.out.println(ts() + "Enqueued job1: " + rs);
                     latch.countDown();
                 });
 
-                RedisClient.enqueue(segmentId, "job2", rs -> {
+                RedisPubSubClient.enqueue(segmentId, "job2", rs -> {
                     System.out.println(ts() + "Enqueued job2: " + rs);
                     latch.countDown();
                 });
 
-                RedisClient.enqueue(segmentId, "job3", rs -> {
+                RedisPubSubClient.enqueue(segmentId, "job3", rs -> {
                     System.out.println(ts() + "Enqueued job3: " + rs);
                     latch.countDown();
                 });
 
-                RedisClient.dequeue(segmentId, rs1 -> {
+                RedisPubSubClient.dequeue(segmentId, rs1 -> {
                     if (rs1 != null) {
                         System.out.println(ts() + "Dequeued: " + rs1);
-                        RedisClient.dequeue(segmentId, rs2 -> {
+                        RedisPubSubClient.dequeue(segmentId, rs2 -> {
                             if (rs2 != null) {
                                 System.out.println(ts() + "Dequeued next: " + rs2);
                             } else {

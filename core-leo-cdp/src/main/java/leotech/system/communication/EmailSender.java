@@ -14,7 +14,7 @@ import org.apache.commons.validator.routines.EmailValidator;
 
 import leotech.cdp.model.marketing.EmailMessage;
 import leotech.system.config.ActivationChannelConfigs;
-import leotech.system.util.RedisClient;
+import leotech.system.util.RedisPubSubClient;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.exceptions.JedisException;
@@ -42,7 +42,7 @@ public final class EmailSender {
 	private static final String EMAIL_CONTENT_TEXT_HTML = "text/html";
 
 	protected static final class EmailSenderQueue {
-		final public static JedisPool jedisPool = RedisClientFactory.buildRedisPool(RedisClient.PUB_SUB_QUEUE_REDIS);
+		final public static JedisPool jedisPool = RedisClientFactory.buildRedisPool(RedisPubSubClient.PUB_SUB_QUEUE_REDIS);
 		static String channel = "leocdp_email_queue";
 
 		public static void publishToRedisPubSubQueue(EmailMessage emailMsg) {
