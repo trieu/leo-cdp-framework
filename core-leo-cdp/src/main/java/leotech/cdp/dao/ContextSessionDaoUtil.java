@@ -4,6 +4,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import com.arangodb.ArangoCollection;
 import com.arangodb.ArangoDBException;
@@ -11,9 +13,9 @@ import com.arangodb.ArangoDatabase;
 
 import leotech.cdp.model.analytics.ContextSession;
 import leotech.system.config.AqlTemplate;
-import leotech.system.util.TaskRunner;
 import leotech.system.util.database.ArangoDbCommand;
 import leotech.system.util.database.ArangoDbUtil;
+import leotech.system.version.SystemMetaData;
 
 /**
  * @author tantrieuf31
@@ -26,8 +28,9 @@ public final class ContextSessionDaoUtil extends AbstractCdpDatabaseUtil {
 	static final String AQL_GET_CONTEXT_SESSION_BY_KEY = AqlTemplate.get("AQL_GET_CONTEXT_SESSION_BY_KEY");
 	static final String AQL_UPDATE_CONTEXT_SESSION_AFTER_MERGE = AqlTemplate.get("AQL_UPDATE_CONTEXT_SESSION_AFTER_MERGE");
 	
-	
 	static final String AQL_FIND_KEY_AQL = ArangoDbUtil.contentFindKeyAql(ContextSession.COLLECTION_NAME);
+	
+	static ExecutorService executorService = Executors.newFixedThreadPool(SystemMetaData.NUMBER_CORE_CPU);
 
 	/**
 	 * @param s
@@ -35,7 +38,7 @@ public final class ContextSessionDaoUtil extends AbstractCdpDatabaseUtil {
 	 */
 	public static ContextSession create(ContextSession s) {
 		if (s.dataValidation()) {
-			TaskRunner.run(() -> {
+			executorService.execute(() -> {
 				ArangoCollection col = s.getDbCollection();
 				if (col != null) {
 					try {
@@ -58,9 +61,8 @@ public final class ContextSessionDaoUtil extends AbstractCdpDatabaseUtil {
 		if (s.dataValidation()) {
 			ArangoCollection col = s.getDbCollection();
 			if (col != null) {
-				TaskRunner.run(() -> {
+				executorService.execute(() -> {
 					try {
-						//String _key = ArangoDbUtil.findKey(AQL_FIND_KEY_AQL, "id", id);
 						s.setUpdatedAt(new Date());
 						col.updateDocument(s.getSessionKey(), s, getUpdateOptions());
 					} catch (ArangoDBException e) {

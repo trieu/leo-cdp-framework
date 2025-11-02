@@ -29,8 +29,6 @@ import rfx.core.util.StringUtil;
  * @author @tantrieuf31
  */
 public final class ObserverHttpPostHandler {
-	
-
 
 	/**
 	 * HTTP Method Post Handler
@@ -46,14 +44,14 @@ public final class ObserverHttpPostHandler {
 	 * @param clientSessionKey
 	 * @return
 	 */
-	public final static boolean process(RoutingContext context, HttpServerRequest req, String urlPath, MultiMap reqHeaders, MultiMap params, HttpServerResponse resp,
-			MultiMap outHeaders, DeviceInfo device, String origin) {
+	public final static void process(RoutingContext context, HttpServerRequest req, String urlPath, MultiMap reqHeaders,
+			MultiMap params, HttpServerResponse resp, MultiMap outHeaders, DeviceInfo device, String origin) {
 		String eventName = StringUtil.safeString(params.get(HttpParamKey.EVENT_METRIC_NAME)).toLowerCase();
 		String ctxSessionKey = StringUtil.safeString(params.get(HttpParamKey.CTX_SESSION_KEY));
-		
+
 		outHeaders.set(CONTENT_TYPE, BaseHttpHandler.CONTENT_TYPE_JSON);
 		BaseHttpRouter.setCorsHeaders(outHeaders, origin);
-		
+
 		if (urlPath.equalsIgnoreCase(PREFIX_EVENT_ACTION)) {
 			// synch ContextSession with event tracking
 			ContextSession ctxSession = ContextSessionManagement.get(ctxSessionKey, req, params, device);
@@ -65,19 +63,18 @@ public final class ObserverHttpPostHandler {
 
 				// event-conversion(add_to_cart|submit_form|checkout|join,sessionKey,visitorId)
 				eventId = EventObserverUtil.recordActionEvent(req, params, device, ctxSession, eventName);
-				if(StringUtil.isNotEmpty(eventId)) {
+				if (StringUtil.isNotEmpty(eventId)) {
 					status = 200;
 				}
-			}
-			else {
+			} else {
 				// invalid session info
-				resp.end(new Gson().toJson(new ObserverResponse("","", INVALID, status)));
+				resp.end(new Gson().toJson(new ObserverResponse("", "", INVALID, status)));
 			}
 			ObserverResponse.done(resp, status, visitorId, sessionKey, eventId);
-			return true;
+
 		}
-		// conversion event 
-		else if (urlPath.equalsIgnoreCase(PREFIX_EVENT_CONVERSION) ) {
+		// conversion event
+		else if (urlPath.equalsIgnoreCase(PREFIX_EVENT_CONVERSION)) {
 			// synch ContextSession with event tracking
 			ContextSession ctxSession = ContextSessionManagement.get(ctxSessionKey, req, params, device);
 			int status = 404;
@@ -91,13 +88,12 @@ public final class ObserverHttpPostHandler {
 				if (StringUtil.isNotEmpty(eventId)) {
 					status = 200;
 				}
-			}
-			else {
+			} else {
 				// invalid session info
-				resp.end(new Gson().toJson(new ObserverResponse("","", INVALID, status)));
+				resp.end(new Gson().toJson(new ObserverResponse("", "", INVALID, status)));
 			}
 			ObserverResponse.done(resp, status, visitorId, sessionKey, eventId);
-			return true;
+
 		}
 
 		// collect data from SURVEY and feedback data
@@ -114,16 +110,15 @@ public final class ObserverHttpPostHandler {
 				if (StringUtil.isNotEmpty(eventId)) {
 					status = 200;
 				}
-			} 
-			else {
+			} else {
 				//
 				resp.end(new Gson().toJson(new ObserverResponse("", "", INVALID, status)));
-				return false;
+
 			}
 			String visitorId = currentSession.getVisitorId();
 			String sessionKey = currentSession.getSessionKey();
 			ObserverResponse.done(resp, status, visitorId, sessionKey, eventId);
-			return true;
+
 		}
 
 		// collect data from LEO FORM JS
@@ -141,13 +136,13 @@ public final class ObserverHttpPostHandler {
 			}
 			DataResponse rs = new ObserverResponse(session.getVisitorId(), session.getSessionKey(), OK, status);
 			resp.end(new Gson().toJson(rs));
-			return true;
-		}		
-		
+
+		}
+
 		// no handler found
 		else {
 			resp.end("CDP Observer_" + DEFAULT_RESPONSE_TEXT);
-			return false;
+
 		}
 	}
 }

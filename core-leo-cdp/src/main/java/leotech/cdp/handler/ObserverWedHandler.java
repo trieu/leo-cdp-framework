@@ -18,6 +18,11 @@ import leotech.system.version.SystemMetaData;
 import leotech.web.model.WebData;
 import rfx.core.util.StringUtil;
 
+/**
+ * @author Trieu Nguyen
+ * @since 2025
+ *
+ */
 public final class ObserverWedHandler {
 	
 	

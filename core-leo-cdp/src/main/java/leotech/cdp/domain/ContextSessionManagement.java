@@ -5,7 +5,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Consumer;
 
 import org.joda.time.DateTime;
 
@@ -46,7 +45,7 @@ public final class ContextSessionManagement {
 
 	public static final int AFTER_30_MINUTES = 1800;
 
-	static JedisPool jedisPool =  RedisClientFactory.buildRedisPool("realtimeDataStats");
+	static JedisPool jedisPool = RedisClientFactory.buildRedisPool("realtimeDataStats");
 
 	/**
 	 * @param sourceIP
@@ -56,7 +55,8 @@ public final class ContextSessionManagement {
 	 * @param dateTimeKey
 	 * @return
 	 */
-	public final static ContextSession createWebContextSession(String sourceIP, MultiMap params, DeviceInfo deviceInfo, DateTime dateTime, String dateTimeKey) {
+	public final static ContextSession createWebContextSession(String sourceIP, MultiMap params, DeviceInfo deviceInfo,
+			DateTime dateTime, String dateTimeKey) {
 		// profile params
 		String visitorId = StringUtil.safeString(params.get(HttpParamKey.VISITOR_ID));
 		if (StringUtil.isEmpty(visitorId)) {
@@ -188,7 +188,7 @@ public final class ContextSessionManagement {
 	public static ContextSession get(final String clientSessionKey, HttpServerRequest req, MultiMap params,
 			DeviceInfo device) {
 		if (!device.isWebCrawler()) {
-			
+
 			RedisCommand<ContextSession> cmd = new RedisCommand<ContextSession>(jedisPool) {
 				@Override
 				protected ContextSession build(Jedis jedis) throws JedisException {
@@ -196,7 +196,7 @@ public final class ContextSessionManagement {
 					if (StringUtil.isNotEmpty(clientSessionKey)) {
 						json = jedis.get(clientSessionKey);
 					}
-					
+
 					// the session is expired, so create a new one and commit to database
 					DateTime dateTime = new DateTime();
 					String dateTimeKey = ContextSession.getSessionDateTimeKey(dateTime);
@@ -206,7 +206,7 @@ public final class ContextSessionManagement {
 					if (StringUtil.isEmpty(json)) {
 						// the session is expired, so create a new one and commit to database
 						ctxSession = createWebContextSession(ip, params, device, dateTime, dateTimeKey);
-			
+
 						if (ctxSession != null) {
 							String newSessionKey = ctxSession.getSessionKey();
 							String sessionJson = new Gson().toJson(ctxSession);
@@ -222,9 +222,9 @@ public final class ContextSessionManagement {
 					return ctxSession;
 				}
 			};
-			
+
 			return cmd.execute();
-		
+
 		}
 		return null;
 	}
@@ -235,20 +235,20 @@ public final class ContextSessionManagement {
 	 * @param device
 	 * @return
 	 */
-	public static void initSession(HttpServerRequest req, MultiMap params, DeviceInfo device, Consumer<ContextSession> callback) {
-		final String ip = HttpWebParamUtil.getRemoteIP(req);
-		RedisCommand<ContextSession> cmd = new RedisCommand<ContextSession>(jedisPool) {
-			@Override
-			protected ContextSession build(Jedis jedis) throws JedisException {
-				ContextSession ctxSession = null;
-				
-				DateTime dateTime = new DateTime();
-				String dateTimeKey = ContextSession.getSessionDateTimeKey(dateTime);
+	public static ContextSession checkAndCreate(HttpServerRequest req, MultiMap params, DeviceInfo device) {
 
-				// create a new one and commit to database
-				ctxSession = createWebContextSession(ip, params, device, dateTime, dateTimeKey);
-				
-				if(ctxSession != null) {
+		DateTime dateTime = new DateTime();
+		String dateTimeKey = ContextSession.getSessionDateTimeKey(dateTime);
+
+		// create a new one and commit to database
+		String ip = HttpWebParamUtil.getRemoteIP(req);
+		final ContextSession ctxSession = createWebContextSession(ip, params, device, dateTime, dateTimeKey);
+
+		if (ctxSession != null) {
+			new RedisCommand<Void>(jedisPool) {
+				@Override
+				protected Void build(Jedis jedis) throws JedisException {
+
 					String newSessionKey = ctxSession.getSessionKey();
 					String sessionJson = new Gson().toJson(ctxSession);
 
@@ -256,15 +256,13 @@ public final class ContextSessionManagement {
 					p.set(newSessionKey, sessionJson);
 					p.expire(newSessionKey, AFTER_30_MINUTES);
 					p.sync();
-				}
-				
-				return ctxSession;
-			}
-		};
 
-		cmd.executeAsync(callback, (e)->{
-			e.printStackTrace();
-		});
+					return null;
+				}
+			}.executeAsync();
+		}
+
+		return ctxSession;
 	}
 
 	/**
@@ -274,7 +272,8 @@ public final class ContextSessionManagement {
 	 * @param device
 	 * @return
 	 */
-	public static int updateProfileData(HttpServerRequest req, MultiMap params, ContextSession ctxSession,DeviceInfo device) {
+	public static int updateProfileData(HttpServerRequest req, MultiMap params, ContextSession ctxSession,
+			DeviceInfo device) {
 		String updatedProfileId = ctxSession.getProfileId();
 
 		String observerId = ctxSession.getObserverId();
@@ -297,8 +296,9 @@ public final class ContextSessionManagement {
 		Set<String> contentKeywords = extData.getOrDefault("contentKeywords", new HashSet<String>(0));
 		Set<String> productKeywords = extData.getOrDefault("productKeywords", new HashSet<String>(0));
 
-		Map<String, Object> profileData = HttpWebParamUtil.getHashMapFromRequestParams(formData, HttpParamKey.PROFILE_DATA);
-		
+		Map<String, Object> profileData = HttpWebParamUtil.getHashMapFromRequestParams(formData,
+				HttpParamKey.PROFILE_DATA);
+
 		String email = HttpWebParamUtil.getString(profileData, "email");
 		String phone = HttpWebParamUtil.getPhoneNumber(profileData, "phone");
 
@@ -319,7 +319,8 @@ public final class ContextSessionManagement {
 
 		Set<LearningCourse> learningCourses = HttpWebParamUtil.getLearningCourses(profileData);
 
-		Touchpoint srcTouchpoint = TouchpointManagement.getOrCreateNew(srcTouchpointName, TouchpointType.WEB_APP, srcTouchpointUrl);
+		Touchpoint srcTouchpoint = TouchpointManagement.getOrCreateNew(srcTouchpointName, TouchpointType.WEB_APP,
+				srcTouchpointUrl);
 
 		ProfileUpdateData profileUpdate = new ProfileUpdateData(updatedProfileId, loginId, loginProvider, firstName,
 				lastName, email, phone, genderStr, age, dateOfBirth, observerId, srcTouchpoint, sourceIP, usedDeviceId,

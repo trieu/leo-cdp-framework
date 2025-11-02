@@ -95,12 +95,15 @@ public final class ObserverHttpRouter extends BaseHttpRouter {
 			// WEBHOOK and Domain Verifier
 			boolean processed = WebhookDataHandler.process(this.context, req, urlPath, reqHeaders, params, resp, outHeaders, device, origin);
 			if(!processed) {
-				if(httpMethod.equalsIgnoreCase(HTTP_METHOD_GET)) {
-					ObserverHttpGetHandler.process(this.context, req, urlPath, reqHeaders, params, resp, outHeaders, device, origin);
-				} 
-				else if(httpMethod.equalsIgnoreCase(HTTP_METHOD_POST) || httpMethod.equalsIgnoreCase(HTTP_METHOD_PUT)) {
-					ObserverHttpPostHandler.process(this.context, req, urlPath, reqHeaders, params, resp, outHeaders, device, origin);
-				}
+				PROCESSORS.submit(()->{
+					if(httpMethod.equalsIgnoreCase(HTTP_METHOD_GET)) {
+						ObserverHttpGetHandler.process(this.context, req, urlPath, reqHeaders, params, resp, outHeaders, device, origin);
+					} 
+					else if(httpMethod.equalsIgnoreCase(HTTP_METHOD_POST) || httpMethod.equalsIgnoreCase(HTTP_METHOD_PUT)) {
+						ObserverHttpPostHandler.process(this.context, req, urlPath, reqHeaders, params, resp, outHeaders, device, origin);
+					}
+				});
+				return;
 			}
 			// no handler found
 			resp.end("CDP Observer_"+DEFAULT_RESPONSE_TEXT);

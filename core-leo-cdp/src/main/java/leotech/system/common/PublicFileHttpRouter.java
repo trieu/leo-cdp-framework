@@ -57,7 +57,6 @@ public final class PublicFileHttpRouter {
 			} 
 			else {
 				String pathname = "." + path.replaceAll("%20", " ");
-				System.out.println("PublicFileHttpRouter "+pathname);
 				
 				File file = new File(pathname);
 				if (file.isFile()) {
