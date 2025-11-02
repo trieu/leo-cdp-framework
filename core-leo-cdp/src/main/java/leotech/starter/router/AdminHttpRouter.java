@@ -77,223 +77,228 @@ public final class AdminHttpRouter extends BaseWebRouter {
 	}
 
 	@Override
-	public void handle() throws Exception {
+	public void process() throws Exception {
 		this.handle(this.context);
 	}
 
 	@Override
 	protected void callHttpPostHandler(HttpServerRequest req, String userSession, String uri, JsonObject paramJson, Consumer<JsonDataPayload> done) {
 		
-		JsonDataPayload payload = null;
-		try {			
-			
-			if (uri.startsWith(CDP_SYSTEM_CONTROL)) {
-				payload = new SystemControlHandler(this).httpPostHandler(userSession, uri, paramJson);
-			}
-			//////// Core System Management ///////
-			else if (uri.startsWith(SYSTEM_USER_PREFIX)) {
-				payload = new SystemUserLoginHandler(this).httpPostHandler(userSession, uri, paramJson);
-			}
-			//
-			else if (uri.startsWith(CDP_SYSTEM_CONFIG_PREFIX)) {
-				payload = new SystemConfigHandler(this).httpPostHandler(userSession, uri, paramJson);
+		PROCESSORS.submit(()->{
+			JsonDataPayload payload = null;
+			try {			
+				
+				if (uri.startsWith(CDP_SYSTEM_CONTROL)) {
+					payload = new SystemControlHandler(this).httpPostHandler(userSession, uri, paramJson);
+				}
+				//////// Core System Management ///////
+				else if (uri.startsWith(SYSTEM_USER_PREFIX)) {
+					payload = new SystemUserLoginHandler(this).httpPostHandler(userSession, uri, paramJson);
+				}
+				//
+				else if (uri.startsWith(CDP_SYSTEM_CONFIG_PREFIX)) {
+					payload = new SystemConfigHandler(this).httpPostHandler(userSession, uri, paramJson);
+				} 
+				
+				//////// Customer Data Platform ///////
+				//
+				else if (uri.startsWith(CDP_ANALYTICS_360_PREFIX)) {
+					payload = new Analytics360Handler(this).httpPostHandler(userSession, uri, paramJson);
+				}
+				//
+				else if (uri.startsWith(CDP_FUNNEL_PREFIX)) {
+					payload = new DataFunnelHandler(this).httpPostHandler(userSession, uri, paramJson);
+				}
+				//
+				else if(uri.startsWith(CDP_JOURNEY_MAP_PREFIX)) {
+					payload = new JourneyMapHandler(this).httpPostHandler(userSession, uri, paramJson);
+				}
+				//
+				else if(uri.startsWith(CDP_TOUCHPOINT_HUB_PREFIX)) {
+					payload = new TouchpointHubHandler(this).httpPostHandler(userSession, uri, paramJson);
+				}
+				//
+				else if(uri.startsWith(CDP_OBSERVER_PREFIX)) {
+					payload = new EventObserverHandler(this).httpPostHandler(userSession, uri, paramJson);
+				}
+				//
+				else if(uri.startsWith(CDP_EVENT_PREFIX)) {
+					payload = new EventDataHandler(this).httpPostHandler(userSession, uri, paramJson);
+				}
+				//
+				else if (uri.startsWith(CDP_TOUCHPOINT_PREFIX)) {
+					payload = new ProfileDataHandler(this).httpPostHandler(userSession, uri, paramJson);
+				}
+				//
+				else if (uri.startsWith(CDP_PROFILE_PREFIX)) {
+					payload = new ProfileDataHandler(this).httpPostHandler(userSession, uri, paramJson);
+				}
+				//
+				else if (uri.startsWith(CDP_SEGMENT_PREFIX)) {
+					payload = new SegmentDataHandler(this).httpPostHandler(userSession, uri, paramJson);
+				}
+				//
+				else if (uri.startsWith(CDP_ACCOUNT_PREFIX)) {
+					payload = new BusinessAccountHandler(this).httpPostHandler(userSession, uri, paramJson);
+				}
+				//
+				else if (uri.startsWith(CDP_CAMPAIGN_PREFIX)) {
+					payload = new CampaignHandler(this).httpPostHandler(userSession, uri, paramJson);
+				}
+				//
+				else if (uri.startsWith(CDP_AI_AGENT_PREFIX)) {
+					payload = new AgentHandler(this).httpPostHandler(userSession, uri, paramJson);
+				}
+				//
+				else if (uri.startsWith(CDP_CATEGORY_PREFIX)) {
+					payload = new AssetCategoryHandler(this).httpPostHandler(userSession, uri, paramJson);
+				}
+				//
+				else if (uri.startsWith(CDP_GROUP_PREFIX)) {
+					payload = new AssetGroupHandler(this).httpPostHandler(userSession, uri, paramJson);
+				}
+				//
+				else if (uri.startsWith(CDP_ITEM_PREFIX)) {
+					payload = new AssetItemHandler(this).httpPostHandler(userSession, uri, paramJson);
+				}
+				// to create or update profile
+				else if (uri.startsWith(API_PROFILE)) {
+					payload = new ProfileApiHandler().handlePost(req, uri, paramJson);
+				}
+				// to create a tracking event for specific profile
+				else if (uri.startsWith(API_EVENT)) {
+					payload = new EventApiHandler().handlePost(req, uri, paramJson);
+				}
+				// to save product item
+				else if (uri.startsWith(API_PRODUCT)) {
+					payload = new ProductApiHandler().handlePost(req, uri, paramJson);
+				}
+				// to create or update segment
+				else if (uri.startsWith(API_SEGMENT)) {
+					payload = new SegmentApiHandler().handlePost(req, uri, paramJson);
+				}
+				// to create or update system
+				else if (uri.startsWith(API_SYSTEM)) {
+					payload = new SystemApiHandler().handlePost(req, uri, paramJson);
+				}
 			} 
-			
-			//////// Customer Data Platform ///////
-			//
-			else if (uri.startsWith(CDP_ANALYTICS_360_PREFIX)) {
-				payload = new Analytics360Handler(this).httpPostHandler(userSession, uri, paramJson);
-			}
-			//
-			else if (uri.startsWith(CDP_FUNNEL_PREFIX)) {
-				payload = new DataFunnelHandler(this).httpPostHandler(userSession, uri, paramJson);
-			}
-			//
-			else if(uri.startsWith(CDP_JOURNEY_MAP_PREFIX)) {
-				payload = new JourneyMapHandler(this).httpPostHandler(userSession, uri, paramJson);
-			}
-			//
-			else if(uri.startsWith(CDP_TOUCHPOINT_HUB_PREFIX)) {
-				payload = new TouchpointHubHandler(this).httpPostHandler(userSession, uri, paramJson);
-			}
-			//
-			else if(uri.startsWith(CDP_OBSERVER_PREFIX)) {
-				payload = new EventObserverHandler(this).httpPostHandler(userSession, uri, paramJson);
-			}
-			//
-			else if(uri.startsWith(CDP_EVENT_PREFIX)) {
-				payload = new EventDataHandler(this).httpPostHandler(userSession, uri, paramJson);
-			}
-			//
-			else if (uri.startsWith(CDP_TOUCHPOINT_PREFIX)) {
-				payload = new ProfileDataHandler(this).httpPostHandler(userSession, uri, paramJson);
-			}
-			//
-			else if (uri.startsWith(CDP_PROFILE_PREFIX)) {
-				payload = new ProfileDataHandler(this).httpPostHandler(userSession, uri, paramJson);
-			}
-			//
-			else if (uri.startsWith(CDP_SEGMENT_PREFIX)) {
-				payload = new SegmentDataHandler(this).httpPostHandler(userSession, uri, paramJson);
-			}
-			//
-			else if (uri.startsWith(CDP_ACCOUNT_PREFIX)) {
-				payload = new BusinessAccountHandler(this).httpPostHandler(userSession, uri, paramJson);
-			}
-			//
-			else if (uri.startsWith(CDP_CAMPAIGN_PREFIX)) {
-				payload = new CampaignHandler(this).httpPostHandler(userSession, uri, paramJson);
-			}
-			//
-			else if (uri.startsWith(CDP_AI_AGENT_PREFIX)) {
-				payload = new AgentHandler(this).httpPostHandler(userSession, uri, paramJson);
-			}
-			//
-			else if (uri.startsWith(CDP_CATEGORY_PREFIX)) {
-				payload = new AssetCategoryHandler(this).httpPostHandler(userSession, uri, paramJson);
-			}
-			//
-			else if (uri.startsWith(CDP_GROUP_PREFIX)) {
-				payload = new AssetGroupHandler(this).httpPostHandler(userSession, uri, paramJson);
-			}
-			//
-			else if (uri.startsWith(CDP_ITEM_PREFIX)) {
-				payload = new AssetItemHandler(this).httpPostHandler(userSession, uri, paramJson);
-			}
-			// to create or update profile
-			else if (uri.startsWith(API_PROFILE)) {
-				payload = new ProfileApiHandler().handlePost(req, uri, paramJson);
-			}
-			// to create a tracking event for specific profile
-			else if (uri.startsWith(API_EVENT)) {
-				payload = new EventApiHandler().handlePost(req, uri, paramJson);
-			}
-			// to save product item
-			else if (uri.startsWith(API_PRODUCT)) {
-				payload = new ProductApiHandler().handlePost(req, uri, paramJson);
-			}
-			// to create or update segment
-			else if (uri.startsWith(API_SEGMENT)) {
-				payload = new SegmentApiHandler().handlePost(req, uri, paramJson);
-			}
-			// to create or update system
-			else if (uri.startsWith(API_SYSTEM)) {
-				payload = new SystemApiHandler().handlePost(req, uri, paramJson);
-			}
-		} 
-		catch (Throwable e) {
-			e.printStackTrace();
-			if (e instanceof IllegalArgumentException) {
-				payload = JsonDataPayload.fail(e.getMessage(), 507);
-			} else {
-				payload = JsonDataPayload.fail(e.getMessage(), 500);
-			}
-		} 
-		done.accept(payload);
+			catch (Throwable e) {
+				e.printStackTrace();
+				if (e instanceof IllegalArgumentException) {
+					payload = JsonDataPayload.fail(e.getMessage(), 507);
+				} else {
+					payload = JsonDataPayload.fail(e.getMessage(), 500);
+				}
+			} 
+			done.accept(payload);
+		});		
+		
 	}
 
 	@Override
 	protected void callHttpGetHandler(HttpServerRequest req, String userSession, String uri, MultiMap urlParams, Consumer<JsonDataPayload> done) {
-		JsonDataPayload payload = null;
-		try {
-			//////// Core System Management ///////
-			if (uri.startsWith(SYSTEM_USER_PREFIX)) {
-				payload = new SystemUserLoginHandler(this).httpGetHandler(userSession, uri, urlParams);
-			}
-			//
-			else if (uri.startsWith(CDP_SYSTEM_CONFIG_PREFIX)) {
-				payload = new SystemConfigHandler(this).httpGetHandler(userSession, uri, urlParams);
+		PROCESSORS.submit(()->{
+			JsonDataPayload payload = null;
+			try {
+				//////// Core System Management ///////
+				if (uri.startsWith(SYSTEM_USER_PREFIX)) {
+					payload = new SystemUserLoginHandler(this).httpGetHandler(userSession, uri, urlParams);
+				}
+				//
+				else if (uri.startsWith(CDP_SYSTEM_CONFIG_PREFIX)) {
+					payload = new SystemConfigHandler(this).httpGetHandler(userSession, uri, urlParams);
+				} 
+				//////// Customer Data Platform ///////
+				//
+				else if (uri.startsWith(CDP_ANALYTICS_360_PREFIX)) {
+					payload = new Analytics360Handler(this).httpGetHandler(userSession, uri, urlParams);
+				}
+				//
+				else if (uri.startsWith(CDP_FUNNEL_PREFIX)) {
+					payload = new DataFunnelHandler(this).httpGetHandler(userSession, uri, urlParams);
+				}
+				//
+				else if(uri.startsWith(CDP_JOURNEY_MAP_PREFIX)) {
+					payload = new JourneyMapHandler(this).httpGetHandler(userSession, uri, urlParams);
+				}
+				//
+				else if(uri.startsWith(CDP_TOUCHPOINT_HUB_PREFIX)) {
+					payload = new TouchpointHubHandler(this).httpGetHandler(userSession, uri, urlParams);
+				}
+				//
+				else if(uri.startsWith(CDP_OBSERVER_PREFIX)) {
+					payload = new EventObserverHandler(this).httpGetHandler(userSession, uri, urlParams);
+				}
+				//
+				else if(uri.startsWith(CDP_EVENT_PREFIX)) {
+					payload = new EventDataHandler(this).httpGetHandler(userSession, uri, urlParams);
+				}
+				//
+				else if (uri.startsWith(CDP_TOUCHPOINT_PREFIX)) {
+					payload = new ProfileDataHandler(this).httpGetHandler(userSession, uri, urlParams);
+				}
+				//
+				else if (uri.startsWith(CDP_PROFILE_PREFIX)) {
+					payload = new ProfileDataHandler(this).httpGetHandler(userSession, uri, urlParams);
+				}
+				//
+				else if (uri.startsWith(CDP_SEGMENT_PREFIX)) {
+					payload = new SegmentDataHandler(this).httpGetHandler(userSession, uri, urlParams);
+				}
+				//
+				else if (uri.startsWith(CDP_ACCOUNT_PREFIX)) {
+					payload = new BusinessAccountHandler(this).httpGetHandler(userSession, uri, urlParams);
+				}
+				//
+				else if (uri.startsWith(CDP_CAMPAIGN_PREFIX)) {
+					payload = new CampaignHandler(this).httpGetHandler(userSession, uri, urlParams);
+				}
+				//
+				else if (uri.startsWith(CDP_AI_AGENT_PREFIX)) {
+					payload = new AgentHandler(this).httpGetHandler(userSession, uri, urlParams);
+				}
+				//
+				else if (uri.startsWith(CDP_CATEGORY_PREFIX)) {
+					payload = new AssetCategoryHandler(this).httpGetHandler(userSession, uri, urlParams);
+				}
+				//
+				else if (uri.startsWith(CDP_GROUP_PREFIX)) {
+					payload = new AssetGroupHandler(this).httpGetHandler(userSession, uri, urlParams);
+				}
+				//
+				else if (uri.startsWith(CDP_ITEM_PREFIX)) {
+					payload = new AssetItemHandler(this).httpGetHandler(userSession, uri, urlParams);
+				}
+				
+				// ---------- API handler ----------
+				
+				// to create or update profile
+				else if (uri.startsWith(API_PROFILE)) {
+					payload = new ProfileApiHandler().handleGet(req, uri, urlParams);
+				}
+				// to create a tracking event for specific profile
+				else if (uri.startsWith(API_EVENT)) {
+					payload = new EventApiHandler().handleGet(req, uri, urlParams);
+				}
+				// to list product items
+				else if (uri.startsWith(API_PRODUCT)) {
+					payload = new ProductApiHandler().handleGet(req, uri, urlParams);
+				}
+				// to create or update profile
+				else if (uri.startsWith(API_SEGMENT)) {
+					payload = new SegmentApiHandler().handleGet(req, uri, urlParams);
+				}
+				// to create or update system
+				else if (uri.startsWith(API_SYSTEM)) {
+					payload = new SystemApiHandler().handleGet(req, uri, urlParams);
+				}
 			} 
-			//////// Customer Data Platform ///////
-			//
-			else if (uri.startsWith(CDP_ANALYTICS_360_PREFIX)) {
-				payload = new Analytics360Handler(this).httpGetHandler(userSession, uri, urlParams);
+			catch (Throwable e) {
+				e.printStackTrace();
+				payload = JsonDataPayload.fail(e.getMessage(), 500);
 			}
-			//
-			else if (uri.startsWith(CDP_FUNNEL_PREFIX)) {
-				payload = new DataFunnelHandler(this).httpGetHandler(userSession, uri, urlParams);
-			}
-			//
-			else if(uri.startsWith(CDP_JOURNEY_MAP_PREFIX)) {
-				payload = new JourneyMapHandler(this).httpGetHandler(userSession, uri, urlParams);
-			}
-			//
-			else if(uri.startsWith(CDP_TOUCHPOINT_HUB_PREFIX)) {
-				payload = new TouchpointHubHandler(this).httpGetHandler(userSession, uri, urlParams);
-			}
-			//
-			else if(uri.startsWith(CDP_OBSERVER_PREFIX)) {
-				payload = new EventObserverHandler(this).httpGetHandler(userSession, uri, urlParams);
-			}
-			//
-			else if(uri.startsWith(CDP_EVENT_PREFIX)) {
-				payload = new EventDataHandler(this).httpGetHandler(userSession, uri, urlParams);
-			}
-			//
-			else if (uri.startsWith(CDP_TOUCHPOINT_PREFIX)) {
-				payload = new ProfileDataHandler(this).httpGetHandler(userSession, uri, urlParams);
-			}
-			//
-			else if (uri.startsWith(CDP_PROFILE_PREFIX)) {
-				payload = new ProfileDataHandler(this).httpGetHandler(userSession, uri, urlParams);
-			}
-			//
-			else if (uri.startsWith(CDP_SEGMENT_PREFIX)) {
-				payload = new SegmentDataHandler(this).httpGetHandler(userSession, uri, urlParams);
-			}
-			//
-			else if (uri.startsWith(CDP_ACCOUNT_PREFIX)) {
-				payload = new BusinessAccountHandler(this).httpGetHandler(userSession, uri, urlParams);
-			}
-			//
-			else if (uri.startsWith(CDP_CAMPAIGN_PREFIX)) {
-				payload = new CampaignHandler(this).httpGetHandler(userSession, uri, urlParams);
-			}
-			//
-			else if (uri.startsWith(CDP_AI_AGENT_PREFIX)) {
-				payload = new AgentHandler(this).httpGetHandler(userSession, uri, urlParams);
-			}
-			//
-			else if (uri.startsWith(CDP_CATEGORY_PREFIX)) {
-				payload = new AssetCategoryHandler(this).httpGetHandler(userSession, uri, urlParams);
-			}
-			//
-			else if (uri.startsWith(CDP_GROUP_PREFIX)) {
-				payload = new AssetGroupHandler(this).httpGetHandler(userSession, uri, urlParams);
-			}
-			//
-			else if (uri.startsWith(CDP_ITEM_PREFIX)) {
-				payload = new AssetItemHandler(this).httpGetHandler(userSession, uri, urlParams);
-			}
-			
-			// ---------- API handler ----------
-			
-			// to create or update profile
-			else if (uri.startsWith(API_PROFILE)) {
-				payload = new ProfileApiHandler().handleGet(req, uri, urlParams);
-			}
-			// to create a tracking event for specific profile
-			else if (uri.startsWith(API_EVENT)) {
-				payload = new EventApiHandler().handleGet(req, uri, urlParams);
-			}
-			// to list product items
-			else if (uri.startsWith(API_PRODUCT)) {
-				payload = new ProductApiHandler().handleGet(req, uri, urlParams);
-			}
-			// to create or update profile
-			else if (uri.startsWith(API_SEGMENT)) {
-				payload = new SegmentApiHandler().handleGet(req, uri, urlParams);
-			}
-			// to create or update system
-			else if (uri.startsWith(API_SYSTEM)) {
-				payload = new SystemApiHandler().handleGet(req, uri, urlParams);
-			}
-		} 
-		catch (Throwable e) {
-			e.printStackTrace();
-			payload = JsonDataPayload.fail(e.getMessage(), 500);
-		}
-		done.accept(payload);
+			done.accept(payload);
+		});	
 	}
 	
 }

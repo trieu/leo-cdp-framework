@@ -2,8 +2,6 @@ package leotech.cdp.domain;
 
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,7 +9,6 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Sets;
 
 import leotech.cdp.dao.ProfileDaoUtil;
-import leotech.cdp.domain.cache.RedisCache;
 import leotech.cdp.model.customer.Profile;
 import leotech.cdp.model.customer.ProfileIdentity;
 import leotech.cdp.model.customer.ProfileSingleView;
@@ -106,58 +103,12 @@ public final class ProfileQueryManagement {
 	}
 	
 	public static long countTotalOfProfiles() {
-	    try {
-	        return countTotalOfProfilesAsync().get(2, TimeUnit.SECONDS);
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	        return ProfileDaoUtil.countTotalProfiles();
-	    }
+		long dbCount = ProfileDaoUtil.countTotalProfiles();
+		return dbCount;
 	}
 
 
-	/**
-	 * Get total raw profiles asynchronously.
-	 * 
-	 * Works safely in Vert.x event loop using CompletableFuture.
-	 */
-	public static CompletableFuture<Long> countTotalOfProfilesAsync() {
-	    final String key = CACHE_COUNT_TOTAL_PROFILE;
 
-	    // Step 1: Try to get from Redis asynchronously
-	    return RedisCache.getCacheAsync(key)
-	        .thenApply(json -> {
-	            if (StringUtil.isNotEmpty(json)) {
-	                long cachedValue = StringUtil.safeParseLong(json);
-	                if (cachedValue > 0) {
-	                    return cachedValue;
-	                }
-	            }
-	            // Redis miss → mark as needing DB fetch
-	            return 0L;
-	        })
-	        // Step 2: If no Redis value, query DB in same async chain
-	        .thenCompose(totalProfile -> {
-	            if (totalProfile > 0) {
-	                // Return cached value
-	                return CompletableFuture.completedFuture(totalProfile);
-	            } else {
-	                // Run DB call in a background thread (off event loop)
-	                return CompletableFuture.supplyAsync(() -> {
-	                    long dbCount = ProfileDaoUtil.countTotalProfiles();
-	                    // Async update Redis (fire and forget)
-	                    RedisCache.setCacheWithExpiryAsync(key, dbCount, 90, false);
-	                    return dbCount;
-	                });
-	            }
-	        })
-	        .exceptionally(e -> {
-	            e.printStackTrace();
-	            // fallback to direct DB call if Redis completely fails
-	            long dbCount = ProfileDaoUtil.countTotalProfiles();
-	            RedisCache.setCacheWithExpiryAsync(key, dbCount, 90, false);
-	            return dbCount;
-	        });
-	}
 
 
 	/**

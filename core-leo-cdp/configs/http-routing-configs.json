@@ -58,16 +58,6 @@
 			"classNameHttpRouter": "leotech.starter.router.ObserverHttpRouter",
 			"bodyHandlerEnabled": true,
 			"sockJsHandlerEnabled": false
-		},
-		
-		" LOCAL -  DeliveryHttpRouter ------------" : {"notes" : "Default CDP - Data Delivery" },
-		"localLeoDeliveryWorker": {
-			"name": "DeliveryHttpRouter-0",
-			"host": "cdpsys.observer",
-			"port": 9050,
-			"classNameHttpRouter": "leotech.starter.router.DeliveryHttpRouter",
-			"bodyHandlerEnabled": true,
-			"sockJsHandlerEnabled": false
 		}
 		
 	}

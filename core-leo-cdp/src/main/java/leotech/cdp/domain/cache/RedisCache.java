@@ -94,7 +94,7 @@ public class RedisCache {
     // SYNC METHODS (for internal or testing use)
     // -------------------------------------------------------------------------
 
-    protected static void setCacheWithExpiry(String key, Object value, int expirySeconds, boolean valueIsJson) {
+    public static void setCacheWithExpiry(String key, Object value, int expirySeconds, boolean valueIsJson) {
         new RedisCommand<Boolean>(jedisPool) {
             @Override
             protected Boolean build(Jedis jedis) {
@@ -105,7 +105,7 @@ public class RedisCache {
         }.execute();
     }
 
-    protected static String getCache(String key) {
+    public static String getCache(String key) {
         return new RedisCommand<String>(jedisPool) {
             @Override
             protected String build(Jedis jedis) {
@@ -114,7 +114,7 @@ public class RedisCache {
         }.execute();
     }
 
-    protected static boolean cacheExists(String key) {
+    public static boolean cacheExists(String key) {
         return new RedisCommand<Boolean>(jedisPool) {
             @Override
             protected Boolean build(Jedis jedis) {
@@ -123,7 +123,7 @@ public class RedisCache {
         }.execute();
     }
 
-    protected static void deleteCache(String key) {
+    public static void deleteCache(String key) {
         new RedisCommand<Void>(jedisPool) {
             @Override
             protected Void build(Jedis jedis) {

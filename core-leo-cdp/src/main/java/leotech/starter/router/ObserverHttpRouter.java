@@ -15,7 +15,6 @@ import leotech.system.model.DeviceInfo;
 import leotech.system.template.HandlebarsTemplateUtil;
 import leotech.system.util.DeviceInfoUtil;
 import leotech.system.util.HttpTrackingUtil;
-import leotech.system.util.LogUtil;
 import leotech.system.version.SystemMetaData;
 import rfx.core.util.StringUtil;
 
@@ -73,7 +72,7 @@ public final class ObserverHttpRouter extends BaseHttpRouter {
 	}
 
 	@Override
-	public void handle() throws Exception {
+	public void process() throws Exception {
 		HttpServerRequest req = context.request();
 
 		String httpMethod = req.rawMethod();
@@ -86,12 +85,12 @@ public final class ObserverHttpRouter extends BaseHttpRouter {
 		outHeaders.set(CONNECTION, HttpTrackingUtil.HEADER_CONNECTION_CLOSE);
 		outHeaders.set(POWERED_BY, SERVER_VERSION);
 		
+		String origin = StringUtil.safeString(reqHeaders.get(BaseHttpHandler.ORIGIN), "*");
 		String useragent = StringUtil.safeString(req.getHeader(BaseHttpHandler.USER_AGENT));
 		DeviceInfo device = DeviceInfoUtil.getDeviceInfo(useragent);
 
 		try {
-			LogUtil.logInfo(this.getClass(), "urlPath " + urlPath);
-			String origin = StringUtil.safeString(reqHeaders.get(BaseHttpHandler.ORIGIN), "*");
+			
 			
 			// WEBHOOK and Domain Verifier
 			boolean processed = WebhookDataHandler.process(this.context, req, urlPath, reqHeaders, params, resp, outHeaders, device, origin);

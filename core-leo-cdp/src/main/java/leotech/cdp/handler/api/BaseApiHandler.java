@@ -28,7 +28,7 @@ public abstract class BaseApiHandler {
 		return StringPool.TRUE.equalsIgnoreCase(req.getParam(DEBUG));
 	}
 	
-	public void handlePost(HttpServerRequest req, String uri, JsonObject jsonObject) { 
+	public JsonDataPayload handlePost(HttpServerRequest req, String uri, JsonObject jsonObject) { 
 		JsonDataPayload payload = null;
 		EventObserver observer = SecuredApiHandler.checkApiTokenAndGetEventObserver(req);
 		if (observer != null) {
@@ -41,7 +41,7 @@ public abstract class BaseApiHandler {
 	}
 	
 
-	public void handleGet(HttpServerRequest req, String uri, MultiMap urlParams) {
+	public JsonDataPayload handleGet(HttpServerRequest req, String uri, MultiMap urlParams) {
 		JsonDataPayload payload = null;
 		EventObserver observer = SecuredApiHandler.checkApiTokenAndGetEventObserver(req);
 		if (observer != null) {

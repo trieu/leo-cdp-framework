@@ -125,7 +125,7 @@ public final class HttpWorker extends BaseWorker {
 				String className = httpRoutingConfigs.getClassNameHttpRouter();
 				Object newInstance = Class.forName(className).getConstructor(RoutingContext.class).newInstance(context);
 				BaseHttpRouter obj = (BaseHttpRouter) newInstance;
-				obj.handle();
+				obj.process();
 			} catch (Throwable e) {
 				e.printStackTrace();
 				String err = e.getMessage();

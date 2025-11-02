@@ -76,13 +76,15 @@ public final class MainHttpRouter extends BaseHttpRouter {
 		}
 	}
 	
-	
 
 	@Override
-	public boolean handle() throws Exception {
+	public void process() throws Exception {
+		
+		
 		HttpServerRequest req = context.request();
 		HttpServerResponse resp = context.response();
 
+		
 		MultiMap outHeaders = resp.headers();
 		outHeaders.set(CONNECTION, HttpTrackingUtil.HEADER_CONNECTION_CLOSE);
 		outHeaders.set(POWERED_BY, SERVER_VERSION);
@@ -95,7 +97,6 @@ public final class MainHttpRouter extends BaseHttpRouter {
 		String userSession = StringUtil.safeString(reqHeaders.get(BaseWebRouter.HEADER_SESSION));
 
 		// ---------------------------------------------------------------------------------------------------
-		String absoluteURI = req.absoluteURI();;
 		
 		String path = req.path();
 		MultiMap params = req.params();
@@ -169,7 +170,7 @@ public final class MainHttpRouter extends BaseHttpRouter {
 		
 		// Uploading File HTTP POST Handler
 		else if(path.equalsIgnoreCase(URI_FILE_UPLOADER_ROUTER)) {
-			return callUploadFileHandler(req, resp, reqHeaders, userSession);
+			callUploadFileHandler(req, resp, reqHeaders, userSession);
 		}
 
 		// ---------------------------------------------------------------------------------------------------
@@ -201,19 +202,21 @@ public final class MainHttpRouter extends BaseHttpRouter {
 			if (tplFolderName.isEmpty()) {
 				resp.setStatusCode(HttpStatus.SC_NOT_FOUND);
 				resp.end(TemplateUtil._404);
-				return false;
+			
 			}
-			// then handle app template for end-user
-			handleWebPageRequest(params, isSearchEngineBot, host, tplFolderName, "index", resp);
+			else {
+				// then handle app template for end-user
+				handleWebPageRequest(params, isSearchEngineBot, host, tplFolderName, "index", resp);
+			}
 		}
 		
 		else {
 			// JSON data API handler for Leo Content Hub
 			AdminHttpRouter adminApiRouter = new AdminHttpRouter(context);
 			adminApiRouter.enableAutoRedirectToHomeIf404();
-			adminApiRouter.handle();
+			adminApiRouter.process();
 		}
-		return true;
+	
 	}
 
 	/**
@@ -223,7 +226,7 @@ public final class MainHttpRouter extends BaseHttpRouter {
 	 * @param userSession
 	 * @return
 	 */
-	private boolean callUploadFileHandler(HttpServerRequest req, HttpServerResponse resp, MultiMap reqHeaders, String userSession) {
+	private void callUploadFileHandler(HttpServerRequest req, HttpServerResponse resp, MultiMap reqHeaders, String userSession) {
 		SystemUser loginUser = SecuredHttpDataHandler.initSystemUser(userSession, req.path(), req.params());
 		boolean ok = false;
 		if (loginUser != null) {
@@ -236,7 +239,6 @@ public final class MainHttpRouter extends BaseHttpRouter {
 			resp.setStatusCode(504).end(JsonErrorPayload.NO_AUTHORIZATION.toString());
 			resp.close();
 		}
-		return ok;
 	}
 
 	//////////////////////////////////////////////////////////////////////////////////////

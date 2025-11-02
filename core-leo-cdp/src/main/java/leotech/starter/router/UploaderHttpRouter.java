@@ -54,7 +54,7 @@ public final class UploaderHttpRouter extends BaseHttpRouter {
 	}
 
 	@Override
-	public void handle() throws Exception {
+	public void process() throws Exception {
 		HttpServerRequest req = context.request();
 		HttpServerResponse resp = context.response();
 		// ---------------------------------------------------------------------------------------------------

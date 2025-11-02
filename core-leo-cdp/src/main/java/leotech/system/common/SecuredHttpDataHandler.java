@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
 
 import com.devskiller.friendly_id.FriendlyId;
 
@@ -560,7 +559,7 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	abstract public void httpPostHandler(String userSession, String uri, JsonObject paramJson, Consumer<JsonDataPayload> done) throws Exception;
+	abstract public JsonDataPayload httpPostHandler(String userSession, String uri, JsonObject paramJson) throws Exception;
 
 	/**
 	 * HTTP get data handler for JSON
@@ -571,6 +570,6 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	abstract public void httpGetHandler(String userSession, String uri, MultiMap params, Consumer<JsonDataPayload> done) throws Exception;
+	abstract public JsonDataPayload httpGetHandler(String userSession, String uri, MultiMap params) throws Exception;
 
 }

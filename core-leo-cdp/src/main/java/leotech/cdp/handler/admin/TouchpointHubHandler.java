@@ -3,7 +3,6 @@ package leotech.cdp.handler.admin;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 
 import io.vertx.core.MultiMap;
 import io.vertx.core.json.JsonObject;
@@ -41,7 +40,7 @@ public final class TouchpointHubHandler extends SecuredHttpDataHandler {
 	}
 	
 	@Override
-	public void httpPostHandler(String userSession, String uri, JsonObject paramJson, Consumer<JsonDataPayload> done) throws Exception {
+	public JsonDataPayload httpPostHandler(String userSession, String uri, JsonObject paramJson) throws Exception {
 		SystemUser loginUser = initSystemUser(userSession, uri, paramJson);
 		if (loginUser != null) {
 			if (isAdminRole(loginUser)) {

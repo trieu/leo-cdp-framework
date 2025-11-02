@@ -1,5 +1,12 @@
 package leotech.system.common;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,6 +97,25 @@ public abstract class BaseHttpRouter {
 	}
 	
 
+    /**
+     * thread pool optimized for high-throughput but safe concurrent work - likely for Redis or network I/O tasks.
+     */
+    protected static final ExecutorService PROCESSORS = new ThreadPoolExecutor(
+            SystemMetaData.NUMBER_CORE_CPU,                      // core threads = CPU cores
+            SystemMetaData.NUMBER_CORE_CPU * 4,                  // allow bursts up to 4× cores
+            60L, TimeUnit.SECONDS,
+            new LinkedBlockingQueue<>(10000), // bounded queue for backpressure
+            new ThreadFactory() {
+                private final ThreadFactory base = Executors.defaultThreadFactory();
+                @Override public Thread newThread(Runnable r) {
+                    Thread t = base.newThread(r);
+                    t.setName("leo-http-" + t.getId());
+                    t.setDaemon(true);
+                    return t;
+                }
+            },
+            new ThreadPoolExecutor.CallerRunsPolicy() // throttles callers under pressure
+    );
 	
 	/**
 	 * HTTP handle
@@ -97,7 +123,7 @@ public abstract class BaseHttpRouter {
 	 * @return
 	 * @throws Exception
 	 */
-	abstract public void handle() throws Exception;
+	abstract public void process() throws Exception;
 
 
 	protected void respond(HttpServerResponse resp, String body) {

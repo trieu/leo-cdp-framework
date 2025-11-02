@@ -49,6 +49,9 @@ public abstract class BaseWebRouter extends BaseHttpRouter {
 
 	private JsonDataPayload defaultDataHttpGet = JsonDataPayload.fail("No HTTP GET handler found", 404);
 	private JsonDataPayload defaultDataHttpPost = JsonDataPayload.fail("No HTTP POST handler found", 404);
+	
+    
+
 
 	///////////
 	public BaseWebRouter(RoutingContext context) {
