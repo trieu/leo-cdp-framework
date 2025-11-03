@@ -73,151 +73,131 @@ configurations.all {
 }
 
 dependencies {
-	
-	// Joda Time https://www.joda.org/joda-time/index.html
-	compile group: 'joda-time', name: 'joda-time', version: '2.12.2'
-	
-	// deps of https://github.com/USPA-Technology/QueryBuilder
-	compile group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.14.2'
-	compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.14.2'
-	compile group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.14.2'	
-	compile group: 'com.fasterxml.jackson.module', name: 'jackson-module-scala_2.13', version: '2.14.2'
-	
-	// CSV, TSV parser
-	compile group: 'com.univocity', name: 'univocity-parsers', version: '2.9.1'
-	
-	// MVEL (MVFLEX Expression Language) to process AutomatedFlow
-	compile group: 'org.mvel', name: 'mvel2', version: '2.5.2.Final'
-
-	// MySQL, PostgreSQL, sqlite data connector
-	compile group: 'com.mysql', name: 'mysql-connector-j', version: '9.3.0'
-	compile group: 'org.postgresql', name: 'postgresql', version: '42.7.7'
-	compile group: 'org.xerial', name: 'sqlite-jdbc', version: '3.50.3.0'
-	
-	// Jdbi library provides convenient, idiomatic access to relational databases
-	compile group: 'org.jdbi', name: 'jdbi3-core', version: '3.49.5'
-	compile group: 'org.jdbi', name: 'jdbi3-sqlobject', version: '3.49.5'
-	
-	// High-quality thumbnails from existing images
-	compile group: 'net.coobird', name: 'thumbnailator', version: '0.4.20'
-	
-	// Captcha  https://github.com/logicsquad/nanocaptcha
-	compile group: 'net.logicsquad', name: 'nanocaptcha', version: '2.1'
-	
-	// for parsing, formatting, and validating international phone numbers https://github.com/google/libphonenumber/
-	compile group: 'com.googlecode.libphonenumber', name: 'libphonenumber', version: '9.0.14'
-	
-	// for job schedulers in data connectors
-	compile group: 'org.quartz-scheduler', name: 'quartz', version: '2.3.2'
-	
-	// core STMP client to send email
-	compile group: 'com.sun.mail', name: 'javax.mail', version: '1.6.2'
-	
-	// generate html and text mail via one fluent build from https://github.com/rocketbase-io/email-template-builder
-	compile group: 'io.rocketbase.mail', name: 'email-template-builder', version: '2.4.0'
-	
-	// Google OAuth
-	compile group: 'com.google.oauth-client', name: 'google-oauth-client', version: '1.34.1'    
-	compile group: 'com.google.oauth-client', name: 'google-oauth-client-jetty', version: '1.34.1'       
-	
-	// Google Drive API	
-	compile group: 'com.google.apis', name: 'google-api-services-drive', version: 'v3-rev20231128-2.0.0'
-	
-	// Google Sheets API
-	compile group: 'com.google.apis', name: 'google-api-services-sheets', version: 'v4-rev20230815-2.0.0'
-	
-	// Google Storage for License and Backup
-	compile group: 'com.google.cloud', name: 'google-cloud-storage', version: '2.22.5'
-	
-
-	// fastexcel-writer
-	compile group: 'org.dhatim', name: 'fastexcel', version: '0.19.0'
-	
-	// ------ END DEFAULT CORE LIBS for MARKETING ACTIVATION ----
-	
-    compile (	   
-		fileTree(dir: 'ext-lib', include: '**/*.jar') 	
-		
-		// Arangodb driver: primary database of Leo CDP
-		,'com.arangodb:arangodb-java-driver:6.25.0'
- 	
-    	// vertx
-    	,'io.vertx:vertx-core:3.8.5'			
-		,'io.vertx:vertx-web:3.8.5'
-		,'io.vertx:vertx-web-client:3.8.5'
-		,'io.vertx:vertx-codegen:3.8.5'
-		,'io.vertx:vertx-auth-jwt:3.8.5'
-		
-		// gson
-		,'com.google.code.gson:gson:2.9.0'
-		
-		// log4j
-		,'org.slf4j:slf4j-api:2.0.3'
-		,'org.apache.logging.log4j:log4j-api:2.20.0'
-		,'org.apache.logging.log4j:log4j-core:2.20.0'
-		,'org.apache.logging.log4j:log4j-slf4j2-impl:2.20.0'
-		
-		// XSS filter
-		,'org.jsoup:jsoup:1.21.1'
-		,'com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:20240325.1'
-		
-		// common util				
-		,'org.apache.commons:commons-lang3:3.12.0'
-		,'commons-validator:commons-validator:1.7'
-		,'commons-net:commons-net:3.6'    		
-		,'commons-io:commons-io:2.5'
-		,'redis.clients:jedis:7.0.0'
-		
-		,'org.apache.httpcomponents:httpclient:4.5.13'
-
-		,'org.databene:contiperf:2.3.4'
-		,'com.google.javascript:closure-compiler:v20210302'
-		,'com.github.jknack:handlebars:4.3.1'
-		,'com.github.spullara.mustache.java:compiler:0.9.6'
-		,'org.yaml:snakeyaml:1.33' 
-				
-		// Friendly Content ID
-		,'com.devskiller.friendly-id:friendly-id:1.1.0'	
-						
-		// SEO util
-		,'com.github.slugify:slugify:2.5'
-		,'net.gcardone.junidecode:junidecode:0.4.1'   
-			
-		// Maxmind Geolocation
-		,'com.maxmind.geoip2:geoip2:3.0.1'	
-		,'com.google.openlocationcode:openlocationcode:1.0.4'
-
-		// for Math library
-		,'org.apache.commons:commons-math3:3.6.1'			
-            
-		// for Embebded OpenSSP Ad Server
-		,'com.squareup.okhttp3:okhttp:4.12.0'
-		,'javax.servlet:javax.servlet-api:3.1.0'
-	
-		// Kafka for raw event data tracking
-		,'org.apache.kafka:kafka-clients:3.5.2'
-		,'org.apache.kafka:kafka-streams:3.5.2'
-		
-		// Image Processing Lib: Headline + Watermark + Visual Image  Generator
-		,'org.docx4j.org.capaxit.textimage:TextImageGen:1.9'
-		,'com.github.jai-imageio:jai-imageio-core:1.4.0'
-		
-		// QR Code Generator 
-		,'io.nayuki:qrcodegen:1.8.0'
-    ) 
-    	
-    testImplementation (
-    	'org.junit.jupiter:junit-jupiter-engine:5.10.3' 
-		,'org.assertj:assertj-core:3.26.3'
-		
-		// Web Crawler for Ajax website, need correct version of Chromedriver at https://chromedriver.chromium.org/downloads
-		,'org.seleniumhq.selenium:selenium-java:4.22.0'
-		
-		// generates fake data for testing
-		,'net.datafaker:datafaker:1.5.0'
-		
+	//  ────────────────────── Local Java Libs: rfx ────────────────────── l
+	implementation(
+        fileTree(dir: 'ext-lib', include: '**/*.jar')
     )
+
+    // ────────────────────── Date & Time ──────────────────────
+    implementation 'joda-time:joda-time:2.12.2'
+
+    // ────────────────────── JSON (Jackson) ──────────────────────
+    implementation 'com.fasterxml.jackson.core:jackson-core:2.14.2'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.14.2'
+    implementation 'com.fasterxml.jackson.core:jackson-annotations:2.14.2'
+    implementation 'com.fasterxml.jackson.module:jackson-module-scala_2.13:2.14.2'
+
+    // ────────────────────── CSV / TSV Parser ──────────────────────
+    implementation 'com.univocity:univocity-parsers:2.9.1'
+
+    // ────────────────────── Expression Language ──────────────────────
+    implementation 'org.mvel:mvel2:2.5.2.Final'
+
+    // ────────────────────── Database Drivers ──────────────────────
+    implementation 'com.mysql:mysql-connector-j:9.5.0'
+    implementation 'org.postgresql:postgresql:42.7.8'
+    implementation 'org.xerial:sqlite-jdbc:3.50.3.0'
+
+    // ────────────────────── Database Utility ──────────────────────
+    implementation 'org.jdbi:jdbi3-core:3.49.6'
+    implementation 'org.jdbi:jdbi3-sqlobject:3.49.6'
+
+    // ────────────────────── Image & Captcha ──────────────────────
+    implementation 'net.coobird:thumbnailator:0.4.20'
+    implementation 'net.logicsquad:nanocaptcha:2.1'
+
+    // ────────────────────── Phone Number Parser ──────────────────────
+    implementation 'com.googlecode.libphonenumber:libphonenumber:9.0.17'
+
+    // ────────────────────── Job Scheduling ──────────────────────
+    implementation 'org.quartz-scheduler:quartz:2.3.2'
+
+    // ────────────────────── Email & Templates ──────────────────────
+    implementation 'com.sun.mail:javax.mail:1.6.2'
+    implementation 'io.rocketbase.mail:email-template-builder:2.5.0'
+
+    // ────────────────────── Google OAuth & APIs ──────────────────────
+    implementation 'com.google.oauth-client:google-oauth-client:1.34.1'
+    implementation 'com.google.oauth-client:google-oauth-client-jetty:1.34.1'
+    implementation 'com.google.apis:google-api-services-drive:v3-rev20231128-2.0.0'
+    implementation 'com.google.apis:google-api-services-sheets:v4-rev20230815-2.0.0'
+    implementation 'com.google.cloud:google-cloud-storage:2.22.5'
+
+    // ────────────────────── Excel Writer ──────────────────────
+    implementation 'org.dhatim:fastexcel:0.19.0'
+
+    // ────────────────────── Security / Auth ──────────────────────
+    implementation 'org.keycloak:keycloak-authz-client:26.0.7'
+
+    // ────────────────────── Database (ArangoDB) ──────────────────────
+    implementation 'com.arangodb:arangodb-java-driver:6.25.0'
+
+    // ────────────────────── Vert.x Framework ──────────────────────
+    implementation 'io.vertx:vertx-core:3.8.5'
+    implementation 'io.vertx:vertx-web:3.8.5'
+    implementation 'io.vertx:vertx-web-client:3.8.5'
+    implementation 'io.vertx:vertx-codegen:3.8.5'
+    implementation 'io.vertx:vertx-auth-jwt:3.8.5'
+
+    // ────────────────────── JSON (Gson) ──────────────────────
+    implementation 'com.google.code.gson:gson:2.9.1'
+
+    // ────────────────────── Logging ──────────────────────
+    implementation 'org.slf4j:slf4j-api:2.0.3'
+    implementation 'org.apache.logging.log4j:log4j-api:2.20.0'
+    implementation 'org.apache.logging.log4j:log4j-core:2.20.0'
+    implementation 'org.apache.logging.log4j:log4j-slf4j2-impl:2.20.0'
+
+    // ────────────────────── Security / XSS Filter ──────────────────────
+    implementation 'org.jsoup:jsoup:1.21.1'
+    implementation 'com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:20240325.1'
+
+    // ────────────────────── Common Utilities ──────────────────────
+    implementation 'org.apache.commons:commons-lang3:3.12.0'
+    implementation 'commons-validator:commons-validator:1.7'
+    implementation 'commons-net:commons-net:3.6'
+    implementation 'commons-io:commons-io:2.5'
+    implementation 'redis.clients:jedis:7.0.0'
+    implementation 'org.apache.httpcomponents:httpclient:4.5.13'
+
+    // ────────────────────── Performance & Templates ──────────────────────
+    implementation 'org.databene:contiperf:2.3.4'
+    implementation 'com.google.javascript:closure-compiler:v20210302'
+    implementation 'com.github.jknack:handlebars:4.3.1'
+    implementation 'com.github.spullara.mustache.java:compiler:0.9.6'
+    implementation 'org.yaml:snakeyaml:1.33'
+
+    // ────────────────────── ID & SEO Helpers ──────────────────────
+    implementation 'com.devskiller.friendly-id:friendly-id:1.1.0'
+    implementation 'com.github.slugify:slugify:2.5'
+    implementation 'net.gcardone.junidecode:junidecode:0.4.1'
+
+    // ────────────────────── Geo & Math ──────────────────────
+    implementation 'com.maxmind.geoip2:geoip2:3.0.2'
+    implementation 'com.google.openlocationcode:openlocationcode:1.0.4'
+    implementation 'org.apache.commons:commons-math3:3.6.1'
+
+    // ────────────────────── AdTech / HTTP / Servlet ──────────────────────
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+    implementation 'javax.servlet:javax.servlet-api:3.1.0'
+
+    // ────────────────────── Kafka (Event Streaming) ──────────────────────
+    implementation 'org.apache.kafka:kafka-clients:3.5.2'
+    implementation 'org.apache.kafka:kafka-streams:3.5.2'
+
+    // ────────────────────── Image Generation / QR Code ──────────────────────
+    implementation 'org.docx4j.org.capaxit.textimage:TextImageGen:1.9'
+    implementation 'com.github.jai-imageio:jai-imageio-core:1.4.0'
+    implementation 'io.nayuki:qrcodegen:1.8.0'
+
+    // ────────────────────── Testing ──────────────────────
+    testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.10.3'
+    testImplementation 'org.assertj:assertj-core:3.26.3'
+    testImplementation 'org.seleniumhq.selenium:selenium-java:4.22.0'
+    testImplementation 'net.datafaker:datafaker:1.5.0'
 }
+
+
 
 uploadArchives {
     repositories {

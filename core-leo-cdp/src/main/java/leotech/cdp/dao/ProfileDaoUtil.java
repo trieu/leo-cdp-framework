@@ -1499,7 +1499,7 @@ public final class ProfileDaoUtil extends AbstractCdpDatabaseUtil {
 			}
 			aql.append(" } ");
 		}
-		logger.info(" ===> getProfilesBySegmentId with AQL \n " + aql);
+		logger.debug(" ===> getProfilesBySegmentId with AQL: \n " + aql);
 		List<Profile> ps = new ArangoDbCommand<>(db, aql.toString(), bindVars, Profile.class).getResultsAsList();
 		return ps;
 	}
