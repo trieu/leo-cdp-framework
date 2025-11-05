@@ -198,8 +198,6 @@ dependencies {
     testImplementation 'net.datafaker:datafaker:1.5.0'
 }
 
-
-
 uploadArchives {
     repositories {
        flatDir {
@@ -208,47 +206,84 @@ uploadArchives {
     }
 }
 
-
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
 }
 
 tasks.withType(Jar) {
-	//destinationDir = file("$rootDir/BUILD-OUTPUT")
-	destinationDir = file(buildOutputFolderPath)
+	//destinationDirectory = file("$rootDir/BUILD-OUTPUT")
+	destinationDirectory = file(buildOutputFolderPath)
 }
 
-// JS minification for common-resources in Web Admin
+// === Helper: generate build version string ===
+def getImplementationVersion() {
+    def date = new Date()
+    def version = leoCdpMetadata['buildVersion'] ?: 'unknown'
+    return "${version}_${date.format('yyyy-MM-dd-HH-mm-ss')}"
+}
+
+
+// === JS minification for common-resources in Web Admin ===
 task minifyJsAdminResource(type: org.gradlewebtools.minify.JsMinifyTask) {
-    srcDir = project.file("resources/app-templates/leocdp-admin/common-resources") 
+    srcDir = project.file("resources/app-templates/leocdp-admin/common-resources")
     dstDir = project.file("resources/app-templates/leocdp-admin/common-resources-min")
-    options { 
-    	originalFileNames = true 
-    }
-}
-
-// JS minification for leo.observer.js
-task minifyLeoObserverJs(type: org.gradlewebtools.minify.JsMinifyTask) {
-    srcDir = project.file("public/js/leo-observer")
-    dstDir = project.file("public/js/leo-observer")
-
-
 
     options {
-        originalFileNames = false   // we'll rename manually
-    
+        originalFileNames = true
     }
 
     doLast {
-        def srcFile = new File(dstDir, "leo.observer.js.min")
-        def targetFile = new File(dstDir, "leo.observer.min.js")
-        if (srcFile.exists()) {
-            srcFile.renameTo(targetFile)
-            println "Minified: ${targetFile}"
+        def codeVersion = getImplementationVersion()
+        def comment = "// Version: ${codeVersion}\n"
+
+        // loop all files in common-resources-min
+        dstDir.eachFileRecurse { file ->
+            if (file.name.endsWith(".js")) {
+                def original = file.text
+                file.text = comment + original
+            }
         }
+
+        println "✅ Minified JS files updated with version header: ${codeVersion}"
+        println "   Source: ${project.relativePath(srcDir)}"
+        println "   Output: ${project.relativePath(dstDir)}"
     }
 }
 
+
+// === JS minification for leo.observer.js only ===
+task minifyJsLeoObserver(type: org.gradlewebtools.minify.JsMinifyTask) {
+    // Source and destination directories (same folder)
+    srcDir = project.file("public/js/leo-observer-src")
+    dstDir = project.file("public/js/leo-observer")
+
+    options {
+        originalFileNames = false   // We will control output name manually
+    }
+
+    doLast {
+        def codeVersion = getImplementationVersion()
+        def comment = "// Version: ${codeVersion}\n"
+
+        // loop all files in common-resources-min
+        dstDir.eachFileRecurse { file ->
+            if (file.name.endsWith(".js")) {
+                def original = file.text
+                file.text = comment + original
+            }
+        }
+
+        println "✅ Minified JS files updated with version header: ${codeVersion}"
+        println "   Source: ${project.relativePath(srcDir)}"
+        println "   Output: ${project.relativePath(dstDir)}"
+    }
+}
+
+
+
+
+
+// 
 def getClasspathStringJars() {
     def baseFolder = 'deps/'
     def files = configurations.runtimeClasspath.files
@@ -261,11 +296,7 @@ def getClasspathStringJars() {
     return "." + separator + jarPaths.join(separator)
 }
 
-def getImplementationVersion() {
-    def date = new Date()
-    def implVersion = leoCdpMetadata['buildVersion'] + "_" + date.format('yyyy-MM-dd-HH-mm-ss')
-    return implVersion
-}
+
 
 /////////////////////////// BEGIN BUILD FOR DEPLOYED JAR ///////////////////////////////
 
@@ -282,6 +313,10 @@ task buildLeoMainHttpStarter(type: Jar) {
         			'Class-Path' : getClasspathStringJars() 
         )
 	}
+	
+	doLast {
+  		println '###  buildLeoMainHttpStarter OK !!!  ###'
+  	}
 } 
 
 task buildLeoDataObserverStarter(type: Jar) {	
@@ -297,6 +332,10 @@ task buildLeoDataObserverStarter(type: Jar) {
         			'Class-Path' : getClasspathStringJars() 
         )
 	}
+	
+	doLast {
+  		println '###  buildLeoDataObserverStarter OK !!!  ###'
+  	}
 }
 
 task buildLeoScheduledJobStarter(type: Jar) {	
@@ -312,6 +351,10 @@ task buildLeoScheduledJobStarter(type: Jar) {
         			'Class-Path' : getClasspathStringJars() 
         )
 	}
+	
+	doLast {
+  		println '###  buildLeoScheduledJobStarter OK !!!  ###'
+  	}
 }
 
 task buildLeoDataProcessingStarter(type: Jar) {	
@@ -327,21 +370,10 @@ task buildLeoDataProcessingStarter(type: Jar) {
         			'Class-Path' : getClasspathStringJars() 
         )
 	}
-}
-
-task buildLeoDataDeliveryStarter(type: Jar) {	
-	dependsOn classes   
-    from(sourceSets.main.output) {
-        include "**"
-    }
-    baseName = 'leo-delivery-starter'
-    manifest {
-   		attributes ('Implementation-Title': 'DataDeliveryStarter', 
-        			'Implementation-Version': getImplementationVersion(),
-        			'Main-Class': ' leotech.starter.DataDeliveryStarter',
-        			'Class-Path' : getClasspathStringJars() 
-    	)
-	}
+	
+	doLast {
+  		println '###  buildLeoDataProcessingStarter OK !!!  ###'
+  	}
 }
 
 task buildLeoUploadFileHttpStarter(type: Jar) {	
@@ -357,6 +389,10 @@ task buildLeoUploadFileHttpStarter(type: Jar) {
         			'Class-Path' : getClasspathStringJars() 
         			)
 	}
+	
+	doLast {
+  		println '###  buildLeoUploadFileHttpStarter OK !!!  ###'
+  	}
 }
 
 /////////////////////////// BEGIN COPY TASKS ///////////////////////////////
@@ -369,7 +405,9 @@ task copyConfigsFolderToBuild(type: Copy) {
   	exclude "**DEV**"
   	exclude "**PRO**"
   	
-  	println '###  copyConfigsFolderToBuild OK !!!  ###'
+  	doLast {
+  		println '###  copyConfigsFolderToBuild OK !!!  ###'
+  	}
 }
 
 
@@ -382,7 +420,9 @@ task copyResourcesToBuild(type: Copy, dependsOn: minifyJsAdminResource) {
   	includeEmptyDirs = true
   	exclude "**/common-resources"
   	
-  	println '###  copyResourcesToBuild OK !!!  ###'
+  	doLast {
+  		println '###  copyResourcesToBuild OK !!!  ###'
+  	}
 }
 
 // 3) clean and copy dependency system libs
@@ -425,7 +465,9 @@ task copyPublicFilesToBuild(type: Copy) {
   	exclude "**/qrcode/**.png"
   	exclude "**/sample-data"
   	
-  	println '###  copyPublicFilesToBuild OK !!!  ###'
+  	doLast {
+  		println '###  copyPublicFilesToBuild OK !!!  ###'
+  	}
 }
 
 // 5) copy public folder to STATIC for public CDN at https://www.jsdelivr.com
@@ -446,7 +488,9 @@ task CopyPublicFolderToSTATIC(type: Copy) {
   	exclude "**/qrcode/**.png"
   	exclude "**/html/leo-event-proxy.html"
   	
-  	println '###  CopyPublicFolderToSTATIC OK !!!  ###'
+  	doLast {
+  		println '###  CopyPublicFolderToSTATIC OK !!!  ###'
+  	}
 }
 
 
@@ -473,7 +517,9 @@ task CopyDevOpsScriptToBUILD(type: Copy) {
         into buildOutputFolderPath + '/devops-script/script-installation'
     }
     
-    println '###  CopyDevOpsScriptToBUILD OK !!!  ###'
+    doLast {
+    	println '###  CopyDevOpsScriptToBUILD OK !!!  ###'
+    }
 }
 
 // 7) copy README.md, data flow image and release notes
@@ -488,7 +534,9 @@ task copyDocuments(type: Copy) {
   	from file('ai-first-customer360.png')
   	into buildOutputFolderPath
   	
-  	println '###  copyDocuments OK !!!  ###'
+  	doLast {
+  		println '###  copyDocuments OK !!!  ###'
+  	}
 }
 
 
@@ -498,7 +546,9 @@ task CopyDbQueryTemplateToBuild(type: Copy) {
   	from file('resources/database/database-query-template.aql')
   	into buildOutputFolderPath + "/resources/database/"
   
-  	println '###  CopyDbQueryTemplateToBuild OK !!!  ###'
+	doLast {  
+  		println '###  CopyDbQueryTemplateToBuild OK !!!  ###'
+  	}
 }
 
 // 9) copy templates
@@ -509,13 +559,17 @@ task copyAirflowDagToBuild(type: Copy) {
   	exclude "**/logs"
   	exclude "**/__pycache__"
   	
-  	println '###  copyAirflowDagToBuild OK !!!  ###'
+  	doLast {
+  		println '###  copyAirflowDagToBuild OK !!!  ###'
+  	}
 }
 
 // 10) compile and copy key Leo CDP jars
 def mainJarTasks = [buildLeoMainHttpStarter, buildLeoDataObserverStarter, buildLeoScheduledJobStarter, buildLeoDataProcessingStarter]
 task BuildAllJavaJars(dependsOn: mainJarTasks) {
-     println '###  BuildAllJavaJars OK !!!  ###'
+	doLast {
+    	println '###  BuildAllJavaJars OK !!!  ###'
+    }
 }
 
 // 11) Build all system
@@ -524,7 +578,9 @@ def staticTasks = [CopyDevOpsScriptToBUILD, copyPublicFilesToBuild, copyResource
 def allReleaseTasks = [minifyJsAdminResource, mainJarTasks, copyPublicFilesToBuild, copyResourcesToBuild, copyRuntimeLibsToBuild ]
 
 task AutoBuildForDeployment(dependsOn: allReleaseTasks) {    
-     println '###  AutoBuildForDeployment OK !!!  ###'
+    doLast {
+    	 println '###  AutoBuildForDeployment OK !!!  ###'
+    }
 }
 
 defaultTasks 'AutoBuildForDeployment'

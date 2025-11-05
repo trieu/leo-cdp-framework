@@ -153,7 +153,7 @@
 	   	var leoObserverJsUrl = "https://gcore.jsdelivr.net/gh/USPA-Technology/leo-cdp-static-files@v0.9.1/js/leo-observer/leo.observer.min.js?cb="+cbKey;
 	   	var isDev = ROOT_DOMAIN === "obs.example.com";
   		if(isDev) { 
-			leoObserverJsUrl = "https://obs.example.com/public/js/leo-observer/leo.observer.js?cb="+(new Date().getTime());
+			leoObserverJsUrl = "https://obs.example.com/public/js/leo-observer-src/leo.observer.js?cb="+(new Date().getTime());
 		}
   		loadScript(leoObserverJsUrl, codeIsReady);
     </script>
