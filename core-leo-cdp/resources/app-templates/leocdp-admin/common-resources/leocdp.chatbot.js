@@ -8,7 +8,7 @@ leoBotActionList.push({ text: 'Search profile', value: 'Search profile', icon: '
 if (USING_LEO_BOT_WITH_AI) {
 	leoBotActionList.push({ text: 'Ask question', value: 'Ask question', icon: 'question-circle' });
 	leoBotActionList.push({ text: 'Create content', value: 'Create content', icon: 'file-word-o' });
-	leoBotActionList.push({ text: 'Create slides', value: 'Create slides', icon: 'file-powerpoint-o' });
+	//leoBotActionList.push({ text: 'Create slides', value: 'Create slides', icon: 'file-powerpoint-o' });
 }
 
 leoBotActionList.push({ text: 'Create short URL', value: 'Create short URL', icon: 'link' });
@@ -70,7 +70,7 @@ function initLeoChatBot(context) {
 	$('#leoChatBotDialog').modal({ backdrop: 'static', keyboard: false });
 	getBotUI().action.hide();
 	getBotUI().message.removeAll();
-	$('#leobot_answer_in_language').show()
+	$('#leobot_persona').show()
 
 	LeoObserverProxy.synchLeoVisitorId(function(vid) {
 		if (window.currentUserProfile) {
@@ -327,17 +327,50 @@ var leoBotCreateNewItem = function(context, title, content) {
 	});
 }
 
+var processMessageNode  = function(rawAnswer) {
+  var node_id = 'm_'  + getRandomStrWithTime()
+  if(rawAnswer.indexOf("<html>") >= 0){
+    var iframe = document.createElement('iframe');
+    iframe.setAttribute('id',node_id)
+    iframe.style.width = "100%";
+    iframe.style.height = "400px";
+    iframe.style.border = "1px solid #ddd";
+    iframe.style.borderRadius = "6px";
+
+    return {'html':iframe.outerHTML,'type':'iframe','id': node_id};
+  } 
+  else {
+     var span = document.createElement('span');
+    span.setAttribute('id',node_id)
+    span.innerHTML =  marked.parse(rawAnswer)
+    return {'html':span.outerHTML,'type':'span','id': node_id}; 
+  }
+}
+
+function getRandomStrWithTime(length = 10) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let randomPart = '';
+  for (let i = 0; i < length; i++) {
+    randomPart += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  const timestamp = Date.now().toString(36); // base36 makes it shorter & still sortable
+  return `${randomPart}_${timestamp}`;
+}
+
 
 var leoBotShowAnswer = function(in_format, answer, callback) {
+	
 	var html = '', cssClass = 'leobot-answer';
 	if(in_format === 'markdown'){
 		html = '<textarea style="width: 100%; height: 220px;" readonly=""> ' + answer + "</textarea>";
 		cssClass = 'leobot-answer-in-markdown';
 	}
 	else {
-		html = answer;
+		var node = processMessageNode(answer);
+		html = node.html;
 	}
 	console.log('leoBotShowAnswer', in_format)
+	
 	
 	getBotUI().message.add({
 		human: false,
@@ -345,6 +378,16 @@ var leoBotShowAnswer = function(in_format, answer, callback) {
 		content: html,
 		type: 'html'
 	}).then(function() {
+		if(node.type === 'iframe') {
+          var iframe = document.getElementById(node.id)
+          const doc = iframe.contentDocument || iframe.contentWindow.document;
+          doc.open();
+          doc.write(answer);
+          doc.close();
+
+          $(iframe).parent().parent().removeClass('botui-message-content').addClass('botui-message-report')
+      	}
+		
 		// format all href nodes in answer
 		$("div.botui-message").find("a").each(function() {
 			$(this).attr("target", "_blank");
@@ -382,7 +425,7 @@ var leoBotAskServer = function(context, question, textPrompts, extraInfo, in_for
 		var processAnswer = function(answer) {
 			if ('ask' === context) {
 				leoBotShowAnswer(answer_in_format, answer, function() {
-					var delay = answer.length > 120 ? 6000 : 2000;
+					var delay = answer.length > 200 ? 3000 : 1000;
 					leoBotPromptQuestion(delay);
 				});
 			}
@@ -436,7 +479,7 @@ var leoBotAskServer = function(context, question, textPrompts, extraInfo, in_for
 			payload["visitor_id"] = currentUserProfile.profileVisitorId;
 			payload['answer_in_format'] = answer_in_format;
 			payload['temperature_score'] = temperature_score;
-			payload['answer_in_language'] = $('#leobot_answer_in_language').val();
+			payload['persona_id'] = $('#leobot_persona').val();
 			LeoAdminApiUtil.callPostApi(LEOBOT_URL_ASK, payload, callback, closeLeoChatBotDialog);
 		}
 		showChatBotLoader().then(callServer);

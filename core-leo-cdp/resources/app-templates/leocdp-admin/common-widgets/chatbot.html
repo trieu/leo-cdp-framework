@@ -30,7 +30,7 @@ div.botui-actions-buttons {
 </style>
 
 <div class="modal fade" id="leoChatBotDialog" role="dialog">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-lg" style="width:86%;">
         <!-- Modal content-->
         <div class="modal-content">
             <div class="modal-header">
@@ -38,20 +38,19 @@ div.botui-actions-buttons {
                 <h4 class="modal-title text-center"> <i class="fa fa-commenting-o"></i> AI Chatbot - Your Personal Assistant</h4>
             </div>
             <div class="modal-body row">
+            	
 				<div class="col-md-9" >
-            		<!-- BCP-47 language code https://en.wikipedia.org/wiki/IETF_language_tag  -->
-	            	<select id="leobot_answer_in_language" class="form-control" style="display: none;">
-				      	<option value="" selected="selected"> Automatically detect the language according to question </option>
-                		<option value="en" > Answer the question in English </option>
-		                <option value="vi"> Trả lời câu hỏi bằng tiếng Việt </option>
-		                <option value="de"> Beantworten Sie Fragen auf Deutsch </option>
-		                <option value="fr"> Répondez à la question en anglais </option>
-		                <option value="es"> Responde la pregunta en español </option>
-		                <option value="ja"> 質問には日本語で答える </option>
-		                <option value="zh"> 用中文回答问题 </option>
-		                <option value="ko"> 질문에 한국어로 답변하기 </option>      
-				    </select> 
+            		<!-- Chatbot Persona Selector -->
+					<select id="leobot_persona" class="form-control">
+					  <option value="personal_assistant" selected>🤖 General Assistant — Quick answers & explanations</option>
+					  <option value="cdp_expert">📊 CDP Expert — Data model, identity resolution, segmentation</option>
+					  <option value="data_engineer">⚙️ Data Engineer — ETL, pipelines, SQL, ArangoDB, APIs</option>
+					  <option value="marketing_strategist">🎯 Marketing Strategist — Campaign design, personalization, insights</option>
+					  <option value="ai_agent_builder">🧠 AI Agent Builder — LLM orchestration, LangChain, memory, retrieval</option>
+					  <option value="growth_analyst">📈 Growth Analyst — KPI, dashboards, A/B test, cohort analysis</option>
+					</select>
 			    </div>
+			    
 			    <div class="col-md-3" >
 	            	<select id="leobot_creativity_score" class="form-control" >
 				      	<option value="0"> No Creativity </option>
@@ -62,7 +61,8 @@ div.botui-actions-buttons {
 		                <option value="1"> 100% Creativity </option>       
 				    </select> 
 			    </div>
-                <div class="botui-app-container" id="LEO_ChatBot_Container" style="width:100%; height:560px; overflow-y:scroll;">
+			    
+                <div class="botui-app-container" id="LEO_ChatBot_Container" style="width:100%; height:796px; overflow-y:scroll;">
                     <bot-ui></bot-ui>
                 </div>
             </div>

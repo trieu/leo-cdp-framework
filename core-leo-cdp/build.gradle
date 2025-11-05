@@ -142,11 +142,12 @@ dependencies {
     // ────────────────────── JSON (Gson) ──────────────────────
     implementation 'com.google.code.gson:gson:2.9.1'
 
-    // ────────────────────── Logging ──────────────────────
-    implementation 'org.slf4j:slf4j-api:2.0.3'
-    implementation 'org.apache.logging.log4j:log4j-api:2.20.0'
-    implementation 'org.apache.logging.log4j:log4j-core:2.20.0'
-    implementation 'org.apache.logging.log4j:log4j-slf4j2-impl:2.20.0'
+   	// ────────────────────── Logging (SLF4J + Log4j2) ──────────────────────
+	implementation 'org.slf4j:slf4j-api:2.0.13'                         // SLF4J API
+	implementation 'org.apache.logging.log4j:log4j-api:2.23.1'          // Log4j2 API
+	implementation 'org.apache.logging.log4j:log4j-core:2.23.1'         // Log4j2 Engine
+	implementation 'org.apache.logging.log4j:log4j-slf4j2-impl:2.23.1'  // Bridge for SLF4J 2.x → Log4j2
+
 
     // ────────────────────── Security / XSS Filter ──────────────────────
     implementation 'org.jsoup:jsoup:1.21.1'
@@ -207,6 +208,11 @@ uploadArchives {
     }
 }
 
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
 tasks.withType(Jar) {
 	//destinationDir = file("$rootDir/BUILD-OUTPUT")
 	destinationDir = file(buildOutputFolderPath)
@@ -243,15 +249,16 @@ task minifyLeoObserverJs(type: org.gradlewebtools.minify.JsMinifyTask) {
     }
 }
 
-
-
 def getClasspathStringJars() {
-	def baseFolder = 'deps/'
-    def fileNames = []
-    configurations.compile.each { File file -> fileNames.add(baseFolder + file.name) }
-    
-    def classpath = fileNames.join(" ; ")    
-    return '. ; ' + classpath + ' ; '
+    def baseFolder = 'deps/'
+    def files = configurations.runtimeClasspath.files
+    def separator = ' ; '
+
+    // Map all runtime JARs to their relative paths under deps/
+    def jarPaths = files.collect { "${baseFolder}${it.name}" }
+
+    // Join them properly for the classpath string
+    return "." + separator + jarPaths.join(separator)
 }
 
 def getImplementationVersion() {
