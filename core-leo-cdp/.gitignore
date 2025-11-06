@@ -1,5 +1,6 @@
-# Important config files
 
+# Important config files
+**/.env
 *.settings/*
 .settings
 
