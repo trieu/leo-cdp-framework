@@ -926,44 +926,85 @@ const renderHorizontalBarChart = function(containerId, labels, dataList) {
 }
 
 const renderVerticalBarChart = function(containerId, labels, dataList) {
-	var data = {
-	  labels: labels,
-	  datasets: [{
-	    axis: 'x',
-	    data: dataList,
-	    fill: false,
-	    backgroundColor: chartColorCodes,
-	    borderColor: [ 'rgb(0, 0, 0)'],
-	    borderWidth: 1
-	  }]
-	}
-	var maxBarThickness = 18;
-	var chartHeight = (maxBarThickness * dataList.length) + 10;
-	var config = { data, type: 'bar', options: 
-		{ 
-			indexAxis: 'x', plugins: { legend: {display: false} },
-			maxBarThickness: maxBarThickness,
-			responsive: true,
-		    maintainAspectRatio: true,
-			scales: {
-                x: {
-                	title: {text: "Event", display: true, font: { size: 16}, color: "#0000CD", align: "end"},
-                	beginAtZero: true,
-                    ticks: {
-                    	stepSize: 5
-                    }
-                }
-            }
-		}
-	}
-	var canvasNode = $('<canvas/>');
-	var container = $('#' + containerId);
-	container.find("canvas").remove();
-	container.html(canvasNode);
-	canvasNode.height(chartHeight).css("height", chartHeight + "px")
-	var myChart = new Chart(canvasNode[0], config);
-	return myChart;
-}
+  const container = $('#' + containerId);
+  container.find("canvas").remove();
+
+  const maxVisibleBars = 20;        // show up to 20 bars before scrolling
+  const baseBarThickness = 18;      // ideal bar height
+  const padding = 40;               // top & bottom space
+  const maxHeight = baseBarThickness * maxVisibleBars + padding;
+
+  // adaptive thickness: thinner bars when too many
+  const barThickness = Math.max(8, Math.min(baseBarThickness, 600 / dataList.length));
+
+  // compute real height (limit to maxHeight)
+  const chartHeight = Math.min((barThickness * dataList.length) + padding, maxHeight);
+
+  const data = {
+    labels: labels,
+    datasets: [{
+      axis: 'x',
+      data: dataList,
+      fill: false,
+      backgroundColor: chartColorCodes,
+      borderColor: ['rgba(0, 0, 0, 0.1)'],
+      borderWidth: 1,
+      barThickness: barThickness
+    }]
+  };
+
+  const config = {
+    type: 'bar',
+    data: data,
+    options: {
+      indexAxis: 'x',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { mode: 'nearest', intersect: false }
+      },
+      scales: {
+        x: {
+          title: {
+            text: "Event",
+            display: true,
+            font: { size: 14 },
+            color: "#0033cc"
+          },
+          ticks: {
+            autoSkip: false,
+            maxRotation: 45,
+            minRotation: 0
+          }
+        },
+        y: {
+          beginAtZero: true,
+          ticks: {
+            stepSize: Math.ceil(Math.max(...dataList) / 5) || 1
+          }
+        }
+      }
+    }
+  };
+
+  // add scrollable wrapper
+  const scrollWrapper = $('<div/>')
+    .css({
+      'max-height': maxHeight + 'px',
+      'overflow-y': dataList.length > maxVisibleBars ? 'auto' : 'hidden',
+      'padding': '10px'
+    });
+
+  const canvasNode = $('<canvas/>')
+    .css({ height: chartHeight + 'px', width: '100%' });
+
+  scrollWrapper.append(canvasNode);
+  container.html(scrollWrapper);
+
+  return new Chart(canvasNode[0], config);
+};
+
 
 const initPanZoomController = function(MIN_ZOOM, MAX_ZOOM, cyObj, rootNodeSelector ){
 	var panzoomConfigs = {
