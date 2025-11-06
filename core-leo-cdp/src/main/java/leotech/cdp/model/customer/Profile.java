@@ -979,6 +979,7 @@ public class Profile extends AbstractProfile implements Comparable<Profile> {
 	public void setGender(int gender) {
 		if (gender >= 0 && gender <= 7) {
 			this.gender = gender;
+			this.genderAsText = ProfileGenderCode.getStringValue(gender);
 			setGenderProbability(100);
 		}
 	}

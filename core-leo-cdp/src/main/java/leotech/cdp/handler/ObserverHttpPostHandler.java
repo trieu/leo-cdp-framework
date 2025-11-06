@@ -25,6 +25,7 @@ import leotech.system.util.HttpWebParamUtil;
 import rfx.core.util.StringUtil;
 
 /**
+ * HTTP POST Event Data handler
  * 
  * @author @tantrieuf31
  */

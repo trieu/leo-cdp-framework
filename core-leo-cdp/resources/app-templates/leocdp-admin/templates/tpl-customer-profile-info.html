@@ -676,22 +676,34 @@
 <!-- Merge Duplicate from Current Profile -->
 <div class="modal fade" id="deduplicateCurrentProfileDialog" role="dialog">
     <div class="modal-dialog">
-        <!-- Modal content-->
-        <div class="modal-content">
-            <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h3 class="modal-title"> <i class="fa fa-compress" aria-hidden="true"></i> De-duplicate Profiles </h3>
-            </div>
-			<div class="modal-body">
-                <div class="alert alert-info">
-                    <h4> <i class="fa fa-question-circle-o" aria-hidden="true"></i>  Do you want to do data de-duplication ? </h4>
-                </div>
-            </div>
-            <div class="modal-footer">
-            	<button type="button" class="btn btn-primary" data-dismiss="modal"> <i class="fa fa-minus-circle" aria-hidden="true"></i> Cancal </button>
-                <button type="button" class="btn btn-success" onclick="deduplicateCurrentProfile()"> <i class="fa fa-check-circle" aria-hidden="true"></i> Do de-duplication </button>
-            </div>
-        </div>
+	    <!-- Modal content -->
+	    <div class="modal-content">
+	        <div class="modal-header">
+	            <button type="button" class="close" data-dismiss="modal">&times;</button>
+	            <h3 class="modal-title">
+	                <i class="fa fa-compress" aria-hidden="true"></i> De-duplicate Profiles
+	            </h3>
+	        </div>
+	
+	        <div class="modal-body">
+	            <div class="alert alert-info">
+	                <h4>
+	                    <i class="fa fa-question-circle-o" aria-hidden="true"></i>
+	                    Are you sure you want to perform data de-duplication?
+	                </h4>
+	                <p>This process will merge duplicate profiles into a single unified profile.</p>
+	            </div>
+	        </div>
+	
+	        <div class="modal-footer">
+	            <button type="button" class="btn btn-default" data-dismiss="modal">
+	                <i class="fa fa-times-circle" aria-hidden="true"></i> Cancel
+	            </button>
+	            <button type="button" class="btn btn-success" onclick="deduplicateCurrentProfile()">
+	                <i class="fa fa-check-circle" aria-hidden="true"></i> Merge Profiles
+	            </button>
+	        </div>
+	    </div>
+	</div>
 
-    </div>
 </div>

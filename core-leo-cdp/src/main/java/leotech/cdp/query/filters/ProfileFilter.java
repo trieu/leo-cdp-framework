@@ -63,8 +63,13 @@ public final class ProfileFilter extends DataFilter {
 	
 	public ProfileFilter(String excludeProfileId) {
 		super();
-		this.excludeProfileId = excludeProfileId;
-		this.dataDeduplicationJob = StringUtil.isNotEmpty(excludeProfileId);
+		if(StringUtil.isNotEmpty(excludeProfileId)) {
+			this.excludeProfileId = excludeProfileId;
+			this.dataDeduplicationJob = true;
+		}
+		else {
+			throw new IllegalArgumentException("excludeProfileId is empty or null");
+		}
 	}
 
 	public ProfileFilter(SystemUser systemUser, String uri, JsonObject paramJson) {

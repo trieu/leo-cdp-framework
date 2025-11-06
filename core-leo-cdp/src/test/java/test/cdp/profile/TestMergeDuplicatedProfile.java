@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import leotech.cdp.dao.ProfileDaoUtil;
-import leotech.cdp.domain.IdentityResolutionManagement;
 import leotech.cdp.domain.ProfileDataManagement;
+import leotech.cdp.domain.ProfileMergeService;
 import leotech.cdp.domain.TouchpointHubManagement;
 import leotech.cdp.domain.schema.CustomerFunnel;
 import leotech.cdp.model.customer.Profile;
@@ -41,6 +41,6 @@ public class TestMergeDuplicatedProfile {
 		List<Profile> listToBeUnified = new ArrayList<Profile>();
 		listToBeUnified.add(ProfileDaoUtil.getByPrimaryEmail("tantrieuf31@gmail.com"));
 		
-		IdentityResolutionManagement.mergeProfileData(destProfile, listToBeUnified);
+		ProfileMergeService.mergeProfileData(destProfile, listToBeUnified);
 	}
 }

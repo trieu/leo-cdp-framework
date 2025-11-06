@@ -48,11 +48,7 @@ import rfx.core.util.StringUtil;
 public final class ContextSessionManagement {
 
 	public static final int AFTER_30_MINUTES = 1800;
-
 	private static final int CACHE_POOL_SIZE = 2000000;
-	private static final int TEN_MINUTES = 2;
-	private static final int TTL_PROFILE_STATS = 3600 * 12; // 12 hours
-	private static final int TIME_TO_UPDATE_CACHE = TTL_PROFILE_STATS - 900;
 
 	// ------- BEGIN Cache Session
 
@@ -208,7 +204,7 @@ public final class ContextSessionManagement {
 			// 2. Use the LoadingCache, which tries Redis next
 			ContextSession ctxSession = null;
 			if (StringUtil.isNotEmpty(clientSessionKey)) {
-				ctxSession = localCacheSessions.get(clientSessionKey);
+				ctxSession = localCacheSessions.getIfPresent(clientSessionKey);
 			}
 
 			// 3. If still null (not in Redis or expired), create new

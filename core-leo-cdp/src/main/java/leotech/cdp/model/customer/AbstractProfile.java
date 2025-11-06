@@ -1994,15 +1994,24 @@ public abstract class AbstractProfile extends PersistentObject {
 	}
 
 	public void setBusinessData(Map<String, Set<String>> businessData) {
-		if(businessData != null) {
-			this.businessData.putAll(businessData);
-			businessData.forEach((String k, Set<String> v)->{
-				Set<String> ev = this.businessData.getOrDefault(k, v);
-				ev.addAll(ev);
-				this.businessData.put(k, ev);
-			});
-		}
+	    if (businessData == null || businessData.isEmpty()) {
+	        return;
+	    }
+
+	    if (this.businessData == null) {
+	        this.businessData = new HashMap<>();
+	    }
+
+	    // Merge entries safely by creating mutable copies
+	    businessData.forEach((key, valueSet) -> {
+	        Set<String> existingSet = this.businessData.getOrDefault(key, new HashSet<>());
+	        if (valueSet != null) {
+	            existingSet.addAll(valueSet);  // merge values
+	        }
+	        this.businessData.put(key, existingSet);
+	    });
 	}
+
 	
 	public Map<String, String> getSocialMediaProfiles() {
 		return socialMediaProfiles;
@@ -2141,8 +2150,24 @@ public abstract class AbstractProfile extends PersistentObject {
 	}
 	
 	public void setNotificationUserIds(Map<String, Set<String>> notificationUserIds) {
-		this.notificationUserIds = notificationUserIds;
+	    if (notificationUserIds == null || notificationUserIds.isEmpty()) {
+	        return;
+	    }
+
+	    if (this.notificationUserIds == null) {
+	        this.notificationUserIds = new HashMap<>();
+	    }
+
+	    // Merge entries safely into a mutable map
+	    notificationUserIds.forEach((key, users) -> {
+	        Set<String> existing = this.notificationUserIds.getOrDefault(key, new HashSet<>());
+	        if (users != null) {
+	            existing.addAll(users);
+	        }
+	        this.notificationUserIds.put(key, existing);
+	    });
 	}
+
 	
 	public Map<String, Set<String>> getNotificationUserIds() {
 		return notificationUserIds;
