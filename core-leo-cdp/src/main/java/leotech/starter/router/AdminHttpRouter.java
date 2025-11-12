@@ -72,8 +72,8 @@ public final class AdminHttpRouter extends BaseWebRouter {
 	public static final String API_CONTENT = "/api/content";
 	public static final String API_SYSTEM = "/api/system";
 	
-	public AdminHttpRouter(RoutingContext context) {
-		super(context);
+	public AdminHttpRouter(RoutingContext context, String host, int port) {
+		super(context, host, port);
 	}
 
 	@Override

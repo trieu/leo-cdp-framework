@@ -18,7 +18,6 @@ import io.vertx.core.http.HttpServerResponse;
 import io.vertx.ext.web.RoutingContext;
 import leotech.system.version.SystemMetaData;
 
-
 /**
  * Base Http Router
  * 
@@ -30,12 +29,10 @@ public abstract class BaseHttpRouter {
 	public static final String PONG = "PONG";
 	public static final String POWERED_BY = "PoweredBy";
 	public static final String SERVER_VERSION = "LeoTech";
-	
+
 	public static final String HTTP = "http://";
 	public final static String DEFAULT_PATH = "/";
-	
-	public final static String DEFAULT_RESPONSE_TEXT = SystemMetaData.BUILD_EDITION + "_" + SystemMetaData.BUILD_ID;
-	
+
 	public final static String SPIDER = "Spider";
 	public final static int COOKIE_AGE_1_DAY = 86400; // One week
 	public final static int COOKIE_AGE_1_WEEK = COOKIE_AGE_1_DAY * 7; // 1 week
@@ -46,10 +43,10 @@ public abstract class BaseHttpRouter {
 	public static final String URI_FAVICON_ICO = "/favicon.ico";
 	public static final String URI_PING = "/ping";
 	public static final String URI_SYSINFO = "/sysinfo";
-	
+
 	public static final String URI_ERROR_404 = "/404";
 	public static final String URI_ERROR_500 = "/500";
-	
+
 	public static final String HTTP_METHOD_POST = "POST";
 	public static final String HTTP_METHOD_PUT = "PUT";
 	public static final String HTTP_METHOD_PATCH = "PATCH";
@@ -57,13 +54,38 @@ public abstract class BaseHttpRouter {
 	public static final String HTTP_METHOD_DELETE = "DELETE";
 	public static final String HTTP_GET_OPTIONS = "options";
 	public static final String HEADER_SESSION = "leouss";
-	
-	final protected static Logger logger = LoggerFactory.getLogger(BaseHttpRouter.class);
-	final protected RoutingContext context;
+
 	final static boolean CACHING_VIEW = SystemMetaData.isEnableCachingViewTemplates();
 
-	public BaseHttpRouter(RoutingContext context) {
+	final protected static Logger logger = LoggerFactory.getLogger(BaseHttpRouter.class);
+
+	final protected RoutingContext context;
+	final protected String host;
+	final protected int port;
+	final protected String nodeInfo;
+
+	public BaseHttpRouter(RoutingContext context, String host, Integer port) {
 		this.context = context;
+		this.host = host;
+		this.port = port;
+		this.nodeInfo = String.format("[%s:%d] %s_%s", host, port, SystemMetaData.BUILD_EDITION,
+				SystemMetaData.BUILD_ID);
+	}
+
+	public RoutingContext getContext() {
+		return context;
+	}
+
+	public String getHost() {
+		return host;
+	}
+
+	public int getPort() {
+		return port;
+	}
+
+	public String getNodeInfo() {
+		return nodeInfo;
 	}
 
 	public static Cookie createCookie(String name, String value, String domain, String path) {
@@ -74,49 +96,61 @@ public abstract class BaseHttpRouter {
 	}
 
 	public static void setCacheControlHeader(MultiMap headers) {
-		if(CACHING_VIEW) {
-			headers.set(HttpHeaders.CACHE_CONTROL, "private, max-age=604800");	
-		}
-		else {
+		if (CACHING_VIEW) {
+			headers.set(HttpHeaders.CACHE_CONTROL, "private, max-age=604800");
+		} else {
 			headers.set(HttpHeaders.CACHE_CONTROL, "no-cache, no-store");
 		}
 	}
 
 	public static void setCorsHeaders(MultiMap headers, String origin) {
+		if (headers == null) {
+			throw new IllegalArgumentException("Headers cannot be null");
+		}
+
+		// Use a whitelist or fallback for security
+		String allowOrigin = (origin != null && !origin.isEmpty()) ? origin : "*";
+
 		headers.set("Accept-Ranges", "bytes");
-		headers.set("Access-Control-Allow-Origin", origin);
+		headers.set("Access-Control-Allow-Origin", allowOrigin);
 		headers.set("Access-Control-Allow-Credentials", "true");
-		headers.set("Access-Control-Allow-Methods", "GET,POST");
-		headers.set("Access-Control-Allow-Headers", "Content-Type, Range, leouss, *");
-		headers.set("Access-Control-Expose-Headers", "Content-Range, Content-Length, leouss");
-		headers.set("Access-Control-Max-Age", "86400");
-		headers.set("Cache-Control", "no-cache,no-store");
-		headers.set("Connection", "Keep-Alive");
+
+		// Expanded for better REST compatibility
+		headers.set("Access-Control-Allow-Methods",
+				String.join(", ", "GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"));
+
+		headers.set("Access-Control-Allow-Headers", String.join(", ", "Origin", "Accept", "Content-Type",
+				"Authorization", "Range", "leouss", "X-Requested-With"));
+
+		headers.set("Access-Control-Expose-Headers", String.join(", ", "Content-Range", "Content-Length", "leouss"));
+
+		headers.set("Access-Control-Max-Age", "86400"); // 1 day
+		headers.set("Cache-Control", "no-cache, no-store, must-revalidate");
+		headers.set("Connection", "keep-alive");
 		headers.set("P3P", "CP=\"CAO PSA OUR\"");
 		headers.set("Pragma", "no-cache");
 	}
-	
 
-    /**
-     * thread pool optimized for high-throughput but safe concurrent work - likely for Redis or network I/O tasks.
-     */
-    protected static final ExecutorService PROCESSORS = new ThreadPoolExecutor(
-            SystemMetaData.NUMBER_CORE_CPU,                      // core threads = CPU cores
-            SystemMetaData.NUMBER_CORE_CPU * 4,                  // allow bursts up to 4× cores
-            60L, TimeUnit.SECONDS,
-            new LinkedBlockingQueue<>(10000), // bounded queue for backpressure
-            new ThreadFactory() {
-                private final ThreadFactory base = Executors.defaultThreadFactory();
-                @Override public Thread newThread(Runnable r) {
-                    Thread t = base.newThread(r);
-                    t.setName("leo-http-" + t.getId());
-                    t.setDaemon(true);
-                    return t;
-                }
-            },
-            new ThreadPoolExecutor.CallerRunsPolicy() // throttles callers under pressure
-    );
-	
+	/**
+	 * thread pool optimized for high-throughput but safe concurrent work - likely
+	 * for Redis or network I/O tasks.
+	 */
+	protected static final ExecutorService PROCESSORS = new ThreadPoolExecutor(SystemMetaData.NUMBER_CORE_CPU,
+			SystemMetaData.NUMBER_CORE_CPU * 4, // allow bursts up to 4× cores
+			60L, TimeUnit.SECONDS, new LinkedBlockingQueue<>(20000), // bounded queue for backpressure
+			new ThreadFactory() {
+				private final ThreadFactory base = Executors.defaultThreadFactory();
+
+				@Override
+				public Thread newThread(Runnable r) {
+					Thread t = base.newThread(r);
+					t.setName("leo-http-" + t.getId());
+					t.setDaemon(true);
+					return t;
+				}
+			}, new ThreadPoolExecutor.CallerRunsPolicy() // throttles callers under pressure
+	);
+
 	/**
 	 * HTTP handle
 	 * 
@@ -125,15 +159,12 @@ public abstract class BaseHttpRouter {
 	 */
 	abstract public void process() throws Exception;
 
-
 	protected void respond(HttpServerResponse resp, String body) {
-	    resp.setStatusCode(HttpStatus.SC_OK).end(body);
+		resp.setStatusCode(HttpStatus.SC_OK).end(body);
 	}
 
 	protected void respondError(HttpServerResponse resp, int code, String body) {
-	    resp.setStatusCode(code).end(body);
+		resp.setStatusCode(code).end(body);
 	}
-
-	
 
 }

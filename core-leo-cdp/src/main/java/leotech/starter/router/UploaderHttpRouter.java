@@ -48,8 +48,8 @@ public final class UploaderHttpRouter extends BaseHttpRouter {
 	public static final String UPLOADED_FILES_LOCATION = "/public/uploaded-files/";
 	static final boolean USE_LOCAL_STORAGE = SystemMetaData.USE_LOCAL_STORAGE;
 
-	public UploaderHttpRouter(RoutingContext context) {
-		super(context);
+	public UploaderHttpRouter(RoutingContext context, String host, int port) {
+		super(context, host, port);
 		logger.info("init UploadFileHttpRouter");
 	}
 
@@ -98,7 +98,7 @@ public final class UploaderHttpRouter extends BaseHttpRouter {
 			// CORS Header
 			BaseHttpRouter.setCorsHeaders(outHeaders, origin);
 			if (HTTP_GET_OPTIONS.equalsIgnoreCase(httpMethod) || HTTP_METHOD_GET.equalsIgnoreCase(httpMethod)) {
-				resp.end("CDP Uploader_" + DEFAULT_RESPONSE_TEXT);
+				resp.end("CDP Uploader_" + nodeInfo);
 			}
 		}
 	}

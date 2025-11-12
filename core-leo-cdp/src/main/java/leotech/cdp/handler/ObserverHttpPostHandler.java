@@ -7,7 +7,6 @@ import static leotech.starter.router.ObserverHttpRouter.PREFIX_CONTEXT_SESSION_P
 import static leotech.starter.router.ObserverHttpRouter.PREFIX_EVENT_ACTION;
 import static leotech.starter.router.ObserverHttpRouter.PREFIX_EVENT_CONVERSION;
 import static leotech.starter.router.ObserverHttpRouter.PREFIX_EVENT_FEEDBACK;
-import static leotech.system.common.BaseHttpRouter.DEFAULT_RESPONSE_TEXT;
 
 import com.google.gson.Gson;
 
@@ -46,7 +45,7 @@ public final class ObserverHttpPostHandler {
 	 * @return
 	 */
 	public final static void process(RoutingContext context, HttpServerRequest req, String urlPath, MultiMap reqHeaders,
-			MultiMap params, HttpServerResponse resp, MultiMap outHeaders, DeviceInfo device, String origin) {
+			MultiMap params, HttpServerResponse resp, MultiMap outHeaders, DeviceInfo device, String origin, String serverInfo) {
 		String eventName = StringUtil.safeString(params.get(HttpParamKey.EVENT_METRIC_NAME)).toLowerCase();
 		String ctxSessionKey = StringUtil.safeString(params.get(HttpParamKey.CTX_SESSION_KEY));
 
@@ -142,7 +141,7 @@ public final class ObserverHttpPostHandler {
 
 		// no handler found
 		else {
-			resp.end("CDP Observer_" + DEFAULT_RESPONSE_TEXT);
+			resp.end("CDP Observer_" + serverInfo);
 
 		}
 	}

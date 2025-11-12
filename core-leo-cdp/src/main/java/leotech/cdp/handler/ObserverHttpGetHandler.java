@@ -17,7 +17,6 @@ import static leotech.starter.router.ObserverHttpRouter.PREFIX_TARGET_MEDIA_CLIC
 import static leotech.starter.router.ObserverHttpRouter.PREFIX_TARGET_MEDIA_QR_CODE_TRACKING;
 import static leotech.starter.router.ObserverHttpRouter.PREFIX_WEBFORM;
 import static leotech.starter.router.ObserverHttpRouter.PREFIX_WEB_TEMPLATE_HTML;
-import static leotech.system.common.BaseHttpRouter.DEFAULT_RESPONSE_TEXT;
 import static leotech.system.common.BaseHttpRouter.PONG;
 import static leotech.system.common.BaseHttpRouter.URI_ERROR_404;
 import static leotech.system.common.BaseHttpRouter.URI_FAVICON_ICO;
@@ -43,7 +42,7 @@ import leotech.starter.router.ObserverHttpRouter;
 import leotech.system.common.BaseHttpHandler;
 import leotech.system.common.BaseHttpRouter;
 import leotech.system.common.PublicFileHttpRouter;
-import leotech.system.domain.SystemInfo;
+import leotech.system.domain.SystemSnapshot;
 import leotech.system.model.DeviceInfo;
 import leotech.system.model.GeoLocation;
 import leotech.system.util.GeoLocationUtil;
@@ -60,7 +59,7 @@ public final class ObserverHttpGetHandler {
 	private static final String GOOGLE_COM_SEARCH_URL = "https://google.com/search?q=";
 
 	public final static void process(RoutingContext context, HttpServerRequest req, String urlPath, MultiMap reqHeaders,
-			MultiMap params, HttpServerResponse resp, MultiMap outHeaders, DeviceInfo device, String origin) {
+			MultiMap params, HttpServerResponse resp, MultiMap outHeaders, DeviceInfo device, String origin, String nodeInfo) {
 		String eventName = StringUtil.safeString(params.get(HttpParamKey.EVENT_METRIC_NAME)).toLowerCase();
 		String ctxSessionKey = StringUtil.safeString(params.get(HttpParamKey.CTX_SESSION_KEY));
 
@@ -265,8 +264,8 @@ public final class ObserverHttpGetHandler {
 		}
 		//
 		else if (urlPath.equalsIgnoreCase(URI_SYSINFO)) {
-			SystemInfo systemInfo = new SystemInfo();
-			resp.end(systemInfo.toString());
+			SystemSnapshot SystemSnapshot = new SystemSnapshot(nodeInfo);
+			resp.end(SystemSnapshot.toString());
 		}
 		//
 		else if (urlPath.equalsIgnoreCase(URI_FAVICON_ICO)) {
@@ -281,7 +280,7 @@ public final class ObserverHttpGetHandler {
 		}
 		// no handler found
 		else {
-			resp.end("CDP Observer_" + DEFAULT_RESPONSE_TEXT);
+			resp.end("CDP OBSERVER: " + nodeInfo);
 
 		}
 	}

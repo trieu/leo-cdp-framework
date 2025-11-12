@@ -59,8 +59,8 @@ public final class ObserverHttpRouter extends BaseHttpRouter {
 	public static final String BASE_URL_TARGET_MEDIA_CLICK_TRACKING = "https://" + SystemMetaData.DOMAIN_CDP_OBSERVER + PREFIX_TARGET_MEDIA_CLICK_TRACKING;
 
 
-	public ObserverHttpRouter(RoutingContext context) {
-		super(context);
+	public ObserverHttpRouter(RoutingContext context, String host, Integer port) {
+		super(context, host, port);
 		// caching or not caching templates in resources
 		boolean enableCaching = SystemMetaData.isEnableCachingViewTemplates();
 		if (enableCaching) {
@@ -91,22 +91,21 @@ public final class ObserverHttpRouter extends BaseHttpRouter {
 
 		try {
 			
-			
 			// WEBHOOK and Domain Verifier
 			boolean processed = WebhookDataHandler.process(this.context, req, urlPath, reqHeaders, params, resp, outHeaders, device, origin);
 			if(!processed) {
 				PROCESSORS.submit(()->{
 					if(httpMethod.equalsIgnoreCase(HTTP_METHOD_GET)) {
-						ObserverHttpGetHandler.process(this.context, req, urlPath, reqHeaders, params, resp, outHeaders, device, origin);
+						ObserverHttpGetHandler.process(this.context, req, urlPath, reqHeaders, params, resp, outHeaders, device, origin, nodeInfo);
 					} 
 					else if(httpMethod.equalsIgnoreCase(HTTP_METHOD_POST) || httpMethod.equalsIgnoreCase(HTTP_METHOD_PUT)) {
-						ObserverHttpPostHandler.process(this.context, req, urlPath, reqHeaders, params, resp, outHeaders, device, origin);
+						ObserverHttpPostHandler.process(this.context, req, urlPath, reqHeaders, params, resp, outHeaders, device, origin, nodeInfo);
 					}
 				});
 				return;
 			}
 			// no handler found
-			resp.end("CDP Observer_"+DEFAULT_RESPONSE_TEXT);
+			resp.end("CDP Observer_"+nodeInfo);
 		} catch (Exception e) {
 			// resp.end();
 			System.err.println("urlPath:" + urlPath + " error:" + e.getMessage());

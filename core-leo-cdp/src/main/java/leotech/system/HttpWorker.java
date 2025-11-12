@@ -1,5 +1,7 @@
 package leotech.system;
 
+import java.lang.reflect.Constructor;
+
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -105,7 +107,7 @@ public final class HttpWorker extends BaseWorker {
 	}
 
 	@Override
-	public final void start(String host, int port) {
+	public final void start(final String host, final int port) {
 		Router router = Router.router(vertxInstance);
 
 		// for HTTP POST upload or Ajax POST submit
@@ -123,8 +125,9 @@ public final class HttpWorker extends BaseWorker {
 		router.route().handler(context -> {
 			try {
 				String className = httpRoutingConfigs.getClassNameHttpRouter();
-				Object newInstance = Class.forName(className).getConstructor(RoutingContext.class).newInstance(context);
-				BaseHttpRouter obj = (BaseHttpRouter) newInstance;
+				Constructor<?> constructor = Class.forName(className).getConstructor(RoutingContext.class, String.class, Integer.class);
+				Object instance = constructor.newInstance(context, host, port);
+				BaseHttpRouter obj = (BaseHttpRouter) instance;
 				obj.process();
 			} catch (Throwable e) {
 				e.printStackTrace();

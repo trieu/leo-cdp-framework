@@ -1,7 +1,6 @@
 package leotech.cdp.handler;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
-import static leotech.system.common.BaseHttpRouter.DEFAULT_RESPONSE_TEXT;
 
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpServerRequest;
@@ -31,7 +30,7 @@ public final class WebhookDataHandler {
 	public static final String THE_BODY_IN_HTTP_IS_EMPTY = "The body in HTTP is empty";
 	public static final String OK = "ok";
 	public static final String INVALID_ACCESS_TOKEN_VALUE = "INVALID_ACCESS_TOKEN_VALUE";
-	public static final String DEFAULT_RESULT = "Observer Http Webhook Handler of " + DEFAULT_RESPONSE_TEXT;
+
 
 	public final static boolean process(RoutingContext context, HttpServerRequest req, String urlPath,
 			MultiMap reqHeaders, MultiMap params, HttpServerResponse resp, MultiMap outHeaders, DeviceInfo device,

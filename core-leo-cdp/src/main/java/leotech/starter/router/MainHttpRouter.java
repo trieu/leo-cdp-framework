@@ -23,7 +23,7 @@ import leotech.system.common.BaseWebRouter;
 import leotech.system.common.PublicFileHttpRouter;
 import leotech.system.common.SecuredApiHandler;
 import leotech.system.common.SecuredHttpDataHandler;
-import leotech.system.domain.SystemInfo;
+import leotech.system.domain.SystemSnapshot;
 import leotech.system.model.DeviceInfo;
 import leotech.system.model.JsonDataPayload;
 import leotech.system.model.SystemUser;
@@ -65,8 +65,8 @@ public final class MainHttpRouter extends BaseHttpRouter {
 	
 	static final Map<String, String> STATIC_FILES = new ConcurrentHashMap<>(10000);
 
-	public MainHttpRouter(RoutingContext context) {
-		super(context);
+	public MainHttpRouter(RoutingContext context, String host, Integer port) {
+		super(context, host, port);
 		// caching or not caching templates in resources
 		boolean enableCaching = SystemMetaData.isEnableCachingViewTemplates();
 		if (enableCaching) {
@@ -179,16 +179,16 @@ public final class MainHttpRouter extends BaseHttpRouter {
 		} 
 		
 		else if (path.equalsIgnoreCase(URI_SYSINFO)) {
-			SystemInfo systemInfo = new SystemInfo();
-			resp.end(systemInfo.toString());
+			SystemSnapshot SystemSnapshot = new SystemSnapshot(nodeInfo);
+			resp.end(SystemSnapshot.toString());
 		} 
 		
 		else if (path.equalsIgnoreCase(URI_VERSION)) {
-			resp.end("CDP Admin_"+DEFAULT_RESPONSE_TEXT);
+			resp.end("CDP ADMIN: "+nodeInfo);
 		} 
 		
 		else if (path.equalsIgnoreCase(URI_LEO_CDP_IMPORTER)) {
-			resp.end("CDP DATA IMPORTER version: "+DEFAULT_RESPONSE_TEXT);
+			resp.end("CDP IMPORTER: "+nodeInfo);
 		} 
 		
 		// 
@@ -212,7 +212,7 @@ public final class MainHttpRouter extends BaseHttpRouter {
 		
 		else {
 			// JSON data API handler for Leo Content Hub
-			AdminHttpRouter adminApiRouter = new AdminHttpRouter(context);
+			AdminHttpRouter adminApiRouter = new AdminHttpRouter(context, host, port);
 			adminApiRouter.enableAutoRedirectToHomeIf404();
 			adminApiRouter.process();
 		}

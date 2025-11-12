@@ -51,11 +51,9 @@ public abstract class BaseWebRouter extends BaseHttpRouter {
 	private JsonDataPayload defaultDataHttpPost = JsonDataPayload.fail("No HTTP POST handler found", 404);
 	
     
-
-
 	///////////
-	public BaseWebRouter(RoutingContext context) {
-		super(context);
+	public BaseWebRouter(RoutingContext context, String host, int port) {
+		super(context, host, port);
 	}
 
 	// for implemented POST method
