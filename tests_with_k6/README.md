@@ -1,195 +1,82 @@
-# 🧪 Setup Guide: Install and Run k6 on Ubuntu 22.04
+# 🧪 Setup & Load Testing Guide for LEO CDP
 
-`k6` is a modern open-source load testing tool for testing APIs and backend systems like **LEO BOT**.
-This guide explains how to install it securely and run a performance test against your endpoint.
-
----
-
-## 1. Update your system
-
-Keep your Ubuntu system and package list up to date:
-
-```bash
-sudo apt-get update
-sudo apt-get upgrade -y
-```
+`k6` is a modern open-source load testing tool designed for API and backend performance testing.
+This guide walks you through installing `k6` safely on **Ubuntu 22.04**, then running load tests against core endpoints of the **LEO CDP Event Observer**.
 
 ---
 
-## 2. Import the official k6 GPG key
+## 1. Install k6 (Automated Installer for Ubuntu 22.04)
 
-To ensure package authenticity, import k6’s signing key:
+Before installing, remove any old or corrupted k6 keyrings or repo definitions:
 
 ```bash
-sudo gpg -k
-sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+sudo rm -f /usr/share/keyrings/k6.gpg
+sudo rm -f /usr/share/keyrings/k6-archive-keyring.gpg
+sudo rm -f /etc/apt/sources.list.d/k6.list
 ```
+
+Move into the testing folder and run the automated installer:
+
+```bash
+cd ./tests_with_k6
+./install_k6_and_run_test.sh
+```
+
+This script handles:
+
+* DNS validation
+* Installation of the correct k6 GPG key
+* Adding the official repository
+* Installing the latest stable `k6`
+* Creating sample test files
+* Verifying installation
+
+Once complete, `k6` is ready to use system-wide.
 
 ---
 
-## 3. Add the k6 APT repository
+## 2. Run a Load Test: Initialize Visitor Session + Page View
 
-This tells Ubuntu where to fetch k6 packages from:
-
-```bash
-echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
-```
-
-Then verify:
+To simulate the beginning of a real user journey, run your session-init test:
 
 ```bash
-cat /etc/apt/sources.list.d/k6.list
+k6 run user_session_load_test.js
 ```
 
-Expected:
+This script typically:
 
-```
-deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main
-```
+* Creates a **visitor session**
+* Sends **page-view events**
+* Checks API latency and error rates
+* Produces a real-world baseline for CDP event ingestion
+
+Use this test as the first building block for deeper scenarios like:
+
+* Multi-page user flows
+* Concurrent session ramping
+* Stress and endurance tests
+* RAG/AI assistant workload simulation
 
 ---
 
-## 4. Install k6
+## 3. Check Current Limit and Apply System-Wide (systemd, k6, Docker, etc.)
 
-Run the following commands:
+To ensure higher file-descriptor limits apply to all systemd-managed services, update the global systemd configuration.
 
-```bash
-sudo apt-get update
-sudo apt-get install k6 -y
-```
-
----
-
-## 5. Verify installation
-
-Check that k6 is installed correctly:
+Open the systemd config file:
 
 ```bash
-k6 version
+sudo nano /etc/systemd/system.conf
 ```
 
-Example output:
+Find the line for `DefaultLimitNOFILE` and either uncomment it or add it if missing:
 
 ```
-k6 v0.51.0 (2025-xx-xx)
+DefaultLimitNOFILE=65535
 ```
 
----
-
-## 6. Create and run the LEO BOT load test
-
-Create a new file named `leobot_load_test.js`:
-
-```javascript
-import http from 'k6/http';
-import { check, sleep } from 'k6';
-import { uuidv4 } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js';
-
-// === CONFIGURATION ===
-// Adjust virtual users (VUs), duration, and ramp stages as needed.
-export const options = {
-  stages: [
-    { duration: '30s', target: 10 },  // ramp up to 10 users
-    { duration: '1m', target: 50 },   // increase to 50 concurrent users
-    { duration: '2m', target: 50 },   // sustain load
-    { duration: '30s', target: 0 },   // ramp down
-  ],
-  thresholds: {
-    http_req_duration: ['p(95)<8000'], // 95% of requests < 8 seconds
-    http_req_failed: ['rate<0.01'],    // less than 1% errors
-  },
-};
-
-// === TEST FUNCTION ===
-export default function () {
-  const url = 'https://leobot.leocdp.com/_leoai/ask';
-  const visitorId = uuidv4();
-
-  const payload = JSON.stringify({
-    context: 'hi  ; Chào bạn Thomas! Hôm nay bạn cần LEO hỗ trợ gì nè? 😊  ; ',
-    question: 'hi',
-    visitor_id: visitorId,
-    answer_in_language: 'Vietnamese',
-    answer_in_format: 'html',
-  });
-
-  const params = {
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  };
-
-  const res = http.post(url, payload, params);
-
-  // === CHECKS ===
-  check(res, {
-    'status is 200': (r) => r.status === 200,
-    'response time < 8s': (r) => r.timings.duration < 8000,
-  });
-
-  // Simulate user think time
-  sleep(1 + Math.random() * 2);
-}
-```
-
----
-
-## 7. Run the test
-
-Execute:
+Reload systemd so the new limits take effect:
 
 ```bash
-k6 run leobot_load_test.js
+sudo systemctl daemon-reexec
 ```
-
-You’ll see live output:
-
-```
-running (3m30.0s), 50/50 VUs, 320 complete and 0 interrupted iterations
-status is 200..............: 100.00% ✓ 320 ✗ 0
-response time < 8s.........: 98.75% ✓ 316 ✗ 4
-```
-
----
-
-## 8. (Optional) Export or visualize results
-
-To export results:
-
-```bash
-k6 run --out json=results.json leobot_load_test.js
-```
-
-To visualize them:
-
-```bash
-xk6-dashboard --input results.json --output report.html
-```
-
----
-
-## 9. (Optional) Uninstall k6
-
-If you ever need to remove it:
-
-```bash
-sudo apt-get remove --purge k6 -y
-sudo rm /etc/apt/sources.list.d/k6.list
-sudo rm /usr/share/keyrings/k6-archive-keyring.gpg
-```
-
----
-
-## ✅ Summary
-
-| Step | Description                      |
-| ---- | -------------------------------- |
-| 1    | Update Ubuntu system             |
-| 2    | Import k6 GPG key                |
-| 3    | Add k6 repo                      |
-| 4    | Install k6                       |
-| 5    | Verify installation              |
-| 6    | Create and run LEO BOT load test |
-| 7    | Analyze results                  |
-| 8    | (Optional) Export or uninstall   |
-

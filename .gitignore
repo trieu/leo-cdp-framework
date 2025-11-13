@@ -38,3 +38,7 @@ core-leo-cdp/sample-trading-data/*
 **/__pycache__/*
 **/logs/*
 airflow-ai-agent/.env
+
+
+# linux APT keys
+**.gpg
