@@ -25,6 +25,11 @@ import leotech.system.domain.WebSocketDataService;
 import leotech.system.util.LogUtil;
 import leotech.system.util.database.ArangoDbUtil;
 import leotech.system.version.SystemMetaData;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.exceptions.JedisException;
+import rfx.core.nosql.jedis.RedisClientFactory;
+import rfx.core.nosql.jedis.RedisCommand;
 import rfx.core.stream.node.worker.BaseWorker;
 
 /**
@@ -44,6 +49,7 @@ public final class HttpWorker extends BaseWorker {
 	static HttpWorker instance = null;
 	final HttpRoutingConfigs httpRoutingConfigs;
 	final String defaultDbConfig;
+	private static JedisPool jedisPool =  RedisClientFactory.buildRedisPool("realtimeDataStats");
 	
 	public final HttpRoutingConfigs getHttpRoutingConfigs() {
 		return httpRoutingConfigs;
@@ -120,30 +126,57 @@ public final class HttpWorker extends BaseWorker {
 		if (httpRoutingConfigs.isSockJsHandlerEnabled()) {
 			initEventBusHandler(router);
 		}
+		
+		// 
+		String className = httpRoutingConfigs.getClassNameHttpRouter();
+		Constructor<?> constructor = initRouterClass(className, host, port);
+		if(constructor != null) {
+			// find the class and create new instance
+			router.route().handler(context -> {
+				try {
+					Object instance = constructor.newInstance(context, host, port);
+					BaseHttpRouter obj = (BaseHttpRouter) instance;
+					obj.process();
+				} catch (Throwable e) {
+					e.printStackTrace();
+					String err = e.getMessage();
+					context.response().setStatusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR).end(err);
+				}
+			});
 
-		// find the class and create new instance
-		router.route().handler(context -> {
-			try {
-				String className = httpRoutingConfigs.getClassNameHttpRouter();
-				Constructor<?> constructor = Class.forName(className).getConstructor(RoutingContext.class, String.class, Integer.class);
-				Object instance = constructor.newInstance(context, host, port);
-				BaseHttpRouter obj = (BaseHttpRouter) instance;
-				obj.process();
-			} catch (Throwable e) {
-				e.printStackTrace();
-				String err = e.getMessage();
-				context.response().setStatusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR).end(err);
+			
+			HttpServer server = checkAndCreateHttpServer(host, port);
+			if (server == null) {
+				System.err.println("registerWorkerHttpRouter return NULL value");
+				return;
 			}
-		});
+			server.requestHandler(router).listen(port, host);
+			registerWorkerNodeIntoCluster();
+		}
+		else {
+			logger.error(className + " is NULL when getConstructor from initRouterClass !");
+		}
 
 		
-		HttpServer server = checkAndCreateHttpServer(host, port);
-		if (server == null) {
-			System.err.println("registerWorkerHttpRouter return NULL value");
-			return;
+	}
+
+	private Constructor<?> initRouterClass(String className, final String host, final int port) {
+		String nodeId = String.format("[%s:%d]", host, port);
+		Constructor<?> constructor = null;
+		try {
+			constructor = Class.forName(className).getConstructor(RoutingContext.class, String.class, Integer.class);
+		} catch (Throwable e1) {
+			e1.printStackTrace();
+			logger.error(className + ":" + e1.getMessage());
 		}
-		server.requestHandler(router).listen(port, host);
-		registerWorkerNodeIntoCluster();
+		new RedisCommand<Void>(jedisPool) {
+			@Override
+			protected Void build(Jedis jedis) throws JedisException {
+				jedis.hset(className, nodeId, "0");
+				return null;
+			}
+		}.execute();
+		return constructor;
 	}
 
 	/**

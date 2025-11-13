@@ -16,6 +16,11 @@ import leotech.system.template.HandlebarsTemplateUtil;
 import leotech.system.util.DeviceInfoUtil;
 import leotech.system.util.HttpTrackingUtil;
 import leotech.system.version.SystemMetaData;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.exceptions.JedisException;
+import rfx.core.nosql.jedis.RedisClientFactory;
+import rfx.core.nosql.jedis.RedisCommand;
 import rfx.core.util.StringUtil;
 
 /**
@@ -23,7 +28,9 @@ import rfx.core.util.StringUtil;
  * https://github.com/USPA-Technology/leo-cdp-build/blob/master/leo-cdp-event-observer-data-flow.md
  */
 public final class ObserverHttpRouter extends BaseHttpRouter {
-
+	
+	
+	
 	public static final String INVALID = "invalid";
 	public static final String FAILED = "failed";
 	public static final String OK = "ok";
@@ -57,6 +64,9 @@ public final class ObserverHttpRouter extends BaseHttpRouter {
 	public static final String PREFIX_TOUCHPOINT  = "/touchpoint";
 	
 	public static final String BASE_URL_TARGET_MEDIA_CLICK_TRACKING = "https://" + SystemMetaData.DOMAIN_CDP_OBSERVER + PREFIX_TARGET_MEDIA_CLICK_TRACKING;
+	
+	public static final String LOG_CLASSNAME = ObserverHttpRouter.class.getName();
+	private static JedisPool jedisPool =  RedisClientFactory.buildRedisPool("realtimeDataStats");
 
 
 	public ObserverHttpRouter(RoutingContext context, String host, Integer port) {
@@ -73,6 +83,15 @@ public final class ObserverHttpRouter extends BaseHttpRouter {
 
 	@Override
 	public void process() throws Exception {
+		
+		new RedisCommand<Void>(jedisPool) {
+			@Override
+			protected Void build(Jedis jedis) throws JedisException {
+				jedis.hincrBy(LOG_CLASSNAME, nodeId, 1);
+				return null;
+			}
+		}.executeAsync();
+		
 		HttpServerRequest req = context.request();
 
 		String httpMethod = req.rawMethod();
@@ -90,11 +109,12 @@ public final class ObserverHttpRouter extends BaseHttpRouter {
 		DeviceInfo device = DeviceInfoUtil.getDeviceInfo(useragent);
 
 		try {
-			
 			// WEBHOOK and Domain Verifier
 			boolean processed = WebhookDataHandler.process(this.context, req, urlPath, reqHeaders, params, resp, outHeaders, device, origin);
 			if(!processed) {
 				PROCESSORS.submit(()->{
+					
+		
 					if(httpMethod.equalsIgnoreCase(HTTP_METHOD_GET)) {
 						ObserverHttpGetHandler.process(this.context, req, urlPath, reqHeaders, params, resp, outHeaders, device, origin, nodeInfo);
 					} 

@@ -40,6 +40,7 @@ import leotech.system.util.LogUtil;
 import leotech.system.util.TaskRunner;
 import leotech.system.util.database.ArangoDbCommand;
 import leotech.system.util.database.ArangoDbCommand.CallbackQuery;
+import leotech.system.version.SystemMetaData;
 import rfx.core.util.StringUtil;
 import rfx.core.util.Utils;
 
@@ -250,7 +251,6 @@ public final class ProfileDaoUtil extends AbstractCdpDatabaseUtil {
 				dataUpdateJob.execute(()->{
 					checkAndUpdateSegmentRefKeys(profile.getId(), profile.getInSegments());
 				});
-				
 			
 				return profileId;
 			} catch (Exception e) {
@@ -262,14 +262,19 @@ public final class ProfileDaoUtil extends AbstractCdpDatabaseUtil {
 		return null;
 	}
 
+	/**
+	 * @param profileId
+	 * @param inSegments
+	 */
 	private static void checkAndUpdateSegmentRefKeys(String profileId, Set<RefKey> inSegments) {
-		
-		List<Segment> segments = SegmentListManagement.getAllActiveSegments();
-		try {
-			ProfileDaoUtil.updateProfileSegmentRefs(profileId, segments, inSegments);
-		} catch (Exception e) {
-			e.printStackTrace();
-		} 
+		if(SystemMetaData.isUsingEventQueue()) {
+			try {
+				List<Segment> segments = SegmentListManagement.getAllActiveSegments();
+				ProfileDaoUtil.updateProfileSegmentRefs(profileId, segments, inSegments);
+			} catch (Exception e) {
+				logger.error("checkAndUpdateSegmentRefKeys profileId:"+profileId, e);
+			} 
+		}
 	}
 	
 	
@@ -331,6 +336,7 @@ public final class ProfileDaoUtil extends AbstractCdpDatabaseUtil {
 				if(callback != null) {
 					dataUpdateJob.execute(callback);
 				}
+				
 				
 				dataUpdateJob.execute(()->{
 					// FIXME try a queue to update profile or field update when import events 

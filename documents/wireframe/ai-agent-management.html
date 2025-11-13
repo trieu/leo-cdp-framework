@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Improved AI Agent Activation Hub</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    
+    <style>
+        /* A few simple style improvements */
+        body {
+            background-color: #f4f7f6;
+        }
+        .page-header {
+            margin-top: 0;
+            border-bottom: 1px solid #ddd;
+        }
+        .panel-heading .label {
+            font-size: 14px;
+            vertical-align: middle;
+        }
+        .panel-title {
+            font-weight: bold;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 15px;
+        }
+        .purpose-labels .label {
+            margin-right: 5px;
+            font-size: 12px;
+        }
+        .panel-footer {
+            background-color: #fcfcfc;
+        }
+        .config-row {
+            margin-bottom: 15px;
+        }
+        .config-row .btn-danger {
+            margin-top: 5px; /* Align button with inputs */
+        }
+        .modal-title {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container-fluid">
+        <div class="page-header">
+            <h3>
+                <i class="fa fa-cogs"></i> Agent Activation Hub
+                <small>Manage and configure your AI agents.</small>
+            </h3>
+        </div>
+
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <form class="form-inline">
+                    <div class="form-group">
+                        <label for="filterByName">Filter:</label>
+                        <input type="text" class="form-control" id="filterByName" placeholder="Enter keywords to filter by name">
+                    </div>
+                    
+                    <div class="form-group">
+                        <select class="form-control">
+                            <option>Show all AI Agents</option>
+                            <option>Show 'Data Personalization'</option>
+                            <option>Show 'Data Enrichment'</option>
+                            <option>Show 'Data Synchronization'</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-default">
+                        <i class="fa fa-filter"></i> Filter
+                    </button>
+                    <button type="reset" class="btn btn-default">
+                        <i class="fa fa-undo"></i> Reset
+                    </button>
+
+                    <button type="button" class="btn btn-primary pull-right" data-toggle="modal" data-target="#agentConfigModal">
+                        <i class="fa fa-plus"></i> Add New Agent
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+
+                <div class="panel panel-primary">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">LEO Email Marketing</h3>
+                        <span class="label label-success pull-right">Ready</span>
+                    </div>
+                    <div class="panel-body">
+                        <p>The default email marketing engine of CDP. Synchronizes contacts and segments to external email platforms.</p>
+                        <div class="purpose-labels">
+                            <strong>Purposes:</strong>
+                            <span class="label label-primary">Data Synchronization</span>
+                        </div>
+                        <hr style="margin-top: 10px; margin-bottom: 10px;">
+                        <small class="text-muted"><strong>Apache Airflow DAG ID:</strong> leo_email_marketing</small>
+                    </div>
+                    <div class="panel-footer text-right">
+                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#agentConfigModal">
+                            <i class="fa fa-pencil"></i> Configure
+                        </button>
+                        <button type="button" class="btn btn-danger">
+                            <i class="fa fa-trash"></i> Delete
+                        </button>
+                    </div>
+                </div>
+
+                <div class="panel panel-primary">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">CLV Computation Service</h3>
+                        <span class="label label-warning pull-right">Running...</span>
+                    </div>
+                    <div class="panel-body">
+                        <p>This agent periodically re-calculates the Customer Lifetime Value (CLV) score for all active profiles.</p>
+                        <div class="purpose-labels">
+                            <strong>Purposes:</strong>
+                            <span class="label label-info">Data Enrichment</span>
+                        </div>
+                        <hr style="margin-top: 10px; margin-bottom: 10px;">
+                        <small class="text-muted"><strong>Apache Airflow DAG ID:</strong> leo_compute_clv</small>
+                    </div>
+                    <div class="panel-footer text-right">
+                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#agentConfigModal">
+                            <i class="fa fa-pencil"></i> Configure
+                        </button>
+                        <button type="button" class="btn btn-danger">
+                            <i class="fa fa-trash"></i> Delete
+                        </button>
+                    </div>
+                </div>
+
+                <div class="panel panel-default"> <div class="panel-heading">
+                        <h3 class="panel-title">Personalization Engine</h3>
+                        <span class="label label-default pull-right">Disabled</span>
+                    </div>
+                    <div class="panel-body">
+                        <p>Connects to your custom-built recommendation engine to fetch product recommendations for users.</p>
+                        <div class="purpose-labels">
+                            <strong>Purposes:</strong>
+                            <span class="label label-success">Data Personalization</span>
+                            <span class="label label-info">Data Enrichment</span>
+                        </div>
+                        <hr style="margin-top: 10px; margin-bottom: 10px;">
+                        <small class="text-muted"><strong>Apache Airflow DAG ID:</strong> leo_personalization</small>
+                    </div>
+                    <div class="panel-footer text-right">
+                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#agentConfigModal">
+                            <i class="fa fa-pencil"></i> Configure
+                        </button>
+                        <button type="button" class="btn btn-danger">
+                            <i class="fa fa-trash"></i> Delete
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+
+    <div class="modal fade" id="agentConfigModal" tabindex="-1" role="dialog" aria-labelledby="agentConfigModalLabel">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="agentConfigModalLabel">
+                        <i class="fa fa-info-circle"></i> Agent Information
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <form class="form-horizontal">
+                        
+                        <div class="form-group">
+                            <label for="agentName" class="col-sm-2 control-label">Name</label>
+                            <div class="col-sm-10">
+                                <input type="text" class="form-control" id="agentName" value="LEO Email Marketing">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="agentDesc" class="col-sm-2 control-label">Description</label>
+                            <div class="col-sm-10">
+                                <textarea class="form-control" id="agentDesc" rows="3">The default email marketing engine of CDP</textarea>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="agentDagId" class="col-sm-2 control-label">Airflow DAG ID</label>
+                            <div class="col-sm-10">
+                                <input type="text" class="form-control" id="agentDagId" value="leo_email_marketing">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">Status</label>
+                            <div class="col-sm-10">
+                                <div class="checkbox" style="padding-top: 7px;">
+                                    <label>
+                                        <input type="checkbox" checked> Ready
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">Purpose</label>
+                            <div class="col-sm-10">
+                                <div class="checkbox">
+                                    <label>
+                                        <input type="checkbox"> Data Personalization (E.g: Use your own recommendation engine)
+                                    </label>
+                                </div>
+                                <div class="checkbox">
+                                    <label>
+                                        <input type="checkbox"> Data Enrichment (E.g: CLV scoring, predict customer interests)
+                                    </label>
+                                </div>
+                                <div class="checkbox">
+                                    <label>
+                                        <input type="checkbox" checked> Data Synchronization (E.g: Synch contact to email marketing platforms)
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="form-group">
+                            <div class="col-sm-10 col-sm-offset-2">
+                                <h4>
+                                    Configurations
+                                    <button type="button" class="btn btn-success btn-xs" style="margin-left: 10px;">
+                                        <i class="fa fa-plus"></i> New Config
+                                    </button>
+                                </h4>
+                                
+                                <div id="config-list">
+                                    <div class="row config-row">
+                                        <div class="col-sm-4">
+                                            <input type="text" class="form-control" value="smtp_enabled">
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <input type="text" class="form-control" value="false">
+                                        </div>
+                                        <div class="col-sm-2">
+                                            <button type="button" class="btn btn-danger btn-sm">
+                                                <i class="fa fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="row config-row">
+                                        <div class="col-sm-4">
+                                            <input type="text" class="form-control" value="smtp_username">
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <input type="text" class="form-control" placeholder="Enter value">
+                                        </div>
+                                        <div class="col-sm-2">
+                                            <button type="button" class="btn btn-danger btn-sm">
+                                                <i class="fa fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="row config-row">
+                                        <div class="col-sm-4">
+                                            <input type="text" class="form-control" value="smtp_password">
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <input type="password" class="form-control" placeholder="Enter value">
+                                        </div>
+                                        <div class="col-sm-2">
+                                            <button type="button" class="btn btn-danger btn-sm">
+                                                <i class="fa fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="row config-row">
+                                        <div class="col-sm-4">
+                                            <input type="text" class="form-control" value="smtp_host">
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <input type="text" class="form-control" placeholder="Enter value">
+                                        </div>
+                                        <div class="col-sm-2">
+                                            <button type="button" class="btn btn-danger btn-sm">
+                                                <i class="fa fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary">
+                        <i class="fa fa-save"></i> Save changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+</body>
+</html>

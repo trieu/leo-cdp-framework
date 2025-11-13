@@ -60,7 +60,6 @@ public final class HttpWebParamUtil {
 	public final static String getRemoteIP(HttpServerRequest request) {
 		String ipAddress = request.headers().get(X_FORWARDED_FOR);
 		if (!StringUtil.isNullOrEmpty(ipAddress) && !unknown.equalsIgnoreCase(ipAddress)) {
-			System.out.println("=> getRemoteIP " + ipAddress);
 			String[] toks = ipAddress.split(",");
 			int len = toks.length;
 			if (len > 0) {

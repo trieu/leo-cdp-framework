@@ -1,11 +1,6 @@
 package leotech.system.common;
 
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
@@ -16,6 +11,7 @@ import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.ext.web.RoutingContext;
+import leotech.system.util.IoProcessors;
 import leotech.system.version.SystemMetaData;
 
 /**
@@ -60,16 +56,19 @@ public abstract class BaseHttpRouter {
 	final protected static Logger logger = LoggerFactory.getLogger(BaseHttpRouter.class);
 
 	final protected RoutingContext context;
+	
 	final protected String host;
 	final protected int port;
+	
+	final protected String nodeId;
 	final protected String nodeInfo;
 
 	public BaseHttpRouter(RoutingContext context, String host, Integer port) {
 		this.context = context;
 		this.host = host;
 		this.port = port;
-		this.nodeInfo = String.format("[%s:%d] %s_%s", host, port, SystemMetaData.BUILD_EDITION,
-				SystemMetaData.BUILD_ID);
+		this.nodeId = String.format("[%s:%d]", host, port);
+		this.nodeInfo = String.format("%s_%s_%s", nodeId, SystemMetaData.BUILD_EDITION, SystemMetaData.BUILD_ID);
 	}
 
 	public RoutingContext getContext() {
@@ -135,21 +134,7 @@ public abstract class BaseHttpRouter {
 	 * thread pool optimized for high-throughput but safe concurrent work - likely
 	 * for Redis or network I/O tasks.
 	 */
-	protected static final ExecutorService PROCESSORS = new ThreadPoolExecutor(SystemMetaData.NUMBER_CORE_CPU,
-			SystemMetaData.NUMBER_CORE_CPU * 4, // allow bursts up to 4× cores
-			60L, TimeUnit.SECONDS, new LinkedBlockingQueue<>(20000), // bounded queue for backpressure
-			new ThreadFactory() {
-				private final ThreadFactory base = Executors.defaultThreadFactory();
-
-				@Override
-				public Thread newThread(Runnable r) {
-					Thread t = base.newThread(r);
-					t.setName("leo-http-" + t.getId());
-					t.setDaemon(true);
-					return t;
-				}
-			}, new ThreadPoolExecutor.CallerRunsPolicy() // throttles callers under pressure
-	);
+	protected static final ExecutorService PROCESSORS = IoProcessors.EXECUTOR;
 
 	/**
 	 * HTTP handle

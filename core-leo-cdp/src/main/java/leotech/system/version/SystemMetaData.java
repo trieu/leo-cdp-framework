@@ -209,6 +209,13 @@ public final class SystemMetaData {
 		return MESSAGE_QUEUE_TYPE.equalsIgnoreCase("kafka");
 	}
 	
+	/**
+	 * @return true if the system is using event queue like Redis or Apache Kafka to scale event processing
+	 */
+	public static final boolean isUsingEventQueue() {
+		return isMessageQueueRedis() || isMessageQueueKafka();
+	}
+	
 	public static final boolean isEnableCachingViewTemplates() {
 		return ENABLE_CACHING_VIEW_TEMPLATES.equalsIgnoreCase("true");
 	}
