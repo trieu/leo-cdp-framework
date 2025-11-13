@@ -11,10 +11,24 @@ import { generateReport } from "./report_utils.js";
 // =============================
 const CDP_HOSTNAME = "datahub4dcdp.bigdatavietnam.org";
 
+
 // =============================
-//   K6 CONFIG
+//   TEST CONFIG
 // =============================
-const MAX_USER = 500;
+const MAX_USER = 1000;
+export const options = {
+  stages: [
+    { duration: "10s", target: Math.floor(MAX_USER / 5) },
+    { duration: "20s", target: Math.floor(MAX_USER / 4) },
+    { duration: "30s", target: Math.floor(MAX_USER / 3) },
+    { duration: "60s", target: Math.floor(MAX_USER / 2) },
+    { duration: "120s", target: MAX_USER },
+  ],
+  thresholds: {
+    http_req_duration: ["p(95)<5000"],
+    http_req_failed: ["rate<0.01"],
+  },
+};
 
 // =============================
 //   GLOBAL VU STATE
@@ -51,21 +65,7 @@ function getUserAgent(vu) {
   return sessionMap[vu].ua;
 }
 
-// =============================
-//   TEST CONFIG
-// =============================
-export const options = {
-  stages: [
-    { duration: "15s", target: Math.floor(MAX_USER / 4) },
-    { duration: "30s", target: Math.floor(MAX_USER / 3) },
-    { duration: "60s", target: Math.floor(MAX_USER / 2) },
-    { duration: "120s", target: MAX_USER },
-  ],
-  thresholds: {
-    http_req_duration: ["p(95)<8000"],
-    http_req_failed: ["rate<0.01"],
-  },
-};
+
 
 // =============================
 //   SESSION GENERATION

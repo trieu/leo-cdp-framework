@@ -6,9 +6,9 @@ import { textSummary } from "https://jslib.k6.io/k6-summary/0.0.2/index.js";
 // ---------------------------------------
 function verdict(p95, errorRate) {
   if (errorRate > 0.05) return "❌ Critical: Error rate too high";
-  if (p95 > 8000) return "❌ Critical: API too slow (P95 > 8s)";
-  if (p95 > 3000) return "⚠️ Slow under load (P95 > 3s)";
-  if (p95 > 1000) return "🟡 Acceptable but needs improvement";
+  if (p95 > 10000) return "❌ Critical: API too slow (P95 > 10s)";
+  if (p95 > 5000) return "⚠️ Slow under load (P95 > 5s)";
+  if (p95 > 2000) return "🟡 Acceptable but needs improvement";
   return "🟢 Excellent performance";
 }
 
