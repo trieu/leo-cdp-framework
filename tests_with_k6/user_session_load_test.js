@@ -1,10 +1,7 @@
 import http from "k6/http";
 import { check, sleep } from "k6";
 import { uuidv4 } from "https://jslib.k6.io/k6-utils/1.2.0/index.js";
-import { htmlReport } from "https://raw.githubusercontent.com/benc-uk/k6-reporter/main/dist/bundle.js";
-import { textSummary } from "https://jslib.k6.io/k6-summary/0.0.2/index.js";
 import { generateReport } from "./report_utils.js";
-
 
 // =============================
 //   LEO CDP OBSERVER CONFIG
@@ -13,22 +10,51 @@ const CDP_HOSTNAME = "datahub4dcdp.bigdatavietnam.org";
 
 
 // =============================
-//   TEST CONFIG
+// 1) Go to LEO CDP Demo Admin, 
+// 2) Copy valid EVENT_OBSERVER_ID at https://dcdp.bigdatavietnam.org/#calljs-leoCdpRouter('Data_Journey_Map','')
 // =============================
-const MAX_USER = 1000;
+const EVENT_OBSERVER_ID = '2orlGAG48Iq4UWRzp3Ol6k'; 
+
+
+// ==========================================
+// LEO CDP LOAD TEST CONFIG
+// ==========================================
+
+// Max concurrent users for this test
+export const MAX_USER = 1000;   // recommended: >= 500 for realistic load
+
+// Performance thresholds (extracted as constants)
+export const P95_THRESHOLD_MS = 5000;   // 95% request must be < 5s
+export const ERROR_RATE_LIMIT = 0.01;   // <1% total errors allowed
+
+// Optional: control ramping speed
+export const RAMP_SPEED = "10s";        // duration for small step ramps
+
+
+// ==========================================
+// K6 OPTIONS
+// ==========================================
 export const options = {
   stages: [
-    { duration: "10s", target: Math.floor(MAX_USER / 5) },
-    { duration: "20s", target: Math.floor(MAX_USER / 4) },
-    { duration: "30s", target: Math.floor(MAX_USER / 3) },
-    { duration: "60s", target: Math.floor(MAX_USER / 2) },
-    { duration: "120s", target: MAX_USER },
+    // Smooth warm-up
+    { duration: RAMP_SPEED, target: Math.floor(MAX_USER * 0.10) },  // 10%
+    { duration: RAMP_SPEED, target: Math.floor(MAX_USER * 0.20) },  // 20%
+    { duration: "20s", target: Math.floor(MAX_USER * 0.33) },       // 33%
+    { duration: "30s", target: Math.floor(MAX_USER * 0.50) },       // 50%
+    { duration: "60s", target: Math.floor(MAX_USER * 0.75) },       // 75%
+    { duration: "120s", target: MAX_USER },                         // 100%
+    // Steady load phase (very important)
+    { duration: "120s", target: MAX_USER },                         // soak at peak
+    // Cool down
+    { duration: "20s", target: 0 },
   ],
+
   thresholds: {
-    http_req_duration: ["p(95)<5000"],
-    http_req_failed: ["rate<0.01"],
+    http_req_duration: [`p(95)<${P95_THRESHOLD_MS}`],       // dynamic threshold
+    http_req_failed: [`rate<${ERROR_RATE_LIMIT}`],          // < ERROR_RATE_LIMIT
   },
 };
+
 
 // =============================
 //   GLOBAL VU STATE
@@ -64,7 +90,6 @@ function getUserAgent(vu) {
   }
   return sessionMap[vu].ua;
 }
-
 
 
 // =============================
@@ -115,7 +140,7 @@ export default function () {
   //   1. INIT SESSION CALL (cxs-pf-init)
   // -----------------------------------------------------
   const initParams = {
-    obsid: "5V8iSpjtr9RbwpePb4Xq0G",
+    obsid: EVENT_OBSERVER_ID,
     mediahost: "bigdatavietnam.org",
     tpurl: "https%3A%2F%2Fwww.bigdatavietnam.org%2F",
     tpname: "Big%20Data%20Vietnam",
@@ -140,7 +165,7 @@ export default function () {
   //   2. PAGE-VIEW EVENT (etv)
   // -----------------------------------------------------
   const pageviewParams = {
-    obsid: "5V8iSpjtr9RbwpePb4Xq0G",
+    obsid: EVENT_OBSERVER_ID,
     mediahost: "bigdatavietnam.org",
     tprefurl: "https://www.youtube.com",
     tprefdomain: "youtube.com",
@@ -153,12 +178,8 @@ export default function () {
     ctxsk: session.ctxsk,
   };
 
-  const pvUrl =
-    `https://${CDP_HOSTNAME}/etv?` +
-    Object.entries(pageviewParams)
-      .map(([k, v]) => `${k}=${v}`)
-      .join("&");
-
+  let params_str = Object.entries(pageviewParams).map(([k, v]) => `${k}=${v}`).join("&");
+  const pvUrl = `https://${CDP_HOSTNAME}/etv?` + params_str;
   const pvRes = http.get(pvUrl, { headers });
 
   check(pvRes, {
@@ -173,5 +194,7 @@ export default function () {
 //   REPORT OUTPUT
 // =============================
 export function handleSummary(data) {
+  // The report is generated at ./tests_with_k6/results/user_session_load_test.html
   return generateReport(data, "user_session_load_test", MAX_USER);
 }
+// =============================
