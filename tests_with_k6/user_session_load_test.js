@@ -3,25 +3,32 @@ import { check, sleep } from "k6";
 import { uuidv4 } from "https://jslib.k6.io/k6-utils/1.2.0/index.js";
 import { generateReport } from "./report_utils.js";
 
+
+// =============================
+//   LOAD FROM ENV WITH FALLBACK
+// =============================
+const DEFAULT_CDP_HOSTNAME = "datahub4dcdp.bigdatavietnam.org";
+const DEFAULT_EVENT_OBSERVER_ID = "2orlGAG48Iq4UWRzp3Ol6k";
+const DEFAULT_MAX_USER = 1000;
+
 // =============================
 //   LEO CDP OBSERVER CONFIG
 // =============================
-const CDP_HOSTNAME = "datahub4dcdp.bigdatavietnam.org";
+export const CDP_HOSTNAME = __ENV.CDP_HOSTNAME || DEFAULT_CDP_HOSTNAME;
 
 
 // =============================
 // 1) Go to LEO CDP Demo Admin, 
 // 2) Copy valid EVENT_OBSERVER_ID at https://dcdp.bigdatavietnam.org/#calljs-leoCdpRouter('Data_Journey_Map','')
 // =============================
-const EVENT_OBSERVER_ID = '2orlGAG48Iq4UWRzp3Ol6k'; 
-
+export const EVENT_OBSERVER_ID = __ENV.EVENT_OBSERVER_ID || DEFAULT_EVENT_OBSERVER_ID;
 
 // ==========================================
 // LEO CDP LOAD TEST CONFIG
 // ==========================================
 
-// Max concurrent users for this test
-export const MAX_USER = 1000;   // recommended: >= 500 for realistic load
+// Max concurrent users for this test, recommended: >= 500 for realistic load
+export const MAX_USER = (__ENV.MAX_USER && Number(__ENV.MAX_USER)) || DEFAULT_MAX_USER;
 
 // Performance thresholds (extracted as constants)
 export const P95_THRESHOLD_MS = 5000;   // 95% request must be < 5s
@@ -30,6 +37,11 @@ export const ERROR_RATE_LIMIT = 0.01;   // <1% total errors allowed
 // Optional: control ramping speed
 export const RAMP_SPEED = "10s";        // duration for small step ramps
 
+
+// Just to show the resolved configuration at test start
+console.log(`Using CDP_HOSTNAME = ${CDP_HOSTNAME}`);
+console.log(`Using EVENT_OBSERVER_ID = ${EVENT_OBSERVER_ID}`);
+console.log(`Using MAX_USER = ${MAX_USER}`);
 
 // ==========================================
 // K6 OPTIONS
