@@ -1,6 +1,8 @@
 package leotech.cdp.job.reactive;
 
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -11,6 +13,12 @@ import leotech.cdp.domain.processor.UpdateProfileEventProcessor;
 import leotech.cdp.model.analytics.UpdateProfileEvent;
 import leotech.system.util.kafka.KafkaUtil;
 import leotech.system.version.SystemMetaData;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.StreamEntryID;
+import redis.clients.jedis.exceptions.JedisException;
+import rfx.core.nosql.jedis.RedisClientFactory;
+import rfx.core.nosql.jedis.RedisCommand;
 import rfx.core.util.RandomUtil;
 import rfx.core.util.StringUtil;
 
@@ -24,6 +32,7 @@ import rfx.core.util.StringUtil;
  */
 public final class JobUpdateProfileByEvent extends ReactiveProfileDataJob<UpdateProfileEvent> {
 
+	private static final String PUB_SUB_QUEUE = "pubSubQueue";
 	private static ExecutorService executor = Executors.newFixedThreadPool(SystemMetaData.NUMBER_CORE_CPU);
 	private static volatile JobUpdateProfileByEvent instance = null;
 
@@ -34,6 +43,8 @@ public final class JobUpdateProfileByEvent extends ReactiveProfileDataJob<Update
 	String topicName = SystemMetaData.KAFKA_TOPIC_EVENT;
 	int partitions = SystemMetaData.KAFKA_TOPIC_EVENT_PARTITIONS;
 	String kafkaBootstrapServer = SystemMetaData.KAFKA_BOOTSTRAP_SERVER; 
+	
+	JedisPool redisQueuePool = null;
 	
 	Producer<String, String> kafkaProducer = null;
 
@@ -60,10 +71,18 @@ public final class JobUpdateProfileByEvent extends ReactiveProfileDataJob<Update
 	 */
 	@Override
 	public void processData(final UpdateProfileEvent e) {
-		// kafka
+		// Kafka
 		if (usingKafkaQueue) {
 			try {
 				sendToKafka(e);
+			} catch (Exception ex) {
+				ex.printStackTrace();
+			}
+		} 
+		// Redis
+		else if (usingRedisQueue) {
+			try {
+				sendToRedis(e);
 			} catch (Exception ex) {
 				ex.printStackTrace();
 			}
@@ -95,7 +114,7 @@ public final class JobUpdateProfileByEvent extends ReactiveProfileDataJob<Update
 	}
 	
 	public void initRedisProducer() {
-		// TODO
+		this.redisQueuePool = RedisClientFactory.buildRedisPool(PUB_SUB_QUEUE);
 	}
 
 	void sendToKafka(UpdateProfileEvent e) {
@@ -108,6 +127,29 @@ public final class JobUpdateProfileByEvent extends ReactiveProfileDataJob<Update
 			throw new IllegalArgumentException("kafkaProducer or topicName or partitionSize is INVALID !");
 		}
 	}
+	
+	void sendToRedis(UpdateProfileEvent e) {
+		if(redisQueuePool == null) {
+			throw new IllegalArgumentException("JobUpdateProfileByEvent.redisQueuePool is NULL !");
+		}
+		new RedisCommand<Void>(redisQueuePool) {
+			@Override
+			protected Void build(Jedis jedis) throws JedisException {
+				
+				String key = "profile:" + e.getProfileId();
+
+	            Map<String, String> fields = new HashMap<>();
+	            fields.put("pfid", e.getProfileId());
+	            fields.put("data", e.value());
+	            fields.put("ts", String.valueOf(System.currentTimeMillis()));
+
+	            jedis.xadd(key, StreamEntryID.NEW_ENTRY, fields);
+
+				return null;
+			}
+		}.executeAsync();
+	}
+	
 
 	void flushQueue() {
 		if (this.kafkaProducer != null) {

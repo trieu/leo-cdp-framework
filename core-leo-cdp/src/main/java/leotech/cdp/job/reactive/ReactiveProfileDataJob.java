@@ -13,8 +13,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 public abstract class ReactiveProfileDataJob<T> {
 	
-	public static final int BATCH_PROCESSING_SIZE = 50;
-	public static final int TIME_TO_PROCESS = 3000;//milisecs
+	public static final int BATCH_PROCESSING_SIZE = 100;
+	public static final int TIME_TO_PROCESS = 5000;//milisecs
 	
 	protected final Timer timer = new Timer(true);
 	protected final Queue<T> dataQueue = new ConcurrentLinkedQueue<>();

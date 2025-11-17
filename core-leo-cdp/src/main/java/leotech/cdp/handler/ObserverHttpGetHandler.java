@@ -73,7 +73,6 @@ public final class ObserverHttpGetHandler {
 			// into one object for analytics (understand why)
 
 			ContextSession session = ContextSessionManagement.checkAndCreate(req, params, device);
-			
 			if (session != null) {
 				ObserverResponse rs = new ObserverResponse(session.getVisitorId(), session.getSessionKey(), OK, 101);
 				resp.end(new Gson().toJson(rs));

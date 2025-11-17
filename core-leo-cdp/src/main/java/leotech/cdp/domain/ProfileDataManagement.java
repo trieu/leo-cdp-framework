@@ -133,6 +133,8 @@ public final class ProfileDataManagement {
 		Profile p = updateOrCreate(observerId, srcTouchpoint, srcTouchpoint.getHostname(), lastSeenIp, deviceId, "", "", contactData);
 		return p;
 	}
+	
+	
 
 	/**
 	 * @param observerId
@@ -150,12 +152,11 @@ public final class ProfileDataManagement {
 	public static Profile updateOrCreate(String observerId, Touchpoint srcTouchpoint, String touchpointRefDomain,
 			String lastSeenIp, String userDeviceId, String visitorId, String fingerprintId, BasicContactData contact) {
 
-		// FIXME use optimize for performance 
-		
 		// query
-		ProfileSingleView profile = ProfileQueryManagement.getProfileByPrimaryKeys(visitorId, contact.email,
-				contact.phone, "", "", lastSeenIp, userDeviceId, fingerprintId);
+		ProfileSingleView profile = ProfileQueryManagement.getProfileByPrimaryKeys(visitorId, contact.email, contact.phone, "", "", lastSeenIp, userDeviceId, fingerprintId);
 
+		// TODO use queue to submit profile and batch process
+		
 		if (profile == null) {
 			if (contact.hasData()) {
 				profile = ProfileSingleView.newContactProfile(observerId, srcTouchpoint, lastSeenIp, visitorId,

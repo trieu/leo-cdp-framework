@@ -113,8 +113,6 @@ public final class ObserverHttpRouter extends BaseHttpRouter {
 			boolean processed = WebhookDataHandler.process(this.context, req, urlPath, reqHeaders, params, resp, outHeaders, device, origin);
 			if(!processed) {
 				PROCESSORS.submit(()->{
-					
-		
 					if(httpMethod.equalsIgnoreCase(HTTP_METHOD_GET)) {
 						ObserverHttpGetHandler.process(this.context, req, urlPath, reqHeaders, params, resp, outHeaders, device, origin, nodeInfo);
 					} 
