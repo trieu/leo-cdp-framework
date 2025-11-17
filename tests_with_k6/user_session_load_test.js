@@ -31,14 +31,12 @@ export const EVENT_OBSERVER_ID = __ENV.EVENT_OBSERVER_ID || DEFAULT_EVENT_OBSERV
 export const MAX_USER = (__ENV.MAX_USER && Number(__ENV.MAX_USER)) || DEFAULT_MAX_USER;
 
 
-
 // Performance thresholds (extracted as constants)
 export const P95_THRESHOLD_MS = 5000;   // 95% request must be < 5s
 export const ERROR_RATE_LIMIT = 0.01;   // <1% total errors allowed
 
 // Optional: control ramping speed
 export const RAMP_SPEED = "10s";        // duration for small step ramps
-
 
 
 // ==========================================
@@ -48,9 +46,9 @@ export const options = {
   stages: [
     // Smooth warm-up
     { duration: RAMP_SPEED, target: Math.floor(MAX_USER * 0.10) },  // 10%
-    { duration: RAMP_SPEED, target: Math.floor(MAX_USER * 0.20) },  // 20%
-    { duration: "20s", target: Math.floor(MAX_USER * 0.33) },       // 33%
-    { duration: "30s", target: Math.floor(MAX_USER * 0.50) },       // 50%
+    { duration: "20s", target: Math.floor(MAX_USER * 0.20) },  // 20%
+    { duration: "30s", target: Math.floor(MAX_USER * 0.33) },       // 33%
+    { duration: "40s", target: Math.floor(MAX_USER * 0.50) },       // 50%
     { duration: "60s", target: Math.floor(MAX_USER * 0.75) },       // 75%
     // Steady load phase (very important)
     { duration: "120s", target: MAX_USER },                         // soak at peak
@@ -211,6 +209,6 @@ export default function () {
 // =============================
 export function handleSummary(data) {
   // The report is generated at ./tests_with_k6/results/user_session_load_test.html
-  return generateReport(data, "user_session_load_test", MAX_USER);
+  return generateReport(data, "user_session_load_test", MAX_USER, CDP_HOSTNAME);
 }
 // =============================

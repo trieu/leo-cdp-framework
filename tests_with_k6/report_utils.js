@@ -15,8 +15,8 @@ function verdict(p95, errorRate) {
 // ---------------------------------------
 //   SUMMARY GENERATOR (stdout + HTML)
 // ---------------------------------------
-export function generateReport(data, reportName = "performance_report", maxUsers = "N/A") {
-  const localTime = new Date().toLocaleString();
+export function generateReport(data, reportName = "performance_report", maxUsers = "N/A", hostname =  "N/A") {
+  const testedAt = new Date().toUTCString();
 
   const httpReqs = data.metrics.http_reqs?.values?.count || 0;
   const durationMs = data.state.testRunDurationMs || 1;
@@ -29,12 +29,13 @@ export function generateReport(data, reportName = "performance_report", maxUsers
 
   const summaryText =
     `\n========== LEO CDP — Load Test Summary ==========\n` +
+    `Target Hostname       : ${hostname}\n` +
     `Concurrent Users       : ${maxUsers}\n` +
     `Requests per Second    : ${rps}\n` +
     `HTTP P95 (ms)          : ${p95.toFixed(2)}\n` +
     `Error Rate             : ${(errorRate * 100).toFixed(2)}%\n` +
     `Verdict                : ${finalVerdict}\n` +
-    `Completed at           : ${localTime}\n` +
+    `Completed at           : ${testedAt}\n` +
     `==================================================\n`;
 
   return {
@@ -43,9 +44,9 @@ export function generateReport(data, reportName = "performance_report", maxUsers
       summaryText,
 
     [`results/${reportName}.html`]:
-      `<!-- Report generated at: ${localTime} -->\n` +
+      `<!-- Report generated at: ${testedAt} -->\n` +
       htmlReport(data, {
-        title: `${reportName} — ${localTime}`,
+        title: `${reportName}:${testedAt}- ${hostname} — CCU:${maxUsers}`,
       }),
   };
 }
