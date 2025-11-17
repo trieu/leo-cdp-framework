@@ -25,7 +25,7 @@ import rfx.core.nosql.jedis.RedisCommand;
 import rfx.core.util.StringUtil;
 
 // https://documentation.cloud-iam.com/resources/recaptcha.html
-public class AdminRouterVerticle extends AbstractVerticle {
+public class KeycloakRouterVerticle extends AbstractVerticle {
 
     private static final Logger logger = LoggerFactory.getLogger("leobot-admin");
 
