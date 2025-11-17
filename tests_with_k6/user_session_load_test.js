@@ -30,6 +30,8 @@ export const EVENT_OBSERVER_ID = __ENV.EVENT_OBSERVER_ID || DEFAULT_EVENT_OBSERV
 // Max concurrent users for this test, recommended: >= 500 for realistic load
 export const MAX_USER = (__ENV.MAX_USER && Number(__ENV.MAX_USER)) || DEFAULT_MAX_USER;
 
+
+
 // Performance thresholds (extracted as constants)
 export const P95_THRESHOLD_MS = 5000;   // 95% request must be < 5s
 export const ERROR_RATE_LIMIT = 0.01;   // <1% total errors allowed
@@ -38,10 +40,6 @@ export const ERROR_RATE_LIMIT = 0.01;   // <1% total errors allowed
 export const RAMP_SPEED = "10s";        // duration for small step ramps
 
 
-// Just to show the resolved configuration at test start
-console.log(`Using CDP_HOSTNAME = ${CDP_HOSTNAME}`);
-console.log(`Using EVENT_OBSERVER_ID = ${EVENT_OBSERVER_ID}`);
-console.log(`Using MAX_USER = ${MAX_USER}`);
 
 // ==========================================
 // K6 OPTIONS
@@ -140,6 +138,13 @@ export default function () {
   const vu = __VU;
   const session = getSession(vu);
   const userAgent = getUserAgent(vu);
+
+  // Just to show the resolved configuration at test start
+  if (__VU == 1 && __ITER == 0) {
+      console.log(`Using CDP_HOSTNAME = ${CDP_HOSTNAME}`);
+      console.log(`Using EVENT_OBSERVER_ID = ${EVENT_OBSERVER_ID}`);
+      console.log(`Using MAX_USER = ${MAX_USER}`);
+  }
 
   const headers = {
     "User-Agent": userAgent,

@@ -53,6 +53,7 @@ public final class PublicFileHttpRouter {
 				} else {
 					resp.setStatusCode(HttpStatus.SC_UNAUTHORIZED);
 					resp.end(UNAUTHORIZED_ERROR);
+					return false;
 				}
 			} 
 			else {
@@ -71,6 +72,7 @@ public final class PublicFileHttpRouter {
 				} else {
 					resp.setStatusCode(HttpStatus.SC_NOT_FOUND);
 					resp.end(TemplateUtil._404);
+					return false;
 				}
 			}
 		} catch (Exception e) {
