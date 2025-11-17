@@ -9,7 +9,7 @@ import { generateReport } from "./report_utils.js";
 // =============================
 const DEFAULT_CDP_HOSTNAME = "datahub4dcdp.bigdatavietnam.org";
 const DEFAULT_EVENT_OBSERVER_ID = "2orlGAG48Iq4UWRzp3Ol6k";
-const DEFAULT_MAX_USER = 1100;
+const DEFAULT_MAX_USER = 1000;
 
 // =============================
 //   LEO CDP OBSERVER CONFIG
