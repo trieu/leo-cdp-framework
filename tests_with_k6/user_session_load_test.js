@@ -9,7 +9,7 @@ import { generateReport } from "./report_utils.js";
 // =============================
 const DEFAULT_CDP_HOSTNAME = "datahub4dcdp.bigdatavietnam.org";
 const DEFAULT_EVENT_OBSERVER_ID = "2orlGAG48Iq4UWRzp3Ol6k";
-const DEFAULT_MAX_USER = 1000;
+const DEFAULT_MAX_USER = 1100;
 
 // =============================
 //   LEO CDP OBSERVER CONFIG
@@ -54,11 +54,10 @@ export const options = {
     { duration: "20s", target: Math.floor(MAX_USER * 0.33) },       // 33%
     { duration: "30s", target: Math.floor(MAX_USER * 0.50) },       // 50%
     { duration: "60s", target: Math.floor(MAX_USER * 0.75) },       // 75%
-    { duration: "120s", target: MAX_USER },                         // 100%
     // Steady load phase (very important)
     { duration: "120s", target: MAX_USER },                         // soak at peak
     // Cool down
-    { duration: "20s", target: 0 },
+    { duration: "10s", target: 0 },
   ],
 
   thresholds: {
@@ -184,7 +183,7 @@ export default function () {
     tpurl: "https%3A%2F%2Fwww.bigdatavietnam.org%2F",
     tpname: "Big%20Data%20Vietnam",
     metric: "page-view",
-    eventdata: encodeURIComponent(JSON.stringify({ demo: 1 })),
+    eventdata: encodeURIComponent(JSON.stringify({ demo: 1, CCU_TEST: MAX_USER })),
     visid: session.visid,
     fgp: session.fgp,
     ctxsk: session.ctxsk,
