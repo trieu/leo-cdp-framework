@@ -1,5 +1,7 @@
 package test.cdp;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -7,15 +9,16 @@ import org.slf4j.LoggerFactory;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Future; // Vert.x 3 uses Future in start
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.MultiMap; // For sendForm
+import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
+import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.ext.web.handler.BodyHandler;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -24,15 +27,16 @@ import rfx.core.nosql.jedis.RedisClientFactory;
 import rfx.core.nosql.jedis.RedisCommand;
 import rfx.core.util.StringUtil;
 
-// https://documentation.cloud-iam.com/resources/recaptcha.html
 public class KeycloakRouterVerticle extends AbstractVerticle {
+    private static final String HTTP_HOST = "0.0.0.0";
+    private static final int HTTP_PORT = 8888;
 
     private static final Logger logger = LoggerFactory.getLogger("leobot-admin");
 
     private WebClient webClient;
     static JedisPool jedisPool = RedisClientFactory.buildRedisPool("clusterInfoRedis");
     private boolean keycloakEnabled;
-    private boolean verifySSL;
+    private boolean verifySSL = false;
 
     private String keycloakUrl;
     private String keycloakRealm;
@@ -41,7 +45,7 @@ public class KeycloakRouterVerticle extends AbstractVerticle {
     private String keycloakCallbackUrl;
 
     @Override
-    public void start(Future<Void> startFuture) { // Vert.x 3 API
+    public void start(Future<Void> startFuture) {
         try {
             // Load config from environment
             keycloakEnabled = getEnvBool("KEYCLOAK_ENABLED", true);
@@ -52,20 +56,37 @@ public class KeycloakRouterVerticle extends AbstractVerticle {
             keycloakClientId = System.getenv("KEYCLOAK_CLIENT_ID");
             keycloakClientSecret = System.getenv("KEYCLOAK_CLIENT_SECRET");
             keycloakCallbackUrl = System.getenv("KEYCLOAK_CALLBACK_URL");
+            
+            logger.info("KEYCLOAK_CLIENT_ID " + keycloakClientId);
+            logger.info("KEYCLOAK_CALLBACK_URL " + keycloakCallbackUrl);
+            logger.info("KEYCLOAK_URL " + keycloakUrl);
+
+            if (StringUtil.isEmpty(keycloakUrl) ||
+                StringUtil.isEmpty(keycloakRealm) ||
+                StringUtil.isEmpty(keycloakClientId) ||
+                StringUtil.isEmpty(keycloakCallbackUrl)) {
+                throw new RuntimeException("Missing required Keycloak env vars (URL/REALM/CLIENT_ID/CALLBACK_URL).");
+            }
 
             if (keycloakClientSecret == null || keycloakClientSecret.isEmpty()) {
                 throw new RuntimeException("KEYCLOAK_CLIENT_SECRET is missing.");
             }
 
-            // Setup Vert.x tools
-            webClient = WebClient.create(vertx);
+            // Setup Vert.x WebClient with SSL options
+            boolean isHttps = keycloakUrl.toLowerCase().startsWith("https");
+            WebClientOptions options = new WebClientOptions()
+                    .setSsl(isHttps)
+                    // when verifySSL=false (DEV): trustAll + no host verify
+                    .setTrustAll(!verifySSL)
+                    .setVerifyHost(verifySSL);
+
+            webClient = WebClient.create(vertx, options);
 
             Router router = Router.router(vertx);
-
             router.route().handler(BodyHandler.create());
 
             // Simple health check
-            router.get("/_leoai/is-admin-ready").handler(this::handleReady);
+            router.get("/_leocdp/is-admin-ready").handler(this::handleReady);
 
             if (keycloakEnabled) {
                 registerKeycloakRoutes(router);
@@ -75,161 +96,215 @@ public class KeycloakRouterVerticle extends AbstractVerticle {
 
             // Start HTTP server
             vertx.createHttpServer()
-                    .requestHandler(router)
-                    .listen(8600, server -> { // Vert.x 3 listen signature
-                        if (server.succeeded()) {
-                            logger.info("✅ Admin router started on port {}", server.result().actualPort());
-                            startFuture.complete(); // Vert.x 3 API
-                        } else {
-                            startFuture.fail(server.cause()); // Vert.x 3 API
-                        }
-                    });
+                 .requestHandler(router)
+                 .listen(HTTP_PORT, HTTP_HOST, server -> {
+                     if (server.succeeded()) {
+                         logger.info("✅ Admin router started on {}:{}", HTTP_HOST, server.result().actualPort());
+                         startFuture.complete();
+                     } else {
+                         logger.error("❌ Failed to start HTTP server", server.cause());
+                         startFuture.fail(server.cause());
+                     }
+                 });
 
         } catch (Exception e) {
-            logger.error("❌ Failed to start AdminRouterVerticle", e);
-            startFuture.fail(e); // Vert.x 3 API
+            logger.error("❌ Failed to start KeycloakRouterVerticle", e);
+            startFuture.fail(e);
         }
     }
 
     private void handleReady(RoutingContext ctx) {
-        // Vert.x 3 API for JSON response
         ctx.response()
-                .putHeader("Content-Type", "application/json")
-                .end(new JsonObject().put("ok", keycloakEnabled).encode());
+           .putHeader("Content-Type", "application/json")
+           .end(new JsonObject().put("ok", keycloakEnabled).encode());
     }
 
     // ------------------------------------------------------------------------------
     // Routes when Keycloak is enabled
     // ------------------------------------------------------------------------------
     private void registerKeycloakRoutes(Router router) {
-        router.get("/_leoai/sso/login").handler(this::handleLogin);
-        router.get("/_leoai/sso/error").handler(this::handleError);
-        router.get("/_leoai/sso/callback").handler(this::handleCallback);
-        router.get("/_leoai/sso/me").handler(this::handleGetMe);
-        router.get("/_leoai/sso/logout").handler(this::handleLogout);
+        router.get("/_leocdp/sso/login").handler(this::handleLogin);
+        router.get("/_leocdp/sso/error").handler(this::handleError);
+        router.get("/_leocdp/sso/callback").handler(this::handleCallback);
+        router.get("/_leocdp/sso/me").handler(this::handleGetMe);
+        router.get("/_leocdp/sso/logout").handler(this::handleLogout);
         router.get("/admin").handler(this::handleAdmin);
     }
 
+    // ------------------------------------------------------------------------------
+    // LOGIN: redirect to Keycloak auth endpoint
+    // ------------------------------------------------------------------------------
     private void handleLogin(RoutingContext ctx) {
-        String redirectUrl = keycloakUrl + "/realms/" + keycloakRealm +
-                "/protocol/openid-connect/auth?client_id=" + keycloakClientId +
-                "&response_type=code&scope=openid&redirect_uri=" + keycloakCallbackUrl;
-        ctx.response()
-                .putHeader("Location", redirectUrl)
-                .setStatusCode(302)
-                .end();
+        try {
+            String encodedRedirect =
+                    URLEncoder.encode(keycloakCallbackUrl, StandardCharsets.UTF_8.name());
+
+            // Optional CSRF state (not persisted here, minimal implementation)
+            String state = UUID.randomUUID().toString();
+
+            String redirectUrl =
+                    keycloakUrl + "/realms/" + keycloakRealm + "/protocol/openid-connect/auth" +
+                            "?client_id=" + keycloakClientId +
+                            "&response_type=code" +
+                            "&scope=openid" +
+                            "&state=" + state +
+                            "&redirect_uri=" + encodedRedirect;
+
+            logger.info("🔑 Redirecting to Keycloak login: {}", redirectUrl);
+
+            ctx.response()
+               .putHeader("Location", redirectUrl)
+               .setStatusCode(302)
+               .end();
+        } catch (Exception e) {
+            logger.error("handleLogin: failed to build redirect URL", e);
+            redirectError(ctx, "login_build_error");
+        }
     }
 
     private void handleError(RoutingContext ctx) {
         String error = ctx.queryParams().get("error");
         String description = ctx.queryParams().get("description");
+
         JsonObject payload = new JsonObject()
                 .put("error", error)
                 .put("message", "SSO Error: " + error)
                 .put("description", description)
                 .put("timestamp", System.currentTimeMillis() / 1000);
+
         ctx.response()
-                .setStatusCode(400)
-                .putHeader("Content-Type", "application/json")
-                .end(payload.encode());
+           .setStatusCode(400)
+           .putHeader("Content-Type", "application/json")
+           .end(payload.encode());
     }
 
+    // ------------------------------------------------------------------------------
+    // CALLBACK: handle code → tokens → userinfo
+    // ------------------------------------------------------------------------------
     private void handleCallback(RoutingContext ctx) {
-        String code = ctx.queryParams().get("code");
-        String sessionState = ctx.queryParams().get("session_state");
-        String error = ctx.queryParams().get("error");
-        String logout = ctx.queryParams().get("logout");
 
-        if ("true".equals(logout)) {
+        final String code = ctx.request().getParam("code");
+        final String error = ctx.request().getParam("error");
+        final String logout = ctx.request().getParam("logout");
+        final String sessionState = ctx.request().getParam("session_state");
+
+        logger.info("🔁 handleCallback: code={}, error={}, logout={}, session_state={}",
+                code, error, logout, sessionState);
+
+        // Handle logout flow redirected back here
+        if ("true".equalsIgnoreCase(logout)) {
             ctx.response()
-                    .putHeader("Location", "/admin?_t=" + System.currentTimeMillis())
-                    .setStatusCode(303)
-                    .end();
+               .putHeader("Location", "/admin?_t=" + System.currentTimeMillis())
+               .setStatusCode(303)
+               .end();
             return;
         }
 
+        // Keycloak returned error
         if (error != null) {
-            ctx.response()
-                    .putHeader("Location", "/_leoai/sso/error?error=" + error)
-                    .setStatusCode(303)
-                    .end();
+            logger.warn("handleCallback: Keycloak returned error={}", error);
+            redirectError(ctx, error);
             return;
         }
 
-        if (code == null || sessionState == null) {
-            ctx.response()
-                    .putHeader("Location", "/_leoai/sso/error?error=invalid_grant")
-                    .setStatusCode(303)
-                    .end();
+        // Missing required auth code
+        if (code == null) {
+            logger.warn("handleCallback: missing authorization code");
+            redirectError(ctx, "missing_code");
             return;
         }
 
-        // Exchange authorization code for token
-        String tokenUrl = keycloakUrl + "/realms/" + keycloakRealm + "/protocol/openid-connect/token";
+        // redirect_uri MUST match exactly the configured value in Keycloak client
+        String redirectUri = keycloakCallbackUrl;
 
-        // OAuth token endpoints require application/x-www-form-urlencoded
-        MultiMap formBody = MultiMap.caseInsensitiveMultiMap();
-        formBody.add("grant_type", "authorization_code");
-        formBody.add("code", code);
-        formBody.add("client_id", keycloakClientId);
-        formBody.add("client_secret", keycloakClientSecret);
-        formBody.add("redirect_uri", keycloakCallbackUrl);
+        String tokenUrl = keycloakUrl +
+                "/realms/" + keycloakRealm +
+                "/protocol/openid-connect/token";
 
-        // Vert.x 3 WebClient API (callback-based)
-        webClient.postAbs(tokenUrl)
-                .sendForm(formBody, ar -> {
-                    if (ar.succeeded()) {
-                        HttpResponse<Buffer> resp = ar.result();
-                        if (resp.statusCode() == 200) {
-                            JsonObject tokenData = resp.bodyAsJsonObject();
-                            String accessToken = tokenData.getString("access_token");
-                            fetchUserInfo(accessToken, ctx, tokenData);
-                        } else {
-                            logger.error("Token exchange failed: {}", resp.bodyAsString());
-                            redirectError(ctx, "invalid_grant");
-                        }
-                    } else {
-                        logger.error("Token exchange error", ar.cause());
-                        redirectError(ctx, "server_error");
-                    }
-                });
+        MultiMap form = MultiMap.caseInsensitiveMultiMap();
+        form.add("grant_type", "authorization_code");
+        form.add("code", code);
+        form.add("client_id", keycloakClientId);
+
+        // Confidential client uses client_secret
+        if (keycloakClientSecret != null && !keycloakClientSecret.isEmpty()) {
+            form.add("client_secret", keycloakClientSecret);
+        }
+
+        form.add("redirect_uri", redirectUri);
+
+        logger.info("🔑 Exchanging code for token at {}", tokenUrl);
+
+        webClient.postAbs(tokenUrl).sendForm(form, ar -> {
+            if (ar.failed()) {
+                logger.error("Token request failed", ar.cause());
+                redirectError(ctx, "token_request_error");
+                return;
+            }
+
+            HttpResponse<Buffer> resp = ar.result();
+
+            if (resp.statusCode() != 200) {
+                logger.error("Token exchange rejected [{}]: {}", resp.statusCode(), resp.bodyAsString());
+                redirectError(ctx, "token_rejected");
+                return;
+            }
+
+            JsonObject token = resp.bodyAsJsonObject();
+            String accessToken = token.getString("access_token");
+
+            if (accessToken == null) {
+                logger.error("Token JSON missing access_token: {}", token.encode());
+                redirectError(ctx, "invalid_token");
+                return;
+            }
+
+            logger.info("✅ Token exchange OK, fetching userinfo");
+            fetchUserInfo(accessToken, ctx, token);
+        });
     }
 
+    // ------------------------------------------------------------------------------
+    // USERINFO & SESSION
+    // ------------------------------------------------------------------------------
     private void fetchUserInfo(String accessToken, RoutingContext ctx, JsonObject tokenData) {
         String userInfoUrl = keycloakUrl + "/realms/" + keycloakRealm + "/protocol/openid-connect/userinfo";
 
-        // Vert.x 3 WebClient API (callback-based)
         webClient.getAbs(userInfoUrl)
-                .putHeader("Authorization", "Bearer " + accessToken)
-                .send(ar -> {
-                    if (ar.succeeded()) {
-                        HttpResponse<Buffer> resp = ar.result();
-                        if (resp.statusCode() == 200) {
-                            JsonObject userInfo = resp.bodyAsJsonObject();
-                            createRedisSession(ctx, userInfo, tokenData, sessionId -> {
-                                ctx.response()
-                                        .putHeader("Location", "/admin?sid=" + sessionId)
-                                        .setStatusCode(303)
-                                        .end();
-                            });
-                        } else {
-                            redirectError(ctx, "userinfo_fetch_failed");
-                        }
-                    } else {
-                        logger.error("Failed to fetch user info", ar.cause());
-                        redirectError(ctx, "server_error");
-                    }
-                });
+                 .putHeader("Authorization", "Bearer " + accessToken)
+                 .send(ar -> {
+                     if (ar.succeeded()) {
+                         HttpResponse<Buffer> resp = ar.result();
+                         if (resp.statusCode() == 200) {
+                             JsonObject userInfo = resp.bodyAsJsonObject();
+                             logger.info("✅ userinfo fetched: {}", userInfo.encode());
+
+                             createRedisSession(ctx, userInfo, tokenData, sessionId -> {
+                                 ctx.response()
+                                    .putHeader("Location", "/admin?sid=" + sessionId)
+                                    .setStatusCode(303)
+                                    .end();
+                             });
+                         } else {
+                             logger.error("userinfo_fetch_failed [{}]: {}", resp.statusCode(), resp.bodyAsString());
+                             redirectError(ctx, "userinfo_fetch_failed");
+                         }
+                     } else {
+                         logger.error("Failed to fetch user info", ar.cause());
+                         redirectError(ctx, "server_error");
+                     }
+                 });
     }
 
-    void createRedisSession(RoutingContext ctx, JsonObject userInfo, JsonObject tokenData, Handler<String> successCallback) {
+    void createRedisSession(RoutingContext ctx, JsonObject userInfo, JsonObject tokenData,
+                            Handler<String> successCallback) {
+
         String sessionId = "sid:" + UUID.randomUUID();
         JsonObject data = new JsonObject()
                 .put("user", userInfo)
                 .put("token", tokenData)
                 .put("timestamp", System.currentTimeMillis() / 1000);
 
-        // Vert.x 3 executeBlocking API
         vertx.executeBlocking(future -> {
             RedisCommand<Boolean> cmd = new RedisCommand<Boolean>(jedisPool) {
                 @Override
@@ -240,12 +315,11 @@ public class KeycloakRouterVerticle extends AbstractVerticle {
             };
             boolean rs = cmd.execute();
             if (rs) {
-                future.complete(sessionId); // Vert.x 3 API
+                future.complete(sessionId);
             } else {
-                future.fail("Failed to set session in Redis"); // Vert.x 3 API
+                future.fail("Failed to set session in Redis");
             }
         }, (AsyncResult<String> res) -> {
-            // This runs back on the event loop
             if (res.succeeded()) {
                 logger.info("✅ createRedisSession OK: sessionId {}", res.result());
                 successCallback.handle(res.result());
@@ -256,10 +330,9 @@ public class KeycloakRouterVerticle extends AbstractVerticle {
         });
     }
 
-    /**
-     * Fulfills user request to only return JSON.
-     * No template engine is used.
-     */
+    // ------------------------------------------------------------------------------
+    // /admin – return JSON only
+    // ------------------------------------------------------------------------------
     private void handleAdmin(RoutingContext ctx) {
         String sessionId = ctx.queryParams().get("sid");
         if (sessionId == null) {
@@ -267,7 +340,6 @@ public class KeycloakRouterVerticle extends AbstractVerticle {
             return;
         }
 
-        // Vert.x 3 executeBlocking API
         vertx.executeBlocking(future -> {
             RedisCommand<String> cmd = new RedisCommand<String>(jedisPool) {
                 @Override
@@ -276,7 +348,7 @@ public class KeycloakRouterVerticle extends AbstractVerticle {
                 }
             };
             String rs = cmd.execute();
-            future.complete(rs); // complete with null if not found
+            future.complete(rs);
         }, (AsyncResult<String> res) -> {
             if (res.failed()) {
                 logger.error("handleAdmin: Failed to fetch session", res.cause());
@@ -296,18 +368,19 @@ public class KeycloakRouterVerticle extends AbstractVerticle {
                         .put("session_id", sessionId)
                         .put("timestamp", System.currentTimeMillis() / 1000);
 
-                // FULFILL USER REQUEST: Just return JSON
                 ctx.response()
-                        .putHeader("Content-Type", "application/json")
-                        .end(context.encodePrettily());
+                   .putHeader("Content-Type", "application/json")
+                   .end(context.encodePrettily());
 
             } else {
-                // Session ID provided but not found in Redis (or empty)
                 redirectLogin(ctx);
             }
         });
     }
 
+    // ------------------------------------------------------------------------------
+    // /_leocdp/sso/me – return user JSON from session
+    // ------------------------------------------------------------------------------
     private void handleGetMe(RoutingContext ctx) {
         String sid = ctx.queryParams().get("sid");
         if (sid == null) {
@@ -315,7 +388,6 @@ public class KeycloakRouterVerticle extends AbstractVerticle {
             return;
         }
 
-        // Vert.x 3 executeBlocking API
         vertx.executeBlocking(future -> {
             RedisCommand<String> cmd = new RedisCommand<String>(jedisPool) {
                 @Override
@@ -335,27 +407,40 @@ public class KeycloakRouterVerticle extends AbstractVerticle {
 
             if (StringUtil.isNotEmpty(sessionStr)) {
                 JsonObject session = new JsonObject(sessionStr);
-                // Vert.x 3 API for JSON response
                 ctx.response()
-                        .putHeader("Content-Type", "application/json")
-                        .end(new JsonObject()
-                                .put("user", session.getJsonObject("user"))
-                                .put("session_id", sid)
-                                .encode());
+                   .putHeader("Content-Type", "application/json")
+                   .end(new JsonObject()
+                           .put("user", session.getJsonObject("user"))
+                           .put("session_id", sid)
+                           .encode());
             } else {
                 ctx.response().setStatusCode(401).end("Invalid or expired session");
             }
         });
     }
 
+    // ------------------------------------------------------------------------------
+    // /_leocdp/sso/logout – kill Redis session + Keycloak logout
+    // ------------------------------------------------------------------------------
     private void handleLogout(RoutingContext ctx) {
         String sid = ctx.queryParams().get("sid");
+
+        // Build post_logout_redirect_uri=<callback>?logout=true (URL encoded)
+        String redirect = keycloakCallbackUrl + "?logout=true";
+        String encodedRedirect;
+        try {
+            encodedRedirect = URLEncoder.encode(redirect, StandardCharsets.UTF_8.name());
+        } catch (Exception e) {
+            logger.error("handleLogout: failed to encode redirect", e);
+            encodedRedirect = redirect;
+        }
+
         String logoutUrl = keycloakUrl + "/realms/" + keycloakRealm
-                + "/protocol/openid-connect/logout?client_id=" + keycloakClientId
-                + "&post_logout_redirect_uri=" + keycloakCallbackUrl + "?logout=true";
+                + "/protocol/openid-connect/logout"
+                + "?client_id=" + keycloakClientId
+                + "&post_logout_redirect_uri=" + encodedRedirect;
 
         if (sid != null) {
-            // Vert.x 3 executeBlocking API
             String finalSid = sid;
             vertx.executeBlocking(future -> {
                 RedisCommand<Long> cmd = new RedisCommand<Long>(jedisPool) {
@@ -375,41 +460,49 @@ public class KeycloakRouterVerticle extends AbstractVerticle {
         }
 
         ctx.response()
-                .putHeader("Location", logoutUrl)
-                .setStatusCode(303)
-                .end();
+           .putHeader("Location", logoutUrl)
+           .setStatusCode(303)
+           .end();
     }
 
+    // ------------------------------------------------------------------------------
+    // Helpers
+    // ------------------------------------------------------------------------------
     void redirectLogin(RoutingContext ctx) {
         ctx.response()
-                .putHeader("Location", "/_leoai/sso/login")
-                .setStatusCode(303)
-                .end();
+           .putHeader("Location", "/_leocdp/sso/login")
+           .setStatusCode(303)
+           .end();
     }
 
     void redirectError(RoutingContext ctx, String code) {
         ctx.response()
-                .putHeader("Location", "/_leoai/sso/error?error=" + code)
-                .setStatusCode(303)
-                .end();
+           .putHeader("Location", "/_leocdp/sso/error?error=" + code)
+           .setStatusCode(303)
+           .end();
     }
 
     private void registerFallbackRoutes(Router router) {
-        router.get("/admin").handler(ctx ->
-                ctx.response().setStatusCode(503)
-                        .end("Keycloak not enabled or failed to initialize."));
-        router.get("/_leoai/sso/login").handler(ctx ->
-                ctx.response().setStatusCode(500)
-                        .end("{\"error\": \"Keycloak not configured\"}"));
-        router.get("/_leoai/sso/logout").handler(ctx ->
-                ctx.response().putHeader("Location", "/")
-                        .setStatusCode(303)
-                        .end());
+        router.get("/admin")
+              .handler(ctx -> ctx.response()
+                                 .setStatusCode(503)
+                                 .end("Keycloak not enabled or failed to initialize."));
+        router.get("/_leocdp/sso/login")
+              .handler(ctx -> ctx.response()
+                                 .setStatusCode(500)
+                                 .end("{\"error\": \"Keycloak not configured\"}"));
+        router.get("/_leocdp/sso/logout")
+              .handler(ctx -> ctx.response()
+                                 .putHeader("Location", "/")
+                                 .setStatusCode(303)
+                                 .end());
     }
 
     private boolean getEnvBool(String key, boolean def) {
         String val = System.getenv(key);
         if (val == null) return def;
-        return val.equalsIgnoreCase("true") || val.equals("1") || val.equalsIgnoreCase("yes");
+        return val.equalsIgnoreCase("true")
+                || val.equals("1")
+                || val.equalsIgnoreCase("yes");
     }
 }
