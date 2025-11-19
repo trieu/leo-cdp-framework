@@ -19,7 +19,7 @@ const getOperators = function(){
 	
 	ops.push({ type: "contains_any", optgroup: 'List Operator', nb_inputs: 1, multiple: true, apply_to: ['string','number','boolean'] });
 	ops.push({ type: "not_contains_any", optgroup: 'List Operator', nb_inputs: 1, multiple: true, apply_to: ['string','number','boolean'] });
-	ops.push({ type: "has_event_statistics", optgroup: 'Data Filter', nb_inputs: 2, multiple: true, apply_to: ['number'] });
+	ops.push({ type: "event_in_journey", optgroup: 'Data Filter', nb_inputs: 1, multiple: true, apply_to: ['number'] });
 	
 	ops.push({ type: "has_key", optgroup: 'Key Operator', nb_inputs: 1, multiple: true, apply_to: ['string'] });
 	ops.push({ type: "not_has_key", optgroup: 'Key Operator', nb_inputs: 1, multiple: true, apply_to: ['string'] });
@@ -58,7 +58,7 @@ const getTouchpointHubHosts = function(touchpointHubs) {
 }
 
 const afterUpdateQueryBuilder = function(e, rule) {
-	console.log('afterUpdateQueryBuilder', e, rule)
+	//console.log('afterUpdateQueryBuilder', e, rule)
 	var operator = rule.operator.type;
 	var autoSetToday = operator === "compare_month_and_day_with_now" || operator === "compare_year_month_day_with_now";
 	if (rule.filter.plugin === 'datepicker') {
@@ -132,34 +132,132 @@ const buildSegmentDateFilter = function(fieldId, fieldLabel, fieldGroupLabel) {
 	};
 }
 
-const buildEventStatisticsFilter = function(fieldId, fieldLabel, fieldGroupLabel) {
-	return {
-	    id: fieldId,
-	    label: fieldLabel,
-	    type: 'string',
-	    placeholder: '',
-	    valueSetter: function(rule, selectedDates) {
-			console.log("buildEventStatisticsFilter.valueSetter ", selectedDates)
-			
-	    },
-	    valueGetter: function(rule) {	
-			var selectedNumber = [];
-		    var sel = rule.$el.find('.rule-value-container input').each(function() {
-				var v = $(this).css('width','100px').val().trim();
-				if(v !== '') {				
-					selectedNumber.push(parseInt(v));
-				}
-		    });
-			console.log("buildEventStatisticsFilter.valueGetter ", selectedNumber)
-			
-	      
-	      	return selectedNumber.length === 1 ? selectedNumber[0] : selectedNumber;
-	    },
+/**
+ * Build a custom QueryBuilder filter:
+ * field selector (select) + operator (select) + numeric input
+ */
+const buildEventStatisticsFilter = function(fieldId, fieldLabel, fieldGroupLabel, journeyMaps, selectionMap) {
 
-		operators : [ "has_event_statistics"],
-	    optgroup : fieldGroupLabel
-	};
-}
+    return {
+        id: fieldId,
+        label: fieldLabel,
+
+        // QueryBuilder base type (for validation only)
+        type: 'string',
+
+        // Overriding default input rendering
+        input: function(rule, name) {
+
+
+            let html = '';
+
+			// -----------------------------
+            // Journey selection dropdown
+            // -----------------------------
+			html += '<select class="form-control journey_map_selection" ' + 'name="' + rule.id + '_journey">';
+        	journeyMaps.forEach(function(journey){
+				var option = '<option value="'+ journey.id +'" >' + journey.name + '</option>';
+        		html += option;
+			});
+			html += '</select> <i class="fa fa-arrow-right" aria-hidden="true"></i> ';
+
+            // -----------------------------
+            // Metric selection dropdown
+            // -----------------------------
+            html += '<select class="form-control event_metric_selection" ' +
+                    'name="' + rule.id + '_metric">';
+
+            // selectionMap is { key : label }
+            _.forEach(selectionMap, function(label, key) {
+                html += '<option value="' + key + '">' + label + '</option>';
+            });
+
+            html += '</select> ';
+
+            // -----------------------------
+            // Operator dropdown
+            // Using valid QB operators (you can define custom ones if needed)
+            // -----------------------------
+            const operators = [
+                "equal",
+                "not_equal",
+                "less",
+                "less_or_equal",
+                "greater",
+                "greater_or_equal"
+            ];
+
+            html += '<select class="form-control event_metric_operator" ' +
+                    'name="' + rule.id + '_operator">';
+
+            for (let op of operators) {
+                html += '<option value="' + op + '">' + op + '</option>';
+            }
+
+            html += '</select> ';
+
+            // -----------------------------
+            // Numeric input for the value
+            // Must use provided name
+            // -----------------------------
+            html += '<input placeholder="Value" ' +
+                    'class="form-control event_metric_value" ' +
+                    'type="number" name="' + name + '" value="0">';
+
+            return html;
+        },
+
+        /**
+         * Extract values from UI → rule.value
+         */
+        valueGetter: function(rule) {
+            const container = rule.$el.find('.rule-value-container');
+
+			const journey = container.find('select[name="' + rule.id + '_journey"]').val();
+            const metric = container.find('select[name="' + rule.id + '_metric"]').val();
+            const operator = container.find('select[name="' + rule.id + '_operator"]').val();
+            const value = container.find('input[name="' + rule.id + '_value_0"]').val();
+
+			var v = value !== "" ? parseInt(value, 10) : "0";
+            return journey + "#" +metric + "#" + operator + "#" + v;
+        },
+
+        /**
+         * Load rule.value → write into UI
+         */
+        valueSetter: function(rule, val) {
+			// val should be in string like page-view#greater#10
+            const container = rule.$el.find('.rule-value-container');
+
+            if (!val) return;
+
+			var toks = val.split('#')
+
+			if (toks[0]) {
+                container.find('select[name="' + rule.id + '_journey"]').val(toks[0]);
+            }
+            if (toks[1]) {
+                container.find('select[name="' + rule.id + '_metric"]').val(toks[1]);
+            }
+            if (toks[2]) {
+                container.find('select[name="' + rule.id + '_operator"]').val(toks[2]);
+            }
+            if (toks[3].length > 0) {
+                container.find('input[name="' + rule.id + '_value_0"]').val(toks[3]);
+            }
+        },
+
+        /**
+         * Operators allowed for this filter.
+         * We use only one "fake" operator because the real operator
+         * is chosen inside our custom UI.
+         */
+        operators: ["event_in_journey"],
+
+        optgroup: fieldGroupLabel
+    };
+};
+
 
 const buildSegmentProductFilter = function(fieldId, fieldLabel, fieldGroupLabel) {
 	return {
@@ -616,14 +714,14 @@ const initSegmentCustomQueryFilter = function(customQueryFilter, readOnly){
 		editor.setCursor(editor.lineCount(), 0);
 		editor.setOption("readOnly", readOnly);
 	}
-
-	
 	window.segmentCustomQueryEditor = editor;
 }
+
 
 const loadSegmentBuilder = function(touchpointHubs,  behavioralEventMap, assetGroups, jsonQueryRules, callback) {
 	
 	var getDataFilter = function(touchpointHubs,  behavioralEventMap, assetGroups, journeyMapsForSegmentation) {
+		
 		var dataFilter = [ 
 			{
 				id : "status",
@@ -892,6 +990,20 @@ const loadSegmentBuilder = function(touchpointHubs,  behavioralEventMap, assetGr
 				operators : getOperatorsForNumberField(),
 				optgroup : "Scoring Model"
 			},
+//			{
+//			    id: 'eventStatistics',
+//			    label: 'Behavioral Event Statistics',
+//			    type: 'integer',
+//			    input: 'select',
+//			    values: behavioralEventMap,
+//			    validation : {
+//					min : 0,
+//					step : 1
+//				},
+//				operators : getOperatorsForNumberField(),
+//			    optgroup : "Scoring Model"
+//			},
+			buildEventStatisticsFilter("eventStatistics","Event Statistics","Scoring Model", journeyMapsForSegmentation, behavioralEventMap),
 			
 			// Data Traffic Sources
 			//buildTouchpointFilter('topEngagedTouchpointIds', 'Top Engaged Touchpoints',  'Data Sources'),
@@ -1018,7 +1130,7 @@ const loadSegmentBuilder = function(touchpointHubs,  behavioralEventMap, assetGr
 			    operators: ["contains_any", "not_contains_any"],
 			    optgroup : "Behavioural Event"
 			},
-			//buildEventStatisticsFilter("event_statistics","Event Statistics","Behavioural Event"),
+			
 			{
 			    id: 'cdp_trackingevent__metricName',
 			    label: 'Event Metric Name',

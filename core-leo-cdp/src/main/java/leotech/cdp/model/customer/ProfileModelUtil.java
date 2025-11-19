@@ -322,6 +322,9 @@ public final class ProfileModelUtil {
 				defaultIndexOptions);
 		aCollection.ensurePersistentIndex(Arrays.asList("inJourneyMapsAsStr"),
 				defaultIndexOptions);
+				
+		aCollection.ensurePersistentIndex(Arrays.asList("eventStatistics[*]"),
+				defaultIndexOptions);
 
 		// marketing metadata indexing
 		aCollection.ensurePersistentIndex(Arrays.asList("solutionsForCustomer[*]"),
