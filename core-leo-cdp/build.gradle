@@ -126,9 +126,6 @@ dependencies {
     // ────────────────────── Excel Writer ──────────────────────
     implementation 'org.dhatim:fastexcel:0.19.0'
 
-    // ────────────────────── Security / Auth ──────────────────────
-    implementation 'org.keycloak:keycloak-authz-client:26.0.7'
-
     // ────────────────────── Database (ArangoDB) ──────────────────────
     implementation 'com.arangodb:arangodb-java-driver:6.25.0'
 
@@ -148,10 +145,12 @@ dependencies {
 	implementation 'org.apache.logging.log4j:log4j-core:2.23.1'         // Log4j2 Engine
 	implementation 'org.apache.logging.log4j:log4j-slf4j2-impl:2.23.1'  // Bridge for SLF4J 2.x → Log4j2
 
-
     // ────────────────────── Security / XSS Filter ──────────────────────
     implementation 'org.jsoup:jsoup:1.21.1'
     implementation 'com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:20240325.1'
+    
+    // ────────────────────── Security / Auth ──────────────────────
+    implementation 'org.keycloak:keycloak-authz-client:26.0.7'
 
     // ────────────────────── Common Utilities ──────────────────────
     implementation 'org.apache.commons:commons-lang3:3.12.0'
