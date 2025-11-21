@@ -44,7 +44,6 @@ public class WebData extends DefaultModel {
 	protected boolean webTemplateCache = true;
 	protected boolean dataApiCache = false;
 	
-	
 	protected int httpStatusCode = HttpStatus.SC_OK;
 	protected final String host;
 	protected final String templateFolder;
@@ -75,10 +74,13 @@ public class WebData extends DefaultModel {
 	
 	protected String minifySuffix = SystemMetaData.MINIFY_SUFFIX;
 	
+	
 	protected String industryDataModels = SystemMetaData.INDUSTRY_DATA_MODELS_STRING;
 	
 	protected String defaultPersonalizationService = SystemMetaData.DEFAULT_PERSONALIZATION_SERVICE;
 	protected int maxTotalRecommendedItems = SystemMetaData.MAX_TOTAL_RECOMMENDED_ITEMS;
+	
+	protected boolean ssoLogin = SystemMetaData.SSO_LOGIN;
 	
 	protected String systemConfigJson = "{}";
 	protected String contactTypeJson = "{}";
@@ -406,6 +408,15 @@ public class WebData extends DefaultModel {
 
 	public void setDataApiCache(boolean dataApiCache) {
 		this.dataApiCache = dataApiCache;
+	}
+	
+	
+	public boolean isSsoLogin() {
+		return ssoLogin;
+	}
+
+	public void setSsoLogin(boolean ssoLogin) {
+		this.ssoLogin = ssoLogin;
 	}
 
 	public void setLeoCdpBuildVersion(String leoCdpBuildVersion) {

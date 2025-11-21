@@ -58,7 +58,12 @@ function loadLeoSystemMainView() {
 	        }
 	    } 
 	    else {
-	        LeoCdpAdmin.loadView('/view/login.html?admin=1', '#wrapper');
+			if(window.ssoLogin === true){
+				LeoCdpAdmin.loadView('/view/login-sso.html?admin=1', '#wrapper');
+			}
+			else {
+				LeoCdpAdmin.loadView('/view/login.html?admin=1', '#wrapper');
+			}	        
 	    }
 	}
 	else {

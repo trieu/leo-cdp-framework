@@ -186,6 +186,9 @@ public final class SystemMetaData {
 	public static final String AUTOMATION = "automation";
 	
 	public static final Set<String> INDUSTRY_DATA_MODELS = new HashSet<String>(10);
+
+	public static final boolean SSO_LOGIN = metaDataMap.getOrDefault("ssoLogin","false").trim().equalsIgnoreCase("true");
+	
 	static {
 		String[] industries = INDUSTRY_DATA_MODELS_STRING.split(",");
 		for (String industry : industries) {

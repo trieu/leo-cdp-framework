@@ -21,6 +21,8 @@ public class KeycloakRouterVerticle extends AbstractVerticle {
 	// Shared pool resource
 	static JedisPool jedisPool = RedisClientFactory.buildRedisPool("clusterInfoRedis");
 
+	// https://chatgpt.com/c/692059a5-b9c0-8324-acec-74b641295962
+	
 	@Override
 	public void start(Promise<Void> startPromise) {
 		try {
