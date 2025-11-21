@@ -5,108 +5,197 @@ import org.slf4j.LoggerFactory;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
+import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
+import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.ext.web.handler.BodyHandler;
 import redis.clients.jedis.JedisPool;
 import rfx.core.nosql.jedis.RedisClientFactory;
 
+/**
+ * Verticle responsible for handling SSO routing and initialization.
+ * Refactored for cleaner OOP structure and maintainability.
+ * 
+ * @author Trieu Nguyen
+ * @since 2025
+ */
 public class KeycloakRouterVerticle extends AbstractVerticle {
+
+
 	private static final Logger logger = LoggerFactory.getLogger("leobot-admin");
-	private static final String HTTP_HOST = "0.0.0.0";
-	private static final int HTTP_PORT = 8888;
 
-	// Shared pool resource
-	static JedisPool jedisPool = RedisClientFactory.buildRedisPool("clusterInfoRedis");
-
-	// https://chatgpt.com/c/692059a5-b9c0-8324-acec-74b641295962
+	private String host = "0.0.0.0";
+	private int port = 9079;
 	
-	@Override
-	public void start(Promise<Void> startPromise) {
-		try {
-			// 1. Initialize Configuration
-			KeycloakConfig config = new KeycloakConfig();
-
-			logger.info("KEYCLOAK_URL: {}", config.url);
-			logger.info("KEYCLOAK_CLIENT_ID: {}", config.clientId);
-
-			// 2. Setup WebClient
-			WebClientOptions options = new WebClientOptions()
-					.setSsl(config.url != null && config.url.toLowerCase().startsWith("https"))
-					.setTrustAll(!config.verifySSL) // dev mode
-					.setVerifyHost(config.verifySSL); // disable hostname verify in dev
-
-			WebClient webClient = WebClient.create(vertx, options);
-
-			// 3. Repositories
-			SessionRepository sessionRepo = new SessionRepository(vertx, jedisPool);
-
-			// 4. Handlers
-			AuthKeycloakHandlers authHandlers = new AuthKeycloakHandlers(config, sessionRepo, webClient);
-
-			// 5. Router
-			Router router = Router.router(vertx);
-			router.route().handler(BodyHandler.create());
-
-			router.get("/_leocdp/is-admin-ready")
-					.handler(ctx -> ctx.response().putHeader("Content-Type", "application/json")
-							.end(new JsonObject().put("ok", config.enabled).encode()));
-
-			if (config.enabled) {
-				registerKeycloakRoutes(router, authHandlers);
-			} else {
-				registerFallbackRoutes(router);
-			}
-
-			// 6. HTTP Server
-			vertx.createHttpServer().requestHandler(router).listen(HTTP_PORT, HTTP_HOST, ar -> {
-				if (ar.succeeded()) {
-					logger.info("✅ Admin router started on {}:{}", HTTP_HOST, ar.result().actualPort());
-					startPromise.complete();
-				} else {
-					logger.error("❌ Failed to start HTTP server", ar.cause());
-					startPromise.fail(ar.cause());
-				}
-			});
-
-		} catch (Exception e) {
-			logger.error("❌ Failed to start KeycloakRouterVerticle", e);
-			startPromise.fail(e);
-		}
+	public KeycloakRouterVerticle() {
+		// default
+		logger.info("event=router_init status=configured host={} port={}", host, port);
 	}
 
-	private void registerKeycloakRoutes(Router router, AuthKeycloakHandlers handlers) {
-		router.get("/_leocdp/sso/login").handler(handlers::handleLogin);
-		router.get("/_leocdp/sso/refresh").handler(handlers::handleRefreshToken);
-		router.get("/_leocdp/sso/callback").handler(handlers::handleCallback);
-		router.get("/_leocdp/sso/logout").handler(handlers::handleLogout);
-
-		// Protected routes
-		router.get("/admin").handler(handlers::handleAdmin);
-		router.get("/api/data").handler(handlers::handleDataApi);
-
-		// Error route
-		router.get("/_leocdp/sso/error").handler(ctx -> {
-			String error = ctx.request().getParam("error");
-			String desc = ctx.request().getParam("description");
-			JsonObject payload = new JsonObject().put("error", error).put("message", "SSO Error: " + error)
-					.put("description", desc).put("timestamp", System.currentTimeMillis() / 1000);
-
-			ctx.response().setStatusCode(400).putHeader("Content-Type", "application/json").end(payload.encode());
-		});
-
-		// Legacy/Alias route for "me"
-		router.get("/_leocdp/sso/me").handler(handlers::handleAdmin);
+	public KeycloakRouterVerticle(String host, int port) {
+		super();
+		this.host = host;
+		this.port = port;
+		logger.info("event=router_init status=configured host={} port={}", host, port);
 	}
 
-	private void registerFallbackRoutes(Router router) {
-		router.get("/admin")
-				.handler(ctx -> ctx.response().setStatusCode(503).end("Keycloak not enabled or failed to initialize."));
-		router.get("/_leocdp/sso/login")
-				.handler(ctx -> ctx.response().setStatusCode(500).end("{\"error\": \"Keycloak not configured\"}"));
-		router.get("/_leocdp/sso/logout")
-				.handler(ctx -> ctx.response().putHeader("Location", "/").setStatusCode(303).end());
-	}
+	// Shared Resource (Consider dependency injection in the future)
+    private static final JedisPool jedisPool = RedisClientFactory.buildRedisPool("clusterInfoRedis");
+
+    /**
+     * Inner static class to encapsulate Route Constants.
+     * Prevents hardcoding URLs throughout the application.
+     */
+    public static final class SsoRoutePaths {
+        // The requested constant prefix
+        public static final String PREFIX = "/_ssocdp";
+
+        // Sub-paths
+        public static final String IS_ENABLED = PREFIX + "/is-sso-enabled";
+        public static final String LOGIN = PREFIX + "/login";
+        public static final String REFRESH = PREFIX + "/refresh";
+        public static final String CALLBACK = PREFIX + "/callback";
+        public static final String LOGOUT = PREFIX + "/logout";
+        public static final String ADMIN = PREFIX + "/admin";
+        public static final String API_DATA = PREFIX + "/api/data";
+        public static final String ERROR = PREFIX + "/error";
+        public static final String ME = PREFIX + "/me";
+        public static final String ROOT_PREFIX = PREFIX + "/";
+        public static final String ROOT = "/";
+    }
+
+    @Override
+    public void start(Promise<Void> startPromise) {
+        try {
+            // 1. Initialize Configuration
+            KeycloakConfig config = new KeycloakConfig();
+            logConfig(config);
+
+            // 2. Initialize Services
+            WebClient webClient = createWebClient(config);
+            SessionRepository sessionRepo = new SessionRepository(vertx, jedisPool);
+            AuthKeycloakHandlers authHandlers = new AuthKeycloakHandlers(config, sessionRepo, webClient);
+
+            // 3. Build Router
+            Router router = Router.router(vertx);
+            router.route().handler(BodyHandler.create());
+
+            // 4. Register Routes
+            configureBaseRoutes(router, config);
+
+            if (config.enabled) {
+                configureKeycloakRoutes(router, authHandlers);
+            } else {
+                configureFallbackRoutes(router);
+            }
+
+            // 5. Start HTTP Server
+            startHttpServer(router, startPromise);
+
+        } catch (Exception e) {
+            logger.error("❌ Failed to start KeycloakRouterVerticle", e);
+            startPromise.fail(e);
+        }
+    }
+
+    private void logConfig(KeycloakConfig config) {
+        logger.info("KEYCLOAK Settings -> URL: [{}], ClientId: [{}], Callback: [{}]", 
+            config.url, config.clientId, config.callbackUrl);
+    }
+
+    private WebClient createWebClient(KeycloakConfig config) {
+        boolean isHttps = config.url != null && config.url.toLowerCase().startsWith("https");
+        WebClientOptions options = new WebClientOptions()
+                .setSsl(isHttps)
+                .setTrustAll(!config.verifySSL) // dev mode: trust all
+                .setVerifyHost(config.verifySSL); // dev mode: disable hostname verification
+
+        return WebClient.create(vertx, options);
+    }
+
+    private void configureBaseRoutes(Router router, KeycloakConfig config) {
+        // Public check for frontend to know if SSO is on
+        router.get(SsoRoutePaths.IS_ENABLED)
+                .handler(ctx -> {
+                    JsonObject response = new JsonObject().put("ok", config.enabled);
+                    ctx.response()
+                       .putHeader(AuthKeycloakHandlers.HEADER_CONTENT_TYPE, AuthKeycloakHandlers.MIME_JSON)
+                       .end(response.encode());
+                });
+    }
+
+    private void configureKeycloakRoutes(Router router, AuthKeycloakHandlers handlers) {
+        // Authentication Flow
+        router.get(SsoRoutePaths.LOGIN).handler(handlers::handleLogin);
+        router.get(SsoRoutePaths.REFRESH).handler(handlers::handleRefreshToken);
+        router.get(SsoRoutePaths.CALLBACK).handler(handlers::handleCallback);
+        router.get(SsoRoutePaths.LOGOUT).handler(handlers::handleLogout);
+
+        // Protected Areas
+        router.get(SsoRoutePaths.ADMIN).handler(handlers::handleAdmin);
+        router.get(SsoRoutePaths.API_DATA).handler(handlers::handleDataApi);
+        
+        // Aliases / Info
+        router.get(SsoRoutePaths.ME).handler(handlers::handleAdmin); // Legacy alias
+        router.get(SsoRoutePaths.ROOT_PREFIX).handler(handlers::handleInfo);
+        router.get(SsoRoutePaths.ROOT).handler(handlers::handleInfo);
+
+        // Error Handling
+        router.get(SsoRoutePaths.ERROR).handler(this::handleErrorRoute);
+    }
+
+    private void configureFallbackRoutes(Router router) {
+        router.get(SsoRoutePaths.ADMIN)
+                .handler(ctx -> ctx.response()
+                        .setStatusCode(503)
+                        .end("Keycloak not enabled or failed to initialize."));
+
+        router.get(SsoRoutePaths.LOGIN)
+                .handler(ctx -> ctx.response()
+                        .setStatusCode(500)
+                        .putHeader("Content-Type", AuthKeycloakHandlers.MIME_JSON)
+                        .end(new JsonObject().put("error", "Keycloak not configured").encode()));
+
+        router.get(SsoRoutePaths.LOGOUT)
+                .handler(ctx -> ctx.response()
+                        .putHeader(AuthKeycloakHandlers.HEADER_LOCATION, "/")
+                        .setStatusCode(303)
+                        .end());
+    }
+
+    /**
+     * Extracted error handler logic to keep route configuration clean.
+     */
+    private void handleErrorRoute(RoutingContext ctx) {
+        String error = ctx.request().getParam("error");
+        String desc = ctx.request().getParam("description");
+        
+        JsonObject payload = new JsonObject()
+                .put("error", error)
+                .put("message", "SSO Error: " + error)
+                .put("description", desc)
+                .put("timestamp", System.currentTimeMillis() / 1000);
+
+        ctx.response()
+                .setStatusCode(400)
+                .putHeader(AuthKeycloakHandlers.HEADER_CONTENT_TYPE, AuthKeycloakHandlers.MIME_JSON)
+                .end(payload.encode());
+    }
+
+    private void startHttpServer(Router router, Promise<Void> startPromise) {
+        vertx.createHttpServer(new HttpServerOptions().setCompressionSupported(true))
+                .requestHandler(router)
+                .listen(port, host, ar -> {
+                    if (ar.succeeded()) {
+                        logger.info("✅ Admin router started on {}:{}", host, ar.result().actualPort());
+                        startPromise.complete();
+                    } else {
+                        logger.error("❌ Failed to start HTTP server on port {}", port, ar.cause());
+                        startPromise.fail(ar.cause());
+                    }
+                });
+    }
 }

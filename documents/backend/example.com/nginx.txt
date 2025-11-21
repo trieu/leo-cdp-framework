@@ -26,35 +26,6 @@ server {
     return 404;
 }
 
-# LEO CDP admin
-server {
-    server_name leocdp.example.com;
-    location / {
-             proxy_pass http://127.0.0.1:9070/;
-             proxy_set_header X-Forwarded-Proto $scheme;
-             proxy_set_header X-Forwarded-Port $server_port;
-             proxy_set_header Host            $host;
-             proxy_set_header X-Forwarded-For "115.74.22.116";
-             expires 1M;
-             access_log off;
-             add_header Cache-Control "public";
-    }
-    listen [::]:443 ssl http2;
-    listen 443 ssl http2;
-    ssl_certificate /home/thomas/0-uspa/localhost-ssl/example.com+5.pem;
-    ssl_certificate_key /home/thomas/0-uspa/localhost-ssl/example.com+5-key.pem;
-}
-
-
-server {
-    if ($host = leocdp.example.com) {
-        return 301 https://$host$request_uri;
-    }
-    listen 80;
-    listen [::]:80;
-    server_name leocdp.example.com;
-    return 404;
-}
 
 # LEO CDP uploaded files
 server {
@@ -80,8 +51,80 @@ server {
 }
 
 
-# LEO Data Observer
+# LEO CDP admin
+upstream backend_admin_cdp {
+  server 127.0.0.1:9070;
+  #server 127.0.0.1:9071;
+}
+upstream backend_sso_cdp {
+  server 127.0.0.1:9079;
+}
+upstream backend_arangodb {
+  server 127.0.0.1:8529;
+}
 
+server {
+  server_name leocdp.example.com;
+
+  # Static Files for /view/
+  location ^~ /view/ {
+    # 1. Use 'alias' to map /view/ directly to the folder.
+    #    Nginx automatically strips '/view/' and looks for the rest of the path inside this folder.
+    alias /home/thomas/0-github/leo-cdp-framework/core-leo-cdp/resources/app-templates/leocdp-admin/;
+
+    # 2. Check if the file exists.
+    #    Note: Query parameters (?admin=1...) are ignored during file lookup, which is what we want.
+    try_files $uri $uri/ =404;
+
+    # 3. Caching and Compression settings
+    add_header Cache-Control "public, max-age=2592000";
+    expires 30d;
+
+    gzip on;
+    gzip_comp_level 6;
+    gzip_min_length 1024;
+    gzip_vary on;
+    gzip_types text/css application/javascript application/x-javascript;
+  }
+
+  # Keycloak: route all /_leocdp/* to SSO backend
+  location ^~ /_ssocdp/ {
+    proxy_pass http://backend_sso_cdp;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-Port $server_port;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_read_timeout 600s;
+  }
+
+  # ArangoDB: route all /_db/* to arangodb backend
+  location ^~ /_db/ {
+    proxy_pass http://backend_arangodb;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-Port $server_port;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_read_timeout 600s;
+  }
+
+  # Proxy requests for all other paths
+  location / {
+    proxy_pass http://backend_admin_cdp/;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-Port $server_port;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For "115.74.22.116";
+    access_log off;
+  }
+
+  listen [::]:443 ssl http2;
+  listen 443 ssl http2;
+  ssl_certificate /home/thomas/0-uspa/localhost-ssl/example.com+5.pem;
+  ssl_certificate_key /home/thomas/0-uspa/localhost-ssl/example.com+5-key.pem;
+}
+
+
+# LEO Data Observer
 server {
     server_name obs.example.com;
     location / {
@@ -99,8 +142,6 @@ server {
     ssl_certificate /home/thomas/0-uspa/localhost-ssl/example.com+5.pem;
     ssl_certificate_key /home/thomas/0-uspa/localhost-ssl/example.com+5-key.pem;
 }
-
-
 server {
     if ($host = obs.example.com) {
         return 301 https://$host$request_uri;
@@ -111,9 +152,7 @@ server {
     return 404;
 }
 
-
 # LEO Chatbot
-
 server {
     server_name leobot.example.com;
     location / {
@@ -131,8 +170,6 @@ server {
     ssl_certificate /home/thomas/0-uspa/localhost-ssl/example.com+5.pem;
     ssl_certificate_key /home/thomas/0-uspa/localhost-ssl/example.com+5-key.pem;
 }
-
-
 server {
     if ($host = leobot.example.com) {
         return 301 https://$host$request_uri;
@@ -143,12 +180,11 @@ server {
     return 404;
 }
 
-# LEO DB
-
+# LEO ID
 server {
-    server_name host;
+    server_name leoid.example.com;
     location / {
-             proxy_pass http://127.0.0.1:8601/;
+             proxy_pass http://127.0.0.1:8080/;
              proxy_set_header X-Forwarded-Proto $scheme;
              proxy_set_header X-Forwarded-Port $server_port;
              proxy_set_header Host            $host;
@@ -157,19 +193,17 @@ server {
              access_log off;
              add_header Cache-Control "public";
     }
+    listen [::]:443 ssl http2;
+    listen 443 ssl http2;
+    ssl_certificate /home/thomas/0-uspa/localhost-ssl/example.com+5.pem;
+    ssl_certificate_key /home/thomas/0-uspa/localhost-ssl/example.com+5-key.pem;
+}
+server {
+    if ($host = leoid.example.com) {
+        return 301 https://$host$request_uri;
+    }
     listen 80;
     listen [::]:80;
+    server_name leoid.example.com;
+    return 404;
 }
-
-# Sample for static website
-
-server {
-    root /build/test-html/;
-    index index.html;
-    server_name example.com;
-    location / {
-            try_files $uri $uri/ =404;
-    }
-}
-
-

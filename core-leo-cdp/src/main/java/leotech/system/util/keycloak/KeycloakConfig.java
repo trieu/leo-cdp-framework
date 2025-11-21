@@ -1,5 +1,6 @@
 package leotech.system.util.keycloak;
 
+import leotech.system.version.SystemMetaData;
 import rfx.core.util.StringUtil;
 
 /**
@@ -19,13 +20,13 @@ public class KeycloakConfig {
 	public final String callbackUrl;
 
 	public KeycloakConfig() {
-		this.enabled = getEnvBool("KEYCLOAK_ENABLED", true);
-		this.verifySSL = getEnvBool("KEYCLOAK_VERIFY_SSL", true);
-		this.url = System.getenv("KEYCLOAK_URL");
-		this.realm = System.getenv("KEYCLOAK_REALM");
-		this.clientId = System.getenv("KEYCLOAK_CLIENT_ID");
-		this.clientSecret = System.getenv("KEYCLOAK_CLIENT_SECRET");
-		this.callbackUrl = System.getenv("KEYCLOAK_CALLBACK_URL");
+		this.enabled = SystemMetaData.SSO_LOGIN;
+		this.verifySSL = SystemMetaData.getBoolean("keycloakVerifySSL", true);
+		this.url = SystemMetaData.getString("keycloakUrl", "");
+		this.realm = SystemMetaData.getString("keycloakRealm", "");
+		this.clientId = SystemMetaData.getString("keycloakClientId", "");
+		this.clientSecret = SystemMetaData.getString("keycloakClientSecret", "");
+		this.callbackUrl = SystemMetaData.getString("keycloakCallbackUrl", "");
 
 		if (enabled) {
 			validate();
@@ -40,10 +41,4 @@ public class KeycloakConfig {
 		}
 	}
 
-	private boolean getEnvBool(String key, boolean def) {
-		String val = System.getenv(key);
-		if (val == null)
-			return def;
-		return val.equalsIgnoreCase("true") || val.equals("1");
-	}
 }

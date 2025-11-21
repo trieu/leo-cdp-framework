@@ -114,6 +114,10 @@ public final class SystemMetaData {
 		return metaDataMap.getOrDefault(name, defaultValue);
 	}
 	
+	public static final boolean getBoolean(String name, boolean defaultValue) {
+		return Boolean.valueOf(metaDataMap.getOrDefault(name, String.valueOf(defaultValue)));
+	}
+	
 	public static final String DEFAULT_DATA_REGION = metaDataMap.getOrDefault("defaultDataRegion", "VN");
 	public static final String DEFAULT_TIME_ZONE = metaDataMap.getOrDefault("defaultTimeZone", "Asia/Saigon");
 	
