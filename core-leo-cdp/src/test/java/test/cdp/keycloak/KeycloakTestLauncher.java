@@ -1,10 +1,11 @@
-package test.cdp;
+package test.cdp.keycloak;
 
 import org.apache.logging.log4j.core.config.Configurator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.vertx.core.Vertx;
+import leotech.system.util.keycloak.KeycloakRouterVerticle;
 
 public class KeycloakTestLauncher {
 	private static final Logger logger = LoggerFactory.getLogger(KeycloakTestLauncher.class);

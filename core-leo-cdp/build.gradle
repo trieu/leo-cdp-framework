@@ -148,9 +148,6 @@ dependencies {
     // ────────────────────── Security / XSS Filter ──────────────────────
     implementation 'org.jsoup:jsoup:1.21.1'
     implementation 'com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:20240325.1'
-    
-    // ────────────────────── Security / Auth ──────────────────────
-    implementation 'org.keycloak:keycloak-authz-client:26.0.7'
 
     // ────────────────────── Common Utilities ──────────────────────
     implementation 'org.apache.commons:commons-lang3:3.12.0'
