@@ -1,8 +1,11 @@
 package leotech.starter.router;
 
+import java.util.Map;
 import java.util.function.Consumer;
 
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.MultiMap;
+import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
@@ -87,79 +90,80 @@ public final class AdminHttpRouter extends BaseWebRouter {
 		PROCESSORS.submit(()->{
 			JsonDataPayload payload = null;
 			try {			
+				Map<String, Cookie> cookieMap = req.cookieMap();
 				
 				if (uri.startsWith(CDP_SYSTEM_CONTROL)) {
-					payload = new SystemControlHandler(this).httpPostHandler(userSession, uri, paramJson);
+					payload = new SystemControlHandler(this).httpPostHandler(userSession, uri, paramJson, cookieMap);
 				}
 				//////// Core System Management ///////
 				else if (uri.startsWith(SYSTEM_USER_PREFIX)) {
-					payload = new SystemUserLoginHandler(this).httpPostHandler(userSession, uri, paramJson);
+					payload = new SystemUserLoginHandler(this).httpPostHandler(userSession, uri, paramJson, cookieMap);
 				}
 				//
 				else if (uri.startsWith(CDP_SYSTEM_CONFIG_PREFIX)) {
-					payload = new SystemConfigHandler(this).httpPostHandler(userSession, uri, paramJson);
+					payload = new SystemConfigHandler(this).httpPostHandler(userSession, uri, paramJson, cookieMap);
 				} 
 				
 				//////// Customer Data Platform ///////
 				//
 				else if (uri.startsWith(CDP_ANALYTICS_360_PREFIX)) {
-					payload = new Analytics360Handler(this).httpPostHandler(userSession, uri, paramJson);
+					payload = new Analytics360Handler(this).httpPostHandler(userSession, uri, paramJson, cookieMap);
 				}
 				//
 				else if (uri.startsWith(CDP_FUNNEL_PREFIX)) {
-					payload = new DataFunnelHandler(this).httpPostHandler(userSession, uri, paramJson);
+					payload = new DataFunnelHandler(this).httpPostHandler(userSession, uri, paramJson, cookieMap);
 				}
 				//
 				else if(uri.startsWith(CDP_JOURNEY_MAP_PREFIX)) {
-					payload = new JourneyMapHandler(this).httpPostHandler(userSession, uri, paramJson);
+					payload = new JourneyMapHandler(this).httpPostHandler(userSession, uri, paramJson, cookieMap);
 				}
 				//
 				else if(uri.startsWith(CDP_TOUCHPOINT_HUB_PREFIX)) {
-					payload = new TouchpointHubHandler(this).httpPostHandler(userSession, uri, paramJson);
+					payload = new TouchpointHubHandler(this).httpPostHandler(userSession, uri, paramJson, cookieMap);
 				}
 				//
 				else if(uri.startsWith(CDP_OBSERVER_PREFIX)) {
-					payload = new EventObserverHandler(this).httpPostHandler(userSession, uri, paramJson);
+					payload = new EventObserverHandler(this).httpPostHandler(userSession, uri, paramJson, cookieMap);
 				}
 				//
 				else if(uri.startsWith(CDP_EVENT_PREFIX)) {
-					payload = new EventDataHandler(this).httpPostHandler(userSession, uri, paramJson);
+					payload = new EventDataHandler(this).httpPostHandler(userSession, uri, paramJson, cookieMap);
 				}
 				//
 				else if (uri.startsWith(CDP_TOUCHPOINT_PREFIX)) {
-					payload = new ProfileDataHandler(this).httpPostHandler(userSession, uri, paramJson);
+					payload = new ProfileDataHandler(this).httpPostHandler(userSession, uri, paramJson, cookieMap);
 				}
 				//
 				else if (uri.startsWith(CDP_PROFILE_PREFIX)) {
-					payload = new ProfileDataHandler(this).httpPostHandler(userSession, uri, paramJson);
+					payload = new ProfileDataHandler(this).httpPostHandler(userSession, uri, paramJson, cookieMap);
 				}
 				//
 				else if (uri.startsWith(CDP_SEGMENT_PREFIX)) {
-					payload = new SegmentDataHandler(this).httpPostHandler(userSession, uri, paramJson);
+					payload = new SegmentDataHandler(this).httpPostHandler(userSession, uri, paramJson, cookieMap);
 				}
 				//
 				else if (uri.startsWith(CDP_ACCOUNT_PREFIX)) {
-					payload = new BusinessAccountHandler(this).httpPostHandler(userSession, uri, paramJson);
+					payload = new BusinessAccountHandler(this).httpPostHandler(userSession, uri, paramJson, cookieMap);
 				}
 				//
 				else if (uri.startsWith(CDP_CAMPAIGN_PREFIX)) {
-					payload = new CampaignHandler(this).httpPostHandler(userSession, uri, paramJson);
+					payload = new CampaignHandler(this).httpPostHandler(userSession, uri, paramJson, cookieMap);
 				}
 				//
 				else if (uri.startsWith(CDP_AI_AGENT_PREFIX)) {
-					payload = new AgentHandler(this).httpPostHandler(userSession, uri, paramJson);
+					payload = new AgentHandler(this).httpPostHandler(userSession, uri, paramJson, cookieMap);
 				}
 				//
 				else if (uri.startsWith(CDP_CATEGORY_PREFIX)) {
-					payload = new AssetCategoryHandler(this).httpPostHandler(userSession, uri, paramJson);
+					payload = new AssetCategoryHandler(this).httpPostHandler(userSession, uri, paramJson, cookieMap);
 				}
 				//
 				else if (uri.startsWith(CDP_GROUP_PREFIX)) {
-					payload = new AssetGroupHandler(this).httpPostHandler(userSession, uri, paramJson);
+					payload = new AssetGroupHandler(this).httpPostHandler(userSession, uri, paramJson, cookieMap);
 				}
 				//
 				else if (uri.startsWith(CDP_ITEM_PREFIX)) {
-					payload = new AssetItemHandler(this).httpPostHandler(userSession, uri, paramJson);
+					payload = new AssetItemHandler(this).httpPostHandler(userSession, uri, paramJson, cookieMap);
 				}
 				// to create or update profile
 				else if (uri.startsWith(API_PROFILE)) {
@@ -200,74 +204,75 @@ public final class AdminHttpRouter extends BaseWebRouter {
 		PROCESSORS.submit(()->{
 			JsonDataPayload payload = null;
 			try {
+				Map<String, Cookie> cookieMap = req.cookieMap();
 				//////// Core System Management ///////
 				if (uri.startsWith(SYSTEM_USER_PREFIX)) {
-					payload = new SystemUserLoginHandler(this).httpGetHandler(userSession, uri, urlParams);
+					payload = new SystemUserLoginHandler(this).httpGetHandler(userSession, uri, urlParams, cookieMap);
 				}
 				//
 				else if (uri.startsWith(CDP_SYSTEM_CONFIG_PREFIX)) {
-					payload = new SystemConfigHandler(this).httpGetHandler(userSession, uri, urlParams);
+					payload = new SystemConfigHandler(this).httpGetHandler(userSession, uri, urlParams, cookieMap);
 				} 
 				//////// Customer Data Platform ///////
 				//
 				else if (uri.startsWith(CDP_ANALYTICS_360_PREFIX)) {
-					payload = new Analytics360Handler(this).httpGetHandler(userSession, uri, urlParams);
+					payload = new Analytics360Handler(this).httpGetHandler(userSession, uri, urlParams, cookieMap);
 				}
 				//
 				else if (uri.startsWith(CDP_FUNNEL_PREFIX)) {
-					payload = new DataFunnelHandler(this).httpGetHandler(userSession, uri, urlParams);
+					payload = new DataFunnelHandler(this).httpGetHandler(userSession, uri, urlParams, cookieMap);
 				}
 				//
 				else if(uri.startsWith(CDP_JOURNEY_MAP_PREFIX)) {
-					payload = new JourneyMapHandler(this).httpGetHandler(userSession, uri, urlParams);
+					payload = new JourneyMapHandler(this).httpGetHandler(userSession, uri, urlParams, cookieMap);
 				}
 				//
 				else if(uri.startsWith(CDP_TOUCHPOINT_HUB_PREFIX)) {
-					payload = new TouchpointHubHandler(this).httpGetHandler(userSession, uri, urlParams);
+					payload = new TouchpointHubHandler(this).httpGetHandler(userSession, uri, urlParams, cookieMap);
 				}
 				//
 				else if(uri.startsWith(CDP_OBSERVER_PREFIX)) {
-					payload = new EventObserverHandler(this).httpGetHandler(userSession, uri, urlParams);
+					payload = new EventObserverHandler(this).httpGetHandler(userSession, uri, urlParams, cookieMap);
 				}
 				//
 				else if(uri.startsWith(CDP_EVENT_PREFIX)) {
-					payload = new EventDataHandler(this).httpGetHandler(userSession, uri, urlParams);
+					payload = new EventDataHandler(this).httpGetHandler(userSession, uri, urlParams, cookieMap);
 				}
 				//
 				else if (uri.startsWith(CDP_TOUCHPOINT_PREFIX)) {
-					payload = new ProfileDataHandler(this).httpGetHandler(userSession, uri, urlParams);
+					payload = new ProfileDataHandler(this).httpGetHandler(userSession, uri, urlParams, cookieMap);
 				}
 				//
 				else if (uri.startsWith(CDP_PROFILE_PREFIX)) {
-					payload = new ProfileDataHandler(this).httpGetHandler(userSession, uri, urlParams);
+					payload = new ProfileDataHandler(this).httpGetHandler(userSession, uri, urlParams, cookieMap);
 				}
 				//
 				else if (uri.startsWith(CDP_SEGMENT_PREFIX)) {
-					payload = new SegmentDataHandler(this).httpGetHandler(userSession, uri, urlParams);
+					payload = new SegmentDataHandler(this).httpGetHandler(userSession, uri, urlParams, cookieMap);
 				}
 				//
 				else if (uri.startsWith(CDP_ACCOUNT_PREFIX)) {
-					payload = new BusinessAccountHandler(this).httpGetHandler(userSession, uri, urlParams);
+					payload = new BusinessAccountHandler(this).httpGetHandler(userSession, uri, urlParams, cookieMap);
 				}
 				//
 				else if (uri.startsWith(CDP_CAMPAIGN_PREFIX)) {
-					payload = new CampaignHandler(this).httpGetHandler(userSession, uri, urlParams);
+					payload = new CampaignHandler(this).httpGetHandler(userSession, uri, urlParams, cookieMap);
 				}
 				//
 				else if (uri.startsWith(CDP_AI_AGENT_PREFIX)) {
-					payload = new AgentHandler(this).httpGetHandler(userSession, uri, urlParams);
+					payload = new AgentHandler(this).httpGetHandler(userSession, uri, urlParams, cookieMap);
 				}
 				//
 				else if (uri.startsWith(CDP_CATEGORY_PREFIX)) {
-					payload = new AssetCategoryHandler(this).httpGetHandler(userSession, uri, urlParams);
+					payload = new AssetCategoryHandler(this).httpGetHandler(userSession, uri, urlParams, cookieMap);
 				}
 				//
 				else if (uri.startsWith(CDP_GROUP_PREFIX)) {
-					payload = new AssetGroupHandler(this).httpGetHandler(userSession, uri, urlParams);
+					payload = new AssetGroupHandler(this).httpGetHandler(userSession, uri, urlParams, cookieMap);
 				}
 				//
 				else if (uri.startsWith(CDP_ITEM_PREFIX)) {
-					payload = new AssetItemHandler(this).httpGetHandler(userSession, uri, urlParams);
+					payload = new AssetItemHandler(this).httpGetHandler(userSession, uri, urlParams, cookieMap);
 				}
 				
 				// ---------- API handler ----------

@@ -1,6 +1,9 @@
 package leotech.cdp.handler.admin;
 
+import java.util.Map;
+
 import io.vertx.core.MultiMap;
+import io.vertx.core.http.Cookie;
 import io.vertx.core.json.JsonObject;
 import leotech.cdp.domain.ProfileGraphManagement;
 import leotech.cdp.domain.SegmentDataManagement;
@@ -51,7 +54,7 @@ public final class SegmentDataHandler extends SecuredHttpDataHandler {
 	 * HTTP POST handler
 	 */
 	@Override
-	public JsonDataPayload httpPostHandler(String userSession, String uri, JsonObject paramJson) throws Exception {
+	public JsonDataPayload httpPostHandler(String userSession, String uri, JsonObject paramJson, Map<String, Cookie> cookieMap) throws Exception {
 		SystemUser loginUser = initSystemUser(userSession, uri, paramJson);
 		if (loginUser != null) {
 			switch (uri) {
@@ -111,7 +114,7 @@ public final class SegmentDataHandler extends SecuredHttpDataHandler {
 	 * HTTP GET handler
 	 */
 	@Override
-	public JsonDataPayload httpGetHandler(String userSession, String uri, MultiMap params) throws Exception {
+	public JsonDataPayload httpGetHandler(String userSession, String uri, MultiMap params, Map<String, Cookie> cookieMap) throws Exception {
 		SystemUser loginUser = initSystemUser(userSession, uri, params);
 		if (loginUser != null) {
 			switch (uri) {

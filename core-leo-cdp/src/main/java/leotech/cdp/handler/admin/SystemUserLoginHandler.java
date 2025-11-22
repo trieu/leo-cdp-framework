@@ -1,9 +1,11 @@
 package leotech.cdp.handler.admin;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import io.vertx.core.MultiMap;
+import io.vertx.core.http.Cookie;
 import io.vertx.core.json.JsonObject;
 import leotech.cdp.domain.JourneyMapManagement;
 import leotech.cdp.domain.ProfileDataManagement;
@@ -46,7 +48,7 @@ public final class SystemUserLoginHandler extends SecuredHttpDataHandler {
 	}
 	
 	@Override
-	public JsonDataPayload httpPostHandler(String userSession, String uri, JsonObject paramJson) throws Exception {
+	public JsonDataPayload httpPostHandler(String userSession, String uri, JsonObject paramJson, Map<String, Cookie> cookieMap) throws Exception {
 		// get user info from login session
 		SystemUser loginUser = initSystemUser(userSession, uri, paramJson);
 
@@ -170,12 +172,12 @@ public final class SystemUserLoginHandler extends SecuredHttpDataHandler {
 			return JsonErrorPayload.NO_AUTHORIZATION;
 		} 
 		else {
-			return userLoginHandler(userSession, uri, paramJson);
+			return userLoginHandler(userSession, uri, paramJson, cookieMap);
 		}
 	}
 
 	@Override
-	public JsonDataPayload httpGetHandler(String userSession, String uri, MultiMap params) throws Exception {
+	public JsonDataPayload httpGetHandler(String userSession, String uri, MultiMap params, Map<String, Cookie> cookieMap) throws Exception {
 		return JsonErrorPayload.NO_HANDLER_FOUND;
 	}
 	

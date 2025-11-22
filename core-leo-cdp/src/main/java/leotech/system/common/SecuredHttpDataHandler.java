@@ -13,6 +13,8 @@ import java.util.concurrent.CompletableFuture;
 import com.devskiller.friendly_id.FriendlyId;
 
 import io.vertx.core.MultiMap;
+import io.vertx.core.http.Cookie;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import leotech.starter.router.NotifyUserHandler;
 import leotech.system.dao.SystemUserDaoUtil;
@@ -24,11 +26,15 @@ import leotech.system.util.CaptchaUtil.CaptchaData;
 import leotech.system.util.EncryptorAES;
 import leotech.system.util.IdGenerator;
 import leotech.system.util.LogUtil;
+import leotech.system.util.keycloak.AuthKeycloakHandlers;
+import leotech.system.util.keycloak.UserProfile;
 import leotech.system.version.SystemMetaData;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Pipeline;
 import redis.clients.jedis.Response;
 import redis.clients.jedis.exceptions.JedisException;
+import rfx.core.nosql.jedis.RedisClientFactory;
 import rfx.core.nosql.jedis.RedisCommand;
 import rfx.core.util.StringUtil;
 
@@ -39,8 +45,7 @@ import rfx.core.util.StringUtil;
  * @since 2020
  */
 public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
-	
-	
+
 	public static final int AFTER_15_MINUTES = 60 * 15;
 	public static final int AFTER_3_DAYS = 60 * 60 * 24 * 3;
 	public static final int AFTER_7_DAYS = 60 * 60 * 24 * 7;
@@ -54,7 +59,7 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 	public static final String REDIS_KEY_ENCKEY = "enckey";
 	public static final String REDIS_KEY_USERLOGIN = "userlogin";
 	public static final String LAST_ACCESS_TIME = "lastaccesstime";
-	
+
 	public static final String API_LOGIN_SESSION = "/user/login-session";
 	public static final String API_CHECK_LOGIN = "/user/check-login";
 	public static final String API_CHECK_SSO = "/user/check-sso";
@@ -63,36 +68,31 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 
 	public static final String ADMIN_HANDLER_SESSION_KEY = "leouss";
 	public static final String DATA_ACCESS_KEY = "dataAccessKey";
-	
+
 	final static int MAX_NUMBER = 1000000;
-	
+
 	// Define classes requiring operational role
-	private static final Set<Class<?>> OPERATION_ROLE_CLASS = Set.of(
-        leotech.cdp.model.customer.Profile.class,
-        leotech.cdp.model.customer.Segment.class,
-        leotech.cdp.model.journey.JourneyMap.class,
-        leotech.cdp.model.asset.AssetCategory.class,
-        leotech.cdp.model.asset.AssetGroup.class,
-        leotech.cdp.model.asset.AssetItem.class,
-        leotech.cdp.model.activation.Agent.class
-    );
-	
+	private static final Set<Class<?>> OPERATION_ROLE_CLASS = Set.of(leotech.cdp.model.customer.Profile.class,
+			leotech.cdp.model.customer.Segment.class, leotech.cdp.model.journey.JourneyMap.class,
+			leotech.cdp.model.asset.AssetCategory.class, leotech.cdp.model.asset.AssetGroup.class,
+			leotech.cdp.model.asset.AssetItem.class, leotech.cdp.model.activation.Agent.class);
+
 	private BaseHttpRouter baseHttpRouter;
-	
+
 	public SecuredHttpDataHandler(BaseHttpRouter baseHttpRouter) {
 		this.baseHttpRouter = baseHttpRouter;
 	}
-	
+
 	public BaseHttpRouter getBaseHttpRouter() {
 		return baseHttpRouter;
 	}
-	
+
 	protected static int randomNumber() {
 		Random rand = new Random();
 		int n = rand.nextInt(MAX_NUMBER) + 1;
 		return n;
 	}
-	
+
 	/**
 	 * @param usersession
 	 * @return
@@ -106,45 +106,42 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 				if (toks[0].equals(ADMIN_HANDLER_SESSION_KEY) && ran > 0 && ran <= MAX_NUMBER) {
 					return true;
 				}
-			} 
-			else {
+			} else {
 				System.err.println("[isValidUserSession] error in parsing usersession, needs 3 tokens");
 			}
 		}
 		return false;
 	}
-	
-	
+
 	/**
 	 * @param usersession
 	 * @return
 	 */
-	public static boolean isValidUserSessionWithCaptcha(String usersession,  String captchaFromUser) {
+	public static boolean isValidUserSessionWithCaptcha(String usersession, String captchaFromUser) {
 		if (StringUtil.isNotEmpty(usersession)) {
 			String decrypt = EncryptorAES.decrypt(usersession);
 			String[] toks = decrypt.split(SESSION_SPLITER);
-			if(toks.length == 4) {
+			if (toks.length == 4) {
 				String savedCaptcha = toks[3];
 				int ran = StringUtil.safeParseInt(toks[2]);
 				logger.info("savedCaptcha " + savedCaptcha);
 				logger.info("captchaFromUser " + captchaFromUser);
-				
-				if(captchaFromUser.equals(savedCaptcha) && toks[0].equals(ADMIN_HANDLER_SESSION_KEY) && ran > 0 && ran <= MAX_NUMBER) {
+
+				if (captchaFromUser.equals(savedCaptcha) && toks[0].equals(ADMIN_HANDLER_SESSION_KEY) && ran > 0
+						&& ran <= MAX_NUMBER) {
 					return true;
 				} else {
 					System.err.println(" ==> check login failed with 4 tokens");
 					return false;
 				}
-			}
-			else {
+			} else {
 				System.err.println("usersession is not 4 tokens");
 				return false;
 			}
 		}
 		return false;
 	}
-	
-	
+
 	/**
 	 * for data exporting and notebook API access
 	 * 
@@ -157,7 +154,7 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 				@Override
 				protected Void build(Jedis jedis) throws JedisException {
 					Pipeline p = jedis.pipelined();
-					p.set(dataAccessKey,systemUserId);
+					p.set(dataAccessKey, systemUserId);
 					p.expire(dataAccessKey, AFTER_15_MINUTES);
 					p.sync();
 					return null;
@@ -167,7 +164,7 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 			e.printStackTrace();
 		}
 	}
-	
+
 	/**
 	 * @param usersession
 	 * @return
@@ -188,7 +185,7 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 
 		return false;
 	}
-	
+
 	/**
 	 * for data exporting and notebook API access
 	 * 
@@ -201,9 +198,9 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 			systemUser = new RedisCommand<SystemUser>(redisLocalCache) {
 				@Override
 				protected SystemUser build(Jedis jedis) throws JedisException {
-					
+
 					String userId = jedis.get(dataAccessKey);
-					if(userId != null) {
+					if (userId != null) {
 						SystemUser user = SystemUserDaoUtil.getSystemUserByKey(userId);
 						if (user != null) {
 							if (user.getStatus() == SystemUser.STATUS_ACTIVE) {
@@ -219,17 +216,16 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		if(systemUser != null) {
+		if (systemUser != null) {
 			try {
 				return systemUser.get();
-			}  catch (Exception e) {
-				
+			} catch (Exception e) {
+
 			}
 		}
 		return null;
 	}
 
-	
 	/**
 	 * get SystemUser from Session to check authentication and authorization
 	 * 
@@ -254,13 +250,13 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 						if (user != null) {
 							if (user.getStatus() == SystemUser.STATUS_ACTIVE) {
 								user.setEncryptionKey(enckey);
-								if(user.shouldCheckNotifications()) {
+								if (user.shouldCheckNotifications()) {
 									NotifyUserHandler.checkNotification(user.getKey());
 								}
 								return user;
-							} 
-							else {
-								LogUtil.logError(SecuredHttpDataHandler.class,"userlogin: " + userlogin + " not active");
+							} else {
+								LogUtil.logError(SecuredHttpDataHandler.class,
+										"userlogin: " + userlogin + " not active");
 							}
 						}
 						return null;
@@ -276,9 +272,9 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 		// no authentication
 		return null;
 	}
-	
+
 	/**
-	 * for HTTP POST, get user info from login session and track SystemEvent 
+	 * for HTTP POST, get user info from login session and track SystemEvent
 	 * 
 	 * @param userSession
 	 * @param clazz
@@ -291,9 +287,9 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 		SystemEventManagement.log(systemUser, SystemUser.class, uri, paramJson);
 		return systemUser;
 	}
-	
+
 	/**
-	 * for HTTP GET, get user info from login session and track SystemEvent 
+	 * for HTTP GET, get user info from login session and track SystemEvent
 	 * 
 	 * @param userSession
 	 * @param uri
@@ -305,7 +301,7 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 		SystemEventManagement.log(systemUser, SystemUser.class, uri, params);
 		return systemUser;
 	}
-	
+
 	/**
 	 * get user info from login session and no tracking SystemEvent
 	 * 
@@ -316,7 +312,6 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 		return getSystemUserFromSession(userSession);
 	}
 
-	
 	/**
 	 * Checks if a user is authorized to access a given class type.
 	 *
@@ -325,25 +320,24 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 	 * @return true if authorized, false otherwise
 	 */
 	public static boolean isAuthorized(SystemUser loginUser, Class<?> clazz) {
-	    if (loginUser == null || clazz == null) {
-	        return false;
-	    }
+		if (loginUser == null || clazz == null) {
+			return false;
+		}
 
-	    // Must be active to proceed
-	    if (loginUser.getStatus() != SystemUser.STATUS_ACTIVE) {
-	        return false;
-	    }
+		// Must be active to proceed
+		if (loginUser.getStatus() != SystemUser.STATUS_ACTIVE) {
+			return false;
+		}
 
-	    // If the class belongs to the operation set, check that role
-	    if (OPERATION_ROLE_CLASS.contains(clazz)) {
-	        return loginUser.hasOperationRole();
-	    }
+		// If the class belongs to the operation set, check that role
+		if (OPERATION_ROLE_CLASS.contains(clazz)) {
+			return loginUser.hasOperationRole();
+		}
 
-	    // Default authorization rule
-	    return loginUser.getRole() >= 0;
+		// Default authorization rule
+		return loginUser.getRole() >= 0;
 	}
 
-	
 	/**
 	 * @param loginUser
 	 * @param clazz
@@ -352,7 +346,7 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 	public static boolean isAuthorizedForSystemAdmin(SystemUser loginUser, Class<?> clazz) {
 		return loginUser.hasAdminRole();
 	}
-	
+
 	/**
 	 * @param loginUser
 	 * @return
@@ -360,8 +354,7 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 	public static boolean isDataOperator(SystemUser loginUser) {
 		return loginUser.hasOperationRole();
 	}
-	
-	
+
 	/**
 	 * @param loginUser
 	 * @return
@@ -370,112 +363,141 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 		return loginUser.hasOperationRole();
 	}
 
-	
 	/**
 	 * @param loginUser
 	 * @return
 	 */
 	public static boolean isAdminRole(SystemUser loginUser) {
-		if(loginUser != null) {
+		if (loginUser != null) {
 			return loginUser.hasAdminRole();
 		}
 		return false;
 	}
-	
+
 	/**
 	 * @param loginUser
 	 * @return
 	 */
 	public static boolean isSuperAdminRole(SystemUser loginUser) {
-		if(loginUser != null) {
-			return loginUser.hasSuperAdminRole();	
+		if (loginUser != null) {
+			return loginUser.hasSuperAdminRole();
 		}
 		return false;
 	}
-	
+
 	public static boolean isAuthorizedToGetUserDetailsByKey(SystemUser loginUser, String userKey) {
 		return isSuperAdminRole(loginUser) || loginUser.getKey().equals(userKey);
 	}
-	
+
 	public static boolean isAuthorizedToGetUserDetailsByUserLogin(SystemUser loginUser, String userLogin) {
 		String sessionUserLogin = loginUser.getUserLogin();
 		return StringUtil.isNotEmpty(userLogin) && (isSuperAdminRole(loginUser) || sessionUserLogin.equals(userLogin));
 	}
 
-	
 	///////////////////////////// 3 API for login
 	///////////////////////////// ///////////////////////////////////////////////////////////////////
 
-
 	/**
-	 * step 1: 
+	 * step 1:
 	 * 
 	 * @param userSession
 	 * @param uri
 	 * @param paramJson
 	 * @return
 	 */
-	protected static JsonDataPayload userLoginHandler(String userSession, String uri, JsonObject paramJson) {
+	protected static JsonDataPayload userLoginHandler(String userSession, String uri, JsonObject paramJson, Map<String, Cookie> cookieMap) {
 		if (uri.equalsIgnoreCase(API_LOGIN_SESSION)) {
 			if (StringUtil.isEmpty(userSession)) {
-				return buildLoginSession(uri, paramJson);
+				return buildLoginSession(uri, paramJson, cookieMap);
 			} else {
 				return JsonDataPayload.ok(uri, userSession);
 			}
 		} 
 		else if (uri.equalsIgnoreCase(API_CHECK_LOGIN)) {
-			String userlogin = paramJson.getString("userlogin","").trim();
-			String userpass = paramJson.getString("userpass","").trim();
-			String captcha = paramJson.getString("captcha","").trim();
-			
-			if(StringUtil.isEmpty(captcha)) {
+			String userlogin = paramJson.getString("userlogin", "").trim();
+			String userpass = paramJson.getString("userpass", "").trim();
+			String captcha = paramJson.getString("captcha", "").trim();
+
+			if (StringUtil.isEmpty(captcha)) {
 				return JsonErrorPayload.INVALID_CAPCHA_NUMBER;
 			}
-			
+
 			boolean valid = StringUtil.isNotEmpty(userlogin) && StringUtil.isNotEmpty(userpass);
-			if(valid) {
+			if (valid) {
 				// verify from database
 				JsonDataPayload checkLoginResult = checkLoginHandler(uri, userSession, userlogin, userpass, captcha);
-				
+
 				// log to monitor
 				paramJson.remove("userpass");
-				
+
 				// tracking with System Analytics
 				SystemEventManagement.log(userlogin, SystemUser.class, uri, paramJson);
-				
+
 				return checkLoginResult;
 			} else {
 				return JsonErrorPayload.WRONG_USER_LOGIN;
 			}
 		}
+		else if( uri.equalsIgnoreCase(API_CHECK_SSO)) {
+			String email = paramJson.getString("email", "").trim();
+			Cookie sidCookie = cookieMap.get("sid");
+			String sid = sidCookie != null ? sidCookie.getValue() : "";
+			
+			logger.info("email " + email + " sid " + sid);
+			return JsonErrorPayload.NO_AUTHENTICATION;
+		}
 		return JsonErrorPayload.NO_AUTHENTICATION;
 	}
 
-
 	/**
-	 * step 2: 
+	 * step 2:
 	 * 
 	 * @param uri
 	 * @return
 	 */
-	private static JsonDataPayload buildLoginSession(String uri, JsonObject paramJson) {
-		String SSO_KEY = "sso";
+	private static JsonDataPayload buildLoginSession(String uri, JsonObject paramJson, Map<String, Cookie> cookieMap) {
+		String SSO_KEY = "sso", SID_KEY = "sid";
 		boolean sso = paramJson.getBoolean(SSO_KEY, false);
-		
-		if(sso) {
-			String encryptedValue = ADMIN_HANDLER_SESSION_KEY + SESSION_SPLITER + System.currentTimeMillis() + SESSION_SPLITER + randomNumber() + SESSION_SPLITER + SSO_KEY;
+
+		if (sso) {
+			String encryptedValue = ADMIN_HANDLER_SESSION_KEY + SESSION_SPLITER + System.currentTimeMillis()
+					+ SESSION_SPLITER + randomNumber() + SESSION_SPLITER + SSO_KEY;
 			String userSession = EncryptorAES.encrypt(encryptedValue);
 			Map<String, String> data = new HashMap<>(2);
-			data.put(USER_SESSION, userSession);	
+			data.put(USER_SESSION, userSession);
+
+			// FIXME
+			Cookie sidCookie = cookieMap.get(SID_KEY);
+			String sid = sidCookie != null ? sidCookie.getValue() : "";
+			JedisPool jedisPool = RedisClientFactory.buildRedisPool("clusterInfoRedis");
+			RedisCommand<String> cmd = new RedisCommand<String>(jedisPool) {
+				@Override
+				protected String build(Jedis jedis) {
+					return jedis.get(sid);
+				}
+			};
+			String email = "";
+			String rawSession = cmd.execute();
+			if (StringUtil.isNotEmpty(rawSession)) {
+				// Transform and response
+	            JsonObject session = new JsonObject(rawSession);
+	            String accessToken = session.getJsonObject("token").getString("access_token");
+	            JsonArray roles = AuthKeycloakHandlers.getUserRoles(accessToken);
+				JsonObject userJson = session.getJsonObject("user");
+				UserProfile user = UserProfile.fromJson(userJson, roles);
+				email = user.getEmail();
+				
+				logger.info(user.toString());
+			}
+			data.put("email", email);
+
 			
-			String email = "tantrieuf31@gmail.com";// FIXME
-			data.put("email", email);	
 			return JsonDataPayload.ok(uri, data);
-		}
-		else {
+		} else {
 			CaptchaData capcha = CaptchaUtil.getRandomCaptcha();
 			String capchaContent = capcha.content;
-			String encryptedValue = ADMIN_HANDLER_SESSION_KEY + SESSION_SPLITER + System.currentTimeMillis() + SESSION_SPLITER + randomNumber() + SESSION_SPLITER + capchaContent;
+			String encryptedValue = ADMIN_HANDLER_SESSION_KEY + SESSION_SPLITER + System.currentTimeMillis()
+					+ SESSION_SPLITER + randomNumber() + SESSION_SPLITER + capchaContent;
 			String userSession = EncryptorAES.encrypt(encryptedValue);
 			Map<String, String> data = new HashMap<>(2);
 			data.put(USER_SESSION, userSession);
@@ -484,9 +506,8 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 		}
 	}
 
-
 	/**
-	 * step 3: 
+	 * step 3:
 	 * 
 	 * @param uri
 	 * @param userSession
@@ -496,7 +517,8 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 	 * @param inputedCaptcha
 	 * @return
 	 */
-	private static JsonDataPayload checkLoginHandler(String uri, String userSession, String userLogin, String userpass, String inputedCaptcha) {
+	private static JsonDataPayload checkLoginHandler(String uri, String userSession, String userLogin, String userpass,
+			String inputedCaptcha) {
 		if (isValidUserSessionWithCaptcha(userSession, inputedCaptcha)) {
 			boolean ok = SystemUserDaoUtil.checkSystemUserLogin(userLogin, userpass);
 			if (ok) {
@@ -510,7 +532,7 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 		}
 		return JsonErrorPayload.INVALID_CAPCHA_NUMBER;
 	}
-	
+
 	/**
 	 * @param segmentId
 	 * @param systemUserId
@@ -518,29 +540,28 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 	 * @return accessUri
 	 */
 	public static String createAccessUriForExportedFile(String segmentId, String systemUserId, String fullPath) {
-	    if (segmentId == null || systemUserId == null || fullPath == null) {
-	        throw new IllegalArgumentException("segmentId, systemUserId, and fullPath must not be null");
-	    }
+		if (segmentId == null || systemUserId == null || fullPath == null) {
+			throw new IllegalArgumentException("segmentId, systemUserId, and fullPath must not be null");
+		}
 
-	    // Generate key
-	    String dataAccessKey = IdGenerator.generateDataAccessKey(segmentId, systemUserId);
+		// Generate key
+		String dataAccessKey = IdGenerator.generateDataAccessKey(segmentId, systemUserId);
 
-	    try {
-	        // Ensure key is URL-safe
-	        String encodedKey = URLEncoder.encode(dataAccessKey, StandardCharsets.UTF_8.toString());
+		try {
+			// Ensure key is URL-safe
+			String encodedKey = URLEncoder.encode(dataAccessKey, StandardCharsets.UTF_8.toString());
 
-	        // Build URI safely, preserving existing query params
-	        URI baseUri = URI.create(fullPath);
-	        String separator = (baseUri.getQuery() == null) ? "?" : "&";
-	        return fullPath + separator + DATA_ACCESS_KEY + "=" + encodedKey;
-	    } catch (Exception e) {
-	        throw new RuntimeException("Failed to build access URI for exported file", e);
-	    }
+			// Build URI safely, preserving existing query params
+			URI baseUri = URI.create(fullPath);
+			String separator = (baseUri.getQuery() == null) ? "?" : "&";
+			return fullPath + separator + DATA_ACCESS_KEY + "=" + encodedKey;
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to build access URI for exported file", e);
+		}
 	}
 
-
 	/**
-	 * step 4: 
+	 * step 4:
 	 * 
 	 * @param userLogin
 	 * @param usersession
@@ -576,7 +597,7 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	abstract public JsonDataPayload httpPostHandler(String userSession, String uri, JsonObject paramJson) throws Exception;
+	abstract public JsonDataPayload httpPostHandler(String userSession, String uri, JsonObject paramJson, Map<String, Cookie> cookieMap) throws Exception;
 
 	/**
 	 * HTTP get data handler for JSON
@@ -587,6 +608,6 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	abstract public JsonDataPayload httpGetHandler(String userSession, String uri, MultiMap params) throws Exception;
+	abstract public JsonDataPayload httpGetHandler(String userSession, String uri, MultiMap params, Map<String, Cookie> cookieMap) throws Exception;
 
 }

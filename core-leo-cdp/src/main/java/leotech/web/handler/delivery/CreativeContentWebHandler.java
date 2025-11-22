@@ -3,8 +3,10 @@ package leotech.web.handler.delivery;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import io.vertx.core.MultiMap;
+import io.vertx.core.http.Cookie;
 import io.vertx.core.json.JsonObject;
 import leotech.cdp.dao.AssetContentDaoPublicUtil;
 import leotech.cdp.domain.ContentItemManagement;
@@ -35,13 +37,13 @@ public class CreativeContentWebHandler extends SecuredHttpDataHandler {
 	}
 
 	@Override
-	public JsonDataPayload httpPostHandler(String userSession, String uri, JsonObject paramJson)
+	public JsonDataPayload httpPostHandler(String userSession, String uri, JsonObject paramJson, Map<String, Cookie> cookieMap)
 			throws Exception {
 		return JsonErrorPayload.NO_HANDLER_FOUND;
 	}
 
 	@Override
-	public JsonDataPayload httpGetHandler(String userSession, String uri, MultiMap params) throws Exception {
+	public JsonDataPayload httpGetHandler(String userSession, String uri, MultiMap params, Map<String, Cookie> cookieMap) throws Exception {
 		boolean includeProtected = false;
 		boolean includePrivate = false;
 		boolean allowPublicAccess = true;

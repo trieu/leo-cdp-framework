@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.vertx.core.MultiMap;
+import io.vertx.core.http.Cookie;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
@@ -98,15 +99,31 @@ public class AuthKeycloakHandlers {
             }
 
             // Transform and response
-            JsonObject userJson = new JsonObject(rawSession).getJsonObject("user");
-            UserProfile user = UserProfile.fromJson(userJson);
+            JsonObject session = new JsonObject(rawSession);
+            String accessToken = session.getJsonObject("token").getString("access_token");
+            JsonArray roles = getUserRoles(accessToken);
+            
+            JsonObject userObj = session.getJsonObject("user");
+            UserProfile user = UserProfile.fromJson(userObj, roles);
 
             JsonObject responseJson = new JsonObject()
                     .put("user", JsonObject.mapFrom(user))
                     .put("session_id", sessionId)
                     .put("timestamp", System.currentTimeMillis() / 1000);
 
-            sendJsonResponse(ctx, responseJson);
+            if (StringUtil.isNotEmpty(sessionId)) {
+            	Cookie cookie = Cookie.cookie("sid", sessionId)
+                    .setPath("/")
+                    .setHttpOnly(true)
+                    .setSecure(true)      // only HTTPS
+                    .setMaxAge(3600);     // 1 hour
+                ctx.addCookie(cookie);
+                
+                redirectToRoot(ctx);
+            }
+            
+            
+            //sendJsonResponse(ctx, responseJson);
         });
     }
 
@@ -333,22 +350,27 @@ public class AuthKeycloakHandlers {
         });
     }
 
-    private boolean isUserAuthorized(String accessToken, String requiredRole) {
+    public static JsonArray getUserRoles(String accessToken) {
         JsonObject payload = decodeJwtWithoutVerify(accessToken);
         try {
             JsonArray roles = payload.getJsonObject("realm_access").getJsonArray("roles");
-            logger.debug("Checking roles: {}", roles);
-            return roles != null && roles.contains(requiredRole);
+            return roles;
         } catch (Exception e) {
-            return false;
+            return null;
         }
+    }
+    
+    public static boolean isUserAuthorized(String accessToken, String requiredRole) {
+    	 JsonArray roles = getUserRoles(accessToken);
+         logger.debug("Checking roles: {}", roles);
+         return roles != null ? roles.contains(requiredRole) : false;
     }
 
     /**
      * Naively decodes a JWT to inspect payload. 
      * Note: This does NOT verify the signature (used only for fast role hints).
      */
-    private JsonObject decodeJwtWithoutVerify(String jwt) {
+    public static JsonObject decodeJwtWithoutVerify(String jwt) {
         try {
             String[] parts = jwt.split("\\.");
             if (parts.length < 2) return new JsonObject();
@@ -364,18 +386,23 @@ public class AuthKeycloakHandlers {
     // =================================================================================
 
     private String getKeycloakEndpoint(String suffix) {
-        return config.url + "/realms/" + config.realm + suffix;
+        return this.config.url + "/realms/" + this.config.realm + suffix;
     }
 
-    private void sendJsonResponse(RoutingContext ctx, JsonObject json) {
+    public static void sendJsonResponse(RoutingContext ctx, JsonObject json) {
         ctx.response()
-           .putHeader(HEADER_CONTENT_TYPE, MIME_JSON)
+           .putHeader("Content-Type", "application/json")
            .end(json.encodePrettily());
     }
 
-    private void redirectToLogin(RoutingContext ctx) {
+    public static void redirectToLogin(RoutingContext ctx) {
         // Using SsoRoutePaths constant
         ctx.response().putHeader(HEADER_LOCATION, SsoRoutePaths.LOGIN).setStatusCode(303).end();
+    }
+    
+    public static void redirectToRoot(RoutingContext ctx) {
+        // Using SsoRoutePaths constant
+        ctx.response().putHeader(HEADER_LOCATION, SsoRoutePaths.ROOT).setStatusCode(303).end();
     }
 
     private void redirectToError(RoutingContext ctx, String errorCode) {

@@ -1,6 +1,17 @@
 // System Management and System Event Monitoring 
 const EXPIRED_AFTER_21_DAYS = 30240;
 
+function getUrlParams(url) {
+    const search = url ? new URL(url).search : window.location.search;
+    const params = new URLSearchParams(search);
+    const result = {};
+
+    for (const [key, value] of params.entries()) {
+        result[key] = value;
+    }
+    return result;
+}
+
 const loadSystemUserLoginSession = function() {
     var urlStr = baseLeoAdminUrl + '/user/login-session';
     LeoAdminApiUtil.callPostApi(urlStr, {}, function (json) {
@@ -78,8 +89,11 @@ const loginFormHandler = function(session) {
 }    
 
 const loadLoginSessionSSO = function() {
-    var urlStr = baseLeoAdminUrl + '/user/login-session';
-    LeoAdminApiUtil.callPostApi(urlStr, {'sso':true}, function (json) {
+    
+	var urlStr = baseLeoAdminUrl + '/user/login-session';
+	var sid = getUrlParams(location.href)['sid'] || '';
+	
+    LeoAdminApiUtil.callPostApi(urlStr, {'sso':true, 'sid':sid}, function (json) {
         if (json.httpCode === 0 && json.errorMessage === '') {
             var usersession = json.data.userSession;
 			var email = json.data.email;
@@ -97,12 +111,11 @@ const loadLoginSessionSSO = function() {
 }
 
 const loadCheckSSO = function(session) {
-    var handlerCheckSSO = function (email, sid) {
+    var handlerCheckSSO = function (email) {
         var urlStr = baseLeoAdminUrl + '/user/check-sso';
         
         var params = {
             'email': email,
-            'sid': sid,
             'usersession': session
         };
         
@@ -133,9 +146,11 @@ const loadCheckSSO = function(session) {
 
 	setTimeout(function () { 
 		var email = $('#email').val();
-		var sid = $('#sid').val();
-		if(email.length > 0 && sid.length > 0) {
-			handlerCheckSSO(email, sid)	
+		if(email.length > 0) {
+			handlerCheckSSO(email)	
+		}
+		else {
+			location.href = 'https://leocdp.example.com/_ssocdp/admin?t=' + new Date().getTime()
 		}		
 	 }, 2000);   
 } 

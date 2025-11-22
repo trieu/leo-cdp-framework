@@ -1,6 +1,13 @@
 package leotech.system.util.keycloak;
 
+import java.util.HashSet;
+import java.util.Set;
+
+import com.google.gson.Gson;
+
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import rfx.core.util.StringUtil;
 
 /**
  * UserProfile: the user profile from Keycloak callback
@@ -19,8 +26,9 @@ public class UserProfile {
 	private String familyName;
 	private String email;
 
-	public static UserProfile fromJson(JsonObject json) {
-		System.out.println("json " + json);
+	private Set<String> roles;
+
+	public static UserProfile fromJson(JsonObject json, JsonArray rolesObj) {
 		UserProfile u = new UserProfile();
 		u.setSub(json.getString("sub"));
 		u.setEmailVerified(json.getBoolean("email_verified", false));
@@ -29,6 +37,14 @@ public class UserProfile {
 		u.setGivenName(json.getString("given_name"));
 		u.setFamilyName(json.getString("family_name"));
 		u.setEmail(json.getString("email"));
+
+		Set<String> roles = new HashSet<String>();
+		rolesObj.forEach(o -> {
+			String r = StringUtil.safeString(o, "");
+			if (!r.isBlank())
+				roles.add(r);
+		});
+		u.setRoles(roles);
 		return u;
 	}
 
@@ -89,5 +105,20 @@ public class UserProfile {
 
 	public void setEmail(String email) {
 		this.email = email;
+	}
+	
+	
+
+	public Set<String> getRoles() {
+		return roles;
+	}
+
+	public void setRoles(Set<String> roles) {
+		this.roles = roles;
+	}
+
+	@Override
+	public String toString() {
+		return new Gson().toJson(this);
 	}
 }

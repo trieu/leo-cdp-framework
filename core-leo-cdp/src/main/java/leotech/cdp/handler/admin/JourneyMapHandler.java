@@ -12,6 +12,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import io.vertx.core.MultiMap;
+import io.vertx.core.http.Cookie;
 import io.vertx.core.json.JsonObject;
 import leotech.cdp.domain.JourneyMapManagement;
 import leotech.cdp.model.journey.JourneyMap;
@@ -59,7 +60,7 @@ public final class JourneyMapHandler extends SecuredHttpDataHandler {
 	}
 	
 	@Override
-	public JsonDataPayload httpPostHandler(String userSession, String uri, JsonObject paramJson) throws Exception {
+	public JsonDataPayload httpPostHandler(String userSession, String uri, JsonObject paramJson, Map<String, Cookie> cookieMap) throws Exception {
 		SystemUser loginUser = initSystemUser(userSession, uri, paramJson);
 		if (loginUser != null) {
 			if(URI_LIST_BY_FILTER.equals(uri) && loginUser.hasOperationRole()) {
@@ -147,7 +148,7 @@ public final class JourneyMapHandler extends SecuredHttpDataHandler {
 	}
 
 	@Override
-	public JsonDataPayload httpGetHandler(String userSession, String uri, MultiMap params) throws Exception {
+	public JsonDataPayload httpGetHandler(String userSession, String uri, MultiMap params, Map<String, Cookie> cookieMap) throws Exception {
 		SystemUser loginUser = initSystemUser(userSession, uri, params);
 		System.out.println(uri);
 		if (loginUser != null) {

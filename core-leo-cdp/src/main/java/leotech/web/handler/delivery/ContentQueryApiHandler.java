@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.vertx.core.MultiMap;
+import io.vertx.core.http.Cookie;
 import io.vertx.core.json.JsonObject;
 import leotech.cdp.dao.AssetContentDaoPublicUtil;
 import leotech.cdp.dao.ContentQueryDaoUtil;
@@ -31,14 +32,14 @@ public class ContentQueryApiHandler extends SecuredHttpDataHandler {
 	}
 
 	@Override
-	public JsonDataPayload httpPostHandler(String userSession, String uri, JsonObject paramJson)
+	public JsonDataPayload httpPostHandler(String userSession, String uri, JsonObject paramJson, Map<String, Cookie> cookieMap)
 			throws Exception {
 		// NO HTTP POST for QUERY OR SEARCH a list of filterd posts
 		return JsonErrorPayload.NO_HANDLER_FOUND;
 	}
 
 	@Override
-	public JsonDataPayload httpGetHandler(String userSession, String uri, MultiMap params) throws Exception {
+	public JsonDataPayload httpGetHandler(String userSession, String uri, MultiMap params, Map<String, Cookie> cookieMap) throws Exception {
 
 		// Geo-location
 		// GeoLocation loc = GeoLocationUtil.processCookieGeoLocation(req,

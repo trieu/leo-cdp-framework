@@ -1,6 +1,9 @@
 package leotech.web.handler.delivery;
 
+import java.util.Map;
+
 import io.vertx.core.MultiMap;
+import io.vertx.core.http.Cookie;
 import io.vertx.core.json.JsonObject;
 import leotech.system.common.BaseHttpRouter;
 import leotech.system.common.SecuredHttpDataHandler;
@@ -22,12 +25,12 @@ public class UserApiHandler extends SecuredHttpDataHandler {
 	}
 	
 	@Override
-	public JsonDataPayload httpPostHandler(String userSession, String uri, JsonObject paramJson)
+	public JsonDataPayload httpPostHandler(String userSession, String uri, JsonObject paramJson, Map<String, Cookie> cookieMap)
 			throws Exception {
 		// input params
 		SystemUser loginUser = initSystemUser(userSession, uri, paramJson);
 		if (loginUser == null) {
-			return userLoginHandler(userSession, uri, paramJson);
+			return userLoginHandler(userSession, uri, paramJson, cookieMap);
 		} else {
 			switch (uri) {
 				case API_GET_INFO : {
@@ -77,7 +80,7 @@ public class UserApiHandler extends SecuredHttpDataHandler {
 	}
 
 	@Override
-	public JsonDataPayload httpGetHandler(String userSession, String uri, MultiMap params) throws Exception {
+	public JsonDataPayload httpGetHandler(String userSession, String uri, MultiMap params, Map<String, Cookie> cookieMap) throws Exception {
 		// TODO Auto-generated method stub
 		SystemUser user = initSystemUser(userSession, uri, params);
 		if (user != null) {

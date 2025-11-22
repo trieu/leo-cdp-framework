@@ -8,6 +8,7 @@ import java.util.Map;
 import com.google.gson.Gson;
 
 import io.vertx.core.MultiMap;
+import io.vertx.core.http.Cookie;
 import io.vertx.core.json.JsonObject;
 import leotech.cdp.domain.DataFlowManagement;
 import leotech.cdp.domain.EventMetricManagement;
@@ -39,7 +40,7 @@ public final class DataFunnelHandler extends SecuredHttpDataHandler {
 	}
 
 	@Override
-	public JsonDataPayload httpPostHandler(String userSession, String uri, JsonObject paramJson) throws Exception {
+	public JsonDataPayload httpPostHandler(String userSession, String uri, JsonObject paramJson, Map<String, Cookie> cookieMap) throws Exception {
 		System.out.println("DataFunnelHandler uri " + uri);
 		SystemUser loginUser = initSystemUser(userSession, uri, paramJson);
 		if (loginUser != null) {
@@ -73,7 +74,7 @@ public final class DataFunnelHandler extends SecuredHttpDataHandler {
 	}
 
 	@Override
-	public JsonDataPayload httpGetHandler(String userSession, String uri, MultiMap params) throws Exception {
+	public JsonDataPayload httpGetHandler(String userSession, String uri, MultiMap params, Map<String, Cookie> cookieMap) throws Exception {
 		SystemUser loginUser = initSystemUser(userSession, uri, params);
 		if (loginUser != null) {
 			if (isAuthorized(loginUser, DataFlowStage.class)) {

@@ -1,6 +1,9 @@
 package leotech.cdp.handler.admin;
 
+import java.util.Map;
+
 import io.vertx.core.MultiMap;
+import io.vertx.core.http.Cookie;
 import io.vertx.core.json.JsonObject;
 import leotech.cdp.model.customer.Profile;
 import leotech.cdp.query.filters.SystemEventFilter;
@@ -37,7 +40,7 @@ public final class SystemControlHandler extends SecuredHttpDataHandler {
 	}
 	
 	@Override
-	public JsonDataPayload httpPostHandler(String userSession, String uri, JsonObject paramJson) throws Exception {
+	public JsonDataPayload httpPostHandler(String userSession, String uri, JsonObject paramJson, Map<String, Cookie> cookieMap) throws Exception {
 		switch (uri) {
 		case SAVE_SYSTEM_CONTROL_SETUP: {
 			String superAdminPassword = StringUtil.safeString(paramJson.getString("superAdminPassword"));
@@ -88,7 +91,7 @@ public final class SystemControlHandler extends SecuredHttpDataHandler {
 	}
 
 	@Override
-	public JsonDataPayload httpGetHandler(String userSession, String uri, MultiMap params) throws Exception {
+	public JsonDataPayload httpGetHandler(String userSession, String uri, MultiMap params, Map<String, Cookie> cookieMap) throws Exception {
 		SystemUser loginUser = initSystemUser(userSession, uri, params);
 		if (isSuperAdminRole(loginUser)) {
 			if(uri.equalsIgnoreCase(SYSTEM_CONTROL_LOGS)) {
