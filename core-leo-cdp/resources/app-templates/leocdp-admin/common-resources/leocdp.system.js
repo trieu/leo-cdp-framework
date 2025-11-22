@@ -48,12 +48,12 @@ const loginFormHandler = function(session) {
                 $('#info-login').html('<i class="fa fa-check-circle fa-2" aria-hidden="true"></i> <b> Login successfully ! </b> ');
                 
                 //wait and reload
-                setTimeout(function () { window.location.reload(true); }, 2500);
+                setTimeout(function () { window.location.reload(); }, 3000);
             } else {
             	$('#info-login').hide();
                 $('#error-login').html('<i class="fa fa-exclamation-circle" aria-hidden="true"></i> ' + json.errorMessage).show().delay(5000).fadeOut();
                 // failed
-                setTimeout(function () { LeoAdminApiUtil.logErrorPayload(json); }, 2500);
+                setTimeout(function () { LeoAdminApiUtil.logErrorPayload(json); }, 2000);
             }
         };
         LeoAdminApiUtil.callPostApi(urlStr, params, loginHandler);
@@ -76,8 +76,71 @@ const loginFormHandler = function(session) {
         }
     });
 }    
+
+const loadLoginSessionSSO = function() {
+    var urlStr = baseLeoAdminUrl + '/user/login-session';
+    LeoAdminApiUtil.callPostApi(urlStr, {'sso':true}, function (json) {
+        if (json.httpCode === 0 && json.errorMessage === '') {
+            var usersession = json.data.userSession;
+			var email = json.data.email;
+			
+			if(email) $('#email').val(email);
+			
+            loadCheckSSO(usersession);
+                           
+            $('#system_user_login_loader').hide();             
+            $('#system_user_login_div').show();
+        } else {
+            LeoAdminApiUtil.logErrorPayload(json);
+        }
+    });
+}
+
+const loadCheckSSO = function(session) {
+    var handlerCheckSSO = function (email, sid) {
+        var urlStr = baseLeoAdminUrl + '/user/check-sso';
+        
+        var params = {
+            'email': email,
+            'sid': sid,
+            'usersession': session
+        };
+        
+        $('#info-login').html("<b>Checking data ...</b>").show();
+        var loginHandler = function (json) {
+            if (json.errorMessage === '') {
+            	//OK, set session data
+                var encryptionkey = json.data;
+            	
+                lscache.set('usersession', session, EXPIRED_AFTER_21_DAYS);
+                lscache.set('encryptionkey', encryptionkey, EXPIRED_AFTER_21_DAYS);
+
+                // update UI
+                $("#system_user_login_form, #btn_system_login").hide();                    
+                $('#info-login').html('<i class="fa fa-check-circle fa-2" aria-hidden="true"></i> <b> Login successfully ! </b> ');
+                
+                //wait and reload
+                setTimeout(function () { window.location.reload(); }, 3000);
+            } else {
+            	$('#info-login').hide();
+                $('#error-login').html('<i class="fa fa-exclamation-circle" aria-hidden="true"></i> ' + json.errorMessage).show().delay(5000).fadeOut();
+                // failed
+                setTimeout(function () { LeoAdminApiUtil.logErrorPayload(json); }, 2000);
+            }
+        };
+        LeoAdminApiUtil.callPostApi(urlStr, params, loginHandler);
+    };
+
+	setTimeout(function () { 
+		var email = $('#email').val();
+		var sid = $('#sid').val();
+		if(email.length > 0 && sid.length > 0) {
+			handlerCheckSSO(email, sid)	
+		}		
+	 }, 2000);   
+} 
     
-const initSystemUserLogin = function() {
+const initSystemUserLogin = function(ssoLogin) {
 	// show logo
 	$('#login_logo').attr('src', window.pageHeaderLogo).show();
 	// check login
@@ -87,8 +150,13 @@ const initSystemUserLogin = function() {
         console.log("You login OK with session " + usersession);
     } 
     else {
-		// no session login, request login
-        loadSystemUserLoginSession();
+		if(ssoLogin ===  true){
+			loadLoginSessionSSO()
+		}
+		else {
+			// no session login, request user login
+        	loadSystemUserLoginSession();
+		}		
         console.log('loadSystemUserLoginSession is called ')
     }
 }

@@ -57,6 +57,7 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 	
 	public static final String API_LOGIN_SESSION = "/user/login-session";
 	public static final String API_CHECK_LOGIN = "/user/check-login";
+	public static final String API_CHECK_SSO = "/user/check-sso";
 
 	public static final String SESSION_SPLITER = "_";
 
@@ -417,7 +418,7 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 	protected static JsonDataPayload userLoginHandler(String userSession, String uri, JsonObject paramJson) {
 		if (uri.equalsIgnoreCase(API_LOGIN_SESSION)) {
 			if (StringUtil.isEmpty(userSession)) {
-				return loginSessionInit(uri);
+				return buildLoginSession(uri, paramJson);
 			} else {
 				return JsonDataPayload.ok(uri, userSession);
 			}
@@ -457,14 +458,30 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 	 * @param uri
 	 * @return
 	 */
-	private static JsonDataPayload loginSessionInit(String uri) {
-		CaptchaData cd = CaptchaUtil.getRandomCaptcha();
-		String encryptedValue = ADMIN_HANDLER_SESSION_KEY + SESSION_SPLITER + System.currentTimeMillis() + SESSION_SPLITER + randomNumber() + SESSION_SPLITER + cd.content;
-		String userSession = EncryptorAES.encrypt(encryptedValue);
-		Map<String, String> data = new HashMap<>(2);
-		data.put(USER_SESSION, userSession);
-		data.put(CAPTCHA_IMAGE, cd.base64Image);
-		return JsonDataPayload.ok(uri, data);
+	private static JsonDataPayload buildLoginSession(String uri, JsonObject paramJson) {
+		String SSO_KEY = "sso";
+		boolean sso = paramJson.getBoolean(SSO_KEY, false);
+		
+		if(sso) {
+			String encryptedValue = ADMIN_HANDLER_SESSION_KEY + SESSION_SPLITER + System.currentTimeMillis() + SESSION_SPLITER + randomNumber() + SESSION_SPLITER + SSO_KEY;
+			String userSession = EncryptorAES.encrypt(encryptedValue);
+			Map<String, String> data = new HashMap<>(2);
+			data.put(USER_SESSION, userSession);	
+			
+			String email = "tantrieuf31@gmail.com";// FIXME
+			data.put("email", email);	
+			return JsonDataPayload.ok(uri, data);
+		}
+		else {
+			CaptchaData capcha = CaptchaUtil.getRandomCaptcha();
+			String capchaContent = capcha.content;
+			String encryptedValue = ADMIN_HANDLER_SESSION_KEY + SESSION_SPLITER + System.currentTimeMillis() + SESSION_SPLITER + randomNumber() + SESSION_SPLITER + capchaContent;
+			String userSession = EncryptorAES.encrypt(encryptedValue);
+			Map<String, String> data = new HashMap<>(2);
+			data.put(USER_SESSION, userSession);
+			data.put(CAPTCHA_IMAGE, capcha.base64Image);
+			return JsonDataPayload.ok(uri, data);
+		}
 	}
 
 

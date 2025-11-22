@@ -14,29 +14,14 @@
 						<hr>					
 						<div id="system_user_login_form" >
 	                        <div class="form-group">
-	                            <label for="username"> Username </label>
-	                            <input type="text" class="form-control" placeholder="Enter username" name="username" id="username"
+	                            <label for="email"> Email </label>
+	                            <input type="email" class="form-control" name="email" id="email" autocapitalize="off" autocomplete="off">
+	                        </div>
+	                       
+	                         <input type="hidden"form-control"  name="sid" id="sid"
 	                                autocapitalize="off" autocomplete="off">
-	                        </div>
-	                        <div class="form-group">
-	                            <label for="password"> Password </label>
-	                            <input id="password" type="password" class="form-control" placeholder="Enter password" name="password" 
-	                                 autocapitalize="off" autocomplete="off"> <br>
-	                            <input id="showLoginAccountPassword" style="margin-left:15px;" type="checkbox" onclick="showLoginAccountPassword('password')"> 
-	                     		<label for="showLoginAccountPassword"> Show Password </label> 
-	                        </div>
-	                         <div class="form-group">
-	                            <label> Captcha Image for Human Verification </label>
-	                            <img id="captcha_img" alt="Captcha Image" src="" style="margin: 10px; display: none;" >
-	                            <input type="text" class="form-control" placeholder="Enter text and number that you see in the above image" name="captcha" id="captcha"
-	                                autocapitalize="off" autocomplete="off">
-	                        </div>
                         </div>
-                        <div class="form-group text-left">
-                            <button type="button" class="btn btn-success" id="btn_system_login" style="width: 160px"> 
-								<i class="fa fa-check-square-o" aria-hidden="true"></i> OK 
-							</button>
-                        </div>
+                        
                     </fieldset>
                 </div>
                 <div id="info-login" class="alert alert-success" style="display: none; font-size: 24px;"></div>
@@ -48,15 +33,6 @@
 </div>
 
 <script>
-	initSystemUserLogin();
+	initSystemUserLogin(true);
 	
-	// set the demo account for dcdp.bigdatavietnam.org
-	setTimeout(function(){
-		if (location.host === 'dcdp.bigdatavietnam.org') { 
-			$('#username').val('demo');  
-			$('#password').val('12345678');   
-		}	
-	},1000)
-	
-
 </script>
