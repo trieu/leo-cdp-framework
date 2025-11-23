@@ -16,7 +16,7 @@ import rfx.core.util.StringUtil;
  * @since 2025
  *
  */
-public class UserProfile {
+public class SsoUserProfile {
 
 	private String sub;
 	private boolean emailVerified;
@@ -28,8 +28,8 @@ public class UserProfile {
 
 	private Set<String> roles;
 
-	public static UserProfile fromJson(JsonObject json, JsonArray rolesObj) {
-		UserProfile u = new UserProfile();
+	public static SsoUserProfile fromJson(JsonObject json, JsonArray rolesObj) {
+		SsoUserProfile u = new SsoUserProfile();
 		u.setSub(json.getString("sub"));
 		u.setEmailVerified(json.getBoolean("email_verified", false));
 		u.setName(json.getString("name"));
@@ -48,11 +48,11 @@ public class UserProfile {
 		return u;
 	}
 
-	public UserProfile() {
+	public SsoUserProfile() {
 	}
 
 	public String getSub() {
-		return sub;
+		return StringUtil.safeString(sub);
 	}
 
 	public void setSub(String sub) {
@@ -68,7 +68,7 @@ public class UserProfile {
 	}
 
 	public String getName() {
-		return name;
+		return StringUtil.safeString(name);
 	}
 
 	public void setName(String name) {
@@ -76,7 +76,7 @@ public class UserProfile {
 	}
 
 	public String getPreferredUsername() {
-		return preferredUsername;
+		return StringUtil.safeString(preferredUsername);
 	}
 
 	public void setPreferredUsername(String preferredUsername) {
@@ -84,7 +84,7 @@ public class UserProfile {
 	}
 
 	public String getGivenName() {
-		return givenName;
+		return StringUtil.safeString(givenName);
 	}
 
 	public void setGivenName(String givenName) {
@@ -92,7 +92,7 @@ public class UserProfile {
 	}
 
 	public String getFamilyName() {
-		return familyName;
+		return StringUtil.safeString(familyName);
 	}
 
 	public void setFamilyName(String familyName) {
@@ -100,17 +100,15 @@ public class UserProfile {
 	}
 
 	public String getEmail() {
-		return email;
+		return StringUtil.safeString(email);
 	}
 
 	public void setEmail(String email) {
 		this.email = email;
 	}
-	
-	
 
 	public Set<String> getRoles() {
-		return roles;
+		return roles != null ? roles : new HashSet<String>(0);
 	}
 
 	public void setRoles(Set<String> roles) {

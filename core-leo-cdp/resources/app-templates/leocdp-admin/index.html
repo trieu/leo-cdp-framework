@@ -15,7 +15,7 @@
 		
 		var baseStaticUrl = location.protocol + '//' +  baseStaticDomain;
 		var baseLeoAdminUrl = location.protocol + '//' + dnsDomainLeoAdmin;
-		var baseSsoGetSessionUrl = location.protocol + '//' + dnsDomainLeoAdmin + "/_ssocdp/session";
+		
 		var baseUploadApi = location.protocol + '//' + baseUploadDomain;
 		var baseLeoObserverUrl = location.protocol + '//' + baseLeoObserverDomain;
 		var baseLeoBotUrl = location.protocol + '//' + dnsDomainLeoBot;
@@ -29,17 +29,18 @@
 		
 		var industryDataModels = '{{industryDataModels}}'.split(",");
 		
-		const leoCdpBuildVersion = '{{leoCdpBuildVersion}}';
-		const cacheBustingKey = '{{cacheBustingKey}}';
+		var leoCdpBuildVersion = '{{leoCdpBuildVersion}}';
+		var cacheBustingKey = '{{cacheBustingKey}}';
 		
-		const minifySuffix = '{{minifySuffix}}';
-		const maxTotalDataQualityScore = parseInt('{{maxTotalDataQualityScore}}');
+		var minifySuffix = '{{minifySuffix}}';
+		var maxTotalDataQualityScore = parseInt('{{maxTotalDataQualityScore}}');
 		
 		var defaultPersonalizationService = "{{defaultPersonalizationService}}";
 		var defaultRecommendedItemForProfile = parseInt('{{maxTotalRecommendedItems}}');
 		
-		const ssoLogin = "{{ssoLogin}}" === "true";
-		const ssoLoginUrl = "{{ssoLoginUrl}}";
+		var ssoLogin = "{{ssoLogin}}" === "true";
+		var ssoSessionUrl = "{{ssoSessionUrl}}";
+		var ssoLogoutUrl = "{{ssoLogoutUrl}}";
 	</script>
 	
 	<meta charset="UTF-8">

@@ -14,11 +14,12 @@ import com.devskiller.friendly_id.FriendlyId;
 
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.Cookie;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import leotech.cdp.utils.ProfileDataValidator;
 import leotech.starter.router.NotifyUserHandler;
 import leotech.system.dao.SystemUserDaoUtil;
 import leotech.system.domain.SystemEventManagement;
+import leotech.system.domain.SystemUserManagement;
 import leotech.system.model.JsonDataPayload;
 import leotech.system.model.SystemUser;
 import leotech.system.util.CaptchaUtil;
@@ -26,15 +27,14 @@ import leotech.system.util.CaptchaUtil.CaptchaData;
 import leotech.system.util.EncryptorAES;
 import leotech.system.util.IdGenerator;
 import leotech.system.util.LogUtil;
-import leotech.system.util.keycloak.KeycloakUtils;
-import leotech.system.util.keycloak.UserProfile;
+import leotech.system.util.keycloak.KeycloakConstants;
+import leotech.system.util.keycloak.SessionRepository;
+import leotech.system.util.keycloak.SsoUserProfile;
 import leotech.system.version.SystemMetaData;
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Pipeline;
 import redis.clients.jedis.Response;
 import redis.clients.jedis.exceptions.JedisException;
-import rfx.core.nosql.jedis.RedisClientFactory;
 import rfx.core.nosql.jedis.RedisCommand;
 import rfx.core.util.StringUtil;
 
@@ -47,8 +47,9 @@ import rfx.core.util.StringUtil;
 public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 
 	public static final int AFTER_15_MINUTES = 60 * 15;
+	public static final int AFTER_60_MINUTES = 60 * 60;
 	public static final int AFTER_3_DAYS = 60 * 60 * 24 * 3;
-	public static final int AFTER_7_DAYS = 60 * 60 * 24 * 7;
+	public static final int AFTER_7_DAYS = 60 * 60 * 24 * 7;	
 	public static final int SESSION_LIVE_TIME = AFTER_7_DAYS * 3; // 3 weeks = 21 days
 
 	private static final String CAPTCHA_IMAGE = "captchaImage";
@@ -439,12 +440,18 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 			}
 		}
 		else if( uri.equalsIgnoreCase(API_CHECK_SSO)) {
-			String email = paramJson.getString("email", "").trim();
-			Cookie sidCookie = cookieMap.get("sid");
-			String sid = sidCookie != null ? sidCookie.getValue() : "";
+			String userEmail = paramJson.getString("email", "").trim();			
+			Cookie ssosidCookie = cookieMap.get(KeycloakConstants.COOKIE_SSO_SESSION_ID);
+			String ssosid = ssosidCookie != null ? ssosidCookie.getValue() : "";
 			
-			logger.info("email " + email + " sid " + sid);
-			return JsonErrorPayload.NO_AUTHENTICATION;
+			if(ProfileDataValidator.isValidEmail(userEmail)) {
+				JsonDataPayload checkLoginResult = buildSessionSSO(uri, userEmail, userSession, ssosid);
+				logger.info("userEmail " + userEmail + " ssosid " + ssosid + " userSession " + userSession);
+				return checkLoginResult;
+			}
+			else {
+				return JsonDataPayload.fail("SSO Login is failed, not valid email" + userEmail, 507);
+			}			
 		}
 		return JsonErrorPayload.NO_AUTHENTICATION;
 	}
@@ -456,7 +463,7 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 	 * @return
 	 */
 	private static JsonDataPayload buildLoginSession(String uri, JsonObject paramJson, Map<String, Cookie> cookieMap) {
-		String SSO_KEY = "sso", SID_KEY = "sid";
+		String SSO_KEY = "sso";
 		boolean sso = paramJson.getBoolean(SSO_KEY, false);
 
 		if (sso) {
@@ -466,32 +473,17 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 			Map<String, String> data = new HashMap<>(2);
 			data.put(USER_SESSION, userSession);
 
-			// FIXME
-			Cookie sidCookie = cookieMap.get(SID_KEY);
-			String sid = sidCookie != null ? sidCookie.getValue() : "";
-			JedisPool jedisPool = RedisClientFactory.buildRedisPool("clusterInfoRedis");
-			RedisCommand<String> cmd = new RedisCommand<String>(jedisPool) {
-				@Override
-				protected String build(Jedis jedis) {
-					return jedis.get(sid);
-				}
-			};
-			String email = "";
-			String rawSession = cmd.execute();
-			if (StringUtil.isNotEmpty(rawSession)) {
-				// Transform and response
-	            JsonObject session = new JsonObject(rawSession);
-	            String accessToken = session.getJsonObject("token").getString("access_token");
-	            JsonArray roles = KeycloakUtils.getUserRoles(accessToken);
-				JsonObject userJson = session.getJsonObject("user");
-				UserProfile user = UserProfile.fromJson(userJson, roles);
-				email = user.getEmail();
-				
-				logger.info(user.toString());
-			}
-			data.put("email", email);
-
+			Cookie sidCookie = cookieMap.get(KeycloakConstants.COOKIE_SSO_SESSION_ID);
+			String ssosid = sidCookie != null ? sidCookie.getValue() : "";
+			SsoUserProfile ssoUser = SessionRepository.getSsoUserProfileFromRedis(ssosid);
 			
+			if(ssoUser != null) {
+				logger.info(ssoUser.toString());
+				data.put("email", ssoUser.getEmail());
+			}
+			else {
+				data.put("email", "");
+			}
 			return JsonDataPayload.ok(uri, data);
 		} else {
 			CaptchaData capcha = CaptchaUtil.getRandomCaptcha();
@@ -505,6 +497,8 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 			return JsonDataPayload.ok(uri, data);
 		}
 	}
+
+
 
 	/**
 	 * step 3:
@@ -531,6 +525,35 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 			}
 		}
 		return JsonErrorPayload.INVALID_CAPCHA_NUMBER;
+	}
+	
+	/**
+	 * @param uri
+	 * @param userEmail
+	 * @param userSession
+	 * @param ssoSessionId
+	 * @return
+	 */
+	private static JsonDataPayload buildSessionSSO(String uri, String userEmail, String userSession, String ssoSessionId) {
+		SsoUserProfile ssoUser = SessionRepository.getSsoUserProfileFromRedis(ssoSessionId);
+		if (ssoUser != null) {
+			boolean isSameEmail = ssoUser.getEmail().equals(userEmail);
+			if(isSameEmail) {
+				String userLogin = SystemUserDaoUtil.getUserLoginByEmail(userEmail);
+				String finalUserLogin = userLogin;
+				if (StringUtil.isEmpty(userLogin)) {
+					// no SystemUser for email from KeyCloak SSO				
+					SystemUser user = new SystemUser(ssoUser);
+					finalUserLogin = SystemUserManagement.saveAndGetUserLogin(user);
+				} 
+				
+				String encryptionKey = FriendlyId.createFriendlyId();
+				// valid token in 7 days
+				saveUserSessionSSO(finalUserLogin, userSession, encryptionKey);
+				return JsonDataPayload.ok(uri, encryptionKey);
+			}			
+		}
+		return JsonErrorPayload.INVALID_SSO_USER_SESSION;
 	}
 
 	/**
@@ -585,6 +608,32 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 			e.printStackTrace();
 		}
 	}
+	
+	/**
+	 * for SSO Session from Keycloak
+	 * 
+	 * @param userLogin
+	 * @param usersession
+	 * @param encryptionKey
+	 */
+	private static void saveUserSessionSSO(String userLogin, String usersession, String encryptionKey) {
+		try {
+			new RedisCommand<Void>(redisLocalCache) {
+				@Override
+				protected Void build(Jedis jedis) throws JedisException {
+					Pipeline p = jedis.pipelined();
+					p.hset(usersession, REDIS_KEY_ENCKEY, encryptionKey);
+					p.hset(usersession, REDIS_KEY_USERLOGIN, userLogin);
+					p.expire(usersession, AFTER_60_MINUTES);
+					p.sync();
+					return null;
+				}
+			}.executeAsync();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

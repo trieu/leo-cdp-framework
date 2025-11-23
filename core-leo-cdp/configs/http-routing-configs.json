@@ -8,6 +8,7 @@
 			"port": 9070,
 			"classNameHttpRouter": "leotech.starter.router.MainHttpRouter",
 			"bodyHandlerEnabled": true,
+			"ssoHandlerEnabled": true,
 			"sockJsHandlerEnabled": true
 		},
 		
@@ -18,6 +19,7 @@
 			"port": 9071,
 			"classNameHttpRouter": "leotech.starter.router.MainHttpRouter",
 			"bodyHandlerEnabled": true,
+			"ssoHandlerEnabled": true,
 			"sockJsHandlerEnabled": false
 		},
 		
@@ -28,6 +30,7 @@
 			"port": 9072,
 			"classNameHttpRouter": "leotech.starter.router.MainHttpRouter",
 			"bodyHandlerEnabled": true,
+			"ssoHandlerEnabled": true,
 			"sockJsHandlerEnabled": false
 		},
 		

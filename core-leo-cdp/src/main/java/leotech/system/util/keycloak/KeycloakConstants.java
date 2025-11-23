@@ -34,5 +34,5 @@ public final class KeycloakConstants {
     public static final String GRANT_REFRESH = "refresh_token";
 
     // Session Cookie
-    public static final String COOKIE_SESSION_ID = "sid";
+    public static final String COOKIE_SSO_SESSION_ID = "ssosid";
 }

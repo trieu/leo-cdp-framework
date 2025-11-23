@@ -473,7 +473,7 @@ if (LeoAdminApiUtil.isLoaded !== true) {
 				onClosingCallback = function(instance, toast, closedBy) {
 					// reload page if error Authentication
 					LeoAdminApiUtil.logout(function() {
-						location.reload(true);
+						location.reload();						
 					});
 				};
 			}
@@ -500,9 +500,14 @@ if (LeoAdminApiUtil.isLoaded !== true) {
 		obj.logout = function(callback) {
 			lscache.flush();
 			setTimeout(function() {
-				if (typeof callback === 'function') callback();
-				else window.location = '/';
-			}, 1200);
+				if(ssoLogin) {
+					doSSOlogout()
+				}
+				else {
+					if (typeof callback === 'function') callback();
+					else window.location = '/';
+				}
+			}, 2000);
 		}
 
 		obj.formater = {

@@ -5,9 +5,11 @@ import java.util.UUID;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
+import rfx.core.nosql.jedis.RedisClientFactory;
 import rfx.core.nosql.jedis.RedisCommand;
 import rfx.core.util.StringUtil;
 
@@ -21,6 +23,7 @@ import rfx.core.util.StringUtil;
  */
 public class SessionRepository {
 
+	private static final String CLUSTER_INFO_REDIS = "clusterInfoRedis";
 	private final Vertx vertx;
 	private final JedisPool jedisPool;
 
@@ -88,5 +91,34 @@ public class SessionRepository {
 			};
 			future.complete(cmd.execute());
 		}, resultHandler);
+	}
+	
+	public static SsoUserProfile getSsoUserProfileFromRedis(String sid) {
+		if(StringUtil.isEmpty(sid)) {
+			return null;
+		}
+		
+		JedisPool jedisPool = RedisClientFactory.buildRedisPool(CLUSTER_INFO_REDIS);
+		RedisCommand<String> cmd = new RedisCommand<String>(jedisPool) {
+			@Override
+			protected String build(Jedis jedis) {
+				return jedis.get(sid);
+			}
+		};			
+		String rawSession = cmd.execute();
+		SsoUserProfile ssoUser = null;
+		if (StringUtil.isNotEmpty(rawSession)) {
+			try {
+				// Transform and response
+				JsonObject session = new JsonObject(rawSession);
+				String accessToken = session.getJsonObject("token").getString("access_token");
+				JsonArray roles = KeycloakUtils.getUserRoles(accessToken);
+				JsonObject userJson = session.getJsonObject("user");
+				ssoUser = SsoUserProfile.fromJson(userJson, roles);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		return ssoUser;
 	}
 }

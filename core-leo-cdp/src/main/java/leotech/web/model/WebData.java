@@ -78,8 +78,9 @@ public class WebData extends DefaultModel {
 	protected String defaultPersonalizationService = SystemMetaData.DEFAULT_PERSONALIZATION_SERVICE;
 	protected int maxTotalRecommendedItems = SystemMetaData.MAX_TOTAL_RECOMMENDED_ITEMS;
 
-	protected boolean ssoLogin = SystemMetaData.SSO_LOGIN;
-	protected String ssoLoginUrl = SystemMetaData.SSO_LOGIN_URL;
+	protected boolean ssoLogin ;
+	protected String ssoSessionUrl ;
+	protected String ssoLogoutUrl;
 
 	protected String systemConfigJson = "{}";
 	protected String contactTypeJson = "{}";
@@ -404,12 +405,20 @@ public class WebData extends DefaultModel {
 		this.ssoLogin = ssoLogin;
 	}
 
-	public String getSsoLoginUrl() {
-		return ssoLoginUrl;
+	public String getSsoSessionUrl() {
+		return ssoSessionUrl;
 	}
 
-	public void setSsoLoginUrl(String ssoLoginUrl) {
-		this.ssoLoginUrl = ssoLoginUrl;
+	public void setSsoSessionUrl(String ssoSessionUrl) {
+		this.ssoSessionUrl = ssoSessionUrl;
+	}
+
+	public String getSsoLogoutUrl() {
+		return ssoLogoutUrl;
+	}
+
+	public void setSsoLogoutUrl(String ssoLogoutUrl) {
+		this.ssoLogoutUrl = ssoLogoutUrl;
 	}
 
 	public void setLeoCdpBuildVersion(String leoCdpBuildVersion) {
@@ -471,6 +480,10 @@ public class WebData extends DefaultModel {
 		this.dataApiCache = app.isDataApiCache();
 
 		this.pageHeaderLogo = SystemMetaData.ADMIN_LOGO_URL;
+		
+		this.ssoLogin = SystemMetaData.SSO_LOGIN;
+		this.ssoSessionUrl = "https://" + dnsDomainLeoAdmin + "/_ssocdp/session";
+		this.ssoLogoutUrl = "https://" + dnsDomainLeoAdmin + "/_ssocdp/logout";
 	}
 
 	/**

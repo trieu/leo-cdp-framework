@@ -44,6 +44,7 @@ public abstract class BaseHttpHandler {
 		public static final JsonDataPayload NO_AUTHORIZATION_TO_UPDATE = JsonDataPayload.fail("You have no authorization to update or create", 500);
 		public static final JsonDataPayload UNKNOWN_EXCEPTION = JsonDataPayload.fail("Unknown Exception", 506);
 		public static final JsonDataPayload INVALID_DATA_EXCEPTION = JsonDataPayload.fail("Invalid Data Exception", 507);
+		public static final JsonDataPayload INVALID_SSO_USER_SESSION = JsonDataPayload.fail("Invalid data, can not create SSO User Session", 508);
 	}
 
 }

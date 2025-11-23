@@ -89,7 +89,7 @@ const loginFormHandler = function(session) {
 }    
 
 const loadLoginSessionSSO = function() {
-	var ssoGetSessionUrl = baseSsoGetSessionUrl + '?_t=' + new Date().getTime();
+	var ssoGetSessionUrl = ssoSessionUrl + '?_t=' + new Date().getTime();
     $('#sso_login_url').attr('href', ssoGetSessionUrl);
 
 	var urlStr = baseLeoAdminUrl + '/user/login-session';
@@ -97,8 +97,8 @@ const loadLoginSessionSSO = function() {
     LeoAdminApiUtil.callPostApi(urlStr, {'sso':true}, function (json) {
         if (json.httpCode === 0 && json.errorMessage === '') {
             var usersession = json.data.userSession;
-			var email = json.data.email;
-			
+
+			var email = json.data.email;			
 			if(email) $('#email').val(email);
 			
             loadCheckSSO(usersession);
@@ -109,6 +109,12 @@ const loadLoginSessionSSO = function() {
             LeoAdminApiUtil.logErrorPayload(json);
         }
     });
+}
+
+const doSSOlogout = function() {
+	if(ssoLogoutUrl && ssoLogoutUrl.indexOf('http')>=0){
+		location.href = ssoLogoutUrl
+	}	
 }
 
 const loadCheckSSO = function(session) {
@@ -145,16 +151,13 @@ const loadCheckSSO = function(session) {
         LeoAdminApiUtil.callPostApi(urlStr, params, loginHandler);
     };
 
-	setTimeout(function () { 
-		var email = $('#email').val();
-		if(email.length > 0) {
-			$('#emailPanel').show();
-			$('#sso_login_url').hide();
-			
-			handlerCheckSSO(email)	
-		}
-			
-	 }, 2000);   
+	var email = $('#email').val();
+	if(email.length > 0) {
+		$('#email_panel').show();
+		$('#sso_login_url').hide();
+		
+		handlerCheckSSO(email)	
+	}
 } 
     
 const initSystemUserLogin = function(ssoLogin) {

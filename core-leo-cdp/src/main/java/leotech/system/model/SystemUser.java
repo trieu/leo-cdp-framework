@@ -22,9 +22,12 @@ import leotech.cdp.model.customer.BusinessAccount;
 import leotech.cdp.model.customer.Profile;
 import leotech.cdp.model.customer.Segment;
 import leotech.cdp.model.journey.EventObserver;
+import leotech.cdp.utils.ProfileDataValidator;
 import leotech.system.util.EncryptorAES;
+import leotech.system.util.PasswordGenerator;
 import leotech.system.util.database.ArangoDbUtil;
 import leotech.system.util.database.PersistentArangoObject;
+import leotech.system.util.keycloak.SsoUserProfile;
 import rfx.core.util.StringPool;
 import rfx.core.util.StringUtil;
 
@@ -61,7 +64,7 @@ public final class SystemUser implements PersistentArangoObject {
 	private String displayName;
 	
 	@Expose
-	private int role = SystemUserRole.CUSTOMER_DATA_VIEWER;
+	private int role = SystemUserRole.STANDARD_USER;
 
 	private String userEmail;
 	
@@ -144,6 +147,29 @@ public final class SystemUser implements PersistentArangoObject {
 		this.displayName = displayName;
 		this.userEmail = userEmail;
 		this.networkId = networkId;
+	}
+	
+	public SystemUser(SsoUserProfile ssoUser) {
+		super();
+		this.userEmail = ssoUser.getEmail();
+		String username = ProfileDataValidator.extractUsernameFromEmail(ssoUser.getEmail());
+		this.userLogin = "sso_"+userEmail.replace("@", "_"); 
+		this.userPass = EncryptorAES.passwordHash(userLogin, PasswordGenerator.generate(16));
+		this.displayName = ssoUser.getName().length() > 1 ? ssoUser.getName() : username;
+		this.networkId = AppMetadata.DEFAULT_ID;
+		this.status = STATUS_ACTIVE;
+	
+		Set<String> ssoUserRoles = ssoUser.getRoles();
+		if(ssoUserRoles.isEmpty()) {
+			this.setRole(SystemUserRole.STANDARD_USER);
+		}
+		else {
+			ssoUserRoles.forEach(role->{
+				if(role.equals("CDP_" + SystemUserRole.DATA_ADMIN)) {
+					
+				}
+			});
+		}
 	}
 
 	@Override

@@ -13,7 +13,7 @@ import static leotech.system.util.keycloak.KeycloakUtils.encodeUrl;
 import static leotech.system.util.keycloak.KeycloakUtils.getUserRoles;
 import static leotech.system.util.keycloak.KeycloakUtils.hasRole;
 import static leotech.system.util.keycloak.KeycloakUtils.kcEndpoint;
-import static leotech.system.util.keycloak.KeycloakUtils.makeSessionCookie;
+import static leotech.system.util.keycloak.KeycloakUtils.makeSsoSessionCookie;
 import static leotech.system.util.keycloak.KeycloakUtils.redirect;
 import static leotech.system.util.keycloak.KeycloakUtils.sendJson;
 
@@ -94,12 +94,11 @@ public class AuthKeycloakHandlers {
             String accessToken = session.getJsonObject("token").getString("access_token");
             JsonArray roles = getUserRoles(accessToken);
 
-            UserProfile user = UserProfile.fromJson(session.getJsonObject("user"), roles);
+            SsoUserProfile user = SsoUserProfile.fromJson(session.getJsonObject("user"), roles);
 
             log.info("Admin user: {}", user);
-
-            Cookie cookie = makeSessionCookie(sid);
-            ctx.addCookie(cookie);
+            
+            ctx.addCookie(makeSsoSessionCookie(sid));
 
             redirect(ctx, SsoRoutePaths.ROOT);
         });

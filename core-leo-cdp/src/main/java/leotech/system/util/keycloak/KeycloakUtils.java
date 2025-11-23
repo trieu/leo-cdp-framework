@@ -69,12 +69,18 @@ public final class KeycloakUtils {
             .end();
     }
 
-    public static Cookie makeSessionCookie(String sid) {
-        return Cookie.cookie(COOKIE_SESSION_ID, sid)
+    /**
+     * COOKIE_SESSION_ID 
+     * 
+     * @param sid
+     * @return
+     */
+    public static Cookie makeSsoSessionCookie(String ssosid) {
+        return Cookie.cookie(COOKIE_SSO_SESSION_ID, ssosid)
                 .setHttpOnly(true)
                 .setSecure(true)
                 .setPath("/")
-                .setMaxAge(3600);
+                .setMaxAge(6);
     }
 
     public static String encodeUrl(String url) {

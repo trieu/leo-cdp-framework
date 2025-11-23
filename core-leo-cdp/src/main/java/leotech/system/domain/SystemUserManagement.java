@@ -12,6 +12,7 @@ import leotech.system.exception.InvalidDataException;
 import leotech.system.model.AppMetadata;
 import leotech.system.model.Notification;
 import leotech.system.model.SystemUser;
+import leotech.system.model.SystemUserRole;
 import leotech.system.util.HttpWebParamUtil;
 import rfx.core.util.StringUtil;
 
@@ -23,19 +24,15 @@ import rfx.core.util.StringUtil;
  *
  */
 public final class SystemUserManagement {
-	
-
 
 	/**
 	 * @param systemUserId
 	 * @param notification
 	 */
 	public static void sendNotification(String systemUserId, Notification notification) {
-		SystemUserDaoUtil.setNotification(systemUserId, notification );
+		SystemUserDaoUtil.setNotification(systemUserId, notification);
 	}
-	
 
-	
 	/**
 	 * @param email
 	 * @return
@@ -43,16 +40,15 @@ public final class SystemUserManagement {
 	public static String getUserLoginByEmail(String email) {
 		return SystemUserDaoUtil.getUserLoginByEmail(email);
 	}
-	
 
 	/**
 	 * @param forManagement
 	 * @return
 	 */
-	public static List<SystemUser> listAllUsers(boolean forManagement){
+	public static List<SystemUser> listAllUsers(boolean forManagement) {
 		return SystemUserDaoUtil.listAllUsersInNetwork(forManagement, AppMetadata.DEFAULT_ID);
 	}
-	
+
 	/**
 	 * @param userLogin
 	 * @param newPass
@@ -60,7 +56,7 @@ public final class SystemUserManagement {
 	 */
 	public final static String resetLoginPassword(String userLogin, String newPass) {
 		SystemUser u = SystemUserDaoUtil.getByUserLogin(userLogin);
-		if(u != null) {
+		if (u != null) {
 			if (StringUtil.isNotEmpty(newPass)) {
 				u.setUserPass(newPass);
 			}
@@ -70,6 +66,10 @@ public final class SystemUserManagement {
 		return null;
 	}
 
+	public final static String saveAndGetUserLogin(SystemUser user) {
+		SystemUserDaoUtil.createNewSystemUser(user);
+		return user.getUserLogin();
+	}
 
 	/**
 	 * @param loginUser
@@ -96,16 +96,17 @@ public final class SystemUserManagement {
 				customData.put(key, val);
 			}
 		});
-		
-		boolean isValidProfile = ProfileDataValidator.isValidEmail(userEmail) && StringUtil.isNotEmpty(userLogin) && StringUtil.isNotEmpty(displayName);
-		if( isValidProfile ) {
+
+		boolean isValidProfile = ProfileDataValidator.isValidEmail(userEmail) && StringUtil.isNotEmpty(userLogin)
+				&& StringUtil.isNotEmpty(displayName);
+		if (isValidProfile) {
 			String userId = "";
 			if (createNew) {
 				int status = paramJson.getInteger("status");
 				int role = paramJson.getInteger("role");
-				
+
 				SystemUser user = new SystemUser(userLogin, userPass, displayName, userEmail, AppMetadata.DEFAULT_ID);
-				
+
 				user.setProfileVisitorId(profileVisitorId);
 				user.setRole(role);
 				user.setBusinessUnit(businessUnit);
@@ -113,10 +114,9 @@ public final class SystemUserManagement {
 				user.setStatus(status);
 				user.setCustomData(customData);
 				userId = SystemUserDaoUtil.createNewSystemUser(user);
-			} 
-			else {
+			} else {
 				SystemUser dbSystemUser = SystemUserDaoUtil.getByUserLogin(userLogin);
-				
+
 				// a normal user can only update non-sensitive data
 				dbSystemUser.setUserEmail(userEmail);
 				dbSystemUser.setDisplayName(displayName);
@@ -124,33 +124,31 @@ public final class SystemUserManagement {
 				dbSystemUser.setBusinessUnit(businessUnit);
 				dbSystemUser.setInGroups(inGroups);
 				dbSystemUser.setCustomData(customData);
-				
+
 				// to make sure only superadmin can update this information
-				if(loginUser.hasSuperAdminRole()) { 
+				if (loginUser.hasSuperAdminRole()) {
 					int role = paramJson.getInteger("role", dbSystemUser.getRole());
 					int status = paramJson.getInteger("status", dbSystemUser.getStatus());
 					dbSystemUser.setStatus(status);
 					dbSystemUser.setRole(role);
 				}
-				
+
 				// just update is password is not empty
-				if( ! userPass.isBlank() ) {
-					if( userPass.length() >= 6 ) {
-						dbSystemUser.setUserPass(userPass);	
-					}
-					else {
+				if (!userPass.isBlank()) {
+					if (userPass.length() >= 6) {
+						dbSystemUser.setUserPass(userPass);
+					} else {
 						throw new InvalidDataException("The password must contain at least 6 characters!");
 					}
 				}
-				
+
 				userId = SystemUserDaoUtil.updateSystemUser(dbSystemUser);
 			}
-			
-			
+
 			return userId;
-		}
-		else {
-			throw new InvalidDataException("userEmail, userLogin, userPass and displayName must a valid string and not empty!");
+		} else {
+			throw new InvalidDataException(
+					"userEmail, userLogin, userPass and displayName must a valid string and not empty!");
 		}
 	}
 
@@ -161,7 +159,7 @@ public final class SystemUserManagement {
 	public static SystemUser getByUserId(String id) {
 		return SystemUserDaoUtil.getSystemUserByKey(id);
 	}
-	
+
 	/**
 	 * @param userLogin
 	 * @return

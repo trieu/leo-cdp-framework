@@ -24,6 +24,7 @@ import leotech.system.config.HttpRoutingConfigs;
 import leotech.system.domain.WebSocketDataService;
 import leotech.system.util.LogUtil;
 import leotech.system.util.database.ArangoDbUtil;
+import leotech.system.util.keycloak.KeycloakClientRouter;
 import leotech.system.version.SystemMetaData;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -125,6 +126,11 @@ public final class HttpWorker extends BaseWorker {
 		// WebSocket
 		if (httpRoutingConfigs.isSockJsHandlerEnabled()) {
 			initEventBusHandler(router);
+		}
+		
+		// SSO
+		if (httpRoutingConfigs.isSsoHandlerEnabled()) {
+			 KeycloakClientRouter.startKeyCloakRouter(vertxInstance, router);
 		}
 		
 		// 
