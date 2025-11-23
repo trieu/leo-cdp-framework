@@ -80,7 +80,7 @@ public final class KeycloakUtils {
                 .setHttpOnly(true)
                 .setSecure(true)
                 .setPath("/")
-                .setMaxAge(6);
+                .setMaxAge(8);
     }
 
     public static String encodeUrl(String url) {

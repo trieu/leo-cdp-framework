@@ -170,11 +170,13 @@ public class AuthKeycloakHandlers {
     public void handleLogout(RoutingContext ctx) {
         String sid = getQueryParam(ctx, "sid");
 
-        if (sid != null)
-            sessionRepo.deleteSession(sid, r -> {});
+        if (sid != null) {
+        	sessionRepo.deleteSession(sid, r -> {});
+        }
+            
 
         try {
-            String redirectUri = encodeUrl(config.callbackUrl + "?logout=true");
+            String redirectUri = encodeUrl(config.callbackUrl + "?logout=true&t="+System.currentTimeMillis());
 
             String logoutUrl = String.format(
                 "%s/realms/%s/protocol/openid-connect/logout?client_id=%s&post_logout_redirect_uri=%s",

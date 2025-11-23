@@ -498,16 +498,19 @@ if (LeoAdminApiUtil.isLoaded !== true) {
 		}
 
 		obj.logout = function(callback) {
+			var ssousersession = lscache.get('ssousersession');
 			lscache.flush();
 			setTimeout(function() {
 				if(ssoLogin) {
-					doSSOlogout()
+					doSSOlogout(ssousersession)	
 				}
 				else {
 					if (typeof callback === 'function') callback();
 					else window.location = '/';
 				}
 			}, 2000);
+			
+			
 		}
 
 		obj.formater = {

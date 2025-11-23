@@ -1,5 +1,6 @@
 // System Management and System Event Monitoring 
 const EXPIRED_AFTER_21_DAYS = 30240;
+const EXPIRED_AFTER_1_HOUR = 60;
 
 function getUrlParams(url) {
     const search = url ? new URL(url).search : window.location.search;
@@ -97,11 +98,10 @@ const loadLoginSessionSSO = function() {
     LeoAdminApiUtil.callPostApi(urlStr, {'sso':true}, function (json) {
         if (json.httpCode === 0 && json.errorMessage === '') {
             var usersession = json.data.userSession;
-
-			var email = json.data.email;			
-			if(email) $('#email').val(email);
+			var ssoUserSession = json.data.ssoUserSession;
+			var ssoUserEmail = json.data.ssoUserEmail;			
 			
-            loadCheckSSO(usersession);
+            loadCheckSSO(ssoUserEmail, ssoUserSession, usersession);
                            
             $('#system_user_login_loader').hide();             
             $('#system_user_login_div').show();
@@ -111,18 +111,26 @@ const loadLoginSessionSSO = function() {
     });
 }
 
-const doSSOlogout = function() {
-	if(ssoLogoutUrl && ssoLogoutUrl.indexOf('http')>=0){
-		location.href = ssoLogoutUrl
-	}	
+const doSSOlogout = function(ssousersession) {
+	if(ssoLogoutUrl && ssousersession && ssoLogoutUrl.indexOf('http')>=0){
+		location.href = ssoLogoutUrl + "?sid="+ssousersession + "&t=" + new Date().getTime();
+	}
+	else {
+		console.error(ssoLogoutUrl, ssousersession. ssoLogoutUrl)
+	}
 }
 
-const loadCheckSSO = function(session) {
-    var handlerCheckSSO = function (email) {
-        var urlStr = baseLeoAdminUrl + '/user/check-sso';
+const loadCheckSSO = function(ssoUserEmail, ssoUserSession, session) {
+    
+	if(ssoUserEmail.length > 0 && ssoUserSession.length > 0) {
+		$('#email').val(ssoUserEmail);
+		$('#email_panel').show();
+		$('#sso_login_url').hide();
+		
+		var urlStr = baseLeoAdminUrl + '/user/check-sso';
         
         var params = {
-            'email': email,
+            'ssoUserEmail': ssoUserEmail,
             'usersession': session
         };
         
@@ -132,8 +140,9 @@ const loadCheckSSO = function(session) {
             	//OK, set session data
                 var encryptionkey = json.data;
             	
-                lscache.set('usersession', session, EXPIRED_AFTER_21_DAYS);
-                lscache.set('encryptionkey', encryptionkey, EXPIRED_AFTER_21_DAYS);
+				lscache.set('ssousersession', ssoUserSession, EXPIRED_AFTER_1_HOUR);
+                lscache.set('usersession', session, EXPIRED_AFTER_1_HOUR);
+                lscache.set('encryptionkey', encryptionkey, EXPIRED_AFTER_1_HOUR);
 
                 // update UI
                 $("#system_user_login_form, #btn_system_login").hide();                    
@@ -149,14 +158,6 @@ const loadCheckSSO = function(session) {
             }
         };
         LeoAdminApiUtil.callPostApi(urlStr, params, loginHandler);
-    };
-
-	var email = $('#email').val();
-	if(email.length > 0) {
-		$('#email_panel').show();
-		$('#sso_login_url').hide();
-		
-		handlerCheckSSO(email)	
 	}
 } 
     

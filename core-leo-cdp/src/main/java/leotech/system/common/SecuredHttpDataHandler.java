@@ -46,6 +46,7 @@ import rfx.core.util.StringUtil;
  */
 public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 
+	
 	public static final int AFTER_15_MINUTES = 60 * 15;
 	public static final int AFTER_60_MINUTES = 60 * 60;
 	public static final int AFTER_3_DAYS = 60 * 60 * 24 * 3;
@@ -54,6 +55,9 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 
 	private static final String CAPTCHA_IMAGE = "captchaImage";
 	private static final String USER_SESSION = "userSession";
+	private static final String SSO_USER_SESSION = "ssoUserSession";
+	private static final String SSO_USER_EMAIL = "ssoUserEmail";
+	
 	public static final boolean DEV_MODE = SystemMetaData.isDevMode();
 
 	// USER SESSION KEYS
@@ -440,7 +444,7 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 			}
 		}
 		else if( uri.equalsIgnoreCase(API_CHECK_SSO)) {
-			String userEmail = paramJson.getString("email", "").trim();			
+			String userEmail = paramJson.getString(SSO_USER_EMAIL, "").trim();			
 			Cookie ssosidCookie = cookieMap.get(KeycloakConstants.COOKIE_SSO_SESSION_ID);
 			String ssosid = ssosidCookie != null ? ssosidCookie.getValue() : "";
 			
@@ -478,11 +482,11 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 			SsoUserProfile ssoUser = SessionRepository.getSsoUserProfileFromRedis(ssosid);
 			
 			if(ssoUser != null) {
-				logger.info(ssoUser.toString());
-				data.put("email", ssoUser.getEmail());
+				data.put(SSO_USER_SESSION, ssosid);				
+				data.put(SSO_USER_EMAIL, ssoUser.getEmail());
 			}
 			else {
-				data.put("email", "");
+				data.put(SSO_USER_EMAIL, "");
 			}
 			return JsonDataPayload.ok(uri, data);
 		} else {
