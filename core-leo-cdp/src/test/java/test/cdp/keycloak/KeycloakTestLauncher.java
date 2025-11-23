@@ -5,14 +5,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.vertx.core.Vertx;
-import leotech.system.util.keycloak.KeycloakRouterVerticle;
+import leotech.system.util.keycloak.KeycloakVerticle;
 
 public class KeycloakTestLauncher {
 	private static final Logger logger = LoggerFactory.getLogger(KeycloakTestLauncher.class);
-	
-    // Server Constants
-    private static final String HTTP_HOST = "0.0.0.0";
-    private static final int HTTP_PORT = 9079;
+
+	// Server Constants
+	private static final String HTTP_HOST = "0.0.0.0";
+	private static final int HTTP_PORT = 9079;
 
 	public static void main(String[] args) {
 		String configPath = "./configs/log4j.xml"; // your custom path
@@ -23,9 +23,9 @@ public class KeycloakTestLauncher {
 		Vertx vertx = Vertx.vertx();
 
 		// Deploy the admin Verticle
-		vertx.deployVerticle(new KeycloakRouterVerticle(HTTP_HOST, HTTP_PORT), res -> {
+		vertx.deployVerticle(new KeycloakVerticle(HTTP_HOST, HTTP_PORT), res -> {
 			if (res.succeeded()) {
-				logger.info("🚀 AdminRouterVerticle deployed successfully! ID = {}", res.result());
+				logger.info("🚀 KeycloakVerticle deployed successfully! ID = {}", res.result());
 			} else {
 				logger.error("❌ Deployment failed", res.cause());
 			}

@@ -15,29 +15,31 @@
 		
 		var baseStaticUrl = location.protocol + '//' +  baseStaticDomain;
 		var baseLeoAdminUrl = location.protocol + '//' + dnsDomainLeoAdmin;
+		var baseSsoGetSessionUrl = location.protocol + '//' + dnsDomainLeoAdmin + "/_ssocdp/session";
 		var baseUploadApi = location.protocol + '//' + baseUploadDomain;
 		var baseLeoObserverUrl = location.protocol + '//' + baseLeoObserverDomain;
 		var baseLeoBotUrl = location.protocol + '//' + dnsDomainLeoBot;
 		
 		var pageHeaderLogo =  '{{pageHeaderLogo}}';
-		var promoVisibility =  '{{promoVisibility}}';
 		
 		var webTemplateCache = "{{webTemplateCache}}" === "true";
 		var hasB2Bfeatures = "{{hasB2Bfeatures}}" === "true";
 		var systemDbReady = "{{systemDbReady}}" === "true";
 		var dataApiCache = "{{dataApiCache}}" === "true";
-		var ssoLogin = "{{ssoLogin}}" === "true";
 		
 		var industryDataModels = '{{industryDataModels}}'.split(",");
 		
-		var leoCdpBuildVersion = '{{leoCdpBuildVersion}}';
-		var cacheBustingKey = '{{cacheBustingKey}}';
+		const leoCdpBuildVersion = '{{leoCdpBuildVersion}}';
+		const cacheBustingKey = '{{cacheBustingKey}}';
 		
-		var minifySuffix = '{{minifySuffix}}';
-		var maxTotalDataQualityScore = parseInt('{{maxTotalDataQualityScore}}');
+		const minifySuffix = '{{minifySuffix}}';
+		const maxTotalDataQualityScore = parseInt('{{maxTotalDataQualityScore}}');
 		
 		var defaultPersonalizationService = "{{defaultPersonalizationService}}";
 		var defaultRecommendedItemForProfile = parseInt('{{maxTotalRecommendedItems}}');
+		
+		const ssoLogin = "{{ssoLogin}}" === "true";
+		const ssoLoginUrl = "{{ssoLoginUrl}}";
 	</script>
 	
 	<meta charset="UTF-8">

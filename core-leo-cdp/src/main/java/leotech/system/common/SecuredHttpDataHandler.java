@@ -26,7 +26,7 @@ import leotech.system.util.CaptchaUtil.CaptchaData;
 import leotech.system.util.EncryptorAES;
 import leotech.system.util.IdGenerator;
 import leotech.system.util.LogUtil;
-import leotech.system.util.keycloak.AuthKeycloakHandlers;
+import leotech.system.util.keycloak.KeycloakUtils;
 import leotech.system.util.keycloak.UserProfile;
 import leotech.system.version.SystemMetaData;
 import redis.clients.jedis.Jedis;
@@ -482,7 +482,7 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 				// Transform and response
 	            JsonObject session = new JsonObject(rawSession);
 	            String accessToken = session.getJsonObject("token").getString("access_token");
-	            JsonArray roles = AuthKeycloakHandlers.getUserRoles(accessToken);
+	            JsonArray roles = KeycloakUtils.getUserRoles(accessToken);
 				JsonObject userJson = session.getJsonObject("user");
 				UserProfile user = UserProfile.fromJson(userJson, roles);
 				email = user.getEmail();

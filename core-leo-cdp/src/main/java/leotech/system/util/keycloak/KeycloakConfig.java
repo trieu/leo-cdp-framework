@@ -21,8 +21,9 @@ public class KeycloakConfig {
 
 	public KeycloakConfig() {
 		this.enabled = SystemMetaData.SSO_LOGIN;
-		this.verifySSL = SystemMetaData.getBoolean("keycloakVerifySSL", true);
-		this.url = SystemMetaData.getString("keycloakUrl", "");
+		this.url = SystemMetaData.SSO_LOGIN_URL;
+		
+		this.verifySSL = SystemMetaData.getBoolean("keycloakVerifySSL", true);		
 		this.realm = SystemMetaData.getString("keycloakRealm", "");
 		this.clientId = SystemMetaData.getString("keycloakClientId", "");
 		this.clientSecret = SystemMetaData.getString("keycloakClientSecret", "");

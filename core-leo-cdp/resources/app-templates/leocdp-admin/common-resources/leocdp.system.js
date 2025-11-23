@@ -89,11 +89,12 @@ const loginFormHandler = function(session) {
 }    
 
 const loadLoginSessionSSO = function() {
-    
+	var ssoGetSessionUrl = baseSsoGetSessionUrl + '?_t=' + new Date().getTime();
+    $('#sso_login_url').attr('href', ssoGetSessionUrl);
+
 	var urlStr = baseLeoAdminUrl + '/user/login-session';
-	var sid = getUrlParams(location.href)['sid'] || '';
 	
-    LeoAdminApiUtil.callPostApi(urlStr, {'sso':true, 'sid':sid}, function (json) {
+    LeoAdminApiUtil.callPostApi(urlStr, {'sso':true}, function (json) {
         if (json.httpCode === 0 && json.errorMessage === '') {
             var usersession = json.data.userSession;
 			var email = json.data.email;
@@ -147,11 +148,12 @@ const loadCheckSSO = function(session) {
 	setTimeout(function () { 
 		var email = $('#email').val();
 		if(email.length > 0) {
+			$('#emailPanel').show();
+			$('#sso_login_url').hide();
+			
 			handlerCheckSSO(email)	
 		}
-		else {
-			location.href = 'https://leocdp.example.com/_ssocdp/admin?t=' + new Date().getTime()
-		}		
+			
 	 }, 2000);   
 } 
     

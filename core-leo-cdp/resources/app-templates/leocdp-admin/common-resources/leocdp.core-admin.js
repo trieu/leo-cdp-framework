@@ -58,7 +58,7 @@ function loadLeoSystemMainView() {
 	        }
 	    } 
 	    else {
-			if(window.ssoLogin === true){
+			if(ssoLogin){
 				LeoCdpAdmin.loadView('/view/login-sso.html?admin=1', '#wrapper');
 			}
 			else {

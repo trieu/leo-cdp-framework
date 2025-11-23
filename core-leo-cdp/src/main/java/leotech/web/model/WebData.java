@@ -19,7 +19,7 @@ import leotech.system.version.SystemMetaData;
 import rfx.core.util.StringUtil;
 
 /**
- * Web Data Object for HTML applications: Admin, Content  and Event Observer
+ * Web Data Object for HTML applications: Admin, Content and Event Observer
  * 
  * @author tantrieuf31
  * @since 2019
@@ -27,23 +27,22 @@ import rfx.core.util.StringUtil;
  */
 public class WebData extends DefaultModel {
 	private static final String BUILD_KEY = SystemMetaData.BUILD_VERSION + System.currentTimeMillis();
-	
+
 	protected String pageHeaderLogo;
-	protected String promoVisibility;
-	
+
 	protected String baseStaticUrl;
 	protected String dnsDomainLeoAdmin;
 	protected String dnsDomainWebSocket;
-	
+
 	protected String dnsDomainLeoBot;
 	protected String baseDeliveryApiUrl;
 	protected String baseUploaderUrl;
 	protected String baseUploadedFilesUrl;
 	protected String baseLeoObserverUrl;
-	
+
 	protected boolean webTemplateCache = true;
 	protected boolean dataApiCache = false;
-	
+
 	protected int httpStatusCode = HttpStatus.SC_OK;
 	protected final String host;
 	protected final String templateFolder;
@@ -66,30 +65,32 @@ public class WebData extends DefaultModel {
 	protected String pageDescription = "";
 	protected String pageKeywords = "";
 	protected String defaultTrackingMetric = "";
-	
+
 	// important data to check version
 	protected boolean systemDbReady = InitDatabaseSchema.isSystemDbReady();
 	protected boolean hasB2Bfeatures = SystemMetaData.hasB2Bfeatures();
 	protected String leoCdpBuildVersion = SystemMetaData.BUILD_ID;
-	
+
 	protected String minifySuffix = SystemMetaData.MINIFY_SUFFIX;
-	
-	
+
 	protected String industryDataModels = SystemMetaData.INDUSTRY_DATA_MODELS_STRING;
-	
+
 	protected String defaultPersonalizationService = SystemMetaData.DEFAULT_PERSONALIZATION_SERVICE;
 	protected int maxTotalRecommendedItems = SystemMetaData.MAX_TOTAL_RECOMMENDED_ITEMS;
-	
+
 	protected boolean ssoLogin = SystemMetaData.SSO_LOGIN;
-	
+	protected String ssoLoginUrl = SystemMetaData.SSO_LOGIN_URL;
+
 	protected String systemConfigJson = "{}";
 	protected String contactTypeJson = "{}";
-	
+
 	/**
 	 * to avoid browser caching for static files: HTML, CSS, JS in DEV mode
 	 */
-	protected String cacheBustingKey = StringUtil.isEmpty(SystemMetaData.MINIFY_SUFFIX) ? String.valueOf(System.currentTimeMillis()) :BUILD_KEY;
-	
+	protected String cacheBustingKey = StringUtil.isEmpty(SystemMetaData.MINIFY_SUFFIX)
+			? String.valueOf(System.currentTimeMillis())
+			: BUILD_KEY;
+
 	protected int maxTotalDataQualityScore = ProfileModelUtil.getMaxTotalDataQualityScore();
 
 	public WebData(String host, String templateFolder, String templateName) {
@@ -189,15 +190,6 @@ public class WebData extends DefaultModel {
 		this.pageHeaderLogo = pageHeaderLogo;
 	}
 
-	
-	public String getPromoVisibility() {
-		return promoVisibility;
-	}
-
-	public void setPromoVisibility(String promoVisibility) {
-		this.promoVisibility = promoVisibility;
-	}
-
 	public String getBaseStaticUrl() {
 		return baseStaticUrl;
 	}
@@ -221,8 +213,6 @@ public class WebData extends DefaultModel {
 	public void setDnsDomainLeoAdmin(String dnsDomainLeoAdmin) {
 		this.dnsDomainLeoAdmin = dnsDomainLeoAdmin;
 	}
-	
-	
 
 	public String getDnsDomainWebSocket() {
 		return dnsDomainWebSocket;
@@ -243,8 +233,6 @@ public class WebData extends DefaultModel {
 	public void setMaxTotalDataQualityScore(int maxTotalDataQualityScore) {
 		this.maxTotalDataQualityScore = maxTotalDataQualityScore;
 	}
-	
-	
 
 	public int getMaxTotalRecommendedItems() {
 		return maxTotalRecommendedItems;
@@ -277,7 +265,7 @@ public class WebData extends DefaultModel {
 	public void setHasB2Bfeatures(boolean hasB2Bfeatures) {
 		this.hasB2Bfeatures = hasB2Bfeatures;
 	}
-	
+
 	public boolean isSystemDbReady() {
 		return systemDbReady;
 	}
@@ -289,7 +277,7 @@ public class WebData extends DefaultModel {
 	public void setIndustryDataModels(String industryDataModels) {
 		this.industryDataModels = industryDataModels;
 	}
-	
+
 	public int getMaxTotalDataQualityScore() {
 		return maxTotalDataQualityScore;
 	}
@@ -392,8 +380,6 @@ public class WebData extends DefaultModel {
 		return leoCdpBuildVersion;
 	}
 
-
-
 	public boolean isWebTemplateCache() {
 		return webTemplateCache;
 	}
@@ -409,8 +395,7 @@ public class WebData extends DefaultModel {
 	public void setDataApiCache(boolean dataApiCache) {
 		this.dataApiCache = dataApiCache;
 	}
-	
-	
+
 	public boolean isSsoLogin() {
 		return ssoLogin;
 	}
@@ -419,11 +404,18 @@ public class WebData extends DefaultModel {
 		this.ssoLogin = ssoLogin;
 	}
 
+	public String getSsoLoginUrl() {
+		return ssoLoginUrl;
+	}
+
+	public void setSsoLoginUrl(String ssoLoginUrl) {
+		this.ssoLoginUrl = ssoLoginUrl;
+	}
+
 	public void setLeoCdpBuildVersion(String leoCdpBuildVersion) {
 		this.leoCdpBuildVersion = leoCdpBuildVersion;
 	}
 
-	
 	public String getBaseUploadedFilesUrl() {
 		return baseUploadedFilesUrl;
 	}
@@ -447,7 +439,7 @@ public class WebData extends DefaultModel {
 	public void setSystemConfigJson(String systemConfigJson) {
 		this.systemConfigJson = systemConfigJson;
 	}
-	
+
 	public String getContactTypeJson() {
 		return contactTypeJson;
 	}
@@ -459,7 +451,7 @@ public class WebData extends DefaultModel {
 	public String getCacheBustingKey() {
 		return cacheBustingKey;
 	}
-	
+
 	public String getDefaultPersonalizationService() {
 		return defaultPersonalizationService;
 	}
@@ -477,9 +469,8 @@ public class WebData extends DefaultModel {
 		this.baseLeoObserverUrl = app.getBaseLeoObserverUrl();
 		this.webTemplateCache = app.isWebTemplateCache();
 		this.dataApiCache = app.isDataApiCache();
-		
+
 		this.pageHeaderLogo = SystemMetaData.ADMIN_LOGO_URL;
-		this.promoVisibility = "hidden";
 	}
 
 	/**
@@ -488,7 +479,7 @@ public class WebData extends DefaultModel {
 	 */
 	public static String renderHtml(WebData model) {
 		StringBuilder tplPath = new StringBuilder();
-		if( StringUtil.isEmpty(model.getTemplateName()) ) {
+		if (StringUtil.isEmpty(model.getTemplateName())) {
 			tplPath.append(model.getTemplateFolder()).append("/index");
 		} else {
 			tplPath.append(model.getTemplateFolder()).append("/").append(model.getTemplateName());

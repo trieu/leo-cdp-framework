@@ -1,34 +1,78 @@
+
+<style>
+    .login-card {
+        background: #ffffff;
+        padding: 30px;
+        border-radius: 6px;
+        box-shadow: 0 3px 12px rgba(0,0,0,0.15);
+        margin-top: 60px;
+    }
+    #login_logo {
+        max-width: 260px;
+        max-height: 120px;
+        margin-bottom: 15px;
+    }
+    .loader {
+        border: 6px solid #f3f3f3;
+        border-top: 6px solid #3498db;
+        border-radius: 50%;
+        width: 38px;
+        height: 38px;
+        animation: spin 1s linear infinite;
+        margin: 25px auto;
+        display: block;
+    }
+    @keyframes spin {
+        100% { transform: rotate(360deg); }
+    }
+</style>
+
 <div class="container-fluid">
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-lg-3"></div>
-            <div class="col-lg-6">
-                <img id="login_logo" src="" alt="MainLogo" style="display: none; max-width: 300px;max-height: 140px;" class="img-responsive center-block" />
-                <hr>
+    <div class="row">
+        <div class="col-lg-3 col-md-3 col-sm-2"></div>
+
+        <div class="col-lg-6 col-md-6 col-sm-8">
+            <div class="login-card text-center">
+
+                <!-- Logo -->
+                <img id="login_logo" src="" alt="LEO CDP" class="img-responsive center-block" style="display:none;">
+
+                <!-- Loader -->
                 <div id="system_user_login_loader" class="loader"></div>
-                <div id="system_user_login_div" style="display:none;" >
-                    <fieldset>
-                        <div id="legend">
-                            <h3>SSO Login Information</h3>
-                        </div>
-						<hr>					
-						<div id="system_user_login_form" >
-	                        <div class="form-group">
-	                            <label for="email"> Email </label>
-	                            <input type="email" class="form-control" name="email" id="email"  readonly="readonly">
-	                        </div>
-                        </div>                     
-                    </fieldset>
+
+                <!-- Login Content -->
+                <div id="system_user_login_div" style="display:none;">
+
+                    <h3 class="text-primary">LEO CDP Admin – SSO Login</h3>
+                    <hr>
+
+                    <div class="form-group text-left" id="email_panel" style="display: none;">
+                        <label for="email">Your Email</label>
+                        <input type="email"
+                               class="form-control input-lg"
+                               name="email"
+                               id="email"
+                               readonly="readonly">
+                    </div>
+
+                    <!-- SSO Login Button -->
+                    <a href="" id="sso_login_url" class="btn btn-primary btn-lg btn-block">
+                        Login with SSO
+                    </a>
+
                 </div>
-                <div id="info-login" class="alert alert-success" style="display: none; font-size: 24px;"></div>
-                <div id="error-login" class="alert alert-danger" style="display: none; font-size: 18px;"></div>
+
+                <!-- Alerts -->
+                <div id="info-login" class="alert alert-success" style="display:none; font-size:18px; margin-top:20px;"></div>
+                <div id="error-login" class="alert alert-danger" style="display:none; font-size:16px; margin-top:20px;"></div>
+
             </div>
-            <div class="col-lg-3"></div>
         </div>
+
+        <div class="col-lg-3 col-md-3 col-sm-2"></div>
     </div>
 </div>
 
 <script>
-	initSystemUserLogin(true);
-	
+    initSystemUserLogin(true);
 </script>
