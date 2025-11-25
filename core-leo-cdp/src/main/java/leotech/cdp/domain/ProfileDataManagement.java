@@ -496,8 +496,7 @@ public final class ProfileDataManagement {
 	 * @param observer
 	 * @return
 	 */
-	private static boolean saveJsonDataIntoProfile(ProfileIdentity pIdentity, ProfileSingleView profile,
-			EventObserver observer, JsonObject jsonObjData) {
+	private static boolean saveJsonDataIntoProfile(ProfileIdentity pIdentity, ProfileSingleView profile, EventObserver observer, JsonObject jsonObjData) {
 		String profileId = profile.getId();
 		boolean ok = false;
 		System.out.println("BEGIN saveJsonDataIntoProfile.id: " + profileId);

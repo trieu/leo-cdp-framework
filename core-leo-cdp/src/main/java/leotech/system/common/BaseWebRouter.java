@@ -97,7 +97,7 @@ public abstract class BaseWebRouter extends BaseHttpRouter {
 			String bodyStr = StringUtil.safeString(context.getBodyAsString(), "{}");
 			JsonObject paramJson = buildHttpPostParams(request, contentType, userAgent, userIp, bodyStr);
 			String userSession =  StringUtil.safeString(paramJson.remove(P_USER_SESSION), userSessionHeader);
-			callHttpPostHandler(request, userSession, uri, paramJson, (JsonDataPayload payload)->{
+			this.callHttpPostHandler(request, userSession, uri, paramJson, (JsonDataPayload payload)->{
 				if (payload != null) {
 					if(payload.getHttpCode() > 300) {
 						resp.setStatusCode(payload.getHttpCode());
@@ -115,7 +115,7 @@ public abstract class BaseWebRouter extends BaseHttpRouter {
 		} else if (HTTP_METHOD_GET.equalsIgnoreCase(httpMethod)) {
 			String userSession = CookieUserSessionUtil.getUserSession(context, userSessionHeader );
 			MultiMap params = buildHttpGetParams(request, userAgent, userIp);
-			callHttpGetHandler(request, userSession, uri, params, (JsonDataPayload payload)->{
+			this.callHttpGetHandler(request, userSession, uri, params, (JsonDataPayload payload)->{
 				if (payload != null) {
 					resp.end(payload.toString());
 				} else {

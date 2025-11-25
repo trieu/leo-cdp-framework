@@ -88,7 +88,7 @@ public class ZaloWebhookProcessor {
 				eventData.put("recipientId", recipientId);
 				
 				eventName = eventName.replaceAll("_", "-");
-				EventObserverManagement.saveEventFromApi(observerId, createdAt, p, journeyMapId, HttpParamKey.PRO_ENV,
+				EventObserverManagement.saveEventFromApi(observerId, "",createdAt, p, journeyMapId, HttpParamKey.PRO_ENV,
 						"127.0.0.1", observer.getType(), observer.getName(), observer.getDataSourceUrl(), "",
 						"", eventName, message, eventData);
 		    }
@@ -124,7 +124,7 @@ public class ZaloWebhookProcessor {
 				eventData.put("source", source);
 				eventData.put("zaloAppId", appId);
 				eventData.put("zaloOaUrl", zaloOaUrl);
-				EventObserverManagement.saveEventFromApi(observerId, createdAt, p, journeyMapId, HttpParamKey.PRO_ENV,
+				EventObserverManagement.saveEventFromApi(observerId, "",createdAt, p, journeyMapId, HttpParamKey.PRO_ENV,
 						"127.0.0.1", observer.getType(), observer.getName(), observer.getDataSourceUrl(), "",
 						"", eventName, eventData);
 			}

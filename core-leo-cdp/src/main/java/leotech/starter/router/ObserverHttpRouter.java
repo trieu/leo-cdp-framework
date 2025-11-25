@@ -109,14 +109,13 @@ public final class ObserverHttpRouter extends BaseHttpRouter {
 		DeviceInfo device = DeviceInfoUtil.getDeviceInfo(useragent);
 
 		try {
-			// WEBHOOK and Domain Verifier
-			if(urlPath.startsWith("/api")) {
+			if(urlPath.startsWith(CdpPublicApiRouter.PREFIX_API)) {
 				// JSON data API handler for Leo Content Hub
-				CdpApiRouter apiRouter = new CdpApiRouter(context, host, port);
-				apiRouter.process();
+				new CdpPublicApiRouter(context, host, port).process();
 				return;
 			}
 			else {
+				// WEBHOOK and Domain Verifier
 				boolean processed = WebhookDataHandler.process(this.context, req, urlPath, reqHeaders, params, resp, outHeaders, device, origin);
 				if(!processed) {
 					PROCESSORS.submit(()->{

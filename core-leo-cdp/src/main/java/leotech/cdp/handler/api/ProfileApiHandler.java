@@ -14,7 +14,6 @@ import leotech.system.model.JsonDataPayload;
 import leotech.system.util.HttpWebParamUtil;
 import leotech.system.util.LogUtil;
 
-
 /**
  * Profile Data API
  * 
@@ -23,11 +22,11 @@ import leotech.system.util.LogUtil;
  *
  */
 public class ProfileApiHandler extends BaseApiHandler {
+
 	
 	static final String API_PROFILE_SAVE = "/api/profile/save";
 	static final String API_PROFILE_LIST = "/api/profile/list";
 
-	
 	@Override
 	protected JsonDataPayload handleGet(EventObserver observer, HttpServerRequest req, String uri, MultiMap urlParams) {
 		if (uri.equals(API_PROFILE_LIST)) {
@@ -35,30 +34,28 @@ public class ProfileApiHandler extends BaseApiHandler {
 		}
 		return NO_SUPPORT_HTTP_REQUEST;
 	}
-	
+
 	@Override
-	protected JsonDataPayload handlePost(EventObserver observer, HttpServerRequest req, String uri, JsonObject jsonObject) {
+	protected JsonDataPayload handlePost(EventObserver observer, HttpServerRequest req, String uri,
+			JsonObject jsonObject) {
 		LogUtil.logInfo(ProfileApiHandler.class, "ProfileApiHandler: \n " + jsonObject);
 		JsonDataPayload payload;
 		if (uri.equals(API_PROFILE_SAVE)) {
 			payload = saveProfileFromApi(observer, uri, jsonObject);
-		}
-		else {
+		} else {
 			payload = notFoundHttpHandler(uri);
 		}
 		return payload;
 	}
-	
 
 	JsonDataPayload saveProfileFromApi(EventObserver observer, String uri, JsonObject jsonObject) {
 		JsonDataPayload payload;
 		try {
 			DataApiPayload data = new DataApiPayload(observer, jsonObject);
 			String id = ProfileDataManagement.saveProfileFromApi(data);
-			if(id != null) {
+			if (id != null) {
 				payload = JsonDataPayload.ok(uri, id);
-			}
-			else {
+			} else {
 				payload = JsonDataPayload.fail("CAN NOT SAVE PROFILE, INVALID DATA: " + data);
 			}
 		} catch (Exception e) {
@@ -67,13 +64,13 @@ public class ProfileApiHandler extends BaseApiHandler {
 		}
 		return payload;
 	}
-	
-	JsonDataPayload listProfiles(EventObserver observer, String uri, MultiMap urlParams ) {
-		String segmentId = HttpWebParamUtil.getString(urlParams, "segment_id", "");
-		int  start = HttpWebParamUtil.getInteger(urlParams, "start", 0);
-		int  limit = HttpWebParamUtil.getInteger(urlParams, "limit", 10);
-		
-		ProfileFilter filter = new ProfileFilter(true, segmentId, start, limit);	
+
+	JsonDataPayload listProfiles(EventObserver observer, String uri, MultiMap urlParams) {
+		String segmentId = HttpWebParamUtil.getString(urlParams, SEGMENT_ID, "");
+		int start = HttpWebParamUtil.getInteger(urlParams, PARAM_START_INDEX, 0);
+		int numberResult = HttpWebParamUtil.getInteger(urlParams, PARAM_NUMBER_RESULT, 10);
+
+		ProfileFilter filter = new ProfileFilter(true, segmentId, start, numberResult);
 
 		List<Profile> list = ProfileDaoUtil.getProfilesByFilter(filter);
 		return JsonDataPayload.ok(uri, list);

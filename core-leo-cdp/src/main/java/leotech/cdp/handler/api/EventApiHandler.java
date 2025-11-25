@@ -30,239 +30,263 @@ import leotech.system.util.XssFilterUtil;
 import rfx.core.util.StringUtil;
 
 /**
- * Event Data API
- * 
- * @author tantrieuf31
- * @since 2022
+ * Cleaner, consistent Event API handler for Mobile/Flutter/CDP integration.
  *
+ * - Extracts JSON field names and URL parameter keys into constants for reuse.
+ * - Adds comments and small clarifications to improve maintainability.
  */
 public class EventApiHandler extends BaseApiHandler {
-
-	static final JsonDataPayload FAIL = JsonDataPayload.fail("You should set parameter " + HttpParamKey.PRIMARY_EMAIL + " or " + HttpParamKey.PRIMARY_PHONE);
+	
+	// API endpoints handled by this class
 	static final String API_EVENT_LIST = "/api/event/list";
 	static final String API_EVENT_SAVE = "/api/event/save";
 
-	/**
-	 * to save tracking event
-	 * 
-	 * @param observer
-	 * @param req
-	 * @param uri
-	 * @param paramJson
-	 * @return
-	 */
+
+	// --------------------------
+	// HTTP handlers
+	// --------------------------
 	@Override
 	protected JsonDataPayload handlePost(EventObserver observer, HttpServerRequest req, String uri,
-			JsonObject paramJson) {
+			JsonObject jsonData) {
 
-		JsonDataPayload payload = null;
 		try {
 			switch (uri) {
 			case API_EVENT_SAVE:
-				String eventName = StringUtil.safeString(paramJson.getString(HttpParamKey.EVENT_METRIC_NAME)).toLowerCase();
-				String eventId = saveEventHandler(observer, req, eventName, paramJson);
-				payload = JsonDataPayload.ok(uri, eventId);
-				break;
-			default:
-				payload = notFoundHttpHandler(uri);
-				break;
-			}
-		} catch (Exception e) {
-			payload = JsonDataPayload.fail(e.getMessage());
-			e.printStackTrace();
-		}
+				// Normalise metric, require it
+				String metric = jsonData.getString(FIELD_METRIC, "").trim().toLowerCase();
 
-		return payload;
+				if (metric.isEmpty()) {
+					return JsonDataPayload.fail("Missing event 'metric'");
+				}
+
+				String eventId = saveEventHandler(observer, req, metric, jsonData);
+
+				return JsonDataPayload.ok(uri, eventId);
+
+			default:
+				return notFoundHttpHandler(uri);
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			return JsonDataPayload.fail(e.getMessage());
+		}
 	}
 
-	/**
-	 * to list events from HTTP GET
-	 * 
-	 * @param observer
-	 * @param req
-	 * @param uri
-	 * @param urlParams
-	 * @return
-	 */
 	@Override
 	protected JsonDataPayload handleGet(EventObserver observer, HttpServerRequest req, String uri, MultiMap urlParams) {
-		JsonDataPayload payload = null;
+
 		if (uri.equals(API_EVENT_LIST)) {
-			payload = listEventStreamOfProfile(uri, urlParams);
+			return listEventStreamOfProfile(uri, urlParams);
 		}
-		return payload;
+		return notFoundHttpHandler(uri);
 	}
 
 	/**
-	 * @param uri
-	 * @param urlParams
-	 * @return
+	 * List tracking events for a profile identified by identity keys passed as
+	 * request parameters. Uses strict identity resolution priority.
 	 */
-	private JsonDataPayload listEventStreamOfProfile(String uri, MultiMap urlParams) {
-		JsonDataPayload payload;
+	private JsonDataPayload listEventStreamOfProfile(String uri, MultiMap params) {
+
 		Profile profile = null;
-		String email = urlParams.get(HttpParamKey.PRIMARY_EMAIL);
-		String phone = urlParams.get(HttpParamKey.PRIMARY_PHONE);
-		String crmRefId = urlParams.get(HttpParamKey.CRM_REF_ID);
-		String applicationIDs = urlParams.get(HttpParamKey.APPLICATION_IDS);
-		String governmentIssuedIDs = urlParams.get(HttpParamKey.GOVERNMENT_ISSUED_IDS);
-		String socialMediaProfiles = urlParams.get(HttpParamKey.SOCIAL_MEDIA_PROFILES);
 
-		if (StringUtil.isNotEmpty(email)) {
-			profile = ProfileQueryManagement.getByPrimaryEmail(email);
-		} 
-		else if (StringUtil.isNotEmpty(phone)) {
+		// read the identity params from the request (query params)
+		String email = params.get(FIELD_PRIMARY_EMAIL);
+		String phone = params.get(FIELD_PRIMARY_PHONE);
+		String crmId = params.get(FIELD_CRM_REF_ID);
+		String appId = params.get(FIELD_APPLICATION_IDS);
+		String govId = params.get(FIELD_GOVERNMENT_ISSUED_IDS);
+		String socialId = params.get(FIELD_SOCIAL_MEDIA_IDS);
+
+		// Identity Lookup Hierarchy (strongest -> weakest)
+		if (StringUtil.isNotEmpty(govId)) {
+			profile = ProfileQueryManagement.getByGovernmentIssuedID(govId);
+		} else if (StringUtil.isNotEmpty(phone)) {
 			profile = ProfileQueryManagement.getByPrimaryPhone(phone);
-		} 
-		else if (StringUtil.isNotEmpty(crmRefId)) {
-			profile = ProfileQueryManagement.getByCrmId(crmRefId);
-		} 
-		else if (StringUtil.isNotEmpty(applicationIDs)) {
-			// KiotViet, Pancake, Facebook User ID, Google User ID,...
-			profile = ProfileQueryManagement.getByApplicationID(applicationIDs);
-		}
-		else if (StringUtil.isNotEmpty(governmentIssuedIDs)) {
-			// CCCD, CMND, Social Security number (SSN) ,...
-			profile = ProfileQueryManagement.getByGovernmentIssuedID(governmentIssuedIDs);
-		}
-		else if (StringUtil.isNotEmpty(socialMediaProfiles)) {
-			// "zalo:123456789", "facebook:123456789", "linkedin:123456789"
-			profile = ProfileQueryManagement.getBySocialMediaId(socialMediaProfiles);
+		} else if (StringUtil.isNotEmpty(email)) {
+			profile = ProfileQueryManagement.getByPrimaryEmail(email);
+		} else if (StringUtil.isNotEmpty(crmId)) {
+			profile = ProfileQueryManagement.getByCrmId(crmId);
+		} else if (StringUtil.isNotEmpty(appId)) {
+			profile = ProfileQueryManagement.getByApplicationID(appId);
+		} else if (StringUtil.isNotEmpty(socialId)) {
+			profile = ProfileQueryManagement.getBySocialMediaId(socialId);
 		}
 
-		if (profile != null) {
-			String profileId = profile.getId();
-			int startIndex = HttpWebParamUtil.getInteger(urlParams, "startIndex", 0);
-			int result = HttpWebParamUtil.getInteger(urlParams, "numberResult", 20);
-			List<TrackingEvent> list = EventDataManagement.getTrackingEventsOfProfile(profileId, "", startIndex, result);
-			payload = JsonDataPayload.ok(uri, list);
-		} else {
-			payload = JsonDataPayload.fail("Not found any profile from urlParams: " + urlParams);
+		if (profile == null) {
+			return JsonDataPayload.fail("No profile found for params: " + params);
 		}
-		return payload;
+
+		// pagination params with sensible defaults
+		int startIndex = HttpWebParamUtil.getInteger(params, PARAM_START_INDEX, 0);
+		int limit = HttpWebParamUtil.getInteger(params, PARAM_NUMBER_RESULT, 20);
+
+		// fetch events for profile
+		List<TrackingEvent> events = EventDataManagement.getTrackingEventsOfProfile(profile.getId(), "", startIndex,
+				limit);
+
+		return JsonDataPayload.ok(uri, events);
 	}
 
 	/**
-	 * to create a tracking event for specific profile
-	 * 
-	 * @param req
-	 * @param params
-	 * @param eventName
-	 * @param jsonData
-	 * @param email
-	 * @return
+	 * Save incoming event JSON payload into the system:
+	 * - parse identity and device/touchpoint info
+	 * - resolve or create profile
+	 * - build transaction if event is purchase/payment
+	 * - delegate to EventObserverManagement to persist
+	 *
+	 * All JSON field names pulled from constants at top of class.
+	 *
+	 * @param observer current EventObserver handling the request
+	 * @param req      HTTP request (used for fallback IP/user-agent retrieval)
+	 * @param eventName normalized event name (metric)
+	 * @param json     payload from client
+	 * @return id of saved event (string) or error marker as produced by downstream
 	 */
-	protected static String saveEventHandler(EventObserver observer, HttpServerRequest req, String eventName, JsonObject jsonData) {
-		LogUtil.logInfo(EventApiHandler.class,"["+ new Date()+ "] processTrackedEvent.jsonData " + jsonData);
-		
-		String environment = jsonData.getString(HttpParamKey.DATA_ENVIRONMENT, HttpParamKey.PRO_ENV);
-		
-		// observer 
+	protected static String saveEventHandler(EventObserver observer, HttpServerRequest req, String eventName,
+			JsonObject json) {
+
+		LogUtil.logInfo(EventApiHandler.class, "[EVENT] " + new Date() + " payload=" + json);
+
+		// environment defaults to the configured PRO_ENV constant when not provided
+		String environment = json.getString(FIELD_ENVIRONMENT, HttpParamKey.PRO_ENV);
+
+		// --- Extract Observer Info (source of event) ---
 		String observerId = observer.getId();
 		String journeyMapId = observer.getJourneyMapId();
 
-		// profile identities
-		String firstName = jsonData.getString(HttpParamKey.FIRST_NAME, "");
-		String lastName = jsonData.getString(HttpParamKey.LAST_NAME, "");
-		String name = jsonData.getString(HttpParamKey.NAME, Profile.UNKNOWN_PROFILE);
-		if(firstName.isBlank() && lastName.isBlank()) {
-			firstName = name;
+		// --- Parse Customer Identity ---
+		String firstName = json.getString(FIELD_FIRST_NAME, "");
+		String lastName = json.getString(FIELD_LAST_NAME, "");
+		String fullName = json.getString(FIELD_FULL_NAME, "");
+
+		// if only 'name' provided, promote to firstName for profile creation
+		if (firstName.isBlank() && lastName.isBlank() && fullName != null) {
+			firstName = fullName;
 		}
-		
-		// update vent for who ?
-		String email = jsonData.getString(HttpParamKey.TARGET_UPDATE_EMAIL, "");
-		String phone = jsonData.getString(HttpParamKey.TARGET_UPDATE_PHONE, "");
-		String crmId = jsonData.getString(HttpParamKey.TARGET_UPDATE_CRMID, "");
-		String appId = jsonData.getString(HttpParamKey.TARGET_UPDATE_APPLICATION_ID, "");
-		String socialId = jsonData.getString(HttpParamKey.TARGET_UPDATE_SOCIAL_MEDIA_ID, "");
-		String govId = jsonData.getString(HttpParamKey.TARGET_UPDATE_GOVERNMENT_ISSUED_ID, "");
-		
-		// from IP
-		String sourceIP =   jsonData.getString(HttpParamKey.SOURCE_IP, HttpWebParamUtil.getRemoteIP(req)); 
-		String userAgent =   jsonData.getString(HttpParamKey.USER_AGENT, ""); 
+
+		String email = json.getString(FIELD_PRIMARY_EMAIL, "");
+		String phone = json.getString(FIELD_PRIMARY_PHONE, "");
+		String crmId = json.getString(FIELD_CRM_REF_ID, "");
+		String appId = json.getString(FIELD_APPLICATION_IDS, "");
+		String socialId = json.getString(FIELD_SOCIAL_MEDIA_IDS, "");
+		String govId = json.getString(FIELD_GOVERNMENT_ISSUED_IDS, "");
+
+		// --- Device Info (with fallbacks to HTTP request) ---
+		String sourceIP = json.getString(FIELD_SOURCE_IP, HttpWebParamUtil.getRemoteIP(req));
+		String userAgent = json.getString(FIELD_USER_AGENT, req.headers().get("User-Agent"));
+		String fingerprintId = json.getString(FIELD_USER_DEVICE_UUID,"");
 		Device userDevice = new Device(userAgent);
-		
-		int touchpointType = HttpWebParamUtil.getInteger(jsonData, HttpParamKey.TOUCHPOINT_TYPE, TouchpointType.DATA_OBSERVER);
-		String srcTouchpointName = XssFilterUtil.safeGet(jsonData, HttpParamKey.TOUCHPOINT_NAME, observer.getName());
-		String srcTouchpointUrl = XssFilterUtil.safeGet(jsonData, HttpParamKey.TOUCHPOINT_URL, observer.getDataSourceUrl());
-		Touchpoint fromTouchpoint = TouchpointManagement.getOrCreateNew(srcTouchpointName, touchpointType, srcTouchpointUrl);
-		
-		String refTouchpointUrl = XssFilterUtil.safeGet(jsonData, HttpParamKey.TOUCHPOINT_REFERRER_URL);
-		String touchpointRefDomain = UrlUtil.getHostName(refTouchpointUrl);
-		
-		// save event fro profile
-		String eventtime = XssFilterUtil.safeGet(jsonData, HttpParamKey.EVENT_TIME);
+
+		// --- Touchpoint Info and creation/retrieval of Touchpoint entity ---
+		int tpType = json.getInteger(FIELD_TOUCHPOINT_TYPE, TouchpointType.DATA_OBSERVER);
+
+		// sanitize incoming touchpoint name / url via XSS filter util; fallback to observer defaults
+		String tpName = XssFilterUtil.safeGet(json, FIELD_TOUCHPOINT_NAME, observer.getName());
+		String tpUrl = XssFilterUtil.safeGet(json, FIELD_TOUCHPOINT_URL, observer.getDataSourceUrl());
+
+		Touchpoint sourceTp = TouchpointManagement.getOrCreateNew(tpName, tpType, tpUrl);
+
+		String refUrl = XssFilterUtil.safeGet(json, FIELD_TOUCHPOINT_REFERER_URL);
+		String refDomain = UrlUtil.getHostName(refUrl);
+
+		// --- Event Time parsing: if provided, parse it; otherwise use now ---
+		String eventTimeStr = json.getString(FIELD_EVENT_TIME);
 		Date createdAt;
-		if(StringUtil.isNotEmpty(eventtime)) {
-			// parse datetime in UTC format: https://stackoverflow.com/questions/2201925/converting-iso-8601-compliant-string-to-java-util-date
-			createdAt = ProfileModelUtil.parseDate(eventtime);
-		}
-		else {
+
+		if (StringUtil.isNotEmpty(eventTimeStr)) {
+			createdAt = ProfileModelUtil.parseDate(eventTimeStr);
+		} else {
 			createdAt = new Date();
 		}
-		
-		// query profile by identities
+
+		// --- Profile Lookup or Create using identity hierarchy ---
 		Profile profile = queryProfileByKeys(email, phone, crmId, appId, socialId, govId);
-		
-		if(profile == null) {
-			// create and save new profile from event
-			profile = ProfileDataManagement.createNewProfileAndSave(firstName, lastName, createdAt, observerId, fromTouchpoint, 
-					sourceIP, govId, phone, email, socialId, appId, crmId);
+
+		if (profile == null) {
+			// create a minimal profile when none found
+			profile = ProfileDataManagement.createNewProfileAndSave(firstName, lastName, createdAt, observerId,
+					sourceTp, sourceIP, govId, phone, email, socialId, appId, crmId);
 		}
+
+		// --- Extra Event Data fields ---
+		int rating = json.getInteger(FIELD_RATING_SCORE, -1);
+		String message = json.getString(FIELD_MESSAGE, "");
+		String rawJson = json.getString(FIELD_RAW_JSON_DATA, "");
+		String imageUrls = json.getString(FIELD_IMAGE_URLS, "");
+		String videoUrls = json.getString(FIELD_VIDEO_URLS, "");
+
+		// event-specific key/value map (nested object)
+		Map<String, Object> eventData = HttpWebParamUtil.getMapFromRequestParams(json, FIELD_EVENT_DATA);
 		
-		int ratingScore = jsonData.getInteger(HttpParamKey.RATING_SCORE, -1);
-		String message = XssFilterUtil.safeGet(jsonData, HttpParamKey.MESSAGE_TEXT);
-		String rawJsonData = XssFilterUtil.safeGet(jsonData, HttpParamKey.EVENT_RAW_JSON_DATA);
-		String imageUrls = XssFilterUtil.safeGet(jsonData, HttpParamKey.IMAGE_URLS);
-		String videoUrls = XssFilterUtil.safeGet(jsonData, HttpParamKey.VIDEO_URLS);
-		Map<String, Object> eventdata = HttpWebParamUtil.getMapFromRequestParams(jsonData,HttpParamKey.EVENT_DATA);
+
 		
-		// save transaction
-		boolean computeTotalTransactionValue = BehavioralEvent.STR_PURCHASE.equalsIgnoreCase(eventName) || BehavioralEvent.STR_MADE_PAYMENT.equalsIgnoreCase(eventName); 
-		OrderTransaction transaction = new OrderTransaction(createdAt, jsonData, computeTotalTransactionValue);
-		
-		// save event
-		String eventId = EventObserverManagement.saveEventFromApi(observerId, createdAt, profile, journeyMapId, environment,
-				sourceIP, userDevice, touchpointType, srcTouchpointName, srcTouchpointUrl, refTouchpointUrl,
-				touchpointRefDomain, eventName, message, eventdata, rawJsonData, transaction, ratingScore, imageUrls, videoUrls);
-		return eventId;
+
+		// --- Transaction construction (if this is a purchase/payment event) ---
+		boolean computeTotal = BehavioralEvent.STR_PURCHASE.equalsIgnoreCase(eventName)
+				|| BehavioralEvent.STR_MADE_PAYMENT.equalsIgnoreCase(eventName);
+
+		OrderTransaction txn = new OrderTransaction(createdAt, json, computeTotal);
+
+		// --- Persist the event via the observer management layer ---
+		return EventObserverManagement.saveEventFromApi(observerId, fingerprintId, createdAt, profile, journeyMapId, environment,
+				sourceIP, userDevice, tpType, tpName, tpUrl, refUrl, refDomain, eventName, message, eventData, rawJson,
+				txn, rating, imageUrls, videoUrls);
 	}
 
 	/**
-	 * @param email
-	 * @param phone
-	 * @param crmId
-	 * @param appId
-	 * @param socialId
-	 * @param govId
-	 * @param profile
-	 * @return
+	 * Resolve a Profile using identity keys in strict priority order.
+	 *
+	 * Identity resolution hierarchy:
+	 *   1. Government-issued ID   (strongest, unique)
+	 *   2. Phone number
+	 *   3. Email address
+	 *   4. CRM reference ID
+	 *   5. Application ID         (KiotViet, Pancake, Google, FB...)
+	 *   6. Social media ID        (zalo, facebook, linkedIn...)
+	 *
+	 * The method returns as soon as one match is found.
+	 * If no identity matches, returns null.
 	 */
-	private static Profile queryProfileByKeys(String email, String phone, String crmId, String appId, String socialId,
-			String govId) {
-		Profile profile = null;
-		if (StringUtil.isNotEmpty(govId)) {
-			// CCCD, CMND, Social Security number (SSN) ,...
-			profile = ProfileQueryManagement.getByGovernmentIssuedID(govId);
-		}
-		else if (StringUtil.isNotEmpty(phone)) {
-			profile = ProfileQueryManagement.getByPrimaryPhone(phone);
-		} 
-		else if (StringUtil.isNotEmpty(email)) {
-			profile = ProfileQueryManagement.getByPrimaryEmail(email);
-		}
-		else if (StringUtil.isNotEmpty(crmId)) {
-			profile = ProfileQueryManagement.getByCrmId(crmId);
-		}
-		else if (StringUtil.isNotEmpty(appId)) {
-			// KiotViet, Pancake, Facebook User ID, Google User ID,...
-			profile = ProfileQueryManagement.getByApplicationID(appId);
-		}
-		else if (StringUtil.isNotEmpty(socialId)) {
-			// "zalo": "123456789", "facebook": "123456789", "linkedin": "123456789"
-			profile = ProfileQueryManagement.getBySocialMediaId(socialId);
-		}
-		return profile;
+	private static Profile queryProfileByKeys(String email,
+	                                          String phone,
+	                                          String crmId,
+	                                          String appId,
+	                                          String socialId,
+	                                          String govId) {
+
+	    // 1. Government ID
+	    if (StringUtil.isNotEmpty(govId)) {
+	        return ProfileQueryManagement.getByGovernmentIssuedID(govId);
+	    }
+
+	    // 2. Phone
+	    if (StringUtil.isNotEmpty(phone)) {
+	        return ProfileQueryManagement.getByPrimaryPhone(phone);
+	    }
+
+	    // 3. Email
+	    if (StringUtil.isNotEmpty(email)) {
+	        return ProfileQueryManagement.getByPrimaryEmail(email);
+	    }
+
+	    // 4. CRM ID
+	    if (StringUtil.isNotEmpty(crmId)) {
+	        return ProfileQueryManagement.getByCrmId(crmId);
+	    }
+
+	    // 5. Application ID
+	    if (StringUtil.isNotEmpty(appId)) {
+	        return ProfileQueryManagement.getByApplicationID(appId);
+	    }
+
+	    // 6. Social Media ID
+	    if (StringUtil.isNotEmpty(socialId)) {
+	        return ProfileQueryManagement.getBySocialMediaId(socialId);
+	    }
+
+	    // No identities found
+	    return null;
 	}
 
 }

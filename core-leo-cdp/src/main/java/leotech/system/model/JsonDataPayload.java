@@ -134,6 +134,11 @@ public class JsonDataPayload {
 	public void setErrorMessage(String errorMessage) {
 		this.errorMessage = errorMessage;
 	}
+	
+	public JsonDataPayload setException(Exception e) {
+		this.errorMessage = e.getMessage();
+		return this;
+	}
 
 	public int getHttpCode() {
 		return httpCode == 200 ? 0 : httpCode;
