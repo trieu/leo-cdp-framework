@@ -110,18 +110,27 @@ public final class ObserverHttpRouter extends BaseHttpRouter {
 
 		try {
 			// WEBHOOK and Domain Verifier
-			boolean processed = WebhookDataHandler.process(this.context, req, urlPath, reqHeaders, params, resp, outHeaders, device, origin);
-			if(!processed) {
-				PROCESSORS.submit(()->{
-					if(httpMethod.equalsIgnoreCase(HTTP_METHOD_GET)) {
-						ObserverHttpGetHandler.process(this.context, req, urlPath, reqHeaders, params, resp, outHeaders, device, origin, nodeInfo);
-					} 
-					else if(httpMethod.equalsIgnoreCase(HTTP_METHOD_POST) || httpMethod.equalsIgnoreCase(HTTP_METHOD_PUT)) {
-						ObserverHttpPostHandler.process(this.context, req, urlPath, reqHeaders, params, resp, outHeaders, device, origin, nodeInfo);
-					}
-				});
+			if(urlPath.startsWith("/api")) {
+				// JSON data API handler for Leo Content Hub
+				CdpApiRouter apiRouter = new CdpApiRouter(context, host, port);
+				apiRouter.process();
 				return;
 			}
+			else {
+				boolean processed = WebhookDataHandler.process(this.context, req, urlPath, reqHeaders, params, resp, outHeaders, device, origin);
+				if(!processed) {
+					PROCESSORS.submit(()->{
+						if(httpMethod.equalsIgnoreCase(HTTP_METHOD_GET)) {
+							ObserverHttpGetHandler.process(this.context, req, urlPath, reqHeaders, params, resp, outHeaders, device, origin, nodeInfo);
+						} 
+						else if(httpMethod.equalsIgnoreCase(HTTP_METHOD_POST) || httpMethod.equalsIgnoreCase(HTTP_METHOD_PUT)) {
+							ObserverHttpPostHandler.process(this.context, req, urlPath, reqHeaders, params, resp, outHeaders, device, origin, nodeInfo);
+						}
+					});
+					return;
+				}
+			}
+			
 			// no handler found
 			resp.end("CDP Observer_"+nodeInfo);
 		} catch (Exception e) {

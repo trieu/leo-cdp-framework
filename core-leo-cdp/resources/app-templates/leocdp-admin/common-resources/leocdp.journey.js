@@ -1066,9 +1066,9 @@ const showObserverApiInfo = function(btn){
 	$('#leoCdpApiTokenValue').val(apiToken);
 	
 	$('#leoCdpApiObserverName').text(json.name);
-	$('#leoCdpGetProfileApiUrl').val(baseLeoAdminUrl + "/api/profile/save");
-	$('#leoCdpTrackEventApiUrl').val(baseLeoAdminUrl + "/api/event/save");
-	$('#leoCdpListEventsApiUrl').val(baseLeoAdminUrl + "/api/event/list?startIndex=0&numberResult=10&profileId={profile_ID}");
+	$('#leoCdpGetProfileApiUrl').val(baseLeoObserverUrl + "/api/profile/save");
+	$('#leoCdpTrackEventApiUrl').val(baseLeoObserverUrl + "/api/event/save");
+	$('#leoCdpListEventsApiUrl').val(baseLeoObserverUrl + "/api/event/list?startIndex=0&numberResult=10&profileId={profile_ID}");
 	$('#leoCdpWebhookUrl').val(baseLeoObserverUrl + "/webhook?tokenkey=" + apiKey +"&tokenvalue=" + apiToken +"&source=");
 	
 	$('#observerApiInfoDialog').modal({

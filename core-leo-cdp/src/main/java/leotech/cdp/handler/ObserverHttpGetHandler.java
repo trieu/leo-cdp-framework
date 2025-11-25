@@ -277,6 +277,7 @@ public final class ObserverHttpGetHandler {
 			resp.setStatusCode(404);
 			resp.end("404 - Not found error");
 		}
+		
 		// no handler found
 		else {
 			resp.end("CDP OBSERVER: " + nodeInfo);

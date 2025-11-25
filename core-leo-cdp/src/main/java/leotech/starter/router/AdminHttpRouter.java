@@ -3,7 +3,6 @@ package leotech.starter.router;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpServerRequest;
@@ -26,11 +25,6 @@ import leotech.cdp.handler.admin.SystemConfigHandler;
 import leotech.cdp.handler.admin.SystemControlHandler;
 import leotech.cdp.handler.admin.SystemUserLoginHandler;
 import leotech.cdp.handler.admin.TouchpointHubHandler;
-import leotech.cdp.handler.api.EventApiHandler;
-import leotech.cdp.handler.api.ProductApiHandler;
-import leotech.cdp.handler.api.ProfileApiHandler;
-import leotech.cdp.handler.api.SegmentApiHandler;
-import leotech.cdp.handler.api.SystemApiHandler;
 import leotech.system.common.BaseWebRouter;
 import leotech.system.model.JsonDataPayload;
 
@@ -66,15 +60,7 @@ public final class AdminHttpRouter extends BaseWebRouter {
 	public static final String CDP_CATEGORY_PREFIX = "/cdp/asset-category";
 	public static final String CDP_CONTENT_CRAWLER_PREFIX = "/cdp/content-crawler";
 	
-	// 5 public API to extend CDP features 
-	public static final String API_JOURNEY = "/api/journey";
-	public static final String API_PROFILE = "/api/profile";
-	public static final String API_SEGMENT = "/api/segment";
-	public static final String API_EVENT = "/api/event";
-	public static final String API_PRODUCT = "/api/product";
-	public static final String API_CONTENT = "/api/content";
-	public static final String API_SYSTEM = "/api/system";
-	
+
 	public AdminHttpRouter(RoutingContext context, String host, int port) {
 		super(context, host, port);
 	}
@@ -165,26 +151,7 @@ public final class AdminHttpRouter extends BaseWebRouter {
 				else if (uri.startsWith(CDP_ITEM_PREFIX)) {
 					payload = new AssetItemHandler(this).httpPostHandler(userSession, uri, paramJson, cookieMap);
 				}
-				// to create or update profile
-				else if (uri.startsWith(API_PROFILE)) {
-					payload = new ProfileApiHandler().handlePost(req, uri, paramJson);
-				}
-				// to create a tracking event for specific profile
-				else if (uri.startsWith(API_EVENT)) {
-					payload = new EventApiHandler().handlePost(req, uri, paramJson);
-				}
-				// to save product item
-				else if (uri.startsWith(API_PRODUCT)) {
-					payload = new ProductApiHandler().handlePost(req, uri, paramJson);
-				}
-				// to create or update segment
-				else if (uri.startsWith(API_SEGMENT)) {
-					payload = new SegmentApiHandler().handlePost(req, uri, paramJson);
-				}
-				// to create or update system
-				else if (uri.startsWith(API_SYSTEM)) {
-					payload = new SystemApiHandler().handlePost(req, uri, paramJson);
-				}
+				
 			} 
 			catch (Throwable e) {
 				e.printStackTrace();
@@ -273,29 +240,6 @@ public final class AdminHttpRouter extends BaseWebRouter {
 				//
 				else if (uri.startsWith(CDP_ITEM_PREFIX)) {
 					payload = new AssetItemHandler(this).httpGetHandler(userSession, uri, urlParams, cookieMap);
-				}
-				
-				// ---------- API handler ----------
-				
-				// to create or update profile
-				else if (uri.startsWith(API_PROFILE)) {
-					payload = new ProfileApiHandler().handleGet(req, uri, urlParams);
-				}
-				// to create a tracking event for specific profile
-				else if (uri.startsWith(API_EVENT)) {
-					payload = new EventApiHandler().handleGet(req, uri, urlParams);
-				}
-				// to list product items
-				else if (uri.startsWith(API_PRODUCT)) {
-					payload = new ProductApiHandler().handleGet(req, uri, urlParams);
-				}
-				// to create or update profile
-				else if (uri.startsWith(API_SEGMENT)) {
-					payload = new SegmentApiHandler().handleGet(req, uri, urlParams);
-				}
-				// to create or update system
-				else if (uri.startsWith(API_SYSTEM)) {
-					payload = new SystemApiHandler().handleGet(req, uri, urlParams);
 				}
 			} 
 			catch (Throwable e) {
