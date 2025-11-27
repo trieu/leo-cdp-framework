@@ -129,7 +129,7 @@ public final class HttpWorker extends BaseWorker {
 		}
 		
 		// SSO
-		if (httpRoutingConfigs.isSsoHandlerEnabled()) {
+		if (SystemMetaData.SSO_LOGIN) {
 			 KeycloakClientRouter.startKeyCloakRouter(vertxInstance, router);
 		}
 		

@@ -119,7 +119,7 @@ public abstract class BaseWebRouter extends BaseHttpRouter {
 				if (payload != null) {
 					resp.end(payload.toString());
 				} else {
-					if (defaultDataHttpGet.getHttpCode() == 301) {
+					if (defaultDataHttpGet.getHttpCode() == 301 || defaultDataHttpGet.getHttpCode() == 303) {
 						resp.putHeader("Location", defaultDataHttpGet.getUri());
 						resp.setStatusCode(defaultDataHttpGet.getHttpCode());
 						resp.end();

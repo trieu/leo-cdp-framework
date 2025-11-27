@@ -23,7 +23,6 @@ public final class HttpRoutingConfigs {
 	String classNameHttpRouter;
 	boolean bodyHandlerEnabled = false;
 	boolean sockJsHandlerEnabled = false;
-	boolean ssoHandlerEnabled = false;
 	String defaultDbConfig;
 
 	public static final class HttpRoutingConfigsMap {
@@ -107,14 +106,6 @@ public final class HttpRoutingConfigs {
 
 	public void setBodyHandlerEnabled(boolean bodyHandlerEnabled) {
 		this.bodyHandlerEnabled = bodyHandlerEnabled;
-	}
-
-	public boolean isSsoHandlerEnabled() {
-		return ssoHandlerEnabled;
-	}
-
-	public void setSsoHandlerEnabled(boolean ssoHandlerEnabled) {
-		this.ssoHandlerEnabled = ssoHandlerEnabled;
 	}
 
 	public boolean isSockJsHandlerEnabled() {
