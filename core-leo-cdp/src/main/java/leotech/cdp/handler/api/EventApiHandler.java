@@ -201,12 +201,24 @@ public class EventApiHandler extends BaseApiHandler {
 		}
 
 		// --- Profile Lookup or Create using identity hierarchy ---
-		Profile profile = queryProfileByKeys(email, phone, crmId, appId, socialId, govId);
+		Profile profile = queryProfileByKeys(fingerprintId, email, phone, crmId, appId, socialId, govId);
 
-		if (profile == null) {
+		if (profile != null) {
+			profile.setFirstName(firstName);
+			profile.setLastName(lastName);
+			profile.setPhone(phone);
+			profile.setEmail(email);
+			profile.setCrmRefId(crmId);
+			profile.setSocialMediaId(socialId);
+			profile.setGovernmentIssuedID(govId);
+			profile.setLastSeenIp(sourceIP);
+			profile.setLastTouchpoint(sourceTp);
+		}
+		else {
 			// create a minimal profile when none found
 			profile = ProfileDataManagement.createNewProfileAndSave(firstName, lastName, createdAt, observerId,
 					sourceTp, sourceIP, govId, phone, email, socialId, appId, crmId);
+			
 		}
 
 		// --- Extra Event Data fields ---
@@ -218,8 +230,6 @@ public class EventApiHandler extends BaseApiHandler {
 
 		// event-specific key/value map (nested object)
 		Map<String, Object> eventData = HttpWebParamUtil.getMapFromRequestParams(json, FIELD_EVENT_DATA);
-		
-
 		
 
 		// --- Transaction construction (if this is a purchase/payment event) ---
@@ -248,13 +258,15 @@ public class EventApiHandler extends BaseApiHandler {
 	 * The method returns as soon as one match is found.
 	 * If no identity matches, returns null.
 	 */
-	private static Profile queryProfileByKeys(String email,
+	private static Profile queryProfileByKeys(String fingerprintId, String email,
 	                                          String phone,
 	                                          String crmId,
 	                                          String appId,
 	                                          String socialId,
 	                                          String govId) {
 
+		// 0. must use fingerprintId for security when update data from public event API 
+		
 	    // 1. Government ID
 	    if (StringUtil.isNotEmpty(govId)) {
 	        return ProfileQueryManagement.getByGovernmentIssuedID(govId);

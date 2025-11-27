@@ -2071,10 +2071,10 @@ public abstract class AbstractProfile extends PersistentObject {
 		return crmRefId;
 	}
 
-	public void setCrmRefId(String crmRefId) {
-		if(StringUtil.isNotEmpty(crmRefId)) {
-			this.crmRefId = crmRefId;			
-			this.setIdentity(ProfileIdentity.ID_PREFIX_CRM, crmRefId);
+	public void setCrmRefId(String crmId) {
+		if(StringUtil.isNotEmpty(crmId) && StringUtil.isEmpty(this.crmRefId)) {
+			this.crmRefId = crmId;			
+			this.setIdentity(ProfileIdentity.ID_PREFIX_CRM, crmId);
 		}
 	}
 	
