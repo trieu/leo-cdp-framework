@@ -24,7 +24,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.vertx.core.MultiMap;
-import io.vertx.core.http.Cookie;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
@@ -32,270 +31,282 @@ import io.vertx.ext.web.client.WebClient;
 import leotech.system.util.keycloak.KeycloakClientRouter.SsoRoutePaths;
 import rfx.core.util.StringUtil;
 
+/**
+ * @author Trieu Nguyen
+ * @since 2025
+ *
+ */
 public class AuthKeycloakHandlers {
 
-    private static final Logger log = LoggerFactory.getLogger(AuthKeycloakHandlers.class);
+	public static final String URI_OPENID_CONNECT_TOKEN = "/protocol/openid-connect/token";
 
-    private final KeycloakConfig config;
-    private final SessionRepository sessionRepo;
-    private final WebClient webClient;
+	public static final String URI_OPENID_CONNECT_USERINFO = "/protocol/openid-connect/userinfo";
 
-    public AuthKeycloakHandlers(KeycloakConfig config, SessionRepository sessionRepo, WebClient wc) {
-        this.config = config;
-        this.sessionRepo = sessionRepo;
-        this.webClient = wc;
-    }
+	public static final String ROLE = "role";
 
-    // -----------------------------------------------------------------------------
-    // NEW: Safe query param extractor
-    // -----------------------------------------------------------------------------
+	public static final String LOGOUT = "logout";
 
-    /**
-     * Extracts param safely from RoutingContext.
-     * Vert.x → queryParam(name) returns List<String>.
-     * This returns:
-     * - first value
-     * - or null if missing
-     */
-    private String getQueryParam(RoutingContext ctx, String name) {
-        try {
-            List<String> vals = ctx.queryParam(name);
-            if (vals == null || vals.isEmpty()) return null;
-            String v = vals.get(0);
-            if (v == null || v.isBlank()) return null;
-            return v;
-        } catch (Exception e) {
-            return null;
-        }
-    }
+	public static final String ERROR = "error";
 
-    // -----------------------------------------------------------------------------
-    // Public Handlers
-    // -----------------------------------------------------------------------------
+	public static final String PARAM_SESSION_ID = "sid";
 
-    public void handleInfo(RoutingContext ctx) {
-        ctx.response().end("LEO CDP SSO System");
-    }
+	public static final String USER = "user";
 
-    public void handleSession(RoutingContext ctx) {
-        String sid = getQueryParam(ctx, "sid");
-        if (StringUtil.isEmpty(sid)) {
-            redirect(ctx, SsoRoutePaths.LOGIN);
-            return;
-        }
+	public static final String TOKEN = "token";
 
-        sessionRepo.getSession(sid, ar -> {
-            if (ar.failed() || StringUtil.isEmpty(ar.result())) {
-                redirect(ctx, SsoRoutePaths.LOGIN);
-                return;
-            }
+	public static final String ACCESS_TOKEN = "access_token";
 
-            JsonObject session = new JsonObject(ar.result());
-            String accessToken = session.getJsonObject("token").getString("access_token");
-            JsonArray roles = getUserRoles(accessToken);
+	public static final String REFRESH_TOKEN = "refresh_token";
 
-            SsoUserProfile user = SsoUserProfile.fromJson(session.getJsonObject("user"), roles);
+	public static final String LEO_CDP_SSO = "LEO CDP SSO";
 
-            log.info("Admin user: {}", user);
-            
-            ctx.addCookie(makeSsoSessionCookie(sid));
+	private static final Logger log = LoggerFactory.getLogger(AuthKeycloakHandlers.class);
 
-            redirect(ctx, SsoRoutePaths.ROOT);
-        });
-    }
+	private final KeycloakConfig config;
+	private final SessionRepository sessionRepo;
+	private final WebClient webClient;
 
-    public void handleLogin(RoutingContext ctx) {
-        try {
-            String redirectEncoded = encodeUrl(config.callbackUrl);
-            String state = UUID.randomUUID().toString();
+	public AuthKeycloakHandlers(KeycloakConfig config, SessionRepository sessionRepo, WebClient wc) {
+		this.config = config;
+		this.sessionRepo = sessionRepo;
+		this.webClient = wc;
+	}
 
-            String authUrl = String.format(
-                "%s/realms/%s/protocol/openid-connect/auth?client_id=%s&response_type=code&scope=openid&state=%s&redirect_uri=%s",
-                config.url, config.realm, config.clientId, state, redirectEncoded
-            );
+	/**
+	 * Safe query param extractor <br>
+	 * Extracts param safely from RoutingContext. Vert.x → queryParam(name) returns
+	 * List<String>. This returns: - first value - or null if missing
+	 */
+	private String getQueryParam(RoutingContext ctx, String name) {
+		try {
+			List<String> vals = ctx.queryParam(name);
+			if (vals == null || vals.isEmpty())
+				return null;
+			String v = vals.get(0);
+			if (v == null || v.isBlank())
+				return null;
+			return v;
+		} catch (Exception e) {
+			return null;
+		}
+	}
 
-            redirect(ctx, authUrl);
+	// -----------------------------------------------------------------------------
+	// Public Handlers
+	// -----------------------------------------------------------------------------
 
-        } catch (Exception e) {
-            log.error("Login redirect error", e);
-            redirect(ctx, SsoRoutePaths.ERROR + "?error=login_build_error");
-        }
-    }
+	public void handleInfo(RoutingContext ctx) {
+		ctx.response().end(LEO_CDP_SSO);
+	}
 
-    public void handleCallback(RoutingContext ctx) {
-        String code = getQueryParam(ctx, PARAM_CODE);
-        String error = getQueryParam(ctx, "error");
-        String logoutFlag = getQueryParam(ctx, "logout");
+	public void handleSession(RoutingContext ctx) {
+		String sid = getQueryParam(ctx, PARAM_SESSION_ID);
+		if (StringUtil.isEmpty(sid)) {
+			redirect(ctx, SsoRoutePaths.LOGIN);
+			return;
+		}
 
-        if ("true".equalsIgnoreCase(logoutFlag)) {
-            redirect(ctx, SsoRoutePaths.SESSION + "?_t=" + System.currentTimeMillis());
-            return;
-        }
+		sessionRepo.getSession(sid, ar -> {
+			if (ar.failed() || StringUtil.isEmpty(ar.result())) {
+				redirect(ctx, SsoRoutePaths.LOGIN);
+				return;
+			}
 
-        if (error != null) {
-            redirect(ctx, SsoRoutePaths.ERROR + "?error=" + error);
-            return;
-        }
+			JsonObject session = new JsonObject(ar.result());
+			String accessToken = session.getJsonObject(TOKEN).getString(ACCESS_TOKEN);
+			JsonArray roles = getUserRoles(accessToken);
 
-        if (code == null) {
-            redirect(ctx, SsoRoutePaths.ERROR + "?error=missing_code");
-            return;
-        }
+			// convert JSON to SSO User 
+			SsoUserProfile user = SsoUserProfile.fromJson(session.getJsonObject(USER), roles);
 
-        exchangeCode(ctx, code);
-    }
+			log.info("Admin user: {}", user);
 
-    public void handleRefreshToken(RoutingContext ctx) {
-        String sid = getQueryParam(ctx, "sid");
-        if (sid == null) {
-            ctx.response().setStatusCode(401).end("Missing sid");
-            return;
-        }
+			ctx.addCookie(makeSsoSessionCookie(sid));
 
-        sessionRepo.getSession(sid, ar -> {
-            if (ar.failed() || ar.result() == null) {
-                ctx.response().setStatusCode(401).end("Invalid sid");
-                return;
-            }
+			redirect(ctx, SsoRoutePaths.ROOT);
+		});
+	}
 
-            JsonObject session = new JsonObject(ar.result());
-            String refresh = session
-                    .getJsonObject("token")
-                    .getString("refresh_token");
+	public void handleLogin(RoutingContext ctx) {
+		try {
+			String redirectEncoded = encodeUrl(config.callbackUrl);
+			String state = UUID.randomUUID().toString();
 
-            refreshToken(ctx, sid, session, refresh);
-        });
-    }
+			String authUrl = String.format(
+					"%s/realms/%s/protocol/openid-connect/auth?client_id=%s&response_type=code&scope=openid&state=%s&redirect_uri=%s",
+					config.url, config.realm, config.clientId, state, redirectEncoded);
 
-    public void handleLogout(RoutingContext ctx) {
-        String sid = getQueryParam(ctx, "sid");
+			redirect(ctx, authUrl);
 
-        if (sid != null) {
-        	sessionRepo.deleteSession(sid, r -> {});
-        }
-            
+		} catch (Exception e) {
+			log.error("Login redirect error", e);
+			redirect(ctx, SsoRoutePaths.ERROR + "?error=login_build_error");
+		}
+	}
 
-        try {
-            String redirectUri = encodeUrl(config.callbackUrl + "?logout=true&t="+System.currentTimeMillis());
+	public void handleCallback(RoutingContext ctx) {
+		String code = getQueryParam(ctx, PARAM_CODE);
+		String error = getQueryParam(ctx, ERROR);
+		String logoutFlag = getQueryParam(ctx, LOGOUT);
 
-            String logoutUrl = String.format(
-                "%s/realms/%s/protocol/openid-connect/logout?client_id=%s&post_logout_redirect_uri=%s",
-                config.url, config.realm, config.clientId, redirectUri
-            );
+		if ("true".equalsIgnoreCase(logoutFlag)) {
+			redirect(ctx, SsoRoutePaths.SESSION + "?_t=" + System.currentTimeMillis());
+			return;
+		}
 
-            redirect(ctx, logoutUrl);
+		if (error != null) {
+			redirect(ctx, SsoRoutePaths.ERROR + "?error=" + error);
+			return;
+		}
 
-        } catch (Exception e) {
-            ctx.response().setStatusCode(500).end("logout_failed");
-        }
-    }
+		if (code == null) {
+			redirect(ctx, SsoRoutePaths.ERROR + "?error=missing_code");
+			return;
+		}
 
-    public void handleCheckRole(RoutingContext ctx) {
-        String sid = getQueryParam(ctx, "sid");
-        String role = getQueryParam(ctx, "role");
-        if (sid == null) {
-            ctx.response().setStatusCode(401).end("Missing sid");
-            return;
-        }
+		exchangeCode(ctx, code);
+	}
 
-        sessionRepo.getSession(sid, ar -> {
-            if (ar.failed() || ar.result() == null) {
-                ctx.response().setStatusCode(401).end("Invalid sid");
-                return;
-            }
+	public void handleRefreshToken(RoutingContext ctx) {
+		String sid = getQueryParam(ctx, PARAM_SESSION_ID);
+		if (sid == null) {
+			ctx.response().setStatusCode(401).end("Missing sid");
+			return;
+		}
 
-            JsonObject session = new JsonObject(ar.result());
-            String accessToken = session.getJsonObject("token").getString("access_token");
+		sessionRepo.getSession(sid, ar -> {
+			if (ar.failed() || ar.result() == null) {
+				ctx.response().setStatusCode(401).end("Invalid sid");
+				return;
+			}
 
-            if (!hasRole(accessToken, role)) {
-                ctx.response().setStatusCode(403).end("Forbidden");
-                return;
-            }
+			JsonObject session = new JsonObject(ar.result());
+			JsonObject tokenObj = session.getJsonObject(TOKEN);
+			String refresh = tokenObj != null ? tokenObj.getString(REFRESH_TOKEN) : "";
 
-            JsonObject data = new JsonObject()
-                .put("message", "Welcome authorized user")
-                .put("records", new JsonObject().put("id", 123).put("value", "example"));
+			refreshToken(ctx, sid, session, refresh);
+		});
+	}
 
-            sendJson(ctx, data);
-        });
-    }
+	public void handleLogout(RoutingContext ctx) {
+		String sid = getQueryParam(ctx, PARAM_SESSION_ID);
 
-    // -----------------------------------------------------------------------------
-    // Internals
-    // -----------------------------------------------------------------------------
+		if (sid != null) {
+			sessionRepo.deleteSession(sid, r -> {
+			});
+		}
 
-    private void exchangeCode(RoutingContext ctx, String code) {
+		try {
+			String redirectUri = encodeUrl(config.callbackUrl + "?logout=true&t=" + System.currentTimeMillis());
 
-        String tokenUrl = kcEndpoint(config, "/protocol/openid-connect/token");
+			String logoutUrl = String.format(
+					"%s/realms/%s/protocol/openid-connect/logout?client_id=%s&post_logout_redirect_uri=%s", config.url,
+					config.realm, config.clientId, redirectUri);
 
-        MultiMap form = MultiMap.caseInsensitiveMultiMap()
-                .add(PARAM_GRANT_TYPE, GRANT_AUTH_CODE)
-                .add(PARAM_CODE, code)
-                .add(PARAM_REDIRECT_URI, config.callbackUrl)
-                .add(PARAM_CLIENT_ID, config.clientId);
+			redirect(ctx, logoutUrl);
 
-        if (config.clientSecret != null)
-            form.add(PARAM_CLIENT_SECRET, config.clientSecret);
+		} catch (Exception e) {
+			ctx.response().setStatusCode(500).end("logout_failed");
+		}
+	}
 
-        webClient.postAbs(tokenUrl).sendForm(form, ar -> {
-            if (ar.failed() || ar.result().statusCode() != 200) {
-                redirect(ctx, SsoRoutePaths.ERROR + "?error=token_exchange_failed");
-                return;
-            }
+	public void handleCheckRole(RoutingContext ctx) {
+		String sid = getQueryParam(ctx, PARAM_SESSION_ID);
+		String role = getQueryParam(ctx, ROLE);
+		if (sid == null) {
+			ctx.response().setStatusCode(401).end("Missing sid");
+			return;
+		}
 
-            JsonObject tokenJson = ar.result().bodyAsJsonObject();
-            String accessToken = tokenJson.getString("access_token");
+		sessionRepo.getSession(sid, ar -> {
+			if (ar.failed() || ar.result() == null) {
+				ctx.response().setStatusCode(401).end("Invalid sid");
+				return;
+			}
 
-            fetchUserInfo(ctx, accessToken, tokenJson);
-        });
-    }
+			JsonObject session = new JsonObject(ar.result());
+			String accessToken = session.getJsonObject(TOKEN).getString(ACCESS_TOKEN);
 
-    private void fetchUserInfo(RoutingContext ctx, String accessToken, JsonObject tokenJson) {
-        String userinfoUrl = kcEndpoint(config, "/protocol/openid-connect/userinfo");
+			if (!hasRole(accessToken, role)) {
+				ctx.response().setStatusCode(403).end("Forbidden");
+				return;
+			}
 
-        webClient.getAbs(userinfoUrl)
-            .putHeader(HEADER_AUTH, "Bearer " + accessToken)
-            .send(ar -> {
-                if (ar.failed() || ar.result().statusCode() != 200) {
-                    redirect(ctx, SsoRoutePaths.ERROR + "?error=userinfo_failed");
-                    return;
-                }
+			JsonObject data = new JsonObject().put("message", "Welcome authorized user");
 
-                JsonObject userInfo = ar.result().bodyAsJsonObject();
+			sendJson(ctx, data);
+		});
+	}
 
-                sessionRepo.createSession(userInfo, tokenJson, res -> {
-                    if (!res.succeeded()) {
-                        redirect(ctx, SsoRoutePaths.ERROR + "?error=session_create_failed");
-                        return;
-                    }
+	// -----------------------------------------------------------------------------
+	// Internals
+	// -----------------------------------------------------------------------------
 
-                    String sid = res.result();
-                    redirect(ctx, SsoRoutePaths.SESSION + "?sid=" + sid);
-                });
-            });
-    }
+	private void exchangeCode(RoutingContext ctx, String code) {
 
-    private void refreshToken(RoutingContext ctx, String sid, JsonObject session, String refreshToken) {
-        String tokenUrl = kcEndpoint(config, "/protocol/openid-connect/token");
+		String tokenUrl = kcEndpoint(config, URI_OPENID_CONNECT_TOKEN);
 
-        MultiMap form = MultiMap.caseInsensitiveMultiMap()
-                .add(PARAM_GRANT_TYPE, GRANT_REFRESH)
-                .add(PARAM_CLIENT_ID, config.clientId)
-                .add(PARAM_REFRESH_TOKEN, refreshToken);
+		MultiMap form = MultiMap.caseInsensitiveMultiMap().add(PARAM_GRANT_TYPE, GRANT_AUTH_CODE).add(PARAM_CODE, code)
+				.add(PARAM_REDIRECT_URI, config.callbackUrl).add(PARAM_CLIENT_ID, config.clientId);
 
-        if (config.clientSecret != null)
-            form.add(PARAM_CLIENT_SECRET, config.clientSecret);
+		if (config.clientSecret != null)
+			form.add(PARAM_CLIENT_SECRET, config.clientSecret);
 
-        webClient.postAbs(tokenUrl).sendForm(form, ar -> {
-            if (ar.failed()) {
-                ctx.response().setStatusCode(500).end("refresh_failed");
-                return;
-            }
+		webClient.postAbs(tokenUrl).sendForm(form, ar -> {
+			if (ar.failed() || ar.result().statusCode() != 200) {
+				redirect(ctx, SsoRoutePaths.ERROR + "?error=token_exchange_failed");
+				return;
+			}
 
-            JsonObject newTokens = ar.result().bodyAsJsonObject();
-            session.put("token", newTokens);
+			JsonObject tokenJson = ar.result().bodyAsJsonObject();
+			String accessToken = tokenJson.getString(ACCESS_TOKEN);
 
-            sessionRepo.updateSession(sid, session, r -> sendJson(ctx, newTokens));
-        });
-    }
+			fetchUserInfo(ctx, accessToken, tokenJson);
+		});
+	}
+
+	private void fetchUserInfo(RoutingContext ctx, String accessToken, JsonObject tokenJson) {
+		String userinfoUrl = kcEndpoint(config, URI_OPENID_CONNECT_USERINFO);
+
+		webClient.getAbs(userinfoUrl).putHeader(HEADER_AUTH, "Bearer " + accessToken).send(ar -> {
+			if (ar.failed() || ar.result().statusCode() != 200) {
+				redirect(ctx, SsoRoutePaths.ERROR + "?error=userinfo_failed");
+				return;
+			}
+
+			JsonObject userInfo = ar.result().bodyAsJsonObject();
+
+			sessionRepo.createSession(userInfo, tokenJson, res -> {
+				if (!res.succeeded()) {
+					redirect(ctx, SsoRoutePaths.ERROR + "?error=session_create_failed");
+					return;
+				}
+
+				String sid = res.result();
+				redirect(ctx, SsoRoutePaths.SESSION + "?sid=" + sid);
+			});
+		});
+	}
+
+	private void refreshToken(RoutingContext ctx, String sid, JsonObject session, String refreshToken) {
+		String tokenUrl = kcEndpoint(config, URI_OPENID_CONNECT_TOKEN);
+
+		MultiMap form = MultiMap.caseInsensitiveMultiMap().add(PARAM_GRANT_TYPE, GRANT_REFRESH)
+				.add(PARAM_CLIENT_ID, config.clientId).add(PARAM_REFRESH_TOKEN, refreshToken);
+
+		if (config.clientSecret != null)
+			form.add(PARAM_CLIENT_SECRET, config.clientSecret);
+
+		webClient.postAbs(tokenUrl).sendForm(form, ar -> {
+			if (ar.failed()) {
+				ctx.response().setStatusCode(500).end("refresh_failed");
+				return;
+			}
+
+			JsonObject newTokens = ar.result().bodyAsJsonObject();
+			session.put(TOKEN, newTokens);
+
+			sessionRepo.updateSession(sid, session, r -> sendJson(ctx, newTokens));
+		});
+	}
 }

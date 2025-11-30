@@ -48,7 +48,7 @@ public class SessionRepository {
 
 	public void createSession(JsonObject userInfo, JsonObject tokenData, Handler<AsyncResult<String>> resultHandler) {
 		String sessionId = "sid:" + UUID.randomUUID();
-		JsonObject data = new JsonObject().put("user", userInfo).put("token", tokenData).put("timestamp",
+		JsonObject data = new JsonObject().put("user", userInfo).put(AuthKeycloakHandlers.TOKEN, tokenData).put("timestamp",
 				System.currentTimeMillis() / 1000);
 
 		vertx.executeBlocking(future -> {
@@ -111,9 +111,9 @@ public class SessionRepository {
 			try {
 				// Transform and response
 				JsonObject session = new JsonObject(rawSession);
-				String accessToken = session.getJsonObject("token").getString("access_token");
+				String accessToken = session.getJsonObject(AuthKeycloakHandlers.TOKEN).getString(AuthKeycloakHandlers.ACCESS_TOKEN);
 				JsonArray roles = KeycloakUtils.getUserRoles(accessToken);
-				JsonObject userJson = session.getJsonObject("user");
+				JsonObject userJson = session.getJsonObject(AuthKeycloakHandlers.USER);
 				ssoUser = SsoUserProfile.fromJson(userJson, roles);
 			} catch (Exception e) {
 				e.printStackTrace();

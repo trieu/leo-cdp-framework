@@ -16,6 +16,8 @@ import rfx.core.util.RandomUtil;
  */
 public final class IdGenerator {
 	
+	private static final int RAMDOM_LIMIT = 9000000;
+
 	/**
 	 * create friendly ID token from keyHint
 	 * 
@@ -34,7 +36,7 @@ public final class IdGenerator {
 	 * @return dataAccessKey
 	 */
 	public static String generateDataAccessKey(String objectId, String systemUserId) {
-		String keyHint = objectId + System.currentTimeMillis() + "#" + RandomUtil.getRandom(100000);
+		String keyHint = objectId + System.currentTimeMillis() + "#" + RandomUtil.getRandom(RAMDOM_LIMIT);
 		String dataAccessKey = FriendlyId.toFriendlyId(UUID.nameUUIDFromBytes(keyHint.getBytes()));
 		SecuredHttpDataHandler.setDataAccessKeyForSystemUser(dataAccessKey, systemUserId);
 		return dataAccessKey;

@@ -28,6 +28,7 @@ public class SsoUserProfile {
 
 	private Set<String> roles;
 
+
 	public static SsoUserProfile fromJson(JsonObject json, JsonArray rolesObj) {
 		SsoUserProfile u = new SsoUserProfile();
 		u.setSub(json.getString("sub"));
@@ -114,6 +115,7 @@ public class SsoUserProfile {
 	public void setRoles(Set<String> roles) {
 		this.roles = roles;
 	}
+
 
 	@Override
 	public String toString() {

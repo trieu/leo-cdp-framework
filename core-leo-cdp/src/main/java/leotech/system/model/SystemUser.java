@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import com.arangodb.ArangoCollection;
@@ -27,6 +28,7 @@ import leotech.system.util.EncryptorAES;
 import leotech.system.util.PasswordGenerator;
 import leotech.system.util.database.ArangoDbUtil;
 import leotech.system.util.database.PersistentArangoObject;
+import leotech.system.util.keycloak.KeycloakConfig;
 import leotech.system.util.keycloak.SsoUserProfile;
 import rfx.core.util.StringPool;
 import rfx.core.util.StringUtil;
@@ -39,17 +41,29 @@ import rfx.core.util.StringUtil;
  */
 public final class SystemUser implements PersistentArangoObject {
 	
-
+	private static ArangoCollection instance;
+	
 	public static final String SUPER_ADMIN_LOGIN = "superadmin";
 	public static final String SUPER_ADMIN_NAME = "Super Admin";
-	
 	public static final String COLLECTION_NAME = "system_user";
-	static ArangoCollection instance;
-
+	
+	
 	public static final int STATUS_PENDING = 0;
 	public static final int STATUS_ACTIVE = 1;
 	public static final int STATUS_DISABLED = 2;
 	public static final int STATUS_EXPIRED = 3;
+	
+	private static final String SSO_PREFIX = "sso_";
+    private static final int PASSWORD_LEN = 16;
+
+    // Map SSO role → Internal SystemUserRole 
+    private static final Map<String, Integer> ROLE_MAPPING = Map.of(
+        "LEOCDP_SUPER_SYSTEM_ADMIN", SystemUserRole.SUPER_SYSTEM_ADMIN,
+        "LEOCDP_DATA_ADMIN", SystemUserRole.DATA_ADMIN,
+        "LEOCDP_DATA_OPERATOR", SystemUserRole.DATA_OPERATOR,
+        "LEOCDP_CUSTOMER_DATA_EDITOR", SystemUserRole.CUSTOMER_DATA_EDITOR,
+        "LEOCDP_REPORT_VIEWER", SystemUserRole.REPORT_VIEWER
+    );
 
 	@Key
 	private String key;
@@ -102,6 +116,8 @@ public final class SystemUser implements PersistentArangoObject {
 	// key to activate the login account and set new password
 	private String activationKey;
 	
+	private String ssoSource = "";
+	
 	@Expose
 	private List<Notification> notifications = new ArrayList<>();
 	
@@ -127,19 +143,12 @@ public final class SystemUser implements PersistentArangoObject {
 		setRole(SystemUserRole.DATA_ADMIN);
 	}
 
-	/**
-	 * this is root user account for development only
-	 * 
-	 * @return Root user
-	 */
-	public static final SystemUser createTestUser() {
-		SystemUser user = new SystemUser("tester", "", "tester", "", 666);
-		user.setActivationKey("");
-		user.setStatus(STATUS_ACTIVE);
-		user.setRole(SystemUserRole.STANDARD_USER);
-		return user;
-	}
 
+    /**
+     * constructor for local update
+     * 
+     * @param ssoUser
+     */
 	public SystemUser(String userLogin, String userPass, String displayName, String userEmail, long networkId) {
 		super();
 		this.userLogin = userLogin;
@@ -149,28 +158,37 @@ public final class SystemUser implements PersistentArangoObject {
 		this.networkId = networkId;
 	}
 	
-	public SystemUser(SsoUserProfile ssoUser) {
-		super();
-		this.userEmail = ssoUser.getEmail();
-		String username = ProfileDataValidator.extractUsernameFromEmail(ssoUser.getEmail());
-		this.userLogin = "sso_"+userEmail.replace("@", "_"); 
-		this.userPass = EncryptorAES.passwordHash(userLogin, PasswordGenerator.generate(16));
-		this.displayName = ssoUser.getName().length() > 1 ? ssoUser.getName() : username;
-		this.networkId = AppMetadata.DEFAULT_ID;
-		this.status = STATUS_ACTIVE;
-	
-		Set<String> ssoUserRoles = ssoUser.getRoles();
-		if(ssoUserRoles.isEmpty()) {
-			this.setRole(SystemUserRole.STANDARD_USER);
-		}
-		else {
-			ssoUserRoles.forEach(role->{
-				if(role.equals("CDP_" + SystemUserRole.DATA_ADMIN)) {
-					
-				}
-			});
-		}
-	}
+    /**
+     * constructor for SSO login
+     * 
+     * @param ssoUser
+     */
+    public SystemUser(SsoUserProfile ssoUser, KeycloakConfig config) {
+    	this.status = STATUS_ACTIVE;
+        this.userEmail = ssoUser.getEmail();
+
+        String username = ProfileDataValidator.extractUsernameFromEmail(userEmail);
+        this.userLogin = SSO_PREFIX + userEmail.replace("@", "_");
+        this.displayName = ssoUser.getName().length() > 1 ? ssoUser.getName() : username;
+        
+        // SSO source
+        this.networkId = config.getHashedId();
+        this.ssoSource = config.ssoSource();
+
+        // set Authorization
+        Set<String> ssoUserRoles = ssoUser.getRoles();
+        // Pick the first matching role from stream, fallback to DATA_OPERATOR
+        int finalRole =
+            ssoUserRoles.stream()
+                .map(ROLE_MAPPING::get)
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(SystemUserRole.DATA_OPERATOR);
+        this.setRole(finalRole);
+        
+        // set random pass
+        this.userPass = EncryptorAES.passwordHash(userLogin, PasswordGenerator.generate(PASSWORD_LEN));
+    }
 
 	@Override
 	public ArangoCollection getDbCollection() {
@@ -319,6 +337,15 @@ public final class SystemUser implements PersistentArangoObject {
 		return isOnline;
 	}
 	
+	
+	public String getSsoSource() {
+		return ssoSource;
+	}
+
+	public void setSsoSource(String ssoSource) {
+		this.ssoSource = ssoSource;
+	}
+
 	public boolean hasAdminRole() {
 		return this.role == SystemUserRole.SUPER_SYSTEM_ADMIN || this.role == SystemUserRole.DATA_ADMIN;
 	}

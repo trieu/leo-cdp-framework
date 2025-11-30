@@ -27,7 +27,9 @@ import leotech.system.util.CaptchaUtil.CaptchaData;
 import leotech.system.util.EncryptorAES;
 import leotech.system.util.IdGenerator;
 import leotech.system.util.LogUtil;
+import leotech.system.util.keycloak.KeycloakConfig;
 import leotech.system.util.keycloak.KeycloakConstants;
+import leotech.system.util.keycloak.KeycloakUtils;
 import leotech.system.util.keycloak.SessionRepository;
 import leotech.system.util.keycloak.SsoUserProfile;
 import leotech.system.version.SystemMetaData;
@@ -445,10 +447,9 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 		}
 		else if( uri.equalsIgnoreCase(API_CHECK_SSO)) {
 			String userEmail = paramJson.getString(SSO_USER_EMAIL, "").trim();			
-			Cookie ssosidCookie = cookieMap.get(KeycloakConstants.COOKIE_SSO_SESSION_ID);
-			String ssosid = ssosidCookie != null ? ssosidCookie.getValue() : "";
 			
 			if(ProfileDataValidator.isValidEmail(userEmail)) {
+				String ssosid = KeycloakUtils.getValueOfCookie(cookieMap, KeycloakConstants.COOKIE_SSO_SESSION_ID);
 				JsonDataPayload checkLoginResult = buildSessionSSO(uri, userEmail, userSession, ssosid);
 				logger.info("userEmail " + userEmail + " ssosid " + ssosid + " userSession " + userSession);
 				return checkLoginResult;
@@ -546,14 +547,14 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 				String userLogin = SystemUserDaoUtil.getUserLoginByEmail(userEmail);
 				String finalUserLogin = userLogin;
 				if (StringUtil.isEmpty(userLogin)) {
-					// no SystemUser for email from KeyCloak SSO				
-					SystemUser user = new SystemUser(ssoUser);
+					// no SystemUser for email from KeyCloak SSO
+					KeycloakConfig config = KeycloakConfig.getInstance();
+					SystemUser user = new SystemUser(ssoUser,config);
 					finalUserLogin = SystemUserManagement.saveAndGetUserLogin(user);
 				} 
 				
 				String encryptionKey = FriendlyId.createFriendlyId();
-				// valid token in 7 days
-				saveUserSessionSSO(finalUserLogin, userSession, encryptionKey);
+				saveUserSessionSSO(finalUserLogin, userSession, encryptionKey, AFTER_60_MINUTES);
 				return JsonDataPayload.ok(uri, encryptionKey);
 			}			
 		}
@@ -619,8 +620,9 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 	 * @param userLogin
 	 * @param usersession
 	 * @param encryptionKey
+	 * @param expiredTime
 	 */
-	private static void saveUserSessionSSO(String userLogin, String usersession, String encryptionKey) {
+	private static void saveUserSessionSSO(String userLogin, String usersession, String encryptionKey, long expiredTime) {
 		try {
 			new RedisCommand<Void>(redisLocalCache) {
 				@Override
@@ -628,7 +630,7 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 					Pipeline p = jedis.pipelined();
 					p.hset(usersession, REDIS_KEY_ENCKEY, encryptionKey);
 					p.hset(usersession, REDIS_KEY_USERLOGIN, userLogin);
-					p.expire(usersession, AFTER_60_MINUTES);
+					p.expire(usersession, expiredTime);
 					p.sync();
 					return null;
 				}

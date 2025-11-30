@@ -9,7 +9,6 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
-import io.vertx.ext.web.handler.BodyHandler;
 import redis.clients.jedis.JedisPool;
 import rfx.core.nosql.jedis.RedisClientFactory;
 
@@ -114,7 +113,7 @@ public class KeycloakClientRouter {
 	
 	public static Router startKeyCloakRouter(Vertx vertxInstance , Router router) {
 		// Load config
-		KeycloakConfig config = new KeycloakConfig();
+		KeycloakConfig config = KeycloakConfig.getInstance();
 		logger.info("KEYCLOAK Settings -> URL: [{}], ClientId: [{}], Callback: [{}]", config.url, config.clientId,config.callbackUrl);
 
 		// WebClient
