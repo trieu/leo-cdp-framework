@@ -12,7 +12,6 @@ import leotech.system.exception.InvalidDataException;
 import leotech.system.model.AppMetadata;
 import leotech.system.model.Notification;
 import leotech.system.model.SystemUser;
-import leotech.system.model.SystemUserRole;
 import leotech.system.util.HttpWebParamUtil;
 import rfx.core.util.StringUtil;
 
@@ -46,7 +45,7 @@ public final class SystemUserManagement {
 	 * @return
 	 */
 	public static List<SystemUser> listAllUsers(boolean forManagement) {
-		return SystemUserDaoUtil.listAllUsersInNetwork(forManagement, AppMetadata.DEFAULT_ID);
+		return SystemUserDaoUtil.listAllUsers(forManagement);
 	}
 
 	/**

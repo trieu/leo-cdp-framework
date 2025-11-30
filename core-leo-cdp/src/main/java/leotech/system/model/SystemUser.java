@@ -166,9 +166,9 @@ public final class SystemUser implements PersistentArangoObject {
     public SystemUser(SsoUserProfile ssoUser, KeycloakConfig config) {
     	this.status = STATUS_ACTIVE;
         this.userEmail = ssoUser.getEmail();
-
+        this.userLogin = SSO_PREFIX + userEmail;
+        
         String username = ProfileDataValidator.extractUsernameFromEmail(userEmail);
-        this.userLogin = SSO_PREFIX + userEmail.replace("@", "_");
         this.displayName = ssoUser.getName().length() > 1 ? ssoUser.getName() : username;
         
         // SSO source

@@ -76,8 +76,8 @@ public class TestUserDataUtil {
 
 	@Test
 	@Order(4)
-	public void getAllUsersInNetwork() {
-		List<SystemUser> users = SystemUserDaoUtil.listAllUsersInNetwork(true, AppMetadata.DEFAULT_ID);
+	public void getAllUsers() {
+		List<SystemUser> users = SystemUserDaoUtil.listAllUsers(true);
 		assertTrue(users.size() >= 10);
 		for (SystemUser user : users) {
 			System.out.println("listAllUsersInNetwork.user " + user.getUserLogin());

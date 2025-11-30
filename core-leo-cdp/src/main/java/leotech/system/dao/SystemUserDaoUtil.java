@@ -36,11 +36,23 @@ public final class SystemUserDaoUtil extends AbstractCdpDatabaseUtil {
 	static final String AQL_GET_USER_BY_USERLOGIN = AqlTemplate.get("AQL_GET_USER_BY_USERLOGIN");
 	static final String AQL_GET_USER_BY_KEY = AqlTemplate.get("AQL_GET_USER_BY_KEY");
 	static final String AQL_GET_USERLOGIN_BY_EMAIL = AqlTemplate.get("AQL_GET_USERLOGIN_BY_EMAIL");
-	static final String AQL_GET_ALL_USERS_IN_NETWORK = AqlTemplate.get("AQL_GET_ALL_USERS_IN_NETWORK");
+	static final String AQL_GET_ALL_SYSTEM_USERS = AqlTemplate.get("AQL_GET_ALL_SYSTEM_USERS");
 	
 	public static int countTotalActiveUsers() {
 		ArangoDatabase db = getCdpDatabase();
 		return new ArangoDbCommand<>(db, AQL_COUNT_TOTAL_ACTIVE_USERS, Integer.class).getSingleResult();
+	}
+	
+	/**
+	 * @param forManagement
+	 * @return List<SystemUser>
+	 */
+	public static List<SystemUser> listAllUsers(boolean forManagement) {
+		ArangoDatabase db = ArangoDbUtil.getCdpDatabase();
+		Map<String, Object> bindVars = new HashMap<>(1);
+		bindVars.put("forManagement", forManagement);
+		List<SystemUser> users = new ArangoDbCommand<>(db, AQL_GET_ALL_SYSTEM_USERS, bindVars, SystemUser.class).getResultsAsList();
+		return users;
 	}
 
 	/**
@@ -255,19 +267,7 @@ public final class SystemUserDaoUtil extends AbstractCdpDatabaseUtil {
 	}
 
 
-	/**
-	 * @param forManagement
-	 * @param networkId
-	 * @return List<SystemUser>
-	 */
-	public static List<SystemUser> listAllUsersInNetwork(boolean forManagement, long networkId) {
-		ArangoDatabase db = ArangoDbUtil.getCdpDatabase();
-		Map<String, Object> bindVars = new HashMap<>(2);
-		bindVars.put("networkId", networkId);
-		bindVars.put("forManagement", forManagement);
-		List<SystemUser> users = new ArangoDbCommand<>(db, AQL_GET_ALL_USERS_IN_NETWORK, bindVars, SystemUser.class).getResultsAsList();
-		return users;
-	}
+
 
 	/**
 	 * @param userLogin
