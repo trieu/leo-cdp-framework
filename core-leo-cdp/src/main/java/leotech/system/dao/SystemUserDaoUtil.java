@@ -34,7 +34,11 @@ public final class SystemUserDaoUtil extends AbstractCdpDatabaseUtil {
 	static final String AQL_COUNT_TOTAL_ACTIVE_USERS = "RETURN LENGTH(FOR s in " + SystemUser.COLLECTION_NAME+" FILTER s.status == 1 RETURN s._key)";
 	static final String AQL_FIND_KEY_BY_USERLOGIN = AqlTemplate.get("AQL_FIND_KEY_BY_USERLOGIN");
 	static final String AQL_GET_USER_BY_USERLOGIN = AqlTemplate.get("AQL_GET_USER_BY_USERLOGIN");
+	
 	static final String AQL_GET_USER_BY_KEY = AqlTemplate.get("AQL_GET_USER_BY_KEY");
+	static final String AQL_GET_USER_BY_EMAIL = AqlTemplate.get("AQL_GET_USER_BY_EMAIL");
+	
+	
 	static final String AQL_GET_USERLOGIN_BY_EMAIL = AqlTemplate.get("AQL_GET_USERLOGIN_BY_EMAIL");
 	static final String AQL_GET_ALL_SYSTEM_USERS = AqlTemplate.get("AQL_GET_ALL_SYSTEM_USERS");
 	
@@ -236,15 +240,12 @@ public final class SystemUserDaoUtil extends AbstractCdpDatabaseUtil {
 		Map<String, Object> bindVars = new HashMap<>(1);
 		bindVars.put("userLogin", userLogin);
 		SystemUser user = new ArangoDbCommand<>(db, AQL_GET_USER_BY_USERLOGIN, bindVars, SystemUser.class).getSingleResult();
-		
-		// TODO load authorized data to access
-		
 		return user;
 	}
 	
 	/**
 	 * @param email
-	 * @return
+	 * @return userLogin
 	 */
 	public static String getUserLoginByEmail(String email) {
 		ArangoDatabase db = ArangoDbUtil.getCdpDatabase();
@@ -254,6 +255,18 @@ public final class SystemUserDaoUtil extends AbstractCdpDatabaseUtil {
 		return userLogin;
 	}
 
+	/**
+	 * @param email
+	 * @return  SystemUser
+	 */
+	public static SystemUser getSystemUserByEmail(String email) {
+		ArangoDatabase db = ArangoDbUtil.getCdpDatabase();
+		Map<String, Object> bindVars = new HashMap<>(1);
+		bindVars.put("email", email);
+		SystemUser user = new ArangoDbCommand<>(db, AQL_GET_USER_BY_EMAIL, bindVars, SystemUser.class).getSingleResult();
+		return user;
+	}
+	
 	/**
 	 * @param key
 	 * @return

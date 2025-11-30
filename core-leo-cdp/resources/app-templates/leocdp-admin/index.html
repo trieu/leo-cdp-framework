@@ -38,7 +38,8 @@
 		var defaultPersonalizationService = "{{defaultPersonalizationService}}";
 		var defaultRecommendedItemForProfile = parseInt('{{maxTotalRecommendedItems}}');
 		
-		var ssoLogin = "{{ssoLogin}}" === "true";
+		var showDefaultLogin = "{{showDefaultLogin}}" === "true";
+		var ssoLogin = "{{ssoLogin}}" === "true" && location.search.indexOf('sso-login=true') < 0 ;
 		var ssoSessionUrl = "{{ssoSessionUrl}}";
 		var ssoLogoutUrl = "{{ssoLogoutUrl}}";
 	</script>

@@ -53,7 +53,7 @@ public final class SystemUser implements PersistentArangoObject {
 	public static final int STATUS_DISABLED = 2;
 	public static final int STATUS_EXPIRED = 3;
 	
-	private static final String SSO_PREFIX = "sso_";
+	public static final String SSO_PREFIX = "sso_";
     private static final int PASSWORD_LEN = 16;
 
     // Map SSO role → Internal SystemUserRole 

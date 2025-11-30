@@ -93,6 +93,10 @@ const loadLoginSessionSSO = function() {
 	var ssoGetSessionUrl = ssoSessionUrl + '?_t=' + new Date().getTime();
     $('#sso_login_url').attr('href', ssoGetSessionUrl);
 
+	if(showDefaultLogin) {
+		$('#default_login_url').show()
+	}
+
 	var urlStr = baseLeoAdminUrl + '/user/login-session';
 	
     LeoAdminApiUtil.callPostApi(urlStr, {'sso':true}, function (json) {
@@ -125,7 +129,7 @@ const loadCheckSSO = function(ssoUserEmail, ssoUserSession, session) {
 	if(ssoUserEmail.length > 0 && ssoUserSession.length > 0) {
 		$('#email').val(ssoUserEmail);
 		$('#email_panel').show();
-		$('#sso_login_url').hide();
+		$('#sso_login_url, #default_login_url').hide();
 		
 		var urlStr = baseLeoAdminUrl + '/user/check-sso';
         

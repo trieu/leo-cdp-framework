@@ -191,6 +191,8 @@ public final class SystemMetaData {
 	
 	public static final Set<String> INDUSTRY_DATA_MODELS = new HashSet<String>(10);
 
+	
+	public static final boolean SHOW_DEFAULT_LOGIN = metaDataMap.getOrDefault("showDefaultLogin","false").trim().equalsIgnoreCase("true");
 	public static final boolean SSO_LOGIN = metaDataMap.getOrDefault("ssoLogin","false").trim().equalsIgnoreCase("true");
 	public static final String SSO_LOGIN_URL = metaDataMap.getOrDefault("ssoLoginUrl","").trim();
 	

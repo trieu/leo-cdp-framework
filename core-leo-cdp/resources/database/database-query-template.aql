@@ -881,7 +881,7 @@ AQL_GET_ALL_CATEGORIES_BY_NETWORK =>
 
 AQL_FIND_KEY_BY_USERLOGIN => 
 	FOR u in system_user 
-	FILTER u.userLogin == @userLogin  
+	FILTER u.userLogin == @userLogin  AND u.status == 1 
 	RETURN u._key
 ;
 
@@ -912,13 +912,19 @@ AQL_GET_USER_BY_USERLOGIN =>
 
 AQL_GET_USERLOGIN_BY_EMAIL => 
 	FOR u in system_user 
-	FILTER u.userEmail == @email  
+	FILTER u.userEmail == @email AND u.status == 1 
 	RETURN u.userLogin
 ;
 
 AQL_GET_USER_BY_KEY => 
 	FOR u in system_user 
 	FILTER u._key == @key  
+	RETURN u
+;
+
+AQL_GET_USER_BY_EMAIL => 
+	FOR u in system_user 
+	FILTER u.userEmail == @email AND u.status == 1 
 	RETURN u
 ;
 

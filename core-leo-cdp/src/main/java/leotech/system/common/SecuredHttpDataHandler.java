@@ -19,7 +19,6 @@ import leotech.cdp.utils.ProfileDataValidator;
 import leotech.starter.router.NotifyUserHandler;
 import leotech.system.dao.SystemUserDaoUtil;
 import leotech.system.domain.SystemEventManagement;
-import leotech.system.domain.SystemUserManagement;
 import leotech.system.model.JsonDataPayload;
 import leotech.system.model.SystemUser;
 import leotech.system.util.CaptchaUtil;
@@ -27,7 +26,6 @@ import leotech.system.util.CaptchaUtil.CaptchaData;
 import leotech.system.util.EncryptorAES;
 import leotech.system.util.IdGenerator;
 import leotech.system.util.LogUtil;
-import leotech.system.util.keycloak.KeycloakConfig;
 import leotech.system.util.keycloak.KeycloakConstants;
 import leotech.system.util.keycloak.KeycloakUtils;
 import leotech.system.util.keycloak.SessionRepository;
@@ -447,11 +445,16 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 		}
 		else if( uri.equalsIgnoreCase(API_CHECK_SSO)) {
 			String userEmail = paramJson.getString(SSO_USER_EMAIL, "").trim();			
-			
 			if(ProfileDataValidator.isValidEmail(userEmail)) {
-				String ssosid = KeycloakUtils.getValueOfCookie(cookieMap, KeycloakConstants.COOKIE_SSO_SESSION_ID);
-				JsonDataPayload checkLoginResult = buildSessionSSO(uri, userEmail, userSession, ssosid);
-				logger.info("userEmail " + userEmail + " ssosid " + ssosid + " userSession " + userSession);
+				JsonDataPayload checkLoginResult = JsonErrorPayload.INVALID_SSO_USER_SESSION;
+				try {
+					String ssosid = KeycloakUtils.getValueOfCookie(cookieMap, KeycloakConstants.COOKIE_SSO_SESSION_ID);
+					String sessionKey = SessionRepository.getSessionKeyFromSSO(uri, userEmail, userSession, ssosid);
+					checkLoginResult = JsonDataPayload.ok(uri, sessionKey);
+					logger.info("userEmail " + userEmail + " ssosid " + ssosid + " userSession " + userSession);
+				} catch (Exception e) {
+					logger.error("userEmail " + userEmail + " " + e.getMessage());
+				}
 				return checkLoginResult;
 			}
 			else {
@@ -532,34 +535,7 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 		return JsonErrorPayload.INVALID_CAPCHA_NUMBER;
 	}
 	
-	/**
-	 * @param uri
-	 * @param userEmail
-	 * @param userSession
-	 * @param ssoSessionId
-	 * @return
-	 */
-	private static JsonDataPayload buildSessionSSO(String uri, String userEmail, String userSession, String ssoSessionId) {
-		SsoUserProfile ssoUser = SessionRepository.getSsoUserProfileFromRedis(ssoSessionId);
-		if (ssoUser != null) {
-			boolean isSameEmail = ssoUser.getEmail().equals(userEmail);
-			if(isSameEmail) {
-				String userLogin = SystemUserDaoUtil.getUserLoginByEmail(userEmail);
-				String finalUserLogin = userLogin;
-				if (StringUtil.isEmpty(userLogin)) {
-					// no SystemUser for email from KeyCloak SSO
-					KeycloakConfig config = KeycloakConfig.getInstance();
-					SystemUser user = new SystemUser(ssoUser,config);
-					finalUserLogin = SystemUserManagement.saveAndGetUserLogin(user);
-				} 
-				
-				String encryptionKey = FriendlyId.createFriendlyId();
-				saveUserSessionSSO(finalUserLogin, userSession, encryptionKey, AFTER_60_MINUTES);
-				return JsonDataPayload.ok(uri, encryptionKey);
-			}			
-		}
-		return JsonErrorPayload.INVALID_SSO_USER_SESSION;
-	}
+
 
 	/**
 	 * @param segmentId
@@ -614,31 +590,7 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 		}
 	}
 	
-	/**
-	 * for SSO Session from Keycloak
-	 * 
-	 * @param userLogin
-	 * @param usersession
-	 * @param encryptionKey
-	 * @param expiredTime
-	 */
-	private static void saveUserSessionSSO(String userLogin, String usersession, String encryptionKey, long expiredTime) {
-		try {
-			new RedisCommand<Void>(redisLocalCache) {
-				@Override
-				protected Void build(Jedis jedis) throws JedisException {
-					Pipeline p = jedis.pipelined();
-					p.hset(usersession, REDIS_KEY_ENCKEY, encryptionKey);
-					p.hset(usersession, REDIS_KEY_USERLOGIN, userLogin);
-					p.expire(usersession, expiredTime);
-					p.sync();
-					return null;
-				}
-			}.executeAsync();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+
 	
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////

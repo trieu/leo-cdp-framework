@@ -78,6 +78,8 @@ public class WebData extends DefaultModel {
 	protected String defaultPersonalizationService = SystemMetaData.DEFAULT_PERSONALIZATION_SERVICE;
 	protected int maxTotalRecommendedItems = SystemMetaData.MAX_TOTAL_RECOMMENDED_ITEMS;
 
+	
+	protected boolean showDefaultLogin ;
 	protected boolean ssoLogin ;
 	protected String ssoSessionUrl ;
 	protected String ssoLogoutUrl;
@@ -397,6 +399,16 @@ public class WebData extends DefaultModel {
 		this.dataApiCache = dataApiCache;
 	}
 
+	
+	
+	public boolean isShowDefaultLogin() {
+		return showDefaultLogin;
+	}
+
+	public void setShowDefaultLogin(boolean showDefaultLogin) {
+		this.showDefaultLogin = showDefaultLogin;
+	}
+
 	public boolean isSsoLogin() {
 		return ssoLogin;
 	}
@@ -481,6 +493,7 @@ public class WebData extends DefaultModel {
 
 		this.pageHeaderLogo = SystemMetaData.ADMIN_LOGO_URL;
 		
+		this.showDefaultLogin = SystemMetaData.SHOW_DEFAULT_LOGIN;
 		this.ssoLogin = SystemMetaData.SSO_LOGIN;
 		this.ssoSessionUrl = "https://" + dnsDomainLeoAdmin + "/_ssocdp/session";
 		this.ssoLogoutUrl = "https://" + dnsDomainLeoAdmin + "/_ssocdp/logout";

@@ -1,41 +1,55 @@
-
 <style>
     .login-card {
-        background: #ffffff;
+        background: #fff;
         padding: 30px;
         border-radius: 6px;
         box-shadow: 0 3px 12px rgba(0,0,0,0.15);
         margin-top: 60px;
     }
+
     #login_logo {
-        max-width: 260px;
-        max-height: 120px;
-        margin-bottom: 15px;
+        max-width: 450px;
+        max-height: 200px;
+        margin: 20px auto;
+        display: none;
     }
+
+
     .loader {
-        border: 6px solid #f3f3f3;
+        border: 6px solid #e9e9e9;
         border-top: 6px solid #3498db;
         border-radius: 50%;
-        width: 38px;
-        height: 38px;
-        animation: spin 1s linear infinite;
+        width: 42px;
+        height: 42px;
+        animation: spin 0.9s linear infinite;
         margin: 25px auto;
-        display: block;
+        display: none;
     }
+
     @keyframes spin {
         100% { transform: rotate(360deg); }
     }
+
+    .login-title {
+        margin-top: 10px;
+        margin-bottom: 20px;
+    }
+
+    .alert {
+        font-size: 16px;
+        margin-top: 20px;
+        display: none;
+    }
 </style>
 
-<div class="container-fluid">
+<div class="container">
     <div class="row">
-        <div class="col-lg-3 col-md-3 col-sm-2"></div>
+        <div class="col-sm-8 col-sm-offset-2 col-md-6 col-md-offset-3">
 
-        <div class="col-lg-6 col-md-6 col-sm-8">
             <div class="login-card text-center">
 
                 <!-- Logo -->
-                <img id="login_logo" src="" alt="LEO CDP" class="img-responsive center-block" style="display:none;">
+                <img id="login_logo" src="" alt="LEO CDP" class="img-responsive center-block">
 
                 <!-- Loader -->
                 <div id="system_user_login_loader" class="loader"></div>
@@ -43,36 +57,43 @@
                 <!-- Login Content -->
                 <div id="system_user_login_div" style="display:none;">
 
-                    <h3 class="text-primary">LEO CDP Admin – SSO Login</h3>
+                    <h1 class="text-primary login-title">System User Login</h1>
                     <hr>
 
-                    <div class="form-group text-left" id="email_panel" style="display: none;">
+                    <div class="form-group text-left" id="email_panel" style="display:none;">
                         <label for="email">SSO Login Email</label>
                         <input type="email"
                                class="form-control input-lg"
                                name="email"
                                id="email"
-                               readonly="readonly">
+                               readonly>
                     </div>
 
-                    <!-- SSO Login Button -->
-                    <a href="" id="sso_login_url" class="btn btn-primary btn-lg btn-block">
-                        Login with SSO
+                    <a href="" id="sso_login_url" class="btn btn-success btn-lg btn-block">
+                        <i class="fa fa-key" aria-hidden="true"></i> Login with SSO
+                    </a>
+
+                    <hr>
+
+                    <a href="/?sso-login=true" id="default_login_url" class="btn btn-info btn-lg btn-block" style="display:none;">
+                        <i class="fa fa-user" aria-hidden="true"></i> Login with default account
                     </a>
 
                 </div>
 
                 <!-- Alerts -->
-                <div id="info-login" class="alert alert-success" style="display:none; font-size:18px; margin-top:20px;"></div>
-                <div id="error-login" class="alert alert-danger" style="display:none; font-size:16px; margin-top:20px;"></div>
+                <div id="info-login" class="alert alert-success"></div>
+                <div id="error-login" class="alert alert-danger"></div>
 
             </div>
-        </div>
 
-        <div class="col-lg-3 col-md-3 col-sm-2"></div>
+        </div>
     </div>
 </div>
 
 <script>
-    initSystemUserLogin(true);
+    $(function () {
+        // Ensures jQuery 3-ready DOM safety
+        initSystemUserLogin(true);
+    });
 </script>

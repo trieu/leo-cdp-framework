@@ -65,10 +65,17 @@ public final class SystemUserManagement {
 		return null;
 	}
 
-	public final static String saveAndGetUserLogin(SystemUser user) {
+	public final static String createNewSystemUser(SystemUser user) {
 		SystemUserDaoUtil.createNewSystemUser(user);
 		return user.getUserLogin();
 	}
+	
+	public final static String updateSystemUser(SystemUser user) {
+		SystemUserDaoUtil.updateSystemUser(user);
+		return user.getUserLogin();
+	}
+	
+	
 
 	/**
 	 * @param loginUser

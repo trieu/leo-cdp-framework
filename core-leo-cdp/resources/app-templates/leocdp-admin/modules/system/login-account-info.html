@@ -55,6 +55,12 @@
 	                    <input data-validation="email" type="email" class="form-control" placeholder="Enter Email" name="userEmail"
 	                        autocorrect="off" autocapitalize="off" autocomplete="off">
 	                </div>
+	                
+	                <div class="form-group">
+	                    <label> SSO Source </label>
+	                    <input type="text" class="form-control" placeholder="SSO Source" name="ssoSource"
+	                        autocorrect="off" autocapitalize="off" autocomplete="off" readonly="readonly">
+	                </div>
 	                <div class="form-group">
 	                    <label> Password </label>
 	                    <input type="text" class="form-control" placeholder="Enter new password to update" name="userPass" autocorrect="off"
@@ -193,6 +199,8 @@
                      
                      node.find('input[name="displayName"]').val(userLoginModel.displayName);
                      node.find('input[name="userEmail"]').val(userLoginModel.userEmail);
+                     node.find('input[name="ssoSource"]').val(userLoginModel.ssoSource);
+                     
                                           
                      //customData
                      var position = userLoginModel.customData.position ? userLoginModel.customData.position : '';
