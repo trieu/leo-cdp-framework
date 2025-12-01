@@ -28,7 +28,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.client.WebClient;
-import leotech.system.util.keycloak.KeycloakClientRouter.SsoRoutePaths;
+import leotech.system.util.keycloak.KeycloakClientSsoRouter.SsoRoutePaths;
 import rfx.core.util.StringUtil;
 
 /**

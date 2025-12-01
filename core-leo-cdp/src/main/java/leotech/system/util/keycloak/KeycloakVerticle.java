@@ -56,7 +56,7 @@ public class KeycloakVerticle extends AbstractVerticle {
 			Router router = Router.router(vertx);
 			router.route().handler(BodyHandler.create());
 
-			Router finalRouter = KeycloakClientRouter.startKeyCloakRouter(vertx, router);
+			Router finalRouter = KeycloakClientSsoRouter.startKeyCloakRouter(vertx, router);
 			startHttpServer(finalRouter, startPromise);
 		} catch (Exception e) {
 			logger.error("❌ Failed to start KeycloakVerticle", e);

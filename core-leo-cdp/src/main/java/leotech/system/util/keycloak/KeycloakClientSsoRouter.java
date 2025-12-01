@@ -19,15 +19,15 @@ import rfx.core.nosql.jedis.RedisClientFactory;
  * @author Trieu Nguyen
  * @since 2025
  */
-public class KeycloakClientRouter {
+public class KeycloakClientSsoRouter {
 
-	private static final Logger logger = LoggerFactory.getLogger(KeycloakClientRouter.class);
+	private static final Logger logger = LoggerFactory.getLogger(KeycloakClientSsoRouter.class);
 
 	private static final JedisPool jedisPool = RedisClientFactory.buildRedisPool("clusterInfoRedis");
 	private final KeycloakConfig config;
 	private final AuthKeycloakHandlers handlers;
 
-	public KeycloakClientRouter( KeycloakConfig config, AuthKeycloakHandlers handlers) {
+	public KeycloakClientSsoRouter( KeycloakConfig config, AuthKeycloakHandlers handlers) {
 		this.config = config;
 		this.handlers = handlers;
 	}
@@ -112,7 +112,7 @@ public class KeycloakClientRouter {
 	
 	
 	public static Router startKeyCloakRouter(Vertx vertxInstance , Router router) {
-		// Load config
+		// Load config from database
 		KeycloakConfig config = KeycloakConfig.getInstance();
 		logger.info("KEYCLOAK Settings -> URL: [{}], ClientId: [{}], Callback: [{}]", config.getUrl(), config.getClientId(),config.getCallbackUrl());
 
@@ -126,7 +126,7 @@ public class KeycloakClientRouter {
 		AuthKeycloakHandlers handlers = new AuthKeycloakHandlers(config, sessionRepo, webClient);
 
 		// Router factory builds Router
-		KeycloakClientRouter routerFactory = new KeycloakClientRouter(config, handlers);
+		KeycloakClientSsoRouter routerFactory = new KeycloakClientSsoRouter(config, handlers);
 		routerFactory.configureRouter(router);
 		return router;
 	}

@@ -24,7 +24,7 @@ import leotech.system.config.HttpRoutingConfigs;
 import leotech.system.domain.WebSocketDataService;
 import leotech.system.util.LogUtil;
 import leotech.system.util.database.ArangoDbUtil;
-import leotech.system.util.keycloak.KeycloakClientRouter;
+import leotech.system.util.keycloak.KeycloakClientSsoRouter;
 import leotech.system.version.SystemMetaData;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -128,10 +128,8 @@ public final class HttpWorker extends BaseWorker {
 			initEventBusHandler(router);
 		}
 		
-		// SSO
-		if (SystemMetaData.SSO_LOGIN) {
-			 KeycloakClientRouter.startKeyCloakRouter(vertxInstance, router);
-		}
+		// SSO router
+		KeycloakClientSsoRouter.startKeyCloakRouter(vertxInstance, router);
 		
 		// 
 		String className = httpRoutingConfigs.getClassNameHttpRouter();
