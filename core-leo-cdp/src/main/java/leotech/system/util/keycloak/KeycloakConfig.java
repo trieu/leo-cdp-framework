@@ -21,8 +21,11 @@ public final class KeycloakConfig {
 
 	private static final Logger logger = LoggerFactory.getLogger(KeycloakConfig.class);
 
+	
+	private boolean validated = false;
 	private boolean enabled = false;
 	private boolean verifySSL = false;
+	
 	private String url = "";
 	private String realm = "";
 	private String clientId = "";
@@ -99,12 +102,23 @@ public final class KeycloakConfig {
 	private void validate() {
 		if (StringUtil.isEmpty(url) || StringUtil.isEmpty(realm) || StringUtil.isEmpty(clientId)
 				|| StringUtil.isEmpty(callbackUrl)) {
-
+			this.validated = false;
 			throw new RuntimeException("Missing required Keycloak environment variables.");
+		}
+		else {
+			this.validated = true;
 		}
 	}
 
 	///////
+	
+	public boolean isReady() {
+		return validated && enabled ;
+	}
+	
+	public boolean isValidated() {
+		return validated;
+	}
 
 	public boolean isEnabled() {
 		return enabled;

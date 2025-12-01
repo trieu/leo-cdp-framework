@@ -62,12 +62,10 @@ public class AuthKeycloakHandlers {
 
 	private static final Logger log = LoggerFactory.getLogger(AuthKeycloakHandlers.class);
 
-	private final KeycloakConfig config;
 	private final SessionRepository sessionRepo;
 	private final WebClient webClient;
 
-	public AuthKeycloakHandlers(KeycloakConfig config, SessionRepository sessionRepo, WebClient wc) {
-		this.config = config;
+	public AuthKeycloakHandlers(SessionRepository sessionRepo, WebClient wc) {
 		this.sessionRepo = sessionRepo;
 		this.webClient = wc;
 	}
@@ -106,42 +104,55 @@ public class AuthKeycloakHandlers {
 			return;
 		}
 
-		sessionRepo.getSession(sid, ar -> {
-			if (ar.failed() || StringUtil.isEmpty(ar.result())) {
-				redirect(ctx, SsoRoutePaths.LOGIN);
-				return;
-			}
+		KeycloakConfig config = KeycloakConfig.getInstance();
+		if (config.isReady()) {
+			sessionRepo.getSession(sid, ar -> {
+				if (ar.failed() || StringUtil.isEmpty(ar.result())) {
+					redirect(ctx, SsoRoutePaths.LOGIN);
+					return;
+				}
 
-			JsonObject session = new JsonObject(ar.result());
-			String accessToken = session.getJsonObject(TOKEN).getString(ACCESS_TOKEN);
-			JsonArray roles = getUserRoles(accessToken);
+				JsonObject session = new JsonObject(ar.result());
+				String accessToken = session.getJsonObject(TOKEN).getString(ACCESS_TOKEN);
+				JsonArray roles = getUserRoles(accessToken);
 
-			// convert JSON to SSO User 
-			SsoUserProfile user = SsoUserProfile.fromJson(session.getJsonObject(USER), roles);
+				// convert JSON to SSO User
+				SsoUserProfile user = SsoUserProfile.fromJson(session.getJsonObject(USER), roles);
 
-			log.info("Admin user: {}", user);
+				log.info("Admin user: {}", user);
 
-			ctx.addCookie(makeSsoSessionCookie(sid));
+				ctx.addCookie(makeSsoSessionCookie(sid));
 
-			redirect(ctx, SsoRoutePaths.ROOT);
-		});
+				redirect(ctx, SsoRoutePaths.ROOT);
+			});
+		} else {
+			noValidSsoConfig(ctx);
+		}
+
 	}
 
 	public void handleLogin(RoutingContext ctx) {
-		try {
-			String redirectEncoded = encodeUrl(config.getCallbackUrl());
-			String state = UUID.randomUUID().toString();
 
-			String authUrl = String.format(
-					"%s/realms/%s/protocol/openid-connect/auth?client_id=%s&response_type=code&scope=openid&state=%s&redirect_uri=%s",
-					config.getUrl(), config.getRealm(), config.getClientId(), state, redirectEncoded);
+		KeycloakConfig config = KeycloakConfig.getInstance();
+		if (config.isReady()) {
+			try {
+				String redirectEncoded = encodeUrl(config.getCallbackUrl());
+				String state = UUID.randomUUID().toString();
 
-			redirect(ctx, authUrl);
+				String authUrl = String.format(
+						"%s/realms/%s/protocol/openid-connect/auth?client_id=%s&response_type=code&scope=openid&state=%s&redirect_uri=%s",
+						config.getUrl(), config.getRealm(), config.getClientId(), state, redirectEncoded);
 
-		} catch (Exception e) {
-			log.error("Login redirect error", e);
-			redirect(ctx, SsoRoutePaths.ERROR + "?error=login_build_error");
+				redirect(ctx, authUrl);
+
+			} catch (Exception e) {
+				log.error("Login redirect error", e);
+				redirect(ctx, SsoRoutePaths.ERROR + "?error=login_build_error");
+			}
+		} else {
+			noValidSsoConfig(ctx);
 		}
+
 	}
 
 	public void handleCallback(RoutingContext ctx) {
@@ -189,25 +200,32 @@ public class AuthKeycloakHandlers {
 	}
 
 	public void handleLogout(RoutingContext ctx) {
-		String sid = getQueryParam(ctx, PARAM_SESSION_ID);
+		KeycloakConfig config = KeycloakConfig.getInstance();
+		if (config.isReady()) {
+			String sid = getQueryParam(ctx, PARAM_SESSION_ID);
 
-		if (sid != null) {
-			sessionRepo.deleteSession(sid, r -> {
-			});
+			if (sid != null) {
+				sessionRepo.deleteSession(sid, r -> {
+				});
+			}
+
+			try {
+				String redirectUri = encodeUrl(
+						config.getCallbackUrl() + "?logout=true&t=" + System.currentTimeMillis());
+
+				String logoutUrl = String.format(
+						"%s/realms/%s/protocol/openid-connect/logout?client_id=%s&post_logout_redirect_uri=%s",
+						config.getUrl(), config.getRealm(), config.getClientId(), redirectUri);
+
+				redirect(ctx, logoutUrl);
+
+			} catch (Exception e) {
+				ctx.response().setStatusCode(500).end("logout_failed");
+			}
+		} else {
+			ctx.response().putHeader(KeycloakConstants.HEADER_LOCATION, "/").setStatusCode(303).end();
 		}
 
-		try {
-			String redirectUri = encodeUrl(config.getCallbackUrl() + "?logout=true&t=" + System.currentTimeMillis());
-
-			String logoutUrl = String.format(
-					"%s/realms/%s/protocol/openid-connect/logout?client_id=%s&post_logout_redirect_uri=%s", config.getUrl(),
-					config.getRealm(), config.getClientId(), redirectUri);
-
-			redirect(ctx, logoutUrl);
-
-		} catch (Exception e) {
-			ctx.response().setStatusCode(500).end("logout_failed");
-		}
 	}
 
 	public void handleCheckRole(RoutingContext ctx) {
@@ -243,70 +261,95 @@ public class AuthKeycloakHandlers {
 	// -----------------------------------------------------------------------------
 
 	private void exchangeCode(RoutingContext ctx, String code) {
+		KeycloakConfig config = KeycloakConfig.getInstance();
 
-		String tokenUrl = kcEndpoint(config, URI_OPENID_CONNECT_TOKEN);
+		if (config.isReady()) {
+			String tokenUrl = kcEndpoint(config, URI_OPENID_CONNECT_TOKEN);
 
-		MultiMap form = MultiMap.caseInsensitiveMultiMap().add(PARAM_GRANT_TYPE, GRANT_AUTH_CODE).add(PARAM_CODE, code)
-				.add(PARAM_REDIRECT_URI, config.getCallbackUrl()).add(PARAM_CLIENT_ID, config.getClientId());
+			MultiMap form = MultiMap.caseInsensitiveMultiMap().add(PARAM_GRANT_TYPE, GRANT_AUTH_CODE)
+					.add(PARAM_CODE, code).add(PARAM_REDIRECT_URI, config.getCallbackUrl())
+					.add(PARAM_CLIENT_ID, config.getClientId());
 
-		if (config.getClientSecret() != null)
-			form.add(PARAM_CLIENT_SECRET, config.getClientSecret());
-
-		webClient.postAbs(tokenUrl).sendForm(form, ar -> {
-			if (ar.failed() || ar.result().statusCode() != 200) {
-				redirect(ctx, SsoRoutePaths.ERROR + "?error=token_exchange_failed");
-				return;
+			if (config.getClientSecret() != null) {
+				form.add(PARAM_CLIENT_SECRET, config.getClientSecret());
 			}
 
-			JsonObject tokenJson = ar.result().bodyAsJsonObject();
-			String accessToken = tokenJson.getString(ACCESS_TOKEN);
-
-			fetchUserInfo(ctx, accessToken, tokenJson);
-		});
-	}
-
-	private void fetchUserInfo(RoutingContext ctx, String accessToken, JsonObject tokenJson) {
-		String userinfoUrl = kcEndpoint(config, URI_OPENID_CONNECT_USERINFO);
-
-		webClient.getAbs(userinfoUrl).putHeader(HEADER_AUTH, "Bearer " + accessToken).send(ar -> {
-			if (ar.failed() || ar.result().statusCode() != 200) {
-				redirect(ctx, SsoRoutePaths.ERROR + "?error=userinfo_failed");
-				return;
-			}
-
-			JsonObject userInfo = ar.result().bodyAsJsonObject();
-
-			sessionRepo.createSession(userInfo, tokenJson, res -> {
-				if (!res.succeeded()) {
-					redirect(ctx, SsoRoutePaths.ERROR + "?error=session_create_failed");
+			webClient.postAbs(tokenUrl).sendForm(form, ar -> {
+				if (ar.failed() || ar.result().statusCode() != 200) {
+					redirect(ctx, SsoRoutePaths.ERROR + "?error=token_exchange_failed");
 					return;
 				}
 
-				String sid = res.result();
-				redirect(ctx, SsoRoutePaths.SESSION + "?sid=" + sid);
+				JsonObject tokenJson = ar.result().bodyAsJsonObject();
+				String accessToken = tokenJson.getString(ACCESS_TOKEN);
+
+				fetchUserInfo(ctx, accessToken, tokenJson);
 			});
-		});
+		} else {
+			noValidSsoConfig(ctx);
+		}
+
+	}
+
+	private void fetchUserInfo(RoutingContext ctx, String accessToken, JsonObject tokenJson) {
+		KeycloakConfig config = KeycloakConfig.getInstance();
+		if (config.isReady()) {
+			String userinfoUrl = kcEndpoint(config, URI_OPENID_CONNECT_USERINFO);
+
+			webClient.getAbs(userinfoUrl).putHeader(HEADER_AUTH, "Bearer " + accessToken).send(ar -> {
+				if (ar.failed() || ar.result().statusCode() != 200) {
+					redirect(ctx, SsoRoutePaths.ERROR + "?error=userinfo_failed");
+					return;
+				}
+
+				JsonObject userInfo = ar.result().bodyAsJsonObject();
+
+				sessionRepo.createSession(userInfo, tokenJson, res -> {
+					if (!res.succeeded()) {
+						redirect(ctx, SsoRoutePaths.ERROR + "?error=session_create_failed");
+						return;
+					}
+
+					String sid = res.result();
+					redirect(ctx, SsoRoutePaths.SESSION + "?sid=" + sid);
+				});
+			});
+		} else {
+			noValidSsoConfig(ctx);
+		}
+
 	}
 
 	private void refreshToken(RoutingContext ctx, String sid, JsonObject session, String refreshToken) {
-		String tokenUrl = kcEndpoint(config, URI_OPENID_CONNECT_TOKEN);
+		KeycloakConfig config = KeycloakConfig.getInstance();
+		if (config.isReady()) {
+			String tokenUrl = kcEndpoint(config, URI_OPENID_CONNECT_TOKEN);
 
-		MultiMap form = MultiMap.caseInsensitiveMultiMap().add(PARAM_GRANT_TYPE, GRANT_REFRESH)
-				.add(PARAM_CLIENT_ID, config.getClientId()).add(PARAM_REFRESH_TOKEN, refreshToken);
+			MultiMap form = MultiMap.caseInsensitiveMultiMap().add(PARAM_GRANT_TYPE, GRANT_REFRESH)
+					.add(PARAM_CLIENT_ID, config.getClientId()).add(PARAM_REFRESH_TOKEN, refreshToken);
 
-		if (!config.getClientSecret().isEmpty())
-			form.add(PARAM_CLIENT_SECRET, config.getClientSecret());
+			if (!config.getClientSecret().isEmpty())
+				form.add(PARAM_CLIENT_SECRET, config.getClientSecret());
 
-		webClient.postAbs(tokenUrl).sendForm(form, ar -> {
-			if (ar.failed()) {
-				ctx.response().setStatusCode(500).end("refresh_failed");
-				return;
-			}
+			webClient.postAbs(tokenUrl).sendForm(form, ar -> {
+				if (ar.failed()) {
+					ctx.response().setStatusCode(500).end("refresh_failed");
+					return;
+				}
 
-			JsonObject newTokens = ar.result().bodyAsJsonObject();
-			session.put(TOKEN, newTokens);
+				JsonObject newTokens = ar.result().bodyAsJsonObject();
+				session.put(TOKEN, newTokens);
 
-			sessionRepo.updateSession(sid, session, r -> sendJson(ctx, newTokens));
-		});
+				sessionRepo.updateSession(sid, session, r -> sendJson(ctx, newTokens));
+			});
+		} else {
+			noValidSsoConfig(ctx);
+		}
+
+	}
+
+	private void noValidSsoConfig(RoutingContext ctx) {
+		ctx.response().setStatusCode(500).putHeader(KeycloakConstants.HEADER_CONTENT_TYPE, KeycloakConstants.MIME_JSON)
+				.end(new JsonObject().put("error", "Keycloak not configured").encode());
 	}
 }

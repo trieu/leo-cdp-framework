@@ -24,27 +24,23 @@ public class KeycloakClientSsoRouter {
 	private static final Logger logger = LoggerFactory.getLogger(KeycloakClientSsoRouter.class);
 
 	private static final JedisPool jedisPool = RedisClientFactory.buildRedisPool("clusterInfoRedis");
-	private final KeycloakConfig config;
+
 	private final AuthKeycloakHandlers handlers;
 
-	public KeycloakClientSsoRouter( KeycloakConfig config, AuthKeycloakHandlers handlers) {
-		this.config = config;
+	public KeycloakClientSsoRouter(AuthKeycloakHandlers handlers) {
 		this.handlers = handlers;
 	}
 
 	public Router configureRouter(Router router) {
 		configureBaseRoutes(router);
-		if (config.isEnabled()) {
-			configureKeycloakRoutes(router);
-		} else {
-			configureFallbackRoutes(router);
-		}
+		configureKeycloakRoutes(router);
 		return router;
 	}
 
 
 	private void configureBaseRoutes(Router router) {
 		router.get(SsoRoutePaths.IS_ENABLED).handler(ctx -> {
+			KeycloakConfig config = KeycloakConfig.getInstance();
 			JsonObject res = new JsonObject().put("ok", config.isEnabled());
 			ctx.response().putHeader(KeycloakConstants.HEADER_CONTENT_TYPE, KeycloakConstants.MIME_JSON)
 					.end(res.encode());
@@ -66,18 +62,6 @@ public class KeycloakClientSsoRouter {
 		router.get(SsoRoutePaths.ERROR).handler(this::handleErrorRoute);
 	}
 
-	private void configureFallbackRoutes(Router router) {
-		router.get(SsoRoutePaths.SESSION)
-				.handler(ctx -> ctx.response().setStatusCode(503).end("Keycloak not enabled or failed to initialize."));
-
-		router.get(SsoRoutePaths.LOGIN)
-				.handler(ctx -> ctx.response().setStatusCode(500)
-						.putHeader(KeycloakConstants.HEADER_CONTENT_TYPE, KeycloakConstants.MIME_JSON)
-						.end(new JsonObject().put("error", "Keycloak not configured").encode()));
-
-		router.get(SsoRoutePaths.LOGOUT).handler(
-				ctx -> ctx.response().putHeader(KeycloakConstants.HEADER_LOCATION, "/").setStatusCode(303).end());
-	}
 
 	private void handleErrorRoute(RoutingContext ctx) {
 		String error = ctx.queryParam("error").stream().findFirst().orElse(null);
@@ -117,22 +101,24 @@ public class KeycloakClientSsoRouter {
 		logger.info("KEYCLOAK Settings -> URL: [{}], ClientId: [{}], Callback: [{}]", config.getUrl(), config.getClientId(),config.getCallbackUrl());
 
 		// WebClient
-		WebClient webClient = createWebClient(vertxInstance, config);
+		WebClient webClient = createWebClient(vertxInstance);
 
 		// Session repo
 		SessionRepository sessionRepo = new SessionRepository(vertxInstance, jedisPool);
 
 		// Handler wrapper
-		AuthKeycloakHandlers handlers = new AuthKeycloakHandlers(config, sessionRepo, webClient);
+		AuthKeycloakHandlers handlers = new AuthKeycloakHandlers(sessionRepo, webClient);
 
 		// Router factory builds Router
-		KeycloakClientSsoRouter routerFactory = new KeycloakClientSsoRouter(config, handlers);
+		KeycloakClientSsoRouter routerFactory = new KeycloakClientSsoRouter(handlers);
 		routerFactory.configureRouter(router);
 		return router;
 	}
 
-	public static WebClient createWebClient(Vertx vertxInstance, KeycloakConfig config) {
+	public static WebClient createWebClient(Vertx vertxInstance) {
+		KeycloakConfig config = KeycloakConfig.getInstance();
 		boolean isHttps = config.getUrl() != null && config.getUrl().toLowerCase().startsWith("https");
+		
 		WebClientOptions opt = new WebClientOptions().setSsl(isHttps).setTrustAll(!config.isVerifySSL())
 				.setVerifyHost(config.isVerifySSL());
 
