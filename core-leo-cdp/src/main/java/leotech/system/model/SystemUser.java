@@ -29,6 +29,7 @@ import leotech.system.util.PasswordGenerator;
 import leotech.system.util.database.ArangoDbUtil;
 import leotech.system.util.database.PersistentArangoObject;
 import leotech.system.util.keycloak.KeycloakConfig;
+import leotech.system.util.keycloak.KeycloakConstants;
 import leotech.system.util.keycloak.SsoUserProfile;
 import rfx.core.util.StringPool;
 import rfx.core.util.StringUtil;
@@ -56,14 +57,6 @@ public final class SystemUser implements PersistentArangoObject {
 	public static final String SSO_PREFIX = "sso_";
     private static final int PASSWORD_LEN = 16;
 
-    // Map SSO role → Internal SystemUserRole 
-    private static final Map<String, Integer> ROLE_MAPPING = Map.of(
-        "LEOCDP_SUPER_SYSTEM_ADMIN", SystemUserRole.SUPER_SYSTEM_ADMIN,
-        "LEOCDP_DATA_ADMIN", SystemUserRole.DATA_ADMIN,
-        "LEOCDP_DATA_OPERATOR", SystemUserRole.DATA_OPERATOR,
-        "LEOCDP_CUSTOMER_DATA_EDITOR", SystemUserRole.CUSTOMER_DATA_EDITOR,
-        "LEOCDP_REPORT_VIEWER", SystemUserRole.REPORT_VIEWER
-    );
 
 	@Key
 	private String key;
@@ -178,9 +171,10 @@ public final class SystemUser implements PersistentArangoObject {
         // set Authorization
         Set<String> ssoUserRoles = ssoUser.getRoles();
         // Pick the first matching role from stream, fallback to DATA_OPERATOR
-        int finalRole =
+        Map<String, Integer> mapper = KeycloakConstants.SSO_ROLE_MAPPING_TO_CDP;
+		int finalRole =
             ssoUserRoles.stream()
-                .map(ROLE_MAPPING::get)
+                .map(mapper::get)
                 .filter(Objects::nonNull)
                 .findFirst()
                 .orElse(SystemUserRole.DATA_OPERATOR);

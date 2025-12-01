@@ -1,5 +1,9 @@
 package leotech.system.util.keycloak;
 
+import java.util.Map;
+
+import leotech.system.model.SystemUserRole;
+
 /**
  *  Constants for local Keycloak client in LEO CDP
  * 
@@ -35,4 +39,14 @@ public final class KeycloakConstants {
 
     // Session Cookie
     public static final String COOKIE_SSO_SESSION_ID = "ssosid";
+    
+
+    // Map SSO role → Internal SystemUserRole 
+    public static final Map<String, Integer> SSO_ROLE_MAPPING_TO_CDP = Map.of(
+        "LEOCDP_SUPER_SYSTEM_ADMIN", SystemUserRole.SUPER_SYSTEM_ADMIN,
+        "LEOCDP_DATA_ADMIN", SystemUserRole.DATA_ADMIN,
+        "LEOCDP_DATA_OPERATOR", SystemUserRole.DATA_OPERATOR,
+        "LEOCDP_CUSTOMER_DATA_EDITOR", SystemUserRole.CUSTOMER_DATA_EDITOR,
+        "LEOCDP_REPORT_VIEWER", SystemUserRole.REPORT_VIEWER
+    );
 }

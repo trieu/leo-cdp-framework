@@ -89,7 +89,7 @@ public final class KeycloakConfig {
 	}
 
 	public String ssoSource() {
-		return url + " Realm:" + realm + " Client:" + clientId;
+		return url + "#" + realm + "#" + clientId;
 	}
 
 	public long getHashedId() {
