@@ -24,18 +24,40 @@
 		<div class="col-lg-12">
 		
 			<!--  Tab Navigation Items -->
-		    <ul class="nav nav-tabs" data-tab-content="system_info_tabs" >
-				<li class="active" >
-					<a href="javascript:" data-target-tab="panel_data_quality_scoring" title="Profile Metadata to compute the total of Data Quality Score" > 
-					<i class="fa fa-list-ul" aria-hidden="true"></i> Data Quality Scoring </a>
-		       	</li>
-		       	<li>
-					<a href="javascript:" data-target-tab="panel_sys_services" title="System Services" > <i class="fa fa-cogs" aria-hidden="true"></i> System Services </a>
-		       	</li>
-		       	<li >
-					<a href="javascript:" data-target-tab="panel_sys_upgrade" title="Upgrade System" > <i class="fa fa-cloud-download" aria-hidden="true"></i> Upgrade System </a>
-		       	</li>
-		  	</ul>
+			<ul class="nav nav-tabs" data-tab-content="system_info_tabs">
+			    <li class="active">
+			        <a href="javascript:" 
+			           data-target-tab="panel_data_quality_scoring"
+			           title="Profile metadata used to calculate the overall Data Quality Score">
+			            <i class="fa fa-list-ul" aria-hidden="true"></i> Data Quality Scoring
+			        </a>
+			    </li>
+			
+			    <li>
+			        <a href="javascript:" 
+			           data-target-tab="panel_sso_settings"
+			           title="Configuration for Keycloak Single Sign-On">
+			            <i class="fa fa-solid fa-key" aria-hidden="true"></i> SSO Settings
+			        </a>
+			    </li>
+			
+			    <li>
+			        <a href="javascript:" 
+			           data-target-tab="panel_sys_services"
+			           title="Service monitoring and system-level operations">
+			            <i class="fa fa-cogs" aria-hidden="true"></i> System Services
+			        </a>
+			    </li>
+			
+			    <li>
+			        <a href="javascript:" 
+			           data-target-tab="panel_sys_upgrade"
+			           title="Upgrade the LEO CDP system to the latest version">
+			            <i class="fa fa-cloud-download" aria-hidden="true"></i> System Upgrade
+			        </a>
+			    </li>
+			</ul>
+
 		  	
 		  	<!-- Tab Contents  -->
 	    	<div id="system_info_tabs" class="tab-content" style="min-height: 750px;"  >
@@ -59,7 +81,106 @@
 			        </div>
 				</div>
 				
-				<!-- tab 2 Event Report  -->
+				<!-- tab 2 SSO (Single Sign-On) Settings  -->
+				<div class="tab-pane" id="panel_sso_settings">
+				    <div>
+				        <h4>
+				            <i class="fa fa-solid fa-key" aria-hidden="true"></i>
+				            <mark>SSO (Single Sign-On) Settings</mark>
+				        </h4>
+				    </div>
+				
+				    <div id="sso_settings_holder">
+				
+				        <form id="form_sso_settings" class="form-horizontal" autocomplete="off" style="margin-top:20px;">
+				
+				            <!-- Enable SSO -->
+				            <div class="form-group">
+				                <label for="ssoLogin" class="col-sm-3 control-label">Enable SSO Login</label>
+				                <div class="col-sm-6">
+				                    <select class="form-control" id="ssoLogin">
+				                        <option value="false">Disabled</option>
+				                        <option value="true">Enabled</option>
+				                    </select>
+				                </div>
+				            </div>
+				
+				            <!-- Base Keycloak URL -->
+				            <div class="form-group">
+				                <label for="ssoLoginUrl" class="col-sm-3 control-label">Keycloak Base URL</label>
+				                <div class="col-sm-6">
+				                    <input type="text" class="form-control" id="ssoLoginUrl"
+				                           placeholder="https://auth.example.com"
+				                           autocomplete="off">
+				                </div>
+				            </div>
+				
+				            <!-- Realm -->
+				            <div class="form-group">
+				                <label for="keycloakRealm" class="col-sm-3 control-label">Realm</label>
+				                <div class="col-sm-6">
+				                    <input type="text" class="form-control" id="keycloakRealm"
+				                           placeholder="e.g. master"
+				                           autocomplete="off">
+				                </div>
+				            </div>
+				
+				            <!-- Client ID -->
+				            <div class="form-group">
+				                <label for="keycloakClientId" class="col-sm-3 control-label">Client ID</label>
+				                <div class="col-sm-6">
+				                    <input type="text" class="form-control" id="keycloakClientId"
+				                           autocomplete="off">
+				                </div>
+				            </div>
+				
+				            <!-- Client Secret -->
+				            <div class="form-group">
+				                <label for="keycloakClientSecret" class="col-sm-3 control-label">Client Secret</label>
+				                <div class="col-sm-6">
+				                    <input type="password" class="form-control" id="keycloakClientSecret"
+				                           autocomplete="new-password">
+				                </div>
+				            </div>
+				
+				            <!-- Callback URL -->
+				            <div class="form-group">
+				                <label for="keycloakCallbackUrl" class="col-sm-3 control-label">Callback URL</label>
+				                <div class="col-sm-6">
+				                    <input type="text" class="form-control" id="keycloakCallbackUrl"
+				                           placeholder="https://your-cdp.com/auth/callback"
+				                           autocomplete="off">
+				                </div>
+				            </div>
+				
+				            <!-- Verify SSL -->
+				            <div class="form-group">
+				                <label for="keycloakVerifySSL" class="col-sm-3 control-label">Verify SSL</label>
+				                <div class="col-sm-6">
+				                    <select class="form-control" id="keycloakVerifySSL">
+				                        <option value="true">Verify SSL</option>
+				                        <option value="false">Skip Verification</option>
+				                    </select>
+				                </div>
+				            </div>
+				
+				            <!-- Save Button -->
+				            <div class="form-group">
+				                <div class="col-sm-offset-3 col-sm-6">
+				                    <button type="button" id="btn_save_sso_settings" class="btn btn-primary" onclick="saveSsoSettings()">
+				                        <i class="fa fa-save"></i> Save Settings
+				                    </button>
+				                </div>
+				            </div>
+				
+				        </form>
+				
+				    </div>
+				</div>
+				
+
+				
+				<!-- tab 3 Core System Services  -->
 				<div class="tab-pane " id="panel_sys_services" >
 					<div  >
 						<h4> <i class="fa fa-cogs" aria-hidden="true"></i> <mark> Configuration Management for Core System Services </mark> </h4>
@@ -69,7 +190,7 @@
 					</div>
 				</div>
 				
-				<!-- tab 3 Event Report  -->
+				<!-- tab 4 System Upgrade  -->
 				<div class="tab-pane " id="panel_sys_upgrade" >
 					<div class="col-lg-9">
 		         		<h4> <i class="fa fa-info-circle" aria-hidden="true"></i> 
@@ -97,6 +218,7 @@
 		loadSystemInfoConfigs();
 		$('#maxTotalDataQualityScore').text(maxTotalDataQualityScore)
 	}
+	
 </script>
 
 <script id='tpl_system_config_box' type="text/html" >

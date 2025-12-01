@@ -1,4 +1,4 @@
-// Version: v_0.9.0_2025-11-30-17-24-50
+// Version: v_0.9.0_2025-12-01-18-25-08
 'use strict';const chartColorCodes=[];for(var i=0;100>i;i++){var colorCode=Math.floor(16777215*Math.random()).toString(16);chartColorCodes.push("#"+colorCode)}const MAX_TO_LINE_CHART=chartColorCodes.length,journeyLabel5A=["AWARENESS","ATTRACTION","ASK","ACTION","ADVOCACY"];function randomInteger(a,d){return Math.floor(Math.random()*(d-a+1))+a}
 function getColorCodeProfileFunnel(a){var d="#7A9F8D #5D897C #40736D #24585C #225059 #1F4360 #1A2E55 #161C4A #15113E #17202A".split(" ");return 0<=a&&10>=a?d[a-1]:d[0]}
 const renderFunnelChart=function(a,d,e,c){var f=[];d.forEach(function(k){var b=k.orderIndex;f.push([k.name,"[Stage "+b+"]",c(b)])});(new D3Funnel(a)).draw(f,e)},renderJourneyFlowChart=function(a,d,e,c,f,k){d={margin:{top:5,left:70,right:50,bottom:50},nodes:{dynamicSizeFontNode:{enabled:!0,minSize:12,maxSize:22},fontSize:15,draggableX:!0,draggableY:!0,colors:d3.scaleOrdinal(d3.schemeCategory20)},links:{formatValue:function(b,l,g){return""},unit:d},tooltip:{infoDiv:!0,labelSource:"Input:",labelTarget:"Output:"}};

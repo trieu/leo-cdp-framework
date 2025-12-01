@@ -1,10 +1,17 @@
 package leotech.system.version;
 
+import java.io.File;
 import java.io.FileInputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -100,6 +107,61 @@ public final class SystemMetaData {
 		}
 		metaDataMap.putAll(Maps.newHashMap(Maps.fromProperties(props)));
 	}
+	
+	public static void saveMetaDataMapPreserveFormat() {
+	    String configPath = Paths.get(".").toString()
+	            + File.separator
+	            + LEOCDP_METADATA_DEFAULT_VALUE;
+
+	    Path filePath = Paths.get(configPath);
+
+	    try {
+	        List<String> lines = Files.readAllLines(filePath, StandardCharsets.UTF_8);
+	        List<String> updatedLines = new ArrayList<>();
+
+	        for (String line : lines) {
+	            String trimmed = line.trim();
+
+	            // Skip comments & blank lines
+	            if (trimmed.startsWith("#") || !trimmed.contains("=")) {
+	                updatedLines.add(line);
+	                continue;
+	            }
+
+	            // Parse key=value
+	            int idx = line.indexOf("=");
+	            if (idx < 0) {
+	                updatedLines.add(line);
+	                continue;
+	            }
+
+	            String key = line.substring(0, idx).trim();
+	            String originalPrefix = line.substring(0, idx + 1); // keep "key=" spacing
+
+	            // If value exists in metaDataMap → update it
+	            if (metaDataMap.containsKey(key)) {
+	                String newValue = metaDataMap.get(key);
+	                updatedLines.add(originalPrefix + newValue);
+	            } else {
+	                updatedLines.add(line); // keep original
+	            }
+	        }
+
+	        Files.write(
+	                filePath,
+	                updatedLines,
+	                StandardCharsets.UTF_8,
+	                StandardOpenOption.TRUNCATE_EXISTING,
+	                StandardOpenOption.CREATE
+	        );
+
+	        logger.info("Metadata updated without modifying formatting: {}", configPath);
+
+	    } catch (Exception ex) {
+	        logger.error("Failed to update metadata file {}: {}", configPath, ex.getMessage(), ex);
+	    }
+	}
+
 	
 	
 	public static final int getInt(String name, int defaultValue) {
@@ -230,6 +292,9 @@ public final class SystemMetaData {
 		return ENABLE_CACHING_VIEW_TEMPLATES.equalsIgnoreCase("true");
 	}
 
+	public static Map<String, String> getMetaDataMap() {
+		return metaDataMap;
+	}
 
 	
 	/**

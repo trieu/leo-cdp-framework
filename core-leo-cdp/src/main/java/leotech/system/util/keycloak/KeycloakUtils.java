@@ -128,6 +128,6 @@ public final class KeycloakUtils {
 	 * @return
 	 */
 	public static String kcEndpoint(KeycloakConfig cfg, String suffix) {
-		return cfg.url + "/realms/" + cfg.realm + suffix;
+		return cfg.getUrl() + "/realms/" + cfg.getRealm() + suffix;
 	}
 }

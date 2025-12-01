@@ -320,6 +320,7 @@ const loadSystemEventsFromLoginUser = function(requestUserLogin) {
 	return loadSystemEventsTable('User Login', 'panel_login_account_view_logs', 'SystemUser', '', requestUserLogin)
 }
 
+
 var loadSystemInfoConfigs = function() {
 	LeoAdminApiUtil.getSecuredData('/cdp/system-config/list-all',{}, function(json) { 
 		var holder = $('#system_configs_holder');
@@ -348,6 +349,7 @@ var loadSystemInfoConfigs = function() {
 		holder.find('div.panel_active_false').find('input').attr('disabled','disabled');
 		holder.find('i.config_description').tooltip();
 
+		// profile metadata
 		var profileMetadata = _.map(systemConfigMap['profile_data_fields'].coreFieldConfigs, function(e,k){
 			if(e.dataQualityScore > 0){
 				e['coreAttribute'] = true;
@@ -363,8 +365,59 @@ var loadSystemInfoConfigs = function() {
 		}]).reverse();
 
 		$('#profileAttributeCount').text(profileMetadata.length)
-		renderProfileMetaDataTable(profileMetadata)
+		renderProfileMetaDataTable(profileMetadata);
+		
+		// leocdp metadata
+		var leocdpMetadata = (systemConfigMap['leo_cdp_metadata'] && systemConfigMap['leo_cdp_metadata'].configs) || {};
+	    renderSsoSettings(leocdpMetadata)
 	})
+}
+
+function renderSsoSettings(leocdpMetadata){
+	// Map field IDs directly to metadata keys
+	var fields = [
+	    'ssoLogin',
+	    'ssoLoginUrl',
+	    'keycloakRealm',
+	    'keycloakClientId',
+	    'keycloakClientSecret',
+	    'keycloakCallbackUrl',
+	    'keycloakVerifySSL'
+	];
+	
+// Initialize inputs + watch for changes
+	fields.forEach(function (field) {
+	    var $el = $('#' + field);
+	
+	    // Set initial value safely
+	    if ($el.length) {
+	        $el.val(leocdpMetadata[field] || '');
+	
+	        // Sync changes back to metadata object
+	        $el.on('change input', function () {
+	            leocdpMetadata[field] = $(this).val();
+	        });
+	    }
+	});
+}
+
+function saveSsoSettings(){
+	saveSystemConfigs(systemConfigMap['leo_cdp_metadata'],function(){
+		notifySuccessMessage('All SSO Settings are saved successfully !')
+	})
+}
+
+function saveSystemConfigs(configs, callbackSaveOk){
+	var params = {'objectJson' : JSON.stringify(configs) };
+	LeoAdminApiUtil.callPostAdminApi('/cdp/system-config/save', params, function (json) {
+        if (json.httpCode === 0 && json.errorMessage === '') {
+        	if( typeof callbackSaveOk === 'function'){
+				callbackSaveOk()
+			}
+        } else {
+            LeoAdminApiUtil.logErrorPayload(json);
+        }
+   	});
 }
 	
 function renderProfileMetaDataTable(profileMetadata) {
@@ -450,15 +503,9 @@ function renderProfileMetaDataTable(profileMetadata) {
 	    	var obj = profileConfigs.coreFieldConfigs[item.attributeName];
 	    	if(obj) {
 	    		obj.dataQualityScore = item.dataQualityScore;
-	    		
-	    		var params = {'objectJson' : JSON.stringify(profileConfigs) };
-	    		LeoAdminApiUtil.callPostAdminApi('/cdp/system-config/save', params, function (json) {
-	                if (json.httpCode === 0 && json.errorMessage === '') {
-	                	notifySuccessMessage('The attribute <b>[' + item.attributeName +  ']</b> is saved successfully !')
-	                } else {
-	                    LeoAdminApiUtil.logErrorPayload(json);
-	                }
-	           	});
+	    		saveSystemConfigs(profileConfigs, function(){
+					notifySuccessMessage('The attribute <b>[' + item.attributeName +  ']</b> is saved successfully !')
+				});
 	    	}
 	    }, 
 	    onItemDeleting: function(args) {

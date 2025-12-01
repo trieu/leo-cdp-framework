@@ -15,6 +15,7 @@ import leotech.system.model.AppMetadata;
 import leotech.system.template.TemplateUtil;
 import leotech.system.util.AppMetadataUtil;
 import leotech.system.util.database.InitDatabaseSchema;
+import leotech.system.util.keycloak.KeycloakConfig;
 import leotech.system.version.SystemMetaData;
 import rfx.core.util.StringUtil;
 
@@ -494,7 +495,7 @@ public class WebData extends DefaultModel {
 		this.pageHeaderLogo = SystemMetaData.ADMIN_LOGO_URL;
 		
 		this.showDefaultLogin = SystemMetaData.SHOW_DEFAULT_LOGIN;
-		this.ssoLogin = SystemMetaData.SSO_LOGIN;
+		this.ssoLogin = KeycloakConfig.getInstance().isEnabled();
 		this.ssoSessionUrl = "https://" + dnsDomainLeoAdmin + "/_ssocdp/session";
 		this.ssoLogoutUrl = "https://" + dnsDomainLeoAdmin + "/_ssocdp/logout";
 	}

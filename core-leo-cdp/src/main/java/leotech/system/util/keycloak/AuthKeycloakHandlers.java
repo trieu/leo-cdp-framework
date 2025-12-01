@@ -129,12 +129,12 @@ public class AuthKeycloakHandlers {
 
 	public void handleLogin(RoutingContext ctx) {
 		try {
-			String redirectEncoded = encodeUrl(config.callbackUrl);
+			String redirectEncoded = encodeUrl(config.getCallbackUrl());
 			String state = UUID.randomUUID().toString();
 
 			String authUrl = String.format(
 					"%s/realms/%s/protocol/openid-connect/auth?client_id=%s&response_type=code&scope=openid&state=%s&redirect_uri=%s",
-					config.url, config.realm, config.clientId, state, redirectEncoded);
+					config.getUrl(), config.getRealm(), config.getClientId(), state, redirectEncoded);
 
 			redirect(ctx, authUrl);
 
@@ -197,11 +197,11 @@ public class AuthKeycloakHandlers {
 		}
 
 		try {
-			String redirectUri = encodeUrl(config.callbackUrl + "?logout=true&t=" + System.currentTimeMillis());
+			String redirectUri = encodeUrl(config.getCallbackUrl() + "?logout=true&t=" + System.currentTimeMillis());
 
 			String logoutUrl = String.format(
-					"%s/realms/%s/protocol/openid-connect/logout?client_id=%s&post_logout_redirect_uri=%s", config.url,
-					config.realm, config.clientId, redirectUri);
+					"%s/realms/%s/protocol/openid-connect/logout?client_id=%s&post_logout_redirect_uri=%s", config.getUrl(),
+					config.getRealm(), config.getClientId(), redirectUri);
 
 			redirect(ctx, logoutUrl);
 
@@ -247,10 +247,10 @@ public class AuthKeycloakHandlers {
 		String tokenUrl = kcEndpoint(config, URI_OPENID_CONNECT_TOKEN);
 
 		MultiMap form = MultiMap.caseInsensitiveMultiMap().add(PARAM_GRANT_TYPE, GRANT_AUTH_CODE).add(PARAM_CODE, code)
-				.add(PARAM_REDIRECT_URI, config.callbackUrl).add(PARAM_CLIENT_ID, config.clientId);
+				.add(PARAM_REDIRECT_URI, config.getCallbackUrl()).add(PARAM_CLIENT_ID, config.getClientId());
 
-		if (config.clientSecret != null)
-			form.add(PARAM_CLIENT_SECRET, config.clientSecret);
+		if (config.getClientSecret() != null)
+			form.add(PARAM_CLIENT_SECRET, config.getClientSecret());
 
 		webClient.postAbs(tokenUrl).sendForm(form, ar -> {
 			if (ar.failed() || ar.result().statusCode() != 200) {
@@ -292,10 +292,10 @@ public class AuthKeycloakHandlers {
 		String tokenUrl = kcEndpoint(config, URI_OPENID_CONNECT_TOKEN);
 
 		MultiMap form = MultiMap.caseInsensitiveMultiMap().add(PARAM_GRANT_TYPE, GRANT_REFRESH)
-				.add(PARAM_CLIENT_ID, config.clientId).add(PARAM_REFRESH_TOKEN, refreshToken);
+				.add(PARAM_CLIENT_ID, config.getClientId()).add(PARAM_REFRESH_TOKEN, refreshToken);
 
-		if (config.clientSecret != null)
-			form.add(PARAM_CLIENT_SECRET, config.clientSecret);
+		if (!config.getClientSecret().isEmpty())
+			form.add(PARAM_CLIENT_SECRET, config.getClientSecret());
 
 		webClient.postAbs(tokenUrl).sendForm(form, ar -> {
 			if (ar.failed()) {

@@ -34,7 +34,7 @@ public class KeycloakClientRouter {
 
 	public Router configureRouter(Router router) {
 		configureBaseRoutes(router);
-		if (config.enabled) {
+		if (config.isEnabled()) {
 			configureKeycloakRoutes(router);
 		} else {
 			configureFallbackRoutes(router);
@@ -45,7 +45,7 @@ public class KeycloakClientRouter {
 
 	private void configureBaseRoutes(Router router) {
 		router.get(SsoRoutePaths.IS_ENABLED).handler(ctx -> {
-			JsonObject res = new JsonObject().put("ok", config.enabled);
+			JsonObject res = new JsonObject().put("ok", config.isEnabled());
 			ctx.response().putHeader(KeycloakConstants.HEADER_CONTENT_TYPE, KeycloakConstants.MIME_JSON)
 					.end(res.encode());
 		});
@@ -114,7 +114,7 @@ public class KeycloakClientRouter {
 	public static Router startKeyCloakRouter(Vertx vertxInstance , Router router) {
 		// Load config
 		KeycloakConfig config = KeycloakConfig.getInstance();
-		logger.info("KEYCLOAK Settings -> URL: [{}], ClientId: [{}], Callback: [{}]", config.url, config.clientId,config.callbackUrl);
+		logger.info("KEYCLOAK Settings -> URL: [{}], ClientId: [{}], Callback: [{}]", config.getUrl(), config.getClientId(),config.getCallbackUrl());
 
 		// WebClient
 		WebClient webClient = createWebClient(vertxInstance, config);
@@ -132,9 +132,9 @@ public class KeycloakClientRouter {
 	}
 
 	public static WebClient createWebClient(Vertx vertxInstance, KeycloakConfig config) {
-		boolean isHttps = config.url != null && config.url.toLowerCase().startsWith("https");
-		WebClientOptions opt = new WebClientOptions().setSsl(isHttps).setTrustAll(!config.verifySSL)
-				.setVerifyHost(config.verifySSL);
+		boolean isHttps = config.getUrl() != null && config.getUrl().toLowerCase().startsWith("https");
+		WebClientOptions opt = new WebClientOptions().setSsl(isHttps).setTrustAll(!config.isVerifySSL())
+				.setVerifyHost(config.isVerifySSL());
 
 		return WebClient.create(vertxInstance, opt);
 	}

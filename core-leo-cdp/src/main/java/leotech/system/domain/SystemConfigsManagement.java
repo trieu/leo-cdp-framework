@@ -19,6 +19,7 @@ import leotech.cdp.model.customer.ProfileModelUtil;
 import leotech.system.dao.SystemServiceDaoUtil;
 import leotech.system.model.AttributeMetaData;
 import leotech.system.model.SystemService;
+import leotech.system.version.SystemMetaData;
 import rfx.core.util.FileUtils;
 
 /**
@@ -35,7 +36,7 @@ public final class SystemConfigsManagement {
 	public static final int DEFAULT_ITEM_FOR_PROFILE = 30;
 	public static final String CDP_RECOMMENDER = "cdp_recommender";
 	
-	// for profile data field configs
+	// for system meta data field configs
 	public static final String LEO_CDP_METADATA = "leo_cdp_metadata";
 	
 	// for profile data field configs
@@ -49,7 +50,8 @@ public final class SystemConfigsManagement {
 		}
 	};
 
-	static LoadingCache<String, SystemService> systemConfigsCache = CacheBuilder.newBuilder().maximumSize(CACHE_SIZE).expireAfterWrite(CACHE_TIME, TimeUnit.SECONDS).build(systemServicesDbLoader);
+	static LoadingCache<String, SystemService> systemConfigsCache = CacheBuilder.newBuilder().maximumSize(CACHE_SIZE)
+			.expireAfterWrite(CACHE_TIME, TimeUnit.SECONDS).build(systemServicesDbLoader);
 		
 	public static void initDefaultSystemData(boolean resetAllConfigs) {
 		try {
@@ -131,6 +133,38 @@ public final class SystemConfigsManagement {
 	}
 	
 	/**
+	 * LEO_CDP_METADATA for leocdp-metadata.properties, so we can replace it in the future
+	 * 
+	 * @return SystemService for LEO_CDP_METADATA
+	 */
+	public final static SystemService loadLeoCdpMetadata() {
+		SystemService cf = null;
+		try {
+			cf = systemConfigsCache.get(LEO_CDP_METADATA);
+			if(cf != null) {
+				// return from database
+				if( cf.getConfigs().isEmpty()) {
+					cf.getConfigs().putAll(SystemMetaData.getMetaDataMap());
+				}
+				return cf;
+			}	
+		} catch (Exception e) {
+			//skip
+		}	
+		if(cf == null) {
+			// create a new and save into database
+			Map<String,Object> metadata = new HashMap<String, Object>();
+			cf = new SystemService(LEO_CDP_METADATA, "LEO CDP METADATA", metadata );
+			if( cf.getConfigs().isEmpty()) {
+				cf.getConfigs().putAll(SystemMetaData.getMetaDataMap());
+			}
+			systemConfigsCache.put(LEO_CDP_METADATA, cf);
+			SystemServiceDaoUtil.save(cf);
+		}
+		return cf;
+	}
+	
+	/**
 	 * @param extAttributes
 	 */
 	public static String saveProfileMetaData(Map<String, AttributeMetaData> profileDataFields, Map<String,AttributeMetaData> extAttributes) {
@@ -193,6 +227,14 @@ public final class SystemConfigsManagement {
 	 * @return
 	 */
 	public static String saveSystemConfig(SystemService config) {
-		return SystemServiceDaoUtil.save(config);
+		String id = SystemServiceDaoUtil.save(config);
+		if(id != null) {
+			systemConfigsCache.invalidate(id);
+			if(id.equals(LEO_CDP_METADATA)) {
+				
+			}
+		}
+		return id;
 	}
+	
 }

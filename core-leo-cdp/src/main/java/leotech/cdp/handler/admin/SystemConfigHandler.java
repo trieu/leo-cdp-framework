@@ -25,11 +25,11 @@ import rfx.core.util.StringUtil;
  */
 public final class SystemConfigHandler extends SecuredHttpDataHandler {
 
+	private static final String OBJECT_JSON = "objectJson";
+	
 	static final String SAVE_SYSTEM_CONFIG = "/cdp/system-config/save";
 	static final String CALL_DATA_QUALITY_COMPUTE_JOB = "/cdp/system-config/call-data-quality-compute-job";
-
 	static final String LIST_ALL_SYSTEM_CONFIGS = "/cdp/system-config/list-all";
-
 	static final String GET_BY_ID = "/cdp/system-config/get-by-id";
 
 	public SystemConfigHandler(BaseHttpRouter baseHttpRouter) {
@@ -42,7 +42,7 @@ public final class SystemConfigHandler extends SecuredHttpDataHandler {
 		if (isSuperAdminRole(loginUser)) {
 			switch (uri) {
 			case SAVE_SYSTEM_CONFIG: {
-				String objectJson = paramJson.getString("objectJson", "");
+				String objectJson = paramJson.getString(OBJECT_JSON, "");
 				if (StringUtil.isNotEmpty(objectJson)) {
 					SystemService config = new Gson().fromJson(objectJson, SystemService.class);
 					String id = SystemConfigsManagement.saveSystemConfig(config);
