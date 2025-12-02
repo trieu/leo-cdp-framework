@@ -374,6 +374,8 @@ var loadSystemInfoConfigs = function() {
 }
 
 function renderSsoSettings(leocdpMetadata){
+	leocdpMetadata['keycloakCallbackUrl'] = baseLeoAdminUrl + '/_ssocdp/callback';
+
 	// Map field IDs directly to metadata keys
 	var fields = [
 	    'ssoLogin',

@@ -34,16 +34,16 @@ version leoCdpMetadata['buildVersion'] ///
 //////////////////////////////////////////
 
 buildscript {
-	repositories {
-		mavenCentral()
-    	maven {
-      		url "https://plugins.gradle.org/m2/"
-    	}
-    	mavenLocal()
-  	}
-  	dependencies {
-    	classpath "org.gradle-webtools.minify:gradle-minify-plugin:1.3.2"
-  	}
+    repositories {
+        mavenCentral()
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+        mavenLocal()
+    }
+    dependencies {
+        classpath "org.gradle-webtools.minify:gradle-minify-plugin:1.3.2"
+    }
 }
 
 apply plugin: 'java'
@@ -60,11 +60,11 @@ eclipse {
 sourceCompatibility = 11 
 
 repositories {
- 	mavenLocal()
-	google()
+    mavenLocal()
+    google()
     mavenCentral()
     maven {
-    	url = "https://oss.sonatype.org/content/repositories/snapshots"
+        url = "https://oss.sonatype.org/content/repositories/snapshots"
     }
 }
 
@@ -73,8 +73,8 @@ configurations.all {
 }
 
 dependencies {
-	//  ────────────────────── Local Java Libs: rfx ────────────────────── l
-	implementation(
+    //  ────────────────────── Local Java Libs: rfx ────────────────────── l
+    implementation(
         fileTree(dir: 'ext-lib', include: '**/*.jar')
     )
 
@@ -139,17 +139,18 @@ dependencies {
     // ────────────────────── JSON (Gson) ──────────────────────
     implementation 'com.google.code.gson:gson:2.9.1'
 
-   	// ────────────────────── Logging (SLF4J + Log4j2) ──────────────────────
-	implementation 'org.slf4j:slf4j-api:2.0.13'                         // SLF4J API
-	implementation 'org.apache.logging.log4j:log4j-api:2.23.1'          // Log4j2 API
-	implementation 'org.apache.logging.log4j:log4j-core:2.23.1'         // Log4j2 Engine
-	implementation 'org.apache.logging.log4j:log4j-slf4j2-impl:2.23.1'  // Bridge for SLF4J 2.x → Log4j2
+    // ────────────────────── Logging (SLF4J + Log4j2) ──────────────────────
+    implementation 'org.slf4j:slf4j-api:2.0.13'                         // SLF4J API
+    implementation 'org.apache.logging.log4j:log4j-api:2.23.1'          // Log4j2 API
+    implementation 'org.apache.logging.log4j:log4j-core:2.23.1'         // Log4j2 Engine
+    implementation 'org.apache.logging.log4j:log4j-slf4j2-impl:2.23.1'  // Bridge for SLF4J 2.x → Log4j2
 
     // ────────────────────── Security / XSS Filter ──────────────────────
     implementation 'org.jsoup:jsoup:1.21.1'
     implementation 'com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:20240325.1'
 
     // ────────────────────── Common Utilities ──────────────────────
+    implementation 'org.apache.commons:commons-text:1.14.0'
     implementation 'org.apache.commons:commons-lang3:3.12.0'
     implementation 'commons-validator:commons-validator:1.7'
     implementation 'commons-net:commons-net:3.6'
@@ -207,8 +208,8 @@ tasks.withType(JavaCompile) {
 }
 
 tasks.withType(Jar) {
-	//destinationDirectory = file("$rootDir/BUILD-OUTPUT")
-	destinationDirectory = file(buildOutputFolderPath)
+    //destinationDirectory = file("$rootDir/BUILD-OUTPUT")
+    destinationDirectory = file(buildOutputFolderPath)
 }
 
 // === Helper: generate build version string ===
@@ -221,6 +222,8 @@ def getImplementationVersion() {
 
 // === JS minification for common-resources in Web Admin ===
 task minifyJsAdminResource(type: org.gradlewebtools.minify.JsMinifyTask) {
+    group = 'Web Resources' // TASK GROUP
+    description = 'Minifies JS resources for the admin panel.' // <-- Added description
     srcDir = project.file("resources/app-templates/leocdp-admin/common-resources")
     dstDir = project.file("resources/app-templates/leocdp-admin/common-resources-min")
 
@@ -249,6 +252,8 @@ task minifyJsAdminResource(type: org.gradlewebtools.minify.JsMinifyTask) {
 
 // === JS minification for leo.observer.js only ===
 task minifyJsLeoObserver(type: org.gradlewebtools.minify.JsMinifyTask) {
+    group = 'Web Resources' // TASK GROUP
+    description = 'Minifies the core leo-observer JavaScript file.' // <-- Added description
     // Source and destination directories (same folder)
     srcDir = project.file("public/js/leo-observer-src")
     dstDir = project.file("public/js/leo-observer")
@@ -296,99 +301,109 @@ def getClasspathStringJars() {
 
 /////////////////////////// BEGIN BUILD FOR DEPLOYED JAR ///////////////////////////////
 
-task buildLeoMainHttpStarter(type: Jar) {	
-	dependsOn classes   
+task buildLeoMainHttpStarter(type: Jar) {   
+    group = 'Deployment Jars' // TASK GROUP
+    description = 'Builds the Main HTTP Starter JAR.' // <-- Added description
+    dependsOn classes   
     from(sourceSets.main.output) {
         include "**"
     }
     baseName = 'leo-main-starter'
     manifest {
-   		attributes ('Implementation-Title': 'MainHttpStarter', 
-        			'Implementation-Version': getImplementationVersion(),
-        			'Main-Class': ' leotech.starter.MainHttpStarter',
-        			'Class-Path' : getClasspathStringJars() 
+        attributes ('Implementation-Title': 'MainHttpStarter', 
+                    'Implementation-Version': getImplementationVersion(),
+                    'Main-Class': ' leotech.starter.MainHttpStarter',
+                    'Class-Path' : getClasspathStringJars() 
         )
-	}
-	
-	doLast {
-  		println '###  buildLeoMainHttpStarter OK !!!  ###'
-  	}
+    }
+    
+    doLast {
+        println '###  buildLeoMainHttpStarter OK !!!  ###'
+    }
 } 
 
-task buildLeoDataObserverStarter(type: Jar) {	
-	dependsOn classes   
+task buildLeoDataObserverStarter(type: Jar) {   
+    group = 'Deployment Jars' // TASK GROUP
+    description = 'Builds the Data Observer Starter JAR.' // <-- Added description
+    dependsOn classes   
     from(sourceSets.main.output) {
         include "**"
     }
     baseName = 'leo-observer-starter'
     manifest {
-   		attributes ('Implementation-Title': 'DataObserverStarter', 
-        			'Implementation-Version': getImplementationVersion(),
-        			'Main-Class': ' leotech.starter.DataObserverStarter',
-        			'Class-Path' : getClasspathStringJars() 
+        attributes ('Implementation-Title': 'DataObserverStarter', 
+                    'Implementation-Version': getImplementationVersion(),
+                    'Main-Class': ' leotech.starter.DataObserverStarter',
+                    'Class-Path' : getClasspathStringJars() 
         )
-	}
-	
-	doLast {
-  		println '###  buildLeoDataObserverStarter OK !!!  ###'
-  	}
+    }
+    
+    doLast {
+        println '###  buildLeoDataObserverStarter OK !!!  ###'
+    }
 }
 
-task buildLeoScheduledJobStarter(type: Jar) {	
-	dependsOn classes   
+task buildLeoScheduledJobStarter(type: Jar) {   
+    group = 'Deployment Jars' // TASK GROUP
+    description = 'Builds the Scheduled Job Starter JAR.' // <-- Added description
+    dependsOn classes   
     from(sourceSets.main.output) {
         include "**"
     }
     baseName = 'leo-scheduler-starter'
     manifest {
-   		attributes ('Implementation-Title': 'ScheduledJobStarter', 
-        			'Implementation-Version': getImplementationVersion(),
-        			'Main-Class': ' leotech.starter.ScheduledJobStarter',
-        			'Class-Path' : getClasspathStringJars() 
+        attributes ('Implementation-Title': 'ScheduledJobStarter', 
+                    'Implementation-Version': getImplementationVersion(),
+                    'Main-Class': ' leotech.starter.ScheduledJobStarter',
+                    'Class-Path' : getClasspathStringJars() 
         )
-	}
-	
-	doLast {
-  		println '###  buildLeoScheduledJobStarter OK !!!  ###'
-  	}
+    }
+    
+    doLast {
+        println '###  buildLeoScheduledJobStarter OK !!!  ###'
+    }
 }
 
-task buildLeoDataProcessingStarter(type: Jar) {	
-	dependsOn classes   
+task buildLeoDataProcessingStarter(type: Jar) { 
+    group = 'Deployment Jars' // TASK GROUP
+    description = 'Builds the Data Processing Starter JAR.' // <-- Added description
+    dependsOn classes   
     from(sourceSets.main.output) {
         include "**"
     }
     baseName = 'leo-data-processing-starter'
     manifest {
-   		attributes ('Implementation-Title': 'DataProcessingStarter', 
-        			'Implementation-Version': getImplementationVersion(),
-        			'Main-Class': ' leotech.starter.DataProcessingStarter',
-        			'Class-Path' : getClasspathStringJars() 
+        attributes ('Implementation-Title': 'DataProcessingStarter', 
+                    'Implementation-Version': getImplementationVersion(),
+                    'Main-Class': ' leotech.starter.DataProcessingStarter',
+                    'Class-Path' : getClasspathStringJars() 
         )
-	}
-	
-	doLast {
-  		println '###  buildLeoDataProcessingStarter OK !!!  ###'
-  	}
+    }
+    
+    doLast {
+        println '###  buildLeoDataProcessingStarter OK !!!  ###'
+    }
 }
 
-task buildLeoUploadFileHttpStarter(type: Jar) {	
-	dependsOn classes   
+task buildLeoUploadFileHttpStarter(type: Jar) { 
+    group = 'Deployment Jars' // TASK GROUP
+    description = 'Builds the Upload File HTTP Starter JAR.' // <-- Added description
+    dependsOn classes   
     from(sourceSets.main.output) {
         include "**"
     }
     baseName = 'leo-uploader-starter'
     manifest {
-   		attributes ('Implementation-Title': 'UploadFileHttpStarter', 
-        			'Implementation-Version': getImplementationVersion(),
-        			'Main-Class': ' leotech.starter.UploadFileHttpStarter',
-        			'Class-Path' : getClasspathStringJars() 
-        			)
-	}
-	
-	doLast {
-  		println '###  buildLeoUploadFileHttpStarter OK !!!  ###'
-  	}
+        attributes ('Implementation-Title': 'UploadFileHttpStarter', 
+                    'Implementation-Version': getImplementationVersion(),
+                    'Main-Class': ' leotech.starter.UploadFileHttpStarter',
+                    'Class-Path' : getClasspathStringJars() 
+                    )
+    }
+    
+    doLast {
+        println '###  buildLeoUploadFileHttpStarter OK !!!  ###'
+    }
 }
 
 /////////////////////////// BEGIN COPY TASKS ///////////////////////////////
@@ -396,33 +411,39 @@ task buildLeoUploadFileHttpStarter(type: Jar) {
 
 // 1) copy configs
 task copyConfigsFolderToBuild(type: Copy) {  
-	from files('configs')
-  	into buildOutputFolderPath + "/configs" 
-  	exclude "**DEV**"
-  	exclude "**PRO**"
-  	
-  	doLast {
-  		println '###  copyConfigsFolderToBuild OK !!!  ###'
-  	}
+    group = 'Deployment Preparation' // TASK GROUP
+    description = 'Copies configuration files to the build folder.' // <-- Added description
+    from files('configs')
+    into buildOutputFolderPath + "/configs" 
+    exclude "**DEV**"
+    exclude "**PRO**"
+    
+    doLast {
+        println '###  copyConfigsFolderToBuild OK !!!  ###'
+    }
 }
 
 
 
 // 2) copy templates
 task copyResourcesToBuild(type: Copy, dependsOn: minifyJsAdminResource) {  
-	from files('resources')
-  	into  buildOutputFolderPath + "/resources" 
-  	
-  	includeEmptyDirs = true
-  	exclude "**/common-resources"
-  	
-  	doLast {
-  		println '###  copyResourcesToBuild OK !!!  ###'
-  	}
+    group = 'Deployment Preparation' // TASK GROUP
+    description = 'Copies resources and templates to the build folder.' // <-- Added description
+    from files('resources')
+    into  buildOutputFolderPath + "/resources" 
+    
+    includeEmptyDirs = true
+    exclude "**/common-resources"
+    
+    doLast {
+        println '###  copyResourcesToBuild OK !!!  ###'
+    }
 }
 
 // 3) clean and copy dependency system libs
 task copyRuntimeLibsToBuild(type: Copy) {
+    group = 'Deployment Preparation' // TASK GROUP
+    description = 'Cleans and copies runtime dependency JARs.' // <-- Added description
     def depsDir = file("$buildOutputFolderPath/deps")
 
     // first delete old jars
@@ -445,53 +466,59 @@ task copyRuntimeLibsToBuild(type: Copy) {
 
 // 4) copy public folder to BUILD
 task copyPublicFilesToBuild(type: Copy) {  
-	from files('public')
-  	into  buildOutputFolderPath + "/public"  
-  	
-  	includeEmptyDirs = true
-  	
-  	// excluded files
-  	exclude "**/leo.proxy.js"
-  	exclude "**/leo.observer.js"
-  	exclude "**/leoads.src.js"
-  	
-  	// excluded folders
-  	exclude "**/exported-files/**.*"
-  	exclude "**/uploaded-files/**.*"
-  	exclude "**/qrcode/**.png"
-  	exclude "**/sample-data"
-  	
-  	doLast {
-  		println '###  copyPublicFilesToBuild OK !!!  ###'
-  	}
+    group = 'Deployment Preparation' // TASK GROUP
+    description = 'Copies public files to the build output folder.' // <-- Added description
+    from files('public')
+    into  buildOutputFolderPath + "/public"  
+    
+    includeEmptyDirs = true
+    
+    // excluded files
+    exclude "**/leo.proxy.js"
+    exclude "**/leo.observer.js"
+    exclude "**/leoads.src.js"
+    
+    // excluded folders
+    exclude "**/exported-files/**.*"
+    exclude "**/uploaded-files/**.*"
+    exclude "**/qrcode/**.png"
+    exclude "**/sample-data"
+    
+    doLast {
+        println '###  copyPublicFilesToBuild OK !!!  ###'
+    }
 }
 
 // 5) copy public folder to STATIC for public CDN at https://www.jsdelivr.com
 // E.g: https://gcore.jsdelivr.net/gh/USPA-Technology/leo-cdp-static-files/js/leo-observer/leo.observer.min.js
 task CopyPublicFolderToSTATIC(type: Copy) {  
-	from files('public')
-  	into staticOutputFolderPath  
-  	
-  	// excluded files
-  	exclude "**/leo.proxy.js"
-  	exclude "**/leo.observer.js"
-  	exclude "**/leoads.src.js"
-  	
-  	// excluded folders
-  	exclude "**/exported-files"
-  	exclude "**/uploaded-files"
-  	exclude "**/sample-data"
-  	exclude "**/qrcode/**.png"
-  	exclude "**/html/leo-event-proxy.html"
-  	
-  	doLast {
-  		println '###  CopyPublicFolderToSTATIC OK !!!  ###'
-  	}
+    group = 'Deployment Preparation' // TASK GROUP
+    description = 'Copies public files for deployment to the static CDN folder.' // <-- Added description
+    from files('public')
+    into staticOutputFolderPath  
+    
+    // excluded files
+    exclude "**/leo.proxy.js"
+    exclude "**/leo.observer.js"
+    exclude "**/leoads.src.js"
+    
+    // excluded folders
+    exclude "**/exported-files"
+    exclude "**/uploaded-files"
+    exclude "**/sample-data"
+    exclude "**/qrcode/**.png"
+    exclude "**/html/leo-event-proxy.html"
+    
+    doLast {
+        println '###  CopyPublicFolderToSTATIC OK !!!  ###'
+    }
 }
 
 
 // 6) copy shell-script-starter and installation
 task CopyDevOpsScriptToBUILD(type: Copy) {  
+    group = 'Deployment Preparation' // TASK GROUP
+    description = 'Copies DevOps and installation scripts to the build folder.' // <-- Added description
 
     copy {
         from 'devops-script/docker-arangodb'
@@ -514,57 +541,65 @@ task CopyDevOpsScriptToBUILD(type: Copy) {
     }
     
     doLast {
-    	println '###  CopyDevOpsScriptToBUILD OK !!!  ###'
+        println '###  CopyDevOpsScriptToBUILD OK !!!  ###'
     }
 }
 
 // 7) copy README.md, data flow image and release notes
 task copyDocuments(type: Copy) {  
+    group = 'Documentation' // TASK GROUP
+    description = 'Copies documentation files (like README, Changelog) to the build folder.' // <-- Added description
 
-	from file('NOTES-FOR-NEW-SETUP.md')
-  	into buildOutputFolderPath
-  	
-  	from file('ChangeLog.md')
-  	into buildOutputFolderPath
-  	
-  	from file('ai-first-customer360.png')
-  	into buildOutputFolderPath
-  	
-  	doLast {
-  		println '###  copyDocuments OK !!!  ###'
-  	}
+    from file('NOTES-FOR-NEW-SETUP.md')
+    into buildOutputFolderPath
+    
+    from file('ChangeLog.md')
+    into buildOutputFolderPath
+    
+    from file('ai-first-customer360.png')
+    into buildOutputFolderPath
+    
+    doLast {
+        println '###  copyDocuments OK !!!  ###'
+    }
 }
 
 
 // 8) Copy AQL code To Build
 task CopyDbQueryTemplateToBuild(type: Copy) {  
-  	
-  	from file('resources/database/database-query-template.aql')
-  	into buildOutputFolderPath + "/resources/database/"
+    group = 'Deployment Preparation' // TASK GROUP
+    description = 'Copies ArangoDB AQL query templates to the build folder.' // <-- Added description
+    
+    from file('resources/database/database-query-template.aql')
+    into buildOutputFolderPath + "/resources/database/"
   
-	doLast {  
-  		println '###  CopyDbQueryTemplateToBuild OK !!!  ###'
-  	}
+    doLast {  
+        println '###  CopyDbQueryTemplateToBuild OK !!!  ###'
+    }
 }
 
 // 9) copy templates
 task copyAirflowDagToBuild(type: Copy) {  
-	from files('../airflow-dags')
-  	into  buildOutputFolderPath + "/airflow-dags" 
-  	
-  	exclude "**/logs"
-  	exclude "**/__pycache__"
-  	
-  	doLast {
-  		println '###  copyAirflowDagToBuild OK !!!  ###'
-  	}
+    group = 'Deployment Preparation' // TASK GROUP
+    description = 'Copies Airflow DAGs to the build folder.' // <-- Added description
+    from files('../airflow-dags')
+    into  buildOutputFolderPath + "/airflow-dags" 
+    
+    exclude "**/logs"
+    exclude "**/__pycache__"
+    
+    doLast {
+        println '###  copyAirflowDagToBuild OK !!!  ###'
+    }
 }
 
 // 10) compile and copy key Leo CDP jars
 def mainJarTasks = [buildLeoMainHttpStarter, buildLeoDataObserverStarter, buildLeoScheduledJobStarter, buildLeoDataProcessingStarter]
 task BuildAllJavaJars(dependsOn: mainJarTasks) {
-	doLast {
-    	println '###  BuildAllJavaJars OK !!!  ###'
+    group = 'Deployment Jars' // TASK GROUP
+    description = 'Executes all core Java JAR build tasks.' // <-- Added description
+    doLast {
+        println '###  BuildAllJavaJars OK !!!  ###'
     }
 }
 
@@ -574,8 +609,10 @@ def staticTasks = [CopyDevOpsScriptToBUILD, copyPublicFilesToBuild, copyResource
 def allReleaseTasks = [minifyJsAdminResource, mainJarTasks, copyPublicFilesToBuild, copyResourcesToBuild, copyRuntimeLibsToBuild ]
 
 task AutoBuildForDeployment(dependsOn: allReleaseTasks) {    
+    group = 'build' // <-- Used standard group for main build task
+    description = 'Runs a full build, including minification and resource copy.' // <-- Added description
     doLast {
-    	 println '###  AutoBuildForDeployment OK !!!  ###'
+         println '###  AutoBuildForDeployment OK !!!  ###'
     }
 }
 
@@ -592,11 +629,14 @@ build {
 
 // deploy jar to Remote Servers and restart all
 task runDeployShellScript(type: Exec) {    
+    group = 'DevOps / Remote Control' // TASK GROUP
+    description = 'Runs the shell script to deploy the ad server.' // <-- Added description
     commandLine 'sh', './shell-scripts/deploy-ad-server.sh'
 }
 
 // just restart all servers
 task runRestartAllServers(type: Exec) {    
+    group = 'DevOps / Remote Control' // TASK GROUP
+    description = 'Runs the shell script to restart all servers.' // <-- Added description
     commandLine 'sh', './shell-scripts/restart-all-ad-servers.sh'
 }
-

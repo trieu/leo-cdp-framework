@@ -54,3 +54,5 @@ ROOT_LICENSE_BUILD_KEY.txt
 leocdp-metadata.properties
 /bert-model/
 airflow-dags/__pycache__/*
+
+.vscode

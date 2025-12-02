@@ -135,7 +135,7 @@
 				                <label for="keycloakClientId" class="col-sm-3 control-label">Client ID</label>
 				                <div class="col-sm-6">
 				                    <input type="text" class="form-control" id="keycloakClientId"
-				                           autocomplete="off">
+				                           autocomplete="new-password" autocorrect="off" autocapitalize="none" spellcheck="false">
 				                </div>
 				            </div>
 				
@@ -144,20 +144,7 @@
 				                <label for="keycloakClientSecret" class="col-sm-3 control-label">Client Secret</label>
 				                <div class="col-sm-6">
 				                    <input type="password" class="form-control" id="keycloakClientSecret"
-				                           autocomplete="off"
-								           autocorrect="off"
-								           autocapitalize="none"
-								           spellcheck="false">
-				                </div>
-				            </div>
-				
-				            <!-- Callback URL -->
-				            <div class="form-group">
-				                <label for="keycloakCallbackUrl" class="col-sm-3 control-label">Callback URL</label>
-				                <div class="col-sm-6">
-				                    <input type="text" class="form-control" id="keycloakCallbackUrl"
-				                           placeholder="https://your-cdp.com/auth/callback"
-				                           autocomplete="off">
+				                           autocomplete="new-password" autocorrect="off" autocapitalize="none" spellcheck="false">
 				                </div>
 				            </div>
 				
@@ -171,11 +158,19 @@
 				                    </select>
 				                </div>
 				            </div>
+
+							<!-- Callback URL -->
+				            <div class="form-group">
+				                <label for="keycloakCallbackUrl" class="col-sm-3 control-label">Callback URL</label>
+				                <div class="col-sm-6">
+				                    <input type="text" class="form-control" id="keycloakCallbackUrl" readonly>
+				                </div>
+				            </div>
 				
 				            <!-- Save Button -->
 				            <div class="form-group">
 				                <div class="col-sm-offset-3 col-sm-6">
-				                    <button type="button" id="btn_save_sso_settings" class="btn btn-primary" onclick="saveSsoSettings()">
+				                    <button type="button" id="btn_save_sso_settings" class="btn btn-goto-router" onclick="saveSsoSettings()">
 				                        <i class="fa fa-save"></i> Save Settings
 				                    </button>
 				                </div>
