@@ -1,6 +1,5 @@
 package leotech.cdp.dao;
 
-
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -39,26 +38,23 @@ public class AssetContentDaoUtil extends AssetContentDaoPublicUtil {
 	 */
 	public static String save(AssetContent item) {
 		if (item.dataValidation()) {
-			ArangoDatabase db = getCdpDatabase();
 			ArangoCollection col = item.getDbCollection();
 			if (col != null) {
 				String id = item.getId();
-				
-				if(item.isShortUrlLink()) {
+
+				if (item.isShortUrlLink()) {
 					TargetMediaUnit mediaUnit = item.createTargetMediaUnit();
-					if(mediaUnit != null) {
+					if (mediaUnit != null) {
 						String mid = TargetMediaUnitDaoUtil.save(mediaUnit);
-						if(StringUtil.isNotEmpty(mid)) {
+						if (StringUtil.isNotEmpty(mid)) {
 							item.createShortLinkUrlFromTargetMediaUnit(mid);
 							item.createQrCodeUrlFromShortLinkUrl(AssetContent.SHORT_LINK_FOLDER_NAME);
 						}
 					}
-				}
-				else if(item.isPresentation()) {
+				} else if (item.isPresentation()) {
 					item.createShortLinkUrlFromSlug(ObserverHttpRouter.PREFIX_PRESENTATION);
 					item.createQrCodeUrlFromShortLinkUrl(AssetContent.PRESENTATION_FOLDER_NAME);
-				}
-				else {
+				} else {
 					item.createShortLinkUrlFromSlug(ObserverHttpRouter.PREFIX_CONTENT);
 					item.createQrCodeUrlFromShortLinkUrl(AssetContent.CONTENT_FOLDER_NAME);
 				}
@@ -76,21 +72,22 @@ public class AssetContentDaoUtil extends AssetContentDaoPublicUtil {
 	 * @return
 	 */
 	public static AssetContent getById(String id, boolean headlineOnly) {
-		if(StringUtil.isNotEmpty(id)) {
+		if (StringUtil.isNotEmpty(id)) {
 			ArangoDatabase db = ArangoDbUtil.getCdpDatabase();
 			Map<String, Object> bindVars = new HashMap<>(1);
 			bindVars.put("id", id);
-			AssetContent p = new ArangoDbCommand<AssetContent>(db, AQL_GET_ASSET_CONTENT_BY_ID, bindVars, AssetContent.class, new CallbackQuery<AssetContent>() {
-				@Override
-				public AssetContent apply(AssetContent obj) {
-					obj.compactDataForList(headlineOnly);
-					if( headlineOnly == false) {
-						loadGroupsAndCategory(obj);
-					}
-					obj.buildDefaultHeadlineImage();
-					return obj;
-				}
-			}).getSingleResult();
+			AssetContent p = new ArangoDbCommand<AssetContent>(db, AQL_GET_ASSET_CONTENT_BY_ID, bindVars,
+					AssetContent.class, new CallbackQuery<AssetContent>() {
+						@Override
+						public AssetContent apply(AssetContent obj) {
+							obj.compactDataForList(headlineOnly);
+							if (headlineOnly == false) {
+								loadGroupsAndCategory(obj);
+							}
+							obj.buildDefaultHeadlineImage();
+							return obj;
+						}
+					}).getSingleResult();
 			return p;
 		}
 		return null;
@@ -103,7 +100,7 @@ public class AssetContentDaoUtil extends AssetContentDaoPublicUtil {
 	public static AssetContent getById(String id) {
 		return getById(id, false);
 	}
-	
+
 	/**
 	 * @param id
 	 * @return
@@ -125,8 +122,8 @@ public class AssetContentDaoUtil extends AssetContentDaoPublicUtil {
 		ArangoDatabase db = getCdpDatabase();
 		Map<String, Object> bindVars = new HashMap<>(1);
 		bindVars.put("fullUrl", fullUrl);
-		AssetContent p = new ArangoDbCommand<AssetContent>(db, AQL_GET_ASSET_CONTENT_BY_FULL_URL, bindVars, AssetContent.class)
-				.getSingleResult();
+		AssetContent p = new ArangoDbCommand<AssetContent>(db, AQL_GET_ASSET_CONTENT_BY_FULL_URL, bindVars,
+				AssetContent.class).getSingleResult();
 		return p;
 	}
 
@@ -144,7 +141,7 @@ public class AssetContentDaoUtil extends AssetContentDaoPublicUtil {
 				AssetContent.class).getResultsAsList();
 		return list;
 	}
-	
+
 	/**
 	 * @param campaignId
 	 * @return
@@ -153,7 +150,8 @@ public class AssetContentDaoUtil extends AssetContentDaoPublicUtil {
 		ArangoDatabase db = getCdpDatabase();
 		Map<String, Object> bindVars = new HashMap<>(1);
 		bindVars.put("campaignId", campaignId);
-		List<AssetContent> list = new ArangoDbCommand<AssetContent>(db, AQL_GET_ASSET_CONTENT_BY_CAMPAIGN, bindVars, AssetContent.class).getResultsAsList();
+		List<AssetContent> list = new ArangoDbCommand<AssetContent>(db, AQL_GET_ASSET_CONTENT_BY_CAMPAIGN, bindVars,
+				AssetContent.class).getResultsAsList();
 		return list;
 	}
 
@@ -175,8 +173,8 @@ public class AssetContentDaoUtil extends AssetContentDaoPublicUtil {
 		long recordsTotal = countTotal();
 		int recordsFiltered = list.size();
 		int draw = filter.getDraw();
-		JsonDataTablePayload payload = JsonDataTablePayload.data(filter.getUri(), list, recordsTotal,
-				recordsFiltered, draw);
+		JsonDataTablePayload payload = JsonDataTablePayload.data(filter.getUri(), list, recordsTotal, recordsFiltered,
+				draw);
 		return payload;
 	}
 

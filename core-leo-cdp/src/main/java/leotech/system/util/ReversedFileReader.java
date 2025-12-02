@@ -3,7 +3,6 @@ package leotech.system.util;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.charset.Charset;
 
 /**
  * @author Trieu Nguyen
@@ -12,12 +11,10 @@ import java.nio.charset.Charset;
  */
 public class ReversedFileReader {
     private RandomAccessFile randomAccessFile = null;
-    private Charset charset;
     private long currentPosition;
 
-    public ReversedFileReader(File file, Charset charset) throws IOException {
+    public ReversedFileReader(File file) throws IOException {
         this.randomAccessFile = new RandomAccessFile(file, "r");
-        this.charset = charset;
         this.currentPosition = file.length();
     }
 

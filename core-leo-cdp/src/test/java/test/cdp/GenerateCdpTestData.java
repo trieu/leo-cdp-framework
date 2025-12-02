@@ -139,7 +139,7 @@ public class GenerateCdpTestData {
 		DeviceDaoUtil.save(userDevice);
 		
 		// web UUID
-		String visitorId = RandomStringUtils.randomAlphanumeric(32).toLowerCase();
+		String visitorId = RandomStringUtils.secure().nextAlphabetic(32).toLowerCase();
 		
 		// social login
 		String source = "facebook";

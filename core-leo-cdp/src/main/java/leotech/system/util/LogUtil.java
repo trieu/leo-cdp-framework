@@ -118,9 +118,8 @@ public class LogUtil {
 
 		File file = new File(logFileUri);
 		int counter = 0;
-		Charset charset = Charset.forName("UTF-8");
 
-		ReversedFileReader reader = new ReversedFileReader(file, charset);
+		ReversedFileReader reader = new ReversedFileReader(file);
 		while (counter < maxRows) {
 			log.append(reader.readLine()).append("\n");
 			counter++;

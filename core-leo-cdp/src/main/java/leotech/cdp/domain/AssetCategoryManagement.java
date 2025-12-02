@@ -87,7 +87,6 @@ public final class AssetCategoryManagement {
 		categoryId = AssetCategoryDaoUtil.save(new AssetCategory("Product Item Catalogs", AssetType.PRODUCT_ITEM_CATALOG, catDesc,3));
 		if (categoryId != null) {
 			int assetType = AssetType.PRODUCT_ITEM_CATALOG;
-			int type = ContentType.HTML_TEXT;
 			
 			AssetGroup group = new AssetGroup("Default Product Items", categoryId, assetType, rootUserId);
 			group.setSystemAsset(true);

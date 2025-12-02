@@ -4,7 +4,6 @@ import java.util.ArrayList;
 
 import leotech.cdp.dao.ProfileDaoUtil;
 import leotech.cdp.domain.ProfileDataManagement;
-import leotech.cdp.job.reactive.JobUpdateProfileSingleView;
 import leotech.cdp.model.customer.ProfileSingleView;
 import rfx.core.util.Utils;
 

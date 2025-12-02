@@ -5,14 +5,9 @@ import org.slf4j.LoggerFactory;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.ext.web.Router;
-import io.vertx.ext.web.client.WebClient;
-import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.ext.web.handler.BodyHandler;
-import redis.clients.jedis.JedisPool;
-import rfx.core.nosql.jedis.RedisClientFactory;
 
 /**
  * KeycloakVerticle responsible for handling SSO routing and initialization.

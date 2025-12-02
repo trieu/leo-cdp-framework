@@ -30,7 +30,7 @@ import rfx.core.util.StringUtil;
 public final class EmailSender {
 
 	public static boolean isValidEmail(String email) {
-		if(StringUtil.isNotEmpty(email)) {
+		if (StringUtil.isNotEmpty(email)) {
 			// create the EmailValidator instance
 			EmailValidator validator = EmailValidator.getInstance();
 			// check for valid email addresses using isValid method
@@ -42,28 +42,27 @@ public final class EmailSender {
 	private static final String EMAIL_CONTENT_TEXT_HTML = "text/html";
 
 	protected static final class EmailSenderQueue {
-		final public static JedisPool jedisPool = RedisClientFactory.buildRedisPool(RedisPubSubClient.PUB_SUB_QUEUE_REDIS);
+		final public static JedisPool jedisPool = RedisClientFactory
+				.buildRedisPool(RedisPubSubClient.PUB_SUB_QUEUE_REDIS);
 		static String channel = "leocdp_email_queue";
 
 		public static void publishToRedisPubSubQueue(EmailMessage emailMsg) {
 			String message = emailMsg.toString();
-			
-			
-			
+
 			new RedisCommand<Long>(jedisPool) {
 				@Override
 				protected Long build(Jedis jedis) throws JedisException {
 					return jedis.publish(channel, message);
 				}
 			}.executeAsync();
-			
+
 		}
 	}
 
 	// ------ BEGIN public API Email Service ------
 
 	public static void sendToSmtpServer(EmailMessage messageModel) {
-		System.out.println("sendToSmtpServer " + messageModel );
+		System.out.println("sendToSmtpServer " + messageModel);
 		flushEmailToSmtpServer(messageModel);
 	}
 
@@ -79,7 +78,7 @@ public final class EmailSender {
 			if (session != null) {
 				Message message = buildMessage(messageModel, session);
 				Transport.send(message);
-				System.out.println("flushEmailToSmtpServer OK " + session );
+				System.out.println("flushEmailToSmtpServer OK " + session);
 				return 1;
 			} else {
 				System.out.println("getSmtpSessionFromSystemEmailService is NULL, skip flushEmailToSmtpServer");
@@ -122,8 +121,7 @@ public final class EmailSender {
 					return new PasswordAuthentication(username, password);
 				}
 			});
-		}
-		else {
+		} else {
 			throw new IllegalArgumentException("IllegalArgument, username " + username + " password " + password);
 		}
 		return session;

@@ -193,33 +193,9 @@ public class DatabaseConfigs implements Serializable {
 		return url.toString();
 	}
 
-	public Connection getConnection() throws SQLException {
-		Connection dbConnection = null;
-		try {
-			Driver driver = driversCache.get(getDbdriverclasspath());
-			String connectionUrl = getConnectionUrl();
-			if (driver == null) {
-				driver = (Driver) Class.forName(getDbdriverclasspath()).newInstance();
-				driversCache.put(getDbdriverclasspath(), driver);
-				DriverManager.registerDriver(driver);
-			}
-			dbConnection = DriverManager.getConnection(connectionUrl, getUsername(), getPassword());
-		} catch (ClassNotFoundException e) {
-			throw new IllegalArgumentException("Missing JDBC driver jar for " + this.getDbdriverclasspath());
-		} catch (InstantiationException e) {
-			e.printStackTrace();
-		} catch (IllegalAccessException e) {
-			e.printStackTrace();
-		}
-
-		return dbConnection;
-	}
-
 	public DatabaseConfigs() {
 	}
 	
-	
-
 	public DatabaseConfigs(String username, String password, String database, String host, int port) {
 		super();
 		this.username = username;

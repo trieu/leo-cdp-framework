@@ -162,6 +162,7 @@ public class Revenue implements Serializable {
     public Map<String, Object> validateRevenue(Connection connection) {
         boolean isValid = true;
         String reason = "";
+        @SuppressWarnings("unchecked")
         Map<String, Object> map = new HashedMap();
         String sql = "SELECT * FROM cdp_revenue.revenue WHERE from_date >= ? AND to_date <= ?";
 
