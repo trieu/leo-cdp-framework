@@ -190,6 +190,15 @@ public final class ProfileQueryManagement {
 	}
 	
 	/**
+	 * @param fgId
+	 * @return
+	 */
+	public static Profile getByFingerprintId(String fgId) {
+		return ProfileDaoUtil.getByFingerprintId(fgId, false);
+	}
+	
+	
+	/**
 	 *  get profile by Application Id
 	 * 
 	 * @param appId

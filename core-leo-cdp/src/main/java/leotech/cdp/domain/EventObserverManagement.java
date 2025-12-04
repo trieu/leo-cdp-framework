@@ -224,10 +224,10 @@ public class EventObserverManagement {
 	 * @param eventData
 	 * @return
 	 */
-	public static String saveEventFromApi(String observerId,  String fingerprintId, Date createdAt, Profile profile, String journeyMapId, String environment, 
+	public static String saveEventFromApi(Profile profile, String observerId,  String fingerprintId, Date createdAt,  String journeyMapId, String environment, 
 			String sourceIP, int touchpointType, String srcTouchpointName, String srcTouchpointUrl,
 			String refTouchpointUrl, String touchpointRefDomain, String eventName, Map<String, Object> eventData) {
-		return saveEventFromApi( observerId, fingerprintId, createdAt,  profile,  journeyMapId,  environment, 
+		return saveEventFromApi(profile, observerId, fingerprintId, createdAt,    journeyMapId,  environment, 
 				 sourceIP, null,  touchpointType,  srcTouchpointName,  srcTouchpointUrl,
 				 refTouchpointUrl,  touchpointRefDomain,  eventName, "",  eventData, null,  null, -1, null, null);
 	}
@@ -249,10 +249,10 @@ public class EventObserverManagement {
 	 * @param eventData
 	 * @return
 	 */
-	public static String saveEventFromApi(String observerId,  String fingerprintId, Date createdAt, Profile profile, String journeyMapId, String environment, 
+	public static String saveEventFromApi(Profile profile,  String observerId,  String fingerprintId, Date createdAt, String journeyMapId, String environment, 
 			String sourceIP, int touchpointType, String srcTouchpointName, String srcTouchpointUrl,
 			String refTouchpointUrl, String touchpointRefDomain, String eventName, String message, Map<String, Object> eventData) {
-		return saveEventFromApi( observerId, fingerprintId,  createdAt,  profile,  journeyMapId,  environment, 
+		return saveEventFromApi(profile, observerId, fingerprintId,  createdAt,   journeyMapId,  environment, 
 				 sourceIP, null,  touchpointType,  srcTouchpointName,  srcTouchpointUrl,
 				 refTouchpointUrl,  touchpointRefDomain,  eventName, message, eventData, null,null, -1,  null, null);
 	}
@@ -282,7 +282,7 @@ public class EventObserverManagement {
 	 * @param videoUrls
 	 * @return
 	 */
-	public static String saveEventFromApi(String observerId, String fingerprintId, Date createdAt, Profile profile, String journeyMapId, String environment, 
+	public static String saveEventFromApi(Profile profile, String observerId, String fingerprintId, Date createdAt, String journeyMapId, String environment, 
 			String sourceIP, Device userDevice, int touchpointType, String srcTouchpointName, String srcTouchpointUrl,
 			String refTouchpointUrl, String touchpointRefDomain, String eventName, String message, 
 			Map<String, Object> eventdata, String rawJsonData, OrderTransaction transaction, int ratingScore, 

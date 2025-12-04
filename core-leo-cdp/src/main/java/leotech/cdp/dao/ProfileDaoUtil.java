@@ -78,6 +78,7 @@ public final class ProfileDaoUtil extends AbstractCdpDatabaseUtil {
 	static final String AQL_GET_PROFILE_BY_PRIMARY_EMAIL = AqlTemplate.get("AQL_GET_PROFILE_BY_PRIMARY_EMAIL");
 	static final String AQL_GET_PROFILE_BY_PRIMARY_PHONE = AqlTemplate.get("AQL_GET_PROFILE_BY_PRIMARY_PHONE");
 	static final String AQL_GET_PROFILE_BY_CRM_ID_FOR_ADMIN = AqlTemplate.get("AQL_GET_PROFILE_BY_CRM_ID_FOR_ADMIN");
+	static final String AQL_GET_PROFILE_BY_FINGERPRINT_ID_FOR_ADMIN = AqlTemplate.get("AQL_GET_PROFILE_BY_FINGERPRINT_ID_FOR_ADMIN");
 	static final String AQL_GET_PROFILE_BY_VISITOR_ID_FOR_ADMIN = AqlTemplate.get("AQL_GET_PROFILE_BY_VISITOR_ID_FOR_ADMIN");
 	
 	
@@ -1096,6 +1097,37 @@ public final class ProfileDaoUtil extends AbstractCdpDatabaseUtil {
 		}
 		return p;
 	}
+	
+	/**
+	 * @param fingerprintId
+	 * @param unifyData
+	 * @return
+	 */
+	public final static ProfileSingleView getByFingerprintId(String fingerprintId, boolean unifyData) {
+		ArangoDatabase db = getCdpDatabase();
+		Map<String, Object> bindVars = new HashMap<>(3);
+		bindVars.put("fingerprintId", fingerprintId);
+		bindVars.put("hasAdminRole", true);
+		bindVars.put("loginUsername", "");
+		ProfileSingleView p;
+		if(unifyData) {
+			//loading touchpoint
+			CallbackQuery<ProfileSingleView> callback = new CallbackQuery<ProfileSingleView>() {
+				@Override
+				public ProfileSingleView apply(ProfileSingleView obj) {
+					obj.unifyData();
+					return obj;
+				}
+			};
+			p = new ArangoDbCommand<ProfileSingleView>(db, AQL_GET_PROFILE_BY_FINGERPRINT_ID_FOR_ADMIN, bindVars, ProfileSingleView.class, callback).getSingleResult();
+		}
+		else {
+			p = new ArangoDbCommand<ProfileSingleView>(db, AQL_GET_PROFILE_BY_FINGERPRINT_ID_FOR_ADMIN, bindVars, ProfileSingleView.class).getSingleResult();
+		}
+		return p;
+	}
+	
+	
 	
 	/**
 	 * @param socialMediaIds

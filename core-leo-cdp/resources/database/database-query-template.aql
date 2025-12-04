@@ -1061,6 +1061,17 @@ AQL_GET_PROFILE_BY_CRM_ID_FOR_ADMIN =>
 	LET crmId = TO_STRING(@crmRefId)
 	FOR p in cdp_profile 
 	FILTER p.status == 1 AND crmId != "" AND p.crmRefId == crmId AND (@loginUsername IN p.authorizedViewers[*] OR @hasAdminRole == TRUE)
+	SORT p.dataQualityScore DESC
+	LIMIT 1
+	RETURN p
+;
+
+AQL_GET_PROFILE_BY_FINGERPRINT_ID_FOR_ADMIN =>
+	LET fingerprintId = TO_STRING(@fingerprintId)
+	FOR p in cdp_profile 
+	FILTER p.status == 1 AND fingerprintId != "" AND p.fingerprintId == fingerprintId 
+			AND (@loginUsername IN p.authorizedViewers[*] OR @hasAdminRole == TRUE)
+	SORT p.dataQualityScore DESC
 	LIMIT 1
 	RETURN p
 ;

@@ -27,6 +27,7 @@ import leotech.system.util.HttpWebParamUtil;
 import leotech.system.util.LogUtil;
 import leotech.system.util.UrlUtil;
 import leotech.system.util.XssFilterUtil;
+import rfx.core.util.HashUtil;
 import rfx.core.util.StringUtil;
 
 /**
@@ -175,8 +176,9 @@ public class EventApiHandler extends BaseApiHandler {
 		// --- Device Info (with fallbacks to HTTP request) ---
 		String sourceIP = json.getString(FIELD_SOURCE_IP, HttpWebParamUtil.getRemoteIP(req));
 		String userAgent = json.getString(FIELD_USER_AGENT, req.headers().get("User-Agent"));
-		String fingerprintId = json.getString(FIELD_USER_DEVICE_UUID,"");
 		Device userDevice = new Device(userAgent);
+		String userDeviceUUID = json.getString(FIELD_USER_DEVICE_UUID,"");
+		String fingerprintId = HashUtil.sha256(userDeviceUUID + observerId + userAgent + environment +journeyMapId);
 
 		// --- Touchpoint Info and creation/retrieval of Touchpoint entity ---
 		int tpType = json.getInteger(FIELD_TOUCHPOINT_TYPE, TouchpointType.DATA_OBSERVER);
@@ -201,7 +203,7 @@ public class EventApiHandler extends BaseApiHandler {
 		}
 
 		// --- Profile Lookup or Create using identity hierarchy ---
-		Profile profile = queryProfileByKeys(fingerprintId, email, phone, crmId, appId, socialId, govId);
+		Profile profile = queryProfileByKeys(email, phone, crmId, appId, socialId, govId, fingerprintId);
 
 		if (profile != null) {
 			profile.setFirstName(firstName);
@@ -213,6 +215,7 @@ public class EventApiHandler extends BaseApiHandler {
 			profile.setGovernmentIssuedID(govId);
 			profile.setLastSeenIp(sourceIP);
 			profile.setLastTouchpoint(sourceTp);
+			profile.setFingerprintId(fingerprintId);
 		}
 		else {
 			// create a minimal profile when none found
@@ -239,7 +242,7 @@ public class EventApiHandler extends BaseApiHandler {
 		OrderTransaction txn = new OrderTransaction(createdAt, json, computeTotal);
 
 		// --- Persist the event via the observer management layer ---
-		return EventObserverManagement.saveEventFromApi(observerId, fingerprintId, createdAt, profile, journeyMapId, environment,
+		return EventObserverManagement.saveEventFromApi(profile, observerId, fingerprintId, createdAt, journeyMapId, environment,
 				sourceIP, userDevice, tpType, tpName, tpUrl, refUrl, refDomain, eventName, message, eventData, rawJson,
 				txn, rating, imageUrls, videoUrls);
 	}
@@ -254,18 +257,21 @@ public class EventApiHandler extends BaseApiHandler {
 	 *   4. CRM reference ID
 	 *   5. Application ID         (KiotViet, Pancake, Google, FB...)
 	 *   6. Social media ID        (zalo, facebook, linkedIn...)
+	 *   7. Fingerprint ID      = sha256(userDeviceUUID + observerId + userAgent + environment +journeyMapId)
 	 *
 	 * The method returns as soon as one match is found.
 	 * If no identity matches, returns null.
 	 */
-	private static Profile queryProfileByKeys(String fingerprintId, String email,
+	private static Profile queryProfileByKeys(String email,
 	                                          String phone,
 	                                          String crmId,
 	                                          String appId,
 	                                          String socialId,
-	                                          String govId) {
+	                                          String govId,
+	                                          String fingerprintId
+	                                          ) {
 
-		// 0. must use fingerprintId for security when update data from public event API 
+		
 		
 	    // 1. Government ID
 	    if (StringUtil.isNotEmpty(govId)) {
@@ -295,6 +301,11 @@ public class EventApiHandler extends BaseApiHandler {
 	    // 6. Social Media ID
 	    if (StringUtil.isNotEmpty(socialId)) {
 	        return ProfileQueryManagement.getBySocialMediaId(socialId);
+	    }
+	    
+	    // 7. fingerprintId (only for mobile app)
+	    if (StringUtil.isNotEmpty(fingerprintId)) {
+	        return ProfileQueryManagement.getByFingerprintId(fingerprintId);
 	    }
 
 	    // No identities found
