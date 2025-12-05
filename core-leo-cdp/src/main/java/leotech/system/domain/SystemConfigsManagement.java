@@ -50,6 +50,7 @@ public final class SystemConfigsManagement {
 		}
 	};
 
+	@SuppressWarnings("null")
 	static LoadingCache<String, SystemService> systemConfigsCache = CacheBuilder.newBuilder().maximumSize(CACHE_SIZE)
 			.expireAfterWrite(CACHE_TIME, TimeUnit.SECONDS).build(systemServicesDbLoader);
 		

@@ -86,7 +86,7 @@ public class TouchpointManagement {
 	static CacheLoader<TouchpointFlowReportCacheKey, List<TouchpointFlowReport>> cacheLoaderTouchpointFlowReport = new CacheLoader<>() {
 		@Override
 		public List<TouchpointFlowReport> load(TouchpointFlowReportCacheKey key) {
-			if(StringUtil.isEmpty(key.refProfileId)) {
+			if(key != null && StringUtil.isEmpty(key.refProfileId)) {
 				System.out.println("MISS CACHE , cache load getTouchpointFlowReportForJourney");
 				return getTouchpointFlowReportForJourney(key.refJourneyId, key.beginFilterDate, key.endFilterDate,
 						key.startIndex, key.numberFlow);

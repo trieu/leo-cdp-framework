@@ -96,6 +96,9 @@ public final class SystemMetaData {
 		logger.debug(LogUtil.toPrettyJson(metaDataMap));
 	}
 
+	/**
+	 * load LEOCDP_METADATA_DEFAULT_VALUE
+	 */
 	private static void loadDefaultMetaDataMap() {
 		Properties props = new Properties();
 		try {
@@ -108,6 +111,9 @@ public final class SystemMetaData {
 		metaDataMap.putAll(Maps.newHashMap(Maps.fromProperties(props)));
 	}
 	
+	/**
+	 * save Meta Data Map to file LEOCDP_METADATA_DEFAULT_VALUE
+	 */
 	public static void saveMetaDataMapPreserveFormat() {
 	    String configPath = Paths.get(".").toString()
 	            + File.separator
@@ -163,19 +169,42 @@ public final class SystemMetaData {
 	}
 
 	
-	
+	/**
+	 * 
+	 * @param name
+	 * @param defaultValue
+	 * @return
+	 */
 	public static final int getInt(String name, int defaultValue) {
 		return StringUtil.safeParseInt(metaDataMap.get(name), defaultValue);
 	}
 	
+	/**
+	 * 
+	 * @param name
+	 * @param defaultValue
+	 * @return
+	 */
 	public static final long getLong(String name, long defaultValue) {
 		return StringUtil.safeParseLong(metaDataMap.get(name), defaultValue);
 	}
 	
+	/**
+	 * 
+	 * @param name
+	 * @param defaultValue
+	 * @return
+	 */
 	public static final String getString(String name, String defaultValue) {
 		return metaDataMap.getOrDefault(name, defaultValue);
 	}
 	
+	/**
+	 * 
+	 * @param name
+	 * @param defaultValue
+	 * @return boolean value of name
+	 */
 	public static final boolean getBoolean(String name, boolean defaultValue) {
 		return Boolean.valueOf(metaDataMap.getOrDefault(name, String.valueOf(defaultValue)));
 	}
@@ -253,10 +282,8 @@ public final class SystemMetaData {
 	
 	public static final Set<String> INDUSTRY_DATA_MODELS = new HashSet<String>(10);
 
-	
 	public static final boolean SHOW_DEFAULT_LOGIN = metaDataMap.getOrDefault("showDefaultLogin","false").trim().equalsIgnoreCase("true");
-	public static final boolean SSO_LOGIN = metaDataMap.getOrDefault("ssoLogin","false").trim().equalsIgnoreCase("true");
-	public static final String SSO_LOGIN_URL = metaDataMap.getOrDefault("ssoLoginUrl","").trim();
+	
 	
 	static {
 		String[] industries = INDUSTRY_DATA_MODELS_STRING.split(",");

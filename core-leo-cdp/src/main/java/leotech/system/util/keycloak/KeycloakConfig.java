@@ -48,27 +48,11 @@ public final class KeycloakConfig {
 			this.clientSecret = configs.getOrDefault("keycloakClientSecret", "").toString();
 			this.callbackUrl = configs.getOrDefault("keycloakCallbackUrl", "").toString();
 
-			if (enabled) {
+			if (this.enabled) {
 				validate();
 			}
-			logger.info("Using ARANGODB, loaded KeycloakConfig.clientId: " + this.clientId);
-		} 
-		else if (SystemMetaData.SSO_LOGIN && StringUtil.isNotEmpty(SystemMetaData.SSO_LOGIN_URL)) {
-			// load default in leocdp-metadata.properties
-			this.enabled = SystemMetaData.SSO_LOGIN;
-			this.url = SystemMetaData.SSO_LOGIN_URL;
-
-			this.verifySSL = SystemMetaData.getBoolean("keycloakVerifySSL", true);
-			this.realm = SystemMetaData.getString("keycloakRealm", "");
-			this.clientId = SystemMetaData.getString("keycloakClientId", "");
-			this.clientSecret = SystemMetaData.getString("keycloakClientSecret", "");
-			this.callbackUrl = SystemMetaData.getString("keycloakCallbackUrl", "");
-
-			if (enabled) {
-				validate();
-			}
-			logger.info("Using leocdp-metadata.properties, loaded KeycloakConfig.clientId: " + this.clientId);
-		}
+			logger.info("From CDP database, loaded KeycloakConfig.clientId: " + this.clientId);
+		}	
 
 	}
 

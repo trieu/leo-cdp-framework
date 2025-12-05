@@ -12,10 +12,7 @@ import static leotech.system.util.database.ArangoDbUtil.ENV_ARANGO_PORT;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.sql.Connection;
 import java.sql.Driver;
-import java.sql.DriverManager;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
