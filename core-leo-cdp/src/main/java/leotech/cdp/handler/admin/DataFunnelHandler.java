@@ -87,14 +87,14 @@ public final class DataFunnelHandler extends SecuredHttpDataHandler {
 						map.put(JourneyFlowSchema.GENERAL_DATA_FUNNEL, funnelFlow);
 						
 						// customer flow event metrics
-						List<EventMetric> metrics = EventMetricManagement.getAllSortedEventMetrics();
+						List<EventMetric> metrics = EventMetricManagement.getAllSortedEventMetrics(true);
 						map.put(JourneyFlowSchema.BEHAVIORAL_METRICS, metrics);
 						
 						return JsonDataPayload.ok(uri, map, loginUser, DataFlowStage.class);
 					}
 					
 					case URI_EVENT_METRICS : {
-						Collection<EventMetric> metrics = EventMetricManagement.getAllSortedEventMetrics();
+						Collection<EventMetric> metrics = EventMetricManagement.getAllSortedEventMetrics(true);
 						return JsonDataPayload.ok(uri, metrics, loginUser, DataFlowStage.class);
 					}
 

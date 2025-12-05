@@ -2,116 +2,206 @@ package leotech.cdp.domain;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import leotech.cdp.dao.EventMetricDaoUtil;
-import leotech.cdp.domain.cache.AdminRedisCacheUtil;
+import leotech.cdp.domain.cache.EventMetricCache;
+import leotech.cdp.domain.comparators.EventMetricComparators;
 import leotech.cdp.domain.schema.JourneyFlowSchema;
 import leotech.cdp.model.journey.EventMetric;
 
 /**
- * Event Metric Metadata Management
- * 
- * @author tantrieuf31
+ * Manages EventMetric metadata with in-memory caching for high-throughput data processing. <br>
+ * <br>
+ * Admin (refresh == true) always bypasses cache and fetches fresh data from DAO. <br>
+ * Runtime (refresh == false) always uses cached values for performance. <br>
+ *<br>
+ * This class also schedules automatic refresh every 3 minutes to ensure CDP nodes 
+ * stay consistent without requiring manual reload. <br>
+ *<br>
+ * @author: tantrieuf31 <br>
  * @since 2020
- *
  */
 public class EventMetricManagement {
 
-	public static final EventMetric UNCLASSIFIED_EVENT = new EventMetric(JourneyFlowSchema.STANDARD_EVENT_FLOW, "unclassified-event", 
-			"Unclassified Event", 0, EventMetric.NO_SCORING,EventMetric.FIRST_PARTY_DATA, DataFlowManagement.CUSTOMER_PROFILE_FUNNEL_STAGE.getId(), EventMetric.JOURNEY_STAGE_AWARENESS);
-	
-	public static final EventMetric RECOMMENDATION = new EventMetric(JourneyFlowSchema.STANDARD_EVENT_FLOW, "recommend", 
-			"Recommend", 0, EventMetric.NO_SCORING, EventMetric.FIRST_PARTY_DATA, "prospect",EventMetric.JOURNEY_STAGE_AWARENESS);
+    /** Global thread-safe cache for all flows */
+    private static final Map<String, EventMetricCache> cacheMap = new ConcurrentHashMap<>();
 
-	// local cache for all event metric definition
-	static final Map<String, EventMetric> metricCache = new ConcurrentHashMap<>(1000);
-	
-	static final Comparator<EventMetric> SORTING_BY_SCORE = new Comparator<EventMetric>() {
-		@Override
-		public int compare(EventMetric o1, EventMetric o2) {
-			int score1 = Math.abs(o1.getScore());
-			int score2 = Math.abs(o2.getScore());
-			if (score1 > score2) {
-				return 1;
-			} else if (score1 < score2) {
-				return -1;
-			}
-			return 0;
-		}
-	};
+    /** Scheduled executor for periodic auto-refresh */
+    private static final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
-	static {
-		loadCache();
-	}
+    /** Predefined built-in event types */
+    public static final EventMetric UNCLASSIFIED_EVENT = createUnclassifiedEvent();
+    public static final EventMetric RECOMMENDATION = createRecommendationEvent();
 
-	/**
-	 * load cache of all event metrics in JourneyDataFlowSchema.GENERAL_BUSINESS_EVENT
-	 */
-	public static void loadCache() {
-		metricCache.clear();
-		String flowName = JourneyFlowSchema.GENERAL_BUSINESS_EVENT;
-		loadEventMetricCache(flowName);
-	}
+    /** Static initializer */
+    static {
+        // Initial load (fresh)
+        loadCache(true);
 
-	/**
-	 * @param flowName
-	 */
-	public static void loadEventMetricCache(String flowName) {
-		metricCache.clear();
-		List<EventMetric> eventMetrics = EventMetricDaoUtil.getEventMetricsByFlowName(flowName);
-		for (EventMetric eventMetric : eventMetrics) {
-			metricCache.put(eventMetric.getEventName(), eventMetric);
-		}
-	}
-	
-	/**
-	 * @param eventMetric
-	 */
-	public static String save(EventMetric eventMetric) {
-		String id = EventMetricDaoUtil.save(eventMetric, true);
-		AdminRedisCacheUtil.clearCacheAllObservers();
-		metricCache.put(eventMetric.getEventName(), eventMetric);
-		return id;
-		
-	}
+        // Auto refresh every 3 minutes
+        scheduler.scheduleAtFixedRate(() -> {
+            try {
+                refreshAllFlows();
+            } catch (Exception ex) {
+                ex.printStackTrace(); // avoid silent failures
+            }
+        }, 3, 3, TimeUnit.MINUTES);
+    }
 
-	/**
-	 * 
-	 * @param eventName
-	 * @return EventMetric
-	 */
-	public static EventMetric getEventMetricByName(String eventName) {
-		if (eventName != null) {
-			return metricCache.getOrDefault(eventName, UNCLASSIFIED_EVENT);
-		}
-		return UNCLASSIFIED_EVENT;
-	}
+    // -------------------------------------------------------------------
+    // Factory for built-in events
+    // -------------------------------------------------------------------
 
-	/**
-	 * @return a sorted list of all event metrics
-	 */
-	public static List<EventMetric> getAllSortedEventMetrics() {
-		List<EventMetric> list = new ArrayList<>(metricCache.values());
-		Collections.sort(list, SORTING_BY_SCORE);
-		return list;
-	}
+    private static EventMetric createUnclassifiedEvent() {
+        return new EventMetric(
+            JourneyFlowSchema.STANDARD_EVENT_FLOW,
+            "unclassified-event",
+            "Unclassified Event",
+            0,
+            EventMetric.NO_SCORING,
+            EventMetric.FIRST_PARTY_DATA,
+            DataFlowManagement.CUSTOMER_PROFILE_FUNNEL_STAGE.getId(),
+            EventMetric.JOURNEY_STAGE_AWARENESS
+        );
+    }
 
-	/**
-	 * delete a event metric by event name
-	 * 
-	 * @param eventName
-	 * @return
-	 */
-	public static String delete(String eventName) {
-		EventMetric eventMetric = metricCache.remove(eventName);
-		if(eventMetric != null) {
-			EventMetricDaoUtil.delete(eventMetric);
-		}
-		AdminRedisCacheUtil.clearCacheAllObservers();
-		return eventName;
-	}
+    private static EventMetric createRecommendationEvent() {
+        return new EventMetric(
+            JourneyFlowSchema.STANDARD_EVENT_FLOW,
+            "recommend",
+            "Recommend",
+            0,
+            EventMetric.NO_SCORING,
+            EventMetric.FIRST_PARTY_DATA,
+            "prospect",
+            EventMetric.JOURNEY_STAGE_AWARENESS
+        );
+    }
+
+    // -------------------------------------------------------------------
+    // Cache Loaders
+    // -------------------------------------------------------------------
+
+    /**
+     * Loads GENERAL_BUSINESS_EVENT flow cache.
+     *
+     * @param refresh true = always reload from database (Admin UI)
+     * @return cache instance
+     */
+    public static EventMetricCache loadCache(boolean refresh) {
+        return loadEventMetricCache(JourneyFlowSchema.GENERAL_BUSINESS_EVENT, refresh);
+    }
+
+    public static EventMetricCache loadCache() {
+        return loadCache(false);
+    }
+
+    /**
+     * Loads EventMetric cache for a given flow.
+     *
+     * refresh == true → DO NOT use cache, ALWAYS load from DAO.  
+     * refresh == false → return cached version (runtime).
+     */
+    public static EventMetricCache loadEventMetricCache(String flowName, boolean refresh) {
+
+        // Admin UI always requires a fresh snapshot
+        if (refresh) {
+            List<EventMetric> freshData = EventMetricDaoUtil.getEventMetricsByFlowName(flowName);
+            EventMetricCache newCache = new EventMetricCache();
+            newCache.putAll(freshData);
+            cacheMap.put(flowName, newCache);
+            return newCache;
+        }
+
+        // Runtime: use cached version
+        return cacheMap.computeIfAbsent(flowName, name -> {
+            // Load from DB on first use
+            List<EventMetric> metrics = EventMetricDaoUtil.getEventMetricsByFlowName(flowName);
+            EventMetricCache c = new EventMetricCache();
+            c.putAll(metrics);
+            return c;
+        });
+    }
+
+    // -------------------------------------------------------------------
+    // CRUD Operations
+    // -------------------------------------------------------------------
+
+    /**
+     * Save & update cache.
+     */
+    public static String save(EventMetric eventMetric) {
+        String id = EventMetricDaoUtil.save(eventMetric, true);
+
+        // Update cache for the corresponding flow
+        EventMetricCache cache = loadEventMetricCache(eventMetric.getFlowName(), false);
+        cache.put(eventMetric.getEventName(), eventMetric);
+
+        return id;
+    }
+
+    public static EventMetric getEventMetricByName(String eventName) {
+        if (eventName == null) return UNCLASSIFIED_EVENT;
+        return loadCache().get(eventName).orElse(UNCLASSIFIED_EVENT);
+    }
+
+    public static List<EventMetric> getAllSortedEventMetrics(boolean refresh) {
+        List<EventMetric> list = new ArrayList<>(loadCache(refresh).getAll());
+        Collections.sort(list, EventMetricComparators.SCORE_COMPARATOR);
+        return list;
+    }
+
+    public static List<EventMetric> getAllSortedEventMetrics() {
+        return getAllSortedEventMetrics(false);
+    }
+
+    /**
+     * Delete from DB first → then remove from cache.
+     */
+    public static String delete(String eventName) {
+        Optional<EventMetric> opt = loadCache().get(eventName);
+        if (opt.isPresent()) {
+            EventMetricDaoUtil.delete(opt.get());
+            loadCache().remove(eventName);
+        }
+        return eventName;
+    }
+
+    public static int getCacheSize() {
+        return loadCache().size();
+    }
+
+    /**
+     * Fully clear all caches.
+     */
+    public static void clearAll() {
+        cacheMap.values().forEach(EventMetricCache::clear);
+        cacheMap.clear();
+    }
+
+    // -------------------------------------------------------------------
+    // Auto Refresh (every 3 minutes)
+    // -------------------------------------------------------------------
+
+    /**
+     * Reloads all flow caches (used by scheduler).
+     */
+    private static void refreshAllFlows() {
+        for (String flowName : cacheMap.keySet()) {
+            List<EventMetric> metrics = EventMetricDaoUtil.getEventMetricsByFlowName(flowName);
+
+            EventMetricCache newCache = new EventMetricCache();
+            newCache.putAll(metrics);
+
+            // Atomic swap
+            cacheMap.put(flowName, newCache);
+        }
+    }
 }
