@@ -149,8 +149,7 @@ public class JobCsvExportForSegment extends ReactiveExportDataJob {
 					);
 					SystemUserManagement.sendNotification(systemUserId, notification);
 				};
-
-	
+				TaskRunner.run(task);
 
 				StringBuffer exportedDataStr = buildCsvContent(csvType, rows);
 				String fullFilePath = getLocalFilePath(segmentId);

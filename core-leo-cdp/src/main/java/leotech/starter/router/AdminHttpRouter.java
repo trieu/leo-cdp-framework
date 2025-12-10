@@ -1,253 +1,166 @@
 package leotech.starter.router;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
-import leotech.cdp.handler.admin.AgentHandler;
-import leotech.cdp.handler.admin.Analytics360Handler;
-import leotech.cdp.handler.admin.AssetCategoryHandler;
-import leotech.cdp.handler.admin.AssetGroupHandler;
-import leotech.cdp.handler.admin.AssetItemHandler;
-import leotech.cdp.handler.admin.BusinessAccountHandler;
-import leotech.cdp.handler.admin.CampaignHandler;
-import leotech.cdp.handler.admin.DataFunnelHandler;
-import leotech.cdp.handler.admin.EventDataHandler;
-import leotech.cdp.handler.admin.EventObserverHandler;
-import leotech.cdp.handler.admin.JourneyMapHandler;
-import leotech.cdp.handler.admin.ProfileDataHandler;
-import leotech.cdp.handler.admin.SegmentDataHandler;
-import leotech.cdp.handler.admin.SystemConfigHandler;
-import leotech.cdp.handler.admin.SystemControlHandler;
-import leotech.cdp.handler.admin.SystemUserLoginHandler;
-import leotech.cdp.handler.admin.TouchpointHubHandler;
+import leotech.cdp.domain.ProfileDataManagement;
+import leotech.cdp.handler.admin.*; // Assumes all handlers are here
 import leotech.system.common.BaseWebRouter;
 import leotech.system.model.JsonDataPayload;
 
 /**
  * Admin Http Web Router
- * 
- * @author tantrieuf31
+ * Refactored for Leo CDP (Java 11)
+ * * @author tantrieuf31
  * @since 2020
- *
  */
 public final class AdminHttpRouter extends BaseWebRouter {
 
-	public static final String CDP_JOURNEY_MAP_PREFIX = "/cdp/journeymap";
-	public static final String CDP_PROFILE_PREFIX = "/cdp/profile";
-	public static final String CDP_FUNNEL_PREFIX = "/cdp/funnel";
-	public static final String CDP_OBSERVER_PREFIX = "/cdp/observer";
-	public static final String CDP_EVENT_PREFIX = "/cdp/event";
-	public static final String CDP_SEGMENT_PREFIX = "/cdp/segment";
-	public static final String CDP_ACCOUNT_PREFIX = "/cdp/account";
-	public static final String CDP_TOUCHPOINT_HUB_PREFIX = "/cdp/touchpointhub";
-	public static final String CDP_TOUCHPOINT_PREFIX = "/cdp/touchpoint";
-	public static final String CDP_ANALYTICS_360_PREFIX = "/cdp/analytics360";
-	public static final String CDP_CAMPAIGN_PREFIX = "/cdp/campaign";
-	public static final String CDP_AI_AGENT_PREFIX = "/cdp/agent";
-	
-	// system handler for admin
-	public static final String CDP_SYSTEM_CONTROL= "/cdp/system-control";
-	public static final String CDP_SYSTEM_CONFIG_PREFIX = "/cdp/system-config";
-	
-	// digital asset management
-	public static final String CDP_ITEM_PREFIX = "/cdp/asset-item";
-	public static final String CDP_GROUP_PREFIX = "/cdp/asset-group";
-	public static final String CDP_CATEGORY_PREFIX = "/cdp/asset-category";
-	public static final String CDP_CONTENT_CRAWLER_PREFIX = "/cdp/content-crawler";
-	
+	static Logger logger = LoggerFactory.getLogger(AdminHttpRouter.class);
 
-	public AdminHttpRouter(RoutingContext context, String host, int port) {
-		super(context, host, port);
-	}
+    // --- Route Constants ---
+    public static final String CDP_JOURNEY_MAP_PREFIX     = "/cdp/journeymap";
+    public static final String CDP_PROFILE_PREFIX         = "/cdp/profile";
+    public static final String CDP_FUNNEL_PREFIX          = "/cdp/funnel";
+    public static final String CDP_OBSERVER_PREFIX        = "/cdp/observer";
+    public static final String CDP_EVENT_PREFIX           = "/cdp/event";
+    public static final String CDP_SEGMENT_PREFIX         = "/cdp/segment";
+    public static final String CDP_ACCOUNT_PREFIX         = "/cdp/account";
+    public static final String CDP_TOUCHPOINT_HUB_PREFIX  = "/cdp/touchpointhub";
+    public static final String CDP_TOUCHPOINT_PREFIX      = "/cdp/touchpoint";
+    public static final String CDP_ANALYTICS_360_PREFIX   = "/cdp/analytics360";
+    public static final String CDP_CAMPAIGN_PREFIX        = "/cdp/campaign";
+    public static final String CDP_AI_AGENT_PREFIX        = "/cdp/agent";
+    public static final String CDP_SYSTEM_CONTROL         = "/cdp/system-control";
+    public static final String CDP_SYSTEM_CONFIG_PREFIX   = "/cdp/system-config";
+    public static final String CDP_ITEM_PREFIX            = "/cdp/asset-item";
+    public static final String CDP_GROUP_PREFIX           = "/cdp/asset-group";
+    public static final String CDP_CATEGORY_PREFIX        = "/cdp/asset-category";
+    public static final String CDP_CONTENT_CRAWLER_PREFIX = "/cdp/content-crawler";
 
-	@Override
-	public void process() throws Exception {
-		this.handle(this.context);
-	}
+    /**
+     * Functional interface factory to instantiate handlers with the router context
+     */
+    private static final Map<String, Function<BaseWebRouter, ?>> ROUTE_REGISTRY = new LinkedHashMap<>();
 
-	@Override
-	protected void callHttpPostHandler(HttpServerRequest req, String userSession, String uri, JsonObject paramJson, Consumer<JsonDataPayload> done) {
-		
-		PROCESSORS.submit(()->{
-			JsonDataPayload payload = null;
-			try {			
-				Map<String, Cookie> cookieMap = req.cookieMap();
-				
-				if (uri.startsWith(CDP_SYSTEM_CONTROL)) {
-					payload = new SystemControlHandler(this).httpPostHandler(userSession, uri, paramJson, cookieMap);
-				}
-				//////// Core System Management ///////
-				else if (uri.startsWith(SYSTEM_USER_PREFIX)) {
-					payload = new SystemUserLoginHandler(this).httpPostHandler(userSession, uri, paramJson, cookieMap);
-				}
-				//
-				else if (uri.startsWith(CDP_SYSTEM_CONFIG_PREFIX)) {
-					payload = new SystemConfigHandler(this).httpPostHandler(userSession, uri, paramJson, cookieMap);
-				} 
-				
-				//////// Customer Data Platform ///////
-				//
-				else if (uri.startsWith(CDP_ANALYTICS_360_PREFIX)) {
-					payload = new Analytics360Handler(this).httpPostHandler(userSession, uri, paramJson, cookieMap);
-				}
-				//
-				else if (uri.startsWith(CDP_FUNNEL_PREFIX)) {
-					payload = new DataFunnelHandler(this).httpPostHandler(userSession, uri, paramJson, cookieMap);
-				}
-				//
-				else if(uri.startsWith(CDP_JOURNEY_MAP_PREFIX)) {
-					payload = new JourneyMapHandler(this).httpPostHandler(userSession, uri, paramJson, cookieMap);
-				}
-				//
-				else if(uri.startsWith(CDP_TOUCHPOINT_HUB_PREFIX)) {
-					payload = new TouchpointHubHandler(this).httpPostHandler(userSession, uri, paramJson, cookieMap);
-				}
-				//
-				else if(uri.startsWith(CDP_OBSERVER_PREFIX)) {
-					payload = new EventObserverHandler(this).httpPostHandler(userSession, uri, paramJson, cookieMap);
-				}
-				//
-				else if(uri.startsWith(CDP_EVENT_PREFIX)) {
-					payload = new EventDataHandler(this).httpPostHandler(userSession, uri, paramJson, cookieMap);
-				}
-				//
-				else if (uri.startsWith(CDP_TOUCHPOINT_PREFIX)) {
-					payload = new ProfileDataHandler(this).httpPostHandler(userSession, uri, paramJson, cookieMap);
-				}
-				//
-				else if (uri.startsWith(CDP_PROFILE_PREFIX)) {
-					payload = new ProfileDataHandler(this).httpPostHandler(userSession, uri, paramJson, cookieMap);
-				}
-				//
-				else if (uri.startsWith(CDP_SEGMENT_PREFIX)) {
-					payload = new SegmentDataHandler(this).httpPostHandler(userSession, uri, paramJson, cookieMap);
-				}
-				//
-				else if (uri.startsWith(CDP_ACCOUNT_PREFIX)) {
-					payload = new BusinessAccountHandler(this).httpPostHandler(userSession, uri, paramJson, cookieMap);
-				}
-				//
-				else if (uri.startsWith(CDP_CAMPAIGN_PREFIX)) {
-					payload = new CampaignHandler(this).httpPostHandler(userSession, uri, paramJson, cookieMap);
-				}
-				//
-				else if (uri.startsWith(CDP_AI_AGENT_PREFIX)) {
-					payload = new AgentHandler(this).httpPostHandler(userSession, uri, paramJson, cookieMap);
-				}
-				//
-				else if (uri.startsWith(CDP_CATEGORY_PREFIX)) {
-					payload = new AssetCategoryHandler(this).httpPostHandler(userSession, uri, paramJson, cookieMap);
-				}
-				//
-				else if (uri.startsWith(CDP_GROUP_PREFIX)) {
-					payload = new AssetGroupHandler(this).httpPostHandler(userSession, uri, paramJson, cookieMap);
-				}
-				//
-				else if (uri.startsWith(CDP_ITEM_PREFIX)) {
-					payload = new AssetItemHandler(this).httpPostHandler(userSession, uri, paramJson, cookieMap);
-				}
-				
-			} 
-			catch (Throwable e) {
-				e.printStackTrace();
-				if (e instanceof IllegalArgumentException) {
-					payload = JsonDataPayload.fail(e.getMessage(), 507);
-				} else {
-					payload = JsonDataPayload.fail(e.getMessage(), 500);
-				}
-			} 
-			done.accept(payload);
-		});		
-		
-	}
+    static {
+        // System & Core
+        ROUTE_REGISTRY.put(CDP_SYSTEM_CONTROL,       SystemControlHandler::new);
+        ROUTE_REGISTRY.put(CDP_SYSTEM_USER_PREFIX,   SystemUserLoginHandler::new); // Inherited constant
+        ROUTE_REGISTRY.put(CDP_SYSTEM_CONFIG_PREFIX, SystemConfigHandler::new);
 
-	@Override
-	protected void callHttpGetHandler(HttpServerRequest req, String userSession, String uri, MultiMap urlParams, Consumer<JsonDataPayload> done) {
-		PROCESSORS.submit(()->{
-			JsonDataPayload payload = null;
-			try {
-				Map<String, Cookie> cookieMap = req.cookieMap();
-				//////// Core System Management ///////
-				if (uri.startsWith(SYSTEM_USER_PREFIX)) {
-					payload = new SystemUserLoginHandler(this).httpGetHandler(userSession, uri, urlParams, cookieMap);
-				}
-				//
-				else if (uri.startsWith(CDP_SYSTEM_CONFIG_PREFIX)) {
-					payload = new SystemConfigHandler(this).httpGetHandler(userSession, uri, urlParams, cookieMap);
-				} 
-				//////// Customer Data Platform ///////
-				//
-				else if (uri.startsWith(CDP_ANALYTICS_360_PREFIX)) {
-					payload = new Analytics360Handler(this).httpGetHandler(userSession, uri, urlParams, cookieMap);
-				}
-				//
-				else if (uri.startsWith(CDP_FUNNEL_PREFIX)) {
-					payload = new DataFunnelHandler(this).httpGetHandler(userSession, uri, urlParams, cookieMap);
-				}
-				//
-				else if(uri.startsWith(CDP_JOURNEY_MAP_PREFIX)) {
-					payload = new JourneyMapHandler(this).httpGetHandler(userSession, uri, urlParams, cookieMap);
-				}
-				//
-				else if(uri.startsWith(CDP_TOUCHPOINT_HUB_PREFIX)) {
-					payload = new TouchpointHubHandler(this).httpGetHandler(userSession, uri, urlParams, cookieMap);
-				}
-				//
-				else if(uri.startsWith(CDP_OBSERVER_PREFIX)) {
-					payload = new EventObserverHandler(this).httpGetHandler(userSession, uri, urlParams, cookieMap);
-				}
-				//
-				else if(uri.startsWith(CDP_EVENT_PREFIX)) {
-					payload = new EventDataHandler(this).httpGetHandler(userSession, uri, urlParams, cookieMap);
-				}
-				//
-				else if (uri.startsWith(CDP_TOUCHPOINT_PREFIX)) {
-					payload = new ProfileDataHandler(this).httpGetHandler(userSession, uri, urlParams, cookieMap);
-				}
-				//
-				else if (uri.startsWith(CDP_PROFILE_PREFIX)) {
-					payload = new ProfileDataHandler(this).httpGetHandler(userSession, uri, urlParams, cookieMap);
-				}
-				//
-				else if (uri.startsWith(CDP_SEGMENT_PREFIX)) {
-					payload = new SegmentDataHandler(this).httpGetHandler(userSession, uri, urlParams, cookieMap);
-				}
-				//
-				else if (uri.startsWith(CDP_ACCOUNT_PREFIX)) {
-					payload = new BusinessAccountHandler(this).httpGetHandler(userSession, uri, urlParams, cookieMap);
-				}
-				//
-				else if (uri.startsWith(CDP_CAMPAIGN_PREFIX)) {
-					payload = new CampaignHandler(this).httpGetHandler(userSession, uri, urlParams, cookieMap);
-				}
-				//
-				else if (uri.startsWith(CDP_AI_AGENT_PREFIX)) {
-					payload = new AgentHandler(this).httpGetHandler(userSession, uri, urlParams, cookieMap);
-				}
-				//
-				else if (uri.startsWith(CDP_CATEGORY_PREFIX)) {
-					payload = new AssetCategoryHandler(this).httpGetHandler(userSession, uri, urlParams, cookieMap);
-				}
-				//
-				else if (uri.startsWith(CDP_GROUP_PREFIX)) {
-					payload = new AssetGroupHandler(this).httpGetHandler(userSession, uri, urlParams, cookieMap);
-				}
-				//
-				else if (uri.startsWith(CDP_ITEM_PREFIX)) {
-					payload = new AssetItemHandler(this).httpGetHandler(userSession, uri, urlParams, cookieMap);
-				}
-			} 
-			catch (Throwable e) {
-				e.printStackTrace();
-				payload = JsonDataPayload.fail(e.getMessage(), 500);
-			}
-			done.accept(payload);
-		});	
-	}
-	
+        // CDP Core
+        ROUTE_REGISTRY.put(CDP_ANALYTICS_360_PREFIX, Analytics360Handler::new);
+        ROUTE_REGISTRY.put(CDP_FUNNEL_PREFIX,        DataFunnelHandler::new);
+        ROUTE_REGISTRY.put(CDP_JOURNEY_MAP_PREFIX,   JourneyMapHandler::new);
+        ROUTE_REGISTRY.put(CDP_TOUCHPOINT_HUB_PREFIX,TouchpointHubHandler::new);
+        ROUTE_REGISTRY.put(CDP_TOUCHPOINT_PREFIX,    TouchpointHandler::new);
+        ROUTE_REGISTRY.put(CDP_OBSERVER_PREFIX,      EventObserverHandler::new);
+        ROUTE_REGISTRY.put(CDP_EVENT_PREFIX,         EventDataHandler::new);
+        ROUTE_REGISTRY.put(CDP_PROFILE_PREFIX,       ProfileDataHandler::new);
+        ROUTE_REGISTRY.put(CDP_SEGMENT_PREFIX,       SegmentDataHandler::new);
+        ROUTE_REGISTRY.put(CDP_ACCOUNT_PREFIX,       BusinessAccountHandler::new);
+        ROUTE_REGISTRY.put(CDP_CAMPAIGN_PREFIX,      CampaignHandler::new);
+        ROUTE_REGISTRY.put(CDP_AI_AGENT_PREFIX,      AgentHandler::new);
+
+        // Assets
+        ROUTE_REGISTRY.put(CDP_CATEGORY_PREFIX,      AssetCategoryHandler::new);
+        ROUTE_REGISTRY.put(CDP_GROUP_PREFIX,         AssetGroupHandler::new);
+        ROUTE_REGISTRY.put(CDP_ITEM_PREFIX,          AssetItemHandler::new);
+    }
+
+    public AdminHttpRouter(RoutingContext context, String host, int port) {
+        super(context, host, port);
+    }
+
+    @Override
+    public void process() throws Exception {
+        this.handle(this.context);
+    }
+
+    @Override
+    protected void callHttpPostHandler(HttpServerRequest req, String userSession, String uri, JsonObject paramJson, Consumer<JsonDataPayload> done) {
+        handleRequest(req, uri, done, (handler, cookies) -> {
+            // reflection or casting required if no common interface exists. 
+            // Assuming common methods are available via reflection or BaseHandler interface.
+            return invokeHandlerMethod(handler, "httpPostHandler", 
+                    new Object[]{userSession, uri, paramJson, cookies}, 
+                    new Class[]{String.class, String.class, JsonObject.class, Map.class});
+        });
+    }
+
+    @Override
+    protected void callHttpGetHandler(HttpServerRequest req, String userSession, String uri, MultiMap urlParams, Consumer<JsonDataPayload> done) {
+        handleRequest(req, uri, done, (handler, cookies) -> {
+            return invokeHandlerMethod(handler, "httpGetHandler", 
+                    new Object[]{userSession, uri, urlParams, cookies},
+                    new Class[]{String.class, String.class, MultiMap.class, Map.class});
+        });
+    }
+
+    /**
+     * Unified request handling logic to reduce duplication between GET and POST.
+     */
+    private void handleRequest(HttpServerRequest req, String uri, Consumer<JsonDataPayload> done, 
+                               BiFunction<Object, Map<String, Cookie>, JsonDataPayload> action) {
+        PROCESSORS.submit(() -> {
+            JsonDataPayload payload;
+            try {
+                Map<String, Cookie> cookieMap = req.cookieMap();
+                var handler = resolveHandler(uri);
+
+                if (handler != null) {
+                    payload = action.apply(handler, cookieMap);
+                } else {
+                    // Fallback if no route matches (though BaseWebRouter likely handles routing before this)
+                    payload = JsonDataPayload.fail("No handler found for URI: " + uri, 404);
+                }
+            } catch (Throwable e) {
+                logger.error("handleRequest is failed by "+e.getMessage(), e);
+                int code = (e instanceof IllegalArgumentException) ? 507 : 500;
+                payload = JsonDataPayload.fail(e.getMessage(), code);
+            }
+            done.accept(payload);
+        });
+    }
+
+    /**
+     * Resolves the correct handler instance based on the URI prefix.
+     */
+    private Object resolveHandler(String uri) {
+        // Iterate over registry to find matching prefix. 
+        // LinkedHashMap ensures we check in insertion order if order matters.
+        for (var entry : ROUTE_REGISTRY.entrySet()) {
+            if (uri.startsWith(entry.getKey())) {
+                return entry.getValue().apply(this);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Helper to invoke handler methods via Reflection if a common interface is missing.
+     * Note: Ideally, all your Handlers should implement a common interface (e.g. AdminRequestHandler)
+     * so you can cast 'handler' and call methods directly without reflection.
+     */
+    @SuppressWarnings("unchecked")
+    private JsonDataPayload invokeHandlerMethod(Object handler, String methodName, Object[] args, Class<?>[] paramTypes) {
+        try {
+            var method = handler.getClass().getMethod(methodName, paramTypes);
+            return (JsonDataPayload) method.invoke(handler, args);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to invoke " + methodName + " on " + handler.getClass().getSimpleName(), e);
+        }
+    }
 }

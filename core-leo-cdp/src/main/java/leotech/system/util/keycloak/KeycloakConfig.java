@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 import leotech.system.domain.SystemConfigsManagement;
 import leotech.system.model.AppMetadata;
 import leotech.system.model.SystemService;
-import leotech.system.version.SystemMetaData;
 import rfx.core.util.StringUtil;
 
 /**

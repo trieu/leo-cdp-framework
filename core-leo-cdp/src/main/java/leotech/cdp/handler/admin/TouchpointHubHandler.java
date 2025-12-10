@@ -11,7 +11,6 @@ import leotech.cdp.domain.TouchpointHubManagement;
 import leotech.cdp.model.journey.EventObserver;
 import leotech.cdp.model.journey.JourneyMap;
 import leotech.cdp.model.journey.TouchpointHub;
-import leotech.cdp.query.filters.DataFilter;
 import leotech.system.common.BaseHttpRouter;
 import leotech.system.common.SecuredHttpDataHandler;
 import leotech.system.model.JsonDataPayload;
@@ -46,22 +45,7 @@ public final class TouchpointHubHandler extends SecuredHttpDataHandler {
 		if (loginUser != null) {
 			if (isAdminRole(loginUser)) {
 				switch (uri) {
-					case API_LIST_WITH_FILTER : {
-						// the list-view component at datatables.net needs Ajax POST method to avoid long URL 
-						DataFilter filter = new DataFilter(loginUser, uri, paramJson);
-						//TODO
-						return null;
-					}
-					case API_GET_MODEL : {
-						String id = paramJson.getString("id", "0");
-						//TODO
-						return JsonDataPayload.ok(uri, null, loginUser, TouchpointHub.class);
-					}
-					case API_UPDATE_MODEL : {
-						String key = null;
-						//TODO                                                                                                                                                                                                                                                                
-						return JsonDataPayload.ok(uri, key, loginUser, TouchpointHub.class);
-					}
+					
 					case API_DELETE : {
 						String id = paramJson.getString("id", "");
 						boolean rs = TouchpointHubManagement.delete(id);
@@ -98,14 +82,7 @@ public final class TouchpointHubHandler extends SecuredHttpDataHandler {
 						String journeyMapId = HttpWebParamUtil.getString(params, "journeyMapId", JourneyMap.DEFAULT_JOURNEY_MAP_ID);
 						List<?> list = TouchpointHubManagement.getByJourneyId(journeyMapId);
 						return JsonDataPayload.ok(uri, list, loginUser, TouchpointHub.class);
-					}
-					case API_GET_MODEL : {
-						String id = HttpWebParamUtil.getString(params,"id", "");
-						if (!id.isEmpty()) {
-							//TODO
-							return JsonDataPayload.ok(uri, null, loginUser, TouchpointHub.class);
-						}
-					}
+					}				
 
 					default :
 						return JsonErrorPayload.NO_HANDLER_FOUND;

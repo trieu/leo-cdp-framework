@@ -89,12 +89,12 @@ public final class Analytics360Handler extends SecuredHttpDataHandler {
 					}
 					case URI_RUN_NOTEBOOK_MANUALLY : {
 						
-						String id = paramJson.getString("id", "0");
+						// String id = paramJson.getString("id", "0");
 						//TODO
 						return JsonDataPayload.ok(uri, null, loginUser, Notebook.class);
 					}
 					case URI_GET_NOTEBOOK : {
-						String id = paramJson.getString("id", "0");
+						// String id = paramJson.getString("id", "0");
 						//TODO
 						return JsonDataPayload.ok(uri, null, loginUser, Notebook.class);
 					}

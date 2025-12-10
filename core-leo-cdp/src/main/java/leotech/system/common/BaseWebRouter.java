@@ -35,7 +35,7 @@ public abstract class BaseWebRouter extends BaseHttpRouter {
 
 	private static final String P_USER_SESSION = "usersession";
 	
-	public static final String SYSTEM_USER_PREFIX = "/user";
+	public static final String CDP_SYSTEM_USER_PREFIX = "/user";
 	
 	////////////
 	public static final String START_DATE = "/start-date";

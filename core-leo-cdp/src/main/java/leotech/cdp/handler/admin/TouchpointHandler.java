@@ -7,7 +7,6 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.json.JsonObject;
 import leotech.cdp.model.journey.Touchpoint;
-import leotech.cdp.query.filters.DataFilter;
 import leotech.system.common.BaseHttpRouter;
 import leotech.system.common.SecuredHttpDataHandler;
 import leotech.system.model.JsonDataPayload;
@@ -44,12 +43,12 @@ public final class TouchpointHandler extends SecuredHttpDataHandler {
 				switch (uri) {
 					case API_LIST_WITH_FILTER : {
 						// the list-view component at datatables.net needs Ajax POST method to avoid long URL 
-						DataFilter filter = new DataFilter(loginUser, uri, paramJson);
+						//DataFilter filter = new DataFilter(loginUser, uri, paramJson);
 						//TODO
 						return null;
 					}
 					case API_GET_MODEL : {
-						String id = paramJson.getString("id", "0");
+						//String id = paramJson.getString("id", "0");
 						//TODO
 						return JsonDataPayload.ok(uri, null, loginUser, Touchpoint.class);
 					}
@@ -84,16 +83,16 @@ public final class TouchpointHandler extends SecuredHttpDataHandler {
 			if (isAuthorized(loginUser, Touchpoint.class)) {
 				switch (uri) {
 					case API_LIST_ALL : {
-						int startIndex =   HttpWebParamUtil.getInteger(params,"startIndex", 0);
-						int numberResult = HttpWebParamUtil.getInteger(params,"numberResult", 20);
+						// int startIndex =   HttpWebParamUtil.getInteger(params,"startIndex", 0);
+						// int numberResult = HttpWebParamUtil.getInteger(params,"numberResult", 20);
 						//TODO
 						List<?> list = null;
 						return JsonDataPayload.ok(uri, list, loginUser, Touchpoint.class);
 					}
 					case API_LIST_WITH_FILTER : {
-						int startIndex =   HttpWebParamUtil.getInteger(params,"startIndex", 0);
-						int numberResult = HttpWebParamUtil.getInteger(params,"numberResult", 20);
-						String phrase = HttpWebParamUtil.getString(params,"phrase", "");
+						// int startIndex =   HttpWebParamUtil.getInteger(params,"startIndex", 0);
+						// int numberResult = HttpWebParamUtil.getInteger(params,"numberResult", 20);
+						// String phrase = HttpWebParamUtil.getString(params,"phrase", "");
 						
 						// TODO
 						

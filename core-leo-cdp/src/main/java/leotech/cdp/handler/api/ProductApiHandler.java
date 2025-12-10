@@ -89,7 +89,7 @@ public class ProductApiHandler extends BaseApiHandler {
 	 */
 	protected static String saveProductItem(EventObserver observer, HttpServerRequest req, String eventName,
 			JsonObject jsonData) {
-		String observerId = observer.getId();
+		//String observerId = observer.getId();
 
 		System.err.println("CDP API can not save product");
 		return "";
