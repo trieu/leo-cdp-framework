@@ -1,37 +1,68 @@
 group 'leocdp'
 
-//-------------------------------------------------------------------------------
-// load ext properties from the file leocdp-build.properties 
-file("./leocdp-build.properties").withReader { 
-   Properties props = new Properties()
-   props.load(it)
-   project.ext.leoCdpBuild = props
+// --- 1. Load configuration safely ---
+// We load this into a standard Properties object first to handle safe lookups
+def props = new Properties()
+def propsFile = file("./leocdp-build.properties")
+
+if (propsFile.exists()) {
+    propsFile.withInputStream { stream ->
+        props.load(stream)
+    }
+} else {
+    // Non-blocking warning: allows build to proceed with defaults if file is missing
+    logger.warn("WARNING: 'leocdp-build.properties' not found. Using defaults.")
 }
 
-// the output for BUILD 
-// Read property from command line, or fallback to default
-def buildOutputFolderPath = project.hasProperty("buildOutputFolderPath") 
-    ? project.getProperty("buildOutputFolderPath").trim() 
-    :  leoCdpBuild['buildOutputFolderPath'].trim()
+// Save raw properties to project extension if needed strictly as a map
+project.ext.leoCdpBuild = props
 
-// the output for STATIC files in CDN
-def staticOutputFolderPath = project.hasProperty("staticOutputFolderPath") 
-    ? project.getProperty("staticOutputFolderPath").trim() 
-    :  leoCdpBuild['staticOutputFolderPath'].trim()
+
+// --- 2. Helper: Unified Property Resolver ---
+// Logic: Command Line (-P) > Properties File > Default Value
+// This prevents NullPointerExceptions if keys are missing.
+def resolveProperty = { key, defaultValue ->
+    if (project.hasProperty(key)) {
+        return project.getProperty(key).toString().trim()
+    }
+    return props.getProperty(key, defaultValue).trim()
+}
+
+
+// --- 3. Set Project Version ---
+// Default to '1.0.0' if not specified anywhere
+project.version = resolveProperty("buildVersion", "1.0.0")
+
+
+// --- 4. Set Output Paths ---
+// We store these in 'project.ext' so other tasks (like Copy or Zip) can see them.
+// Default to 'build/dist' and 'build/static' to prevent crashes if config is empty.
+
+project.ext.buildOutputFolderPath = resolveProperty("buildOutputFolderPath", "${buildDir}/dist-release")
+project.ext.staticOutputFolderPath = resolveProperty("staticOutputFolderPath", "${buildDir}/static-release")
+
+
+// --- 5. Helper: Generate timestamped implementation version ---
+ext.getImplementationVersion = {
+    def date = new Date()
+    return "${project.version}_${date.format('yyyy-MM-dd-HH-mm-ss')}"
+}
+
+
+// --- 6. Debug / Verification Log ---
+println "------------------------------------------------------------"
+println " LeoCDP Build Configuration"
+println "------------------------------------------------------------"
+println " Group         : ${project.group}"
+println " Version       : ${project.version}"
+println " Build ID      : ${getImplementationVersion()}"
+println " Build Output  : ${project.ext.buildOutputFolderPath}"
+println " Static Output : ${project.ext.staticOutputFolderPath}"
+println "------------------------------------------------------------"
 
 
 //-------------------------------------------------------------------------------
 
-// load ext properties from the file leocdp-metadata.properties 
-file("./leocdp-metadata.properties").withReader { 
-   Properties props = new Properties()
-   props.load(it)
-   project.ext.leoCdpMetadata = props
-}
-
-//////////////////////////////////////////
-version leoCdpMetadata['buildVersion'] ///
-//////////////////////////////////////////
 
 buildscript {
     repositories {
@@ -210,13 +241,6 @@ tasks.withType(JavaCompile) {
 tasks.withType(Jar) {
     //destinationDirectory = file("$rootDir/BUILD-OUTPUT")
     destinationDirectory = file(buildOutputFolderPath)
-}
-
-// === Helper: generate build version string ===
-def getImplementationVersion() {
-    def date = new Date()
-    def version = leoCdpMetadata['buildVersion'] ?: 'unknown'
-    return "${version}_${date.format('yyyy-MM-dd-HH-mm-ss')}"
 }
 
 
