@@ -93,49 +93,7 @@
         }
     }
 
-   
-    LeoCorsRequest.postAsJson = function(url, payload, callback) {
-        var httpRequest = null;
 
-        // 1. Define the state change handler (Closure)
-        var onStateChange = function() {
-            // We usually only care when the request is DONE (4)
-            if (httpRequest.readyState === 4) {
-                // Check HTTP Status (200-299 is usually success)
-                if (isRequestSuccessful(httpRequest)) { 
-                    // Safe execution of callback
-                    if (typeof callback === 'function') {
-                        callback(httpRequest.responseText);
-                    }
-                } else {
-                    // Log detailed error for debugging
-                    logError("LeoCorsRequest.postAsJsonArray failed. Status: " + httpRequest.status + " | URL: " + url);
-                }
-            }
-        };
-
-        // 2. Initialize Request
-        if (!httpRequest) {
-            httpRequest = createHTTPRequestObject();
-        }
-
-        if (httpRequest) {
-            httpRequest.open("POST", url, true); // Async is critical for performance
-            
-            // 3. Set Headers for JSON Batching
-            // This is the specific requirement for sending arrays/objects
-            httpRequest.setRequestHeader('Content-Type', 'application/json;charset=utf-8');
-            
-            // Add custom headers if your CDP requires specific Auth headers or Stream IDs here
-            // httpRequest.setRequestHeader('X-Leo-Auth', '...'); 
-
-            httpRequest.onreadystatechange = onStateChange;
-            httpRequest.withCredentials = true;
-            httpRequest.send(payload);
-        } else {
-             logError("Browser does not support CORS or XHR creation failed.");
-        }
-    }
 
     LeoCorsRequest.eventQueueMap = {};
     LeoCorsRequest.batchSend = function(url, paramsObj, batchSize) {
@@ -150,7 +108,7 @@
             var payload = JSON.stringify(queue);
             var eventcount = queue.length;
             var finalUrl = url + "&eventcount=" + eventcount;
-            LeoCorsRequest.postAsJson(finalUrl, payload, function(rs){
+            LeoCorsRequest.post(finalUrl, payload, function(rs){
                 console.log(rs)
             })
             LeoCorsRequest.eventQueueMap[url] = [];
@@ -167,7 +125,7 @@
                 if( eventcount > 0 ){
                     var payload = JSON.stringify(queue);
                     var finalUrl = url + "&eventcount=" + eventcount;
-                    LeoCorsRequest.postAsJson(finalUrl, payload, function(rs){
+                    LeoCorsRequest.post(finalUrl, payload, function(rs){
                         console.log(rs)
                     });
                     LeoCorsRequest.eventQueueMap[url] = [];

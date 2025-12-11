@@ -46,22 +46,29 @@ public final class ObserverHttpPostHandler {
 	 */
 	public final static void process(RoutingContext context, HttpServerRequest req, String urlPath, MultiMap reqHeaders,
 			MultiMap params, HttpServerResponse resp, MultiMap outHeaders, DeviceInfo device, String origin, String serverInfo) {
-		String eventName = StringUtil.safeString(params.get(HttpParamKey.EVENT_METRIC_NAME)).toLowerCase();
+		
 		String ctxSessionKey = StringUtil.safeString(params.get(HttpParamKey.CTX_SESSION_KEY));
 
 		outHeaders.set(CONTENT_TYPE, BaseHttpHandler.CONTENT_TYPE_JSON);
 		BaseHttpRouter.setCorsHeaders(outHeaders, origin);
 		int eventcount = StringUtil.safeParseInt(params.get("eventcount"));
 
+		System.out.println("eventcount: " + eventcount + " ctxSessionKey: " + ctxSessionKey);
 		if(eventcount > 0){
-			req.bodyHandler(body -> {
-				String jsonBody = body.toString();
-				System.out.println(jsonBody);
-			});
-			ObserverResponse.done(resp, 500, "", "", "");
-			return;
+			// TODO
+			System.out.println("params "+ params);
+			System.out.println("formAttributes "+ req.formAttributes());
+			
+			ObserverResponse.done(resp, 404, "1111", "1111", "1111");
 		}
+		else {
+			processSingleEvent(req, urlPath, params, resp, device, serverInfo, ctxSessionKey);
+		}
+		
+	}
 
+	static void processSingleEvent(HttpServerRequest req, String urlPath, MultiMap params,
+			HttpServerResponse resp, DeviceInfo device, String serverInfo, String ctxSessionKey) {
 		if (urlPath.equalsIgnoreCase(PREFIX_EVENT_ACTION)) {
 			// synch ContextSession with event tracking
 			ContextSession ctxSession = ContextSessionManagement.get(ctxSessionKey, req, params, device);
@@ -72,6 +79,7 @@ public final class ObserverHttpPostHandler {
 				sessionKey = ctxSession.getSessionKey();
 
 				// event-conversion(add_to_cart|submit_form|checkout|join,sessionKey,visitorId)
+				String eventName = StringUtil.safeString(params.get(HttpParamKey.EVENT_METRIC_NAME)).toLowerCase();
 				eventId = EventObserverUtil.recordActionEvent(req, params, device, ctxSession, eventName);
 				if (StringUtil.isNotEmpty(eventId)) {
 					status = 200;
@@ -93,6 +101,7 @@ public final class ObserverHttpPostHandler {
 				sessionKey = ctxSession.getSessionKey();
 
 				// event-conversion(add_to_cart|submit_form|checkout|join,sessionKey,visitorId)
+				String eventName = StringUtil.safeString(params.get(HttpParamKey.EVENT_METRIC_NAME)).toLowerCase();
 				eventId = EventObserverUtil.recordConversionEvent(req, params, device, ctxSession, eventName);
 				if (StringUtil.isNotEmpty(eventId)) {
 					status = 200;
@@ -107,7 +116,7 @@ public final class ObserverHttpPostHandler {
 
 		// collect data from SURVEY and feedback data
 		else if (urlPath.equalsIgnoreCase(PREFIX_EVENT_FEEDBACK)) {
-			// synch ContextSession with event tracking
+			String eventName = StringUtil.safeString(params.get(HttpParamKey.EVENT_METRIC_NAME)).toLowerCase();
 			FeedbackEvent feedbackEvent = HttpWebParamUtil.getFeedbackEventFromHttpPost(req, eventName);
 			ContextSession currentSession = ContextSessionManagement.get(ctxSessionKey, req, params, device);
 
@@ -152,7 +161,6 @@ public final class ObserverHttpPostHandler {
 		// no handler found
 		else {
 			resp.end("CDP Observer_" + serverInfo);
-
 		}
 	}
 }

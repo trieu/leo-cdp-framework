@@ -37,8 +37,7 @@ public final class WebhookDataHandler {
 			String origin) {
 
 		// In LEO CDP, the ACCESS_TOKEN_KEY is observerId
-		String observerId = HttpWebParamUtil.getString(params, HttpParamKey.ACCESS_TOKEN_KEY,
-				EventObserver.DEFAULT_EVENT_OBSERVER_ID);
+		String observerId = HttpWebParamUtil.getString(params, HttpParamKey.ACCESS_TOKEN_KEY, EventObserver.DEFAULT_EVENT_OBSERVER_ID);
 		EventObserver observer = EventObserverManagement.getById(observerId);
 
 		// ZALO

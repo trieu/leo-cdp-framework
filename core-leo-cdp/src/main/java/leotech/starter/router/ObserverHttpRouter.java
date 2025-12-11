@@ -8,7 +8,6 @@ import io.vertx.core.http.HttpServerResponse;
 import io.vertx.ext.web.RoutingContext;
 import leotech.cdp.handler.ObserverHttpGetHandler;
 import leotech.cdp.handler.ObserverHttpPostHandler;
-import leotech.cdp.handler.WebhookDataHandler;
 import leotech.system.common.BaseHttpHandler;
 import leotech.system.common.BaseHttpRouter;
 import leotech.system.model.DeviceInfo;
@@ -109,7 +108,7 @@ public final class ObserverHttpRouter extends BaseHttpRouter {
 		String useragent = StringUtil.safeString(req.getHeader(BaseHttpHandler.USER_AGENT));
 		DeviceInfo device = DeviceInfoUtil.getDeviceInfo(useragent);
 
-		System.out.println("contentType: " + contentType + " urlPath: " + urlPath);
+		System.out.println("contentType: " + contentType + " urlPath: " + urlPath + " httpMethod " + httpMethod);
 
 		try {
 			if(urlPath.startsWith(CdpPublicApiRouter.PREFIX_API)) {
@@ -119,25 +118,19 @@ public final class ObserverHttpRouter extends BaseHttpRouter {
 			}
 			else {
 				// WEBHOOK and Domain Verifier
-				boolean processed = WebhookDataHandler.process(this.context, req, urlPath, reqHeaders, params, resp, outHeaders, device, origin);
-				if(!processed) {
-					PROCESSORS.submit(()->{
-						if(httpMethod.equalsIgnoreCase(HTTP_METHOD_GET)) {
-							ObserverHttpGetHandler.process(this.context, req, urlPath, reqHeaders, params, resp, outHeaders, device, origin, nodeInfo);
-						} 
-						else if(httpMethod.equalsIgnoreCase(HTTP_METHOD_POST) || httpMethod.equalsIgnoreCase(HTTP_METHOD_PUT)) {
-							ObserverHttpPostHandler.process(this.context, req, urlPath, reqHeaders, params, resp, outHeaders, device, origin, nodeInfo);
-						}
-						else {
-							resp.end("NO handler found");
-						}
-					});
-					return;
+				// FIXME  , refactoring this
+				// boolean processed = WebhookDataHandler.process(this.context, req, urlPath, reqHeaders, params, resp, outHeaders, device, origin);
+				if(httpMethod.equalsIgnoreCase(HTTP_METHOD_GET)) {
+					ObserverHttpGetHandler.process(this.context, req, urlPath, reqHeaders, params, resp, outHeaders, device, origin, nodeInfo);
+				} 
+				else if(httpMethod.equalsIgnoreCase(HTTP_METHOD_POST) || httpMethod.equalsIgnoreCase(HTTP_METHOD_PUT)) {
+					ObserverHttpPostHandler.process(this.context, req, urlPath, reqHeaders, params, resp, outHeaders, device, origin, nodeInfo);
 				}
+				else {
+					resp.end("NO handler found");
+				}
+				return;
 			}
-			
-			// no handler found
-			resp.end("CDP Observer_"+nodeInfo);
 		} catch (Exception e) {
 			// resp.end();
 			System.err.println("urlPath:" + urlPath + " error:" + e.getMessage());
