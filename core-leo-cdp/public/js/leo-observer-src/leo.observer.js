@@ -2,139 +2,236 @@
  * LeoEventObserver version 0.9.2 - built on 2025.12.11
  */
 
-// ------------------------------ LeoCorsRequest ----------------------------------------//
-(function(global, undefined) {
+// ------------------------------ Leo Data Request ----------------------------------------//
+
+(function(global) {
     'use strict';
 
-    function logError(e) {
-        if (window.console) {
-            window.console.error(e);
+    // Configuration
+    var CONFIG = {
+        CONTENT_TYPE_JSON: 'application/json; charset=UTF-8',
+        CONTENT_TYPE_FORM: 'application/x-www-form-urlencoded',
+        RETRY_DELAY: 2000,
+        DEBUG: false // Set to true to see logs
+    };
+
+    // Logger Utility
+    function log(msg, type) {
+        if (!window.console) return;
+        var prefix = "[LeoCDP] ";
+        if (type === 'error') {
+            window.console.error(prefix + msg);
+        } else if (CONFIG.DEBUG) {
+            window.console.log(prefix + msg);
         }
     }
 
-    function createHTTPRequestObject() {
-        // although IE supports the XMLHttpRequest object, but it does not work on local files.
-        var forceActiveX = (window.ActiveXObject && location.protocol === "file:");
-        if (window.XMLHttpRequest && !forceActiveX) {
+    // --- Network Layer ---
+
+    function createXHR() {
+        if (window.XMLHttpRequest) {
             return new XMLHttpRequest();
-        } else {
-            try {
-                return new ActiveXObject("Microsoft.XMLHTTP");
-            } catch (e) {}
         }
-        logError("Your browser doesn't support XML handling!");
-        return null;
+        // Legacy IE Fallback (Only if absolutely necessary)
+        try {
+            return new ActiveXObject("Microsoft.XMLHTTP");
+        } catch (e) {
+            log("XHR not supported.", "error");
+            return null;
+        }
     }
 
+    var Network = {
+        /**
+         * Generic Request Handler
+         */
+        request: function(method, url, data, headers, callback) {
+            var xhr = createXHR();
+            if (!xhr) return;
 
-    // returns whether the HTTP request was successful
-    function isRequestSuccessful(httpRequest) {
-        // IE: sometimes 1223 instead of 204
-        var success = (httpRequest.status == 0 ||
-            (httpRequest.status >= 200 && httpRequest.status < 300) ||
-            httpRequest.status == 304 || httpRequest.status == 1223);
-        return success;
-    }
-
-    var LeoCorsRequest = {};
-
-    LeoCorsRequest.get = function(withCredentials, url, respHeaderNames, callback) {
-        var httpRequest = null;
-        var onStateChange = function() {
-            if (httpRequest.readyState == 0 || httpRequest.readyState == 4) {
-                if (isRequestSuccessful(httpRequest)) {
-                    var resHeaders = {};
-                    for (var i = 0; i < respHeaderNames.length; i++) {
-                        var name = respHeaderNames[i];
-                        var val = httpRequest.getResponseHeader(name);
-                        if (val) {
-                            resHeaders[name] = val;
-                        }
+            xhr.open(method, url, true);
+            
+            // Set Headers
+            if (headers) {
+                for (var key in headers) {
+                    if (headers.hasOwnProperty(key)) {
+                        xhr.setRequestHeader(key, headers[key]);
                     }
-                    callback(resHeaders, httpRequest.responseText);
-                } else {
-                    logError("Operation failed by LeoCorsRequest.get: " + url);
                 }
             }
-        }
 
-        if (!httpRequest) {
-            httpRequest = createHTTPRequestObject();
-        }
-        if (httpRequest) {
-            httpRequest.open("GET", url, true); // async
-            httpRequest.onreadystatechange = onStateChange;
-            httpRequest.withCredentials = withCredentials;
-            httpRequest.send();
-        }
-    }
-    
-    LeoCorsRequest.post = function(url, params, callback) {
-        var httpRequest = null;
-        var onStateChange = function() {
-            if ((httpRequest.readyState == 0 || httpRequest.readyState == 4) && httpRequest.status == 200) {
-                if (isRequestSuccessful(httpRequest)) {                    
-                    callback(httpRequest.responseText);
+            xhr.withCredentials = true;
+
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    var isSuccess = (xhr.status >= 200 && xhr.status < 300) || xhr.status === 304 || xhr.status === 1223;
+                    if (callback) {
+                        callback(isSuccess, xhr.responseText, xhr);
+                    }
+                }
+            };
+
+            xhr.send(data);
+        },
+
+        get: function(url, callback) {
+            this.request("GET", url, null, null, function(success, response, xhr) {
+                if (success && callback) {
+                    callback(response);
                 } else {
-                    logError("Operation failed by LeoCorsRequest.post: " + url);
+                    log("GET failed: " + url, "error");
+                }
+            });
+        },
+
+        post: function(url, data, callback) {
+            var headers = { 'Content-Type': CONFIG.CONTENT_TYPE_FORM };
+            this.request("POST", url, data, headers, function(success, response) {
+                if (success && callback) {
+                    callback(response);
+                } else if (!success) {
+                    log("POST failed: " + url, "error");
+                }
+            });
+        },
+
+        /**
+         * Tries to use sendBeacon (best for analytics), falls back to XHR
+         */
+        sendBeaconOrXHR: function(url, payload, callback) {
+            // 1. Try Beacon API (Modern, non-blocking, survives page unload)
+            if (navigator.sendBeacon) {
+                // Note: sendBeacon sends POST by default. 
+                // We use Blob to ensure the correct Content-Type if the backend requires it.
+                var blob = new Blob([payload], { type: CONFIG.CONTENT_TYPE_FORM });
+                var queued = navigator.sendBeacon(url, blob);
+                if (queued) {
+                    if (callback) callback(true);
+                    return;
                 }
             }
+
+            // 2. Fallback to XHR
+            this.post(url, payload, function(resp) {
+                if (callback) callback(true, resp);
+            });
         }
+    };
 
-        if (!httpRequest) {
-            httpRequest = createHTTPRequestObject();
-        }
-        if (httpRequest) {
-            httpRequest.open("POST", url, true); // async
-            httpRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded'); // form submit
-            httpRequest.onreadystatechange = onStateChange;
-            httpRequest.withCredentials = true;
-            httpRequest.send(params);
-        }
-    }
+    // --- Batching & Queue Layer ---
 
+    var BatchManager = {
+        queues: {},
+        isFlushing: {},
 
+        /**
+         * Standardized payload creator
+         */
+        createPayload: function(events) {
+            return "events=" + encodeURIComponent(JSON.stringify(events));
+        },
 
-    LeoCorsRequest.eventQueueMap = {};
-    LeoCorsRequest.batchSend = function(url, paramsObj, batchSize) {
-        var queue =  LeoCorsRequest.eventQueueMap[url];
-        if(typeof queue !== 'object'){
-            queue = [];
-            LeoCorsRequest.eventQueueMap[url] = queue;
-        }
+        /**
+         * Adds item to queue and checks constraints
+         */
+        enqueue: function(url, data, batchSize) {
+            if (!this.queues[url]) {
+                this.queues[url] = [];
+            }
+            this.queues[url].push(data);
 
-        queue.push(paramsObj);
-        if( queue.length >= batchSize){
-            var payload = JSON.stringify(queue);
-            var eventcount = queue.length;
-            var finalUrl = url + "&eventcount=" + eventcount;
-            LeoCorsRequest.post(finalUrl, payload, function(rs){
-                console.log(rs)
-            })
-            LeoCorsRequest.eventQueueMap[url] = [];
-        }
-    }
+            if (this.queues[url].length >= batchSize) {
+                this.flush(url);
+            }
+        },
 
-    setInterval(function(){
-        for(var url in LeoCorsRequest.eventQueueMap){  
-            if(typeof url === 'string'){
-                var queue =  LeoCorsRequest.eventQueueMap[url];
-                console.log(url); 
-                console.log(queue) 
-                var eventcount = queue.length;
-                if( eventcount > 0 ){
-                    var payload = JSON.stringify(queue);
-                    var finalUrl = url + "&eventcount=" + eventcount;
-                    LeoCorsRequest.post(finalUrl, payload, function(rs){
-                        console.log(rs)
-                    });
-                    LeoCorsRequest.eventQueueMap[url] = [];
+        /**
+         * Sends data safely.
+         * Logic: Move data to buffer -> Send -> If Fail, return to queue.
+         */
+        flush: function(url) {
+            var self = this;
+            var queue = this.queues[url];
+
+            if (!queue || queue.length === 0 || this.isFlushing[url]) {
+                return;
+            }
+
+            // Lock this URL to prevent race conditions
+            this.isFlushing[url] = true;
+
+            // Take a snapshot of current events (Buffer)
+            var buffer = queue.slice(0); 
+            // Optimistically clear the main queue (we will restore if fail)
+            this.queues[url] = []; 
+
+            var eventCount = buffer.length;
+            var payload = this.createPayload(buffer);
+            var finalUrl = url + (url.indexOf('?') === -1 ? '?' : '&') + "eventcount=" + eventCount;
+
+            Network.sendBeaconOrXHR(finalUrl, payload, function(success) {
+                self.isFlushing[url] = false;
+                
+                if (success) {
+                    log("Batch sent successfully: " + eventCount + " events to " + url);
+                } else {
+                    // FATAL: Network failed. Restore data to the FRONT of the queue to preserve order.
+                    log("Batch failed. Restoring " + eventCount + " events to queue.", "error");
+                    self.queues[url] = buffer.concat(self.queues[url]);
                 }
-            }            
-        }        
-    },5000)
+            });
+        }
+    };
+
+    // --- Global Interface ---
+
+    var LeoCorsRequest = {
+        get: function(url, callback) {
+            Network.get(url, callback);
+        },
+        
+        post: function(url, params, callback) {
+            Network.post(url, params, callback);
+        },
+
+        /**
+         * Add event to batch queue.
+         * @param {string} url - The endpoint URL
+         * @param {object} paramsObj - The data object to send
+         * @param {number} batchSize - Trigger send when queue reaches this size
+         */
+        batchSend: function(url, paramsObj, batchSize) {
+            BatchManager.enqueue(url, paramsObj, batchSize || 10);
+        }
+    };
+
+    // --- Automatic Flush Timer ---
     
+    // Flush all queues every 5 seconds
+    setInterval(function() {
+        for (var url in BatchManager.queues) {
+            if (BatchManager.queues.hasOwnProperty(url)) {
+                // Use closure or pass variable explicitly to avoid loop scope issues
+                BatchManager.flush(url);
+            }
+        }
+    }, 5000);
+
+    // --- Flush on Page Unload (Crucial for CDPs) ---
+    // Ensures we don't lose the last few clicks when user closes tab
+    if (window.addEventListener) {
+        window.addEventListener('unload', function() {
+            for (var url in BatchManager.queues) {
+                if (BatchManager.queues.hasOwnProperty(url)) {
+                    BatchManager.flush(url);
+                }
+            }
+        });
+    }
+
+    // Expose to Global
     global.LeoCorsRequest = LeoCorsRequest;
+
 })(typeof window === 'undefined' ? this : window);
 
 // ------------------------------------------------------------------------------------//
@@ -650,7 +747,7 @@ var leoVisitorIdStringKey = "leocdp_vid";
             
             if(batchSize <= 1){
                 // send of batchSize is 1 or 0
-                LeoCorsRequest.post(url ,queryStr ,trackingAjaxHandler);
+                LeoCorsRequest.post(url, queryStr, trackingAjaxHandler);
             }
             else {
                 LeoCorsRequest.batchSend(url, params, batchSize)
@@ -658,7 +755,7 @@ var leoVisitorIdStringKey = "leocdp_vid";
         	
         } else {
         	url = prefixUrl + '?' + queryStr + '&ctxsk=' + localSessionKey;
-        	LeoCorsRequest.get(false, url, [], trackingAjaxHandler);
+        	LeoCorsRequest.get(url, trackingAjaxHandler);
         }
        
         console.log("LeoCorsRequest url " + url)
@@ -723,8 +820,7 @@ var leoVisitorIdStringKey = "leocdp_vid";
             var queryStr = objectToQueryString(params);
             var vsId = getVisitorId();
             var url = PREFIX_SESSION_INIT_URL + '?' + queryStr + '&visid=' + vsId;
-            
-            LeoCorsRequest.get(false, url, [], h);
+            LeoCorsRequest.get(url, h);
     	}
     	else {
     		// the cache is valid

@@ -21,7 +21,7 @@ public abstract class BaseHttpHandler {
 
 	public static final String NO_DATA = "0";
 	public static final String ACCESS_CONTROL_ALLOW_ORIGIN = "Access-Control-Allow-Origin";
-	public static final String CONTENT_TYPE_JSON = "application/json;charset=utf-8";
+	public static final String CONTENT_TYPE_JSON = "application/json";
 	public static final String CONTENT_TYPE_XML = "application/xml";
 	public static final String CONTENT_TYPE_JAVASCRIPT = "text/javascript;charset=UTF-8";
 	public static final String CONTENT_TYPE_MULTIPART = "multipart/form-data";

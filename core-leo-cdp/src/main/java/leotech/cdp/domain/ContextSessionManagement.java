@@ -188,7 +188,7 @@ public final class ContextSessionManagement {
 	 * @param device
 	 * @return
 	 */
-	public static ContextSession get(final String clientSessionKey, HttpServerRequest req, MultiMap params, DeviceInfo device) {
+	public static ContextSession get(String clientSessionKey, String ip, MultiMap params, DeviceInfo device) {
 		if (device.isWebCrawler())
 			return null;
 
@@ -210,7 +210,7 @@ public final class ContextSessionManagement {
 			if (ctxSession == null) {
 				DateTime dateTime = new DateTime();
 				String dateTimeKey = ContextSession.getSessionDateTimeKey(dateTime);
-				String ip = HttpWebParamUtil.getRemoteIP(req);
+				
 
 				ctxSession = createWebContextSession(ip, params, device, dateTime, dateTimeKey);
 				if (ctxSession != null) {
@@ -241,15 +241,7 @@ public final class ContextSessionManagement {
 		}
 	}
 
-	/**
-	 * @param req
-	 * @param params
-	 * @param device
-	 * @return
-	 */
-	public static ContextSession get(HttpServerRequest req, MultiMap params, DeviceInfo device) {
-		return get(null, req, params, device);
-	}
+
 
 	/**
 	 * to update session to merge profile data

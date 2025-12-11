@@ -18,15 +18,15 @@ public final class ObserverResponse extends DataResponse {
 	public final String sessionKey;
 	public final String visitorId;
 	
-	public final String eventId;
+	public final int eventCount;
 	
-	public ObserverResponse(String visitorId, String sessionKey, String message, int status, String eventId) {
+	public ObserverResponse(String visitorId, String sessionKey, String message, int status, int eventCount) {
 		super();
 		this.visitorId = visitorId;
 		this.sessionKey = sessionKey;
 		this.message = message;
 		this.status = status;
-		this.eventId = eventId;
+		this.eventCount = eventCount;
 	}
 	
 	public ObserverResponse(String visitorId, String sessionKey, String message, int status) {
@@ -35,7 +35,7 @@ public final class ObserverResponse extends DataResponse {
 		this.sessionKey = sessionKey;
 		this.message = message;
 		this.status = status;
-		this.eventId = "";
+		this.eventCount = 0;
 	}
 	
 	/**
@@ -45,15 +45,15 @@ public final class ObserverResponse extends DataResponse {
 	 * @param sessionKey
 	 * @param eventId
 	 */
-	final public static void done(HttpServerResponse resp, int status, String visitorId, String sessionKey, String eventId) {
+	final public static void done(HttpServerResponse resp, int status, String visitorId, String sessionKey, int eventCount) {
 		if (status >= 200 && status < 300) {
-			ObserverResponse rs = new ObserverResponse(visitorId, sessionKey, OK, status, eventId);
+			ObserverResponse rs = new ObserverResponse(visitorId, sessionKey, OK, status, eventCount);
 			resp.end(new Gson().toJson(rs));
 		} else if (status == 500) {
 			ObserverResponse rs = new ObserverResponse(visitorId, sessionKey, FAILED, status);
 			resp.end(new Gson().toJson(rs));
 		} else if (status == 102) {
-			ObserverResponse rs = new ObserverResponse(visitorId, sessionKey, OK, status, eventId);
+			ObserverResponse rs = new ObserverResponse(visitorId, sessionKey, OK, status, eventCount);
 			resp.end(new Gson().toJson(rs));
 		} else {
 			ObserverResponse rs = new ObserverResponse(visitorId, sessionKey, INVALID, status);

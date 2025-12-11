@@ -14,8 +14,25 @@ import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
-import leotech.cdp.domain.ProfileDataManagement;
-import leotech.cdp.handler.admin.*; // Assumes all handlers are here
+// Assumes all handlers are here
+import leotech.cdp.handler.admin.AgentHandler;
+import leotech.cdp.handler.admin.Analytics360Handler;
+import leotech.cdp.handler.admin.AssetCategoryHandler;
+import leotech.cdp.handler.admin.AssetGroupHandler;
+import leotech.cdp.handler.admin.AssetItemHandler;
+import leotech.cdp.handler.admin.BusinessAccountHandler;
+import leotech.cdp.handler.admin.CampaignHandler;
+import leotech.cdp.handler.admin.DataFunnelHandler;
+import leotech.cdp.handler.admin.EventDataHandler;
+import leotech.cdp.handler.admin.EventObserverHandler;
+import leotech.cdp.handler.admin.JourneyMapHandler;
+import leotech.cdp.handler.admin.ProfileDataHandler;
+import leotech.cdp.handler.admin.SegmentDataHandler;
+import leotech.cdp.handler.admin.SystemConfigHandler;
+import leotech.cdp.handler.admin.SystemControlHandler;
+import leotech.cdp.handler.admin.SystemUserLoginHandler;
+import leotech.cdp.handler.admin.TouchpointHandler;
+import leotech.cdp.handler.admin.TouchpointHubHandler;
 import leotech.system.common.BaseWebRouter;
 import leotech.system.model.JsonDataPayload;
 
@@ -57,7 +74,7 @@ public final class AdminHttpRouter extends BaseWebRouter {
     static {
         // System & Core
         ROUTE_REGISTRY.put(CDP_SYSTEM_CONTROL,       SystemControlHandler::new);
-        ROUTE_REGISTRY.put(CDP_SYSTEM_USER_PREFIX,   SystemUserLoginHandler::new); // Inherited constant
+        ROUTE_REGISTRY.put(CDP_SYSTEM_USER_PREFIX,   SystemUserLoginHandler::new);
         ROUTE_REGISTRY.put(CDP_SYSTEM_CONFIG_PREFIX, SystemConfigHandler::new);
 
         // CDP Core
@@ -91,6 +108,7 @@ public final class AdminHttpRouter extends BaseWebRouter {
 
     @Override
     protected void callHttpPostHandler(HttpServerRequest req, String userSession, String uri, JsonObject paramJson, Consumer<JsonDataPayload> done) {
+    	System.out.println("AdminHttpRouter paramJson " + paramJson);
         handleRequest(req, uri, done, (handler, cookies) -> {
             // reflection or casting required if no common interface exists. 
             // Assuming common methods are available via reflection or BaseHandler interface.

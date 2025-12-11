@@ -52,7 +52,8 @@ public final class SystemUserLoginHandler extends SecuredHttpDataHandler {
 		// get user info from login session
 		SystemUser loginUser = initSystemUser(userSession, uri, paramJson);
 
-		System.out.println(uri);
+		System.out.println("SystemUserLoginHandler " + uri);
+		System.out.println("loginUser " + loginUser);
 		if (loginUser != null) {
 			if (isAuthorized(loginUser, SystemUser.class)) {
 				switch (uri) {

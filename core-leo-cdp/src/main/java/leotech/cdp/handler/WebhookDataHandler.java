@@ -31,13 +31,14 @@ public final class WebhookDataHandler {
 	public static final String OK = "ok";
 	public static final String INVALID_ACCESS_TOKEN_VALUE = "INVALID_ACCESS_TOKEN_VALUE";
 
-
 	public final static boolean process(RoutingContext context, HttpServerRequest req, String urlPath,
-			MultiMap reqHeaders, MultiMap params, HttpServerResponse resp, MultiMap outHeaders, DeviceInfo device,
-			String origin) {
+			MultiMap reqHeaders, MultiMap params, HttpServerResponse resp, String origin, DeviceInfo device) {
+
+		MultiMap outHeaders = resp.headers();
 
 		// In LEO CDP, the ACCESS_TOKEN_KEY is observerId
-		String observerId = HttpWebParamUtil.getString(params, HttpParamKey.ACCESS_TOKEN_KEY, EventObserver.DEFAULT_EVENT_OBSERVER_ID);
+		String observerId = HttpWebParamUtil.getString(params, HttpParamKey.ACCESS_TOKEN_KEY,
+				EventObserver.DEFAULT_EVENT_OBSERVER_ID);
 		EventObserver observer = EventObserverManagement.getById(observerId);
 
 		// ZALO

@@ -101,9 +101,9 @@ const loadLoginSessionSSO = function() {
 	
     LeoAdminApiUtil.callPostApi(urlStr, {'sso':true}, function (json) {
         if (json.httpCode === 0 && json.errorMessage === '') {
-            var usersession = json.data.userSession;
-			var ssoUserSession = json.data.ssoUserSession;
-			var ssoUserEmail = json.data.ssoUserEmail;			
+            var usersession = json.data.userSession || "";
+			var ssoUserSession = json.data.ssoUserSession || "";
+			var ssoUserEmail = json.data.ssoUserEmail || "";			
 			
             loadCheckSSO(ssoUserEmail, ssoUserSession, usersession);
                            

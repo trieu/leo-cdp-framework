@@ -62,6 +62,7 @@ public final class ObserverHttpGetHandler {
 			MultiMap params, HttpServerResponse resp, MultiMap outHeaders, DeviceInfo device, String origin, String nodeInfo) {
 		String eventName = StringUtil.safeString(params.get(HttpParamKey.EVENT_METRIC_NAME)).toLowerCase();
 		String ctxSessionKey = StringUtil.safeString(params.get(HttpParamKey.CTX_SESSION_KEY));
+		String ip = HttpWebParamUtil.getRemoteIP(req);
 
 		// init web session
 		if (urlPath.equalsIgnoreCase(PREFIX_CONTEXT_SESSION_PROFILE_INIT)) {
@@ -87,30 +88,30 @@ public final class ObserverHttpGetHandler {
 			BaseHttpRouter.setCorsHeaders(outHeaders, origin);
 
 			// synch ContextSession with event tracking
-			ContextSession ctxSession = ContextSessionManagement.get(ctxSessionKey, req, params, device);
+			ContextSession ctxSession = ContextSessionManagement.get(ctxSessionKey, ip, params, device);
 
 			int status = 404;
-			String eventId = "", visitorId = "", sessionKey = "";
+			String visitorId = "", sessionKey = "";
 			if (ctxSession != null) {
 				visitorId = ctxSession.getVisitorId();
 				sessionKey = ctxSession.getSessionKey();
 				// event-view(pageview|screenview|storeview|trueview|placeview,contentId,sessionKey,visitorId)
 				if (urlPath.equalsIgnoreCase(PREFIX_EVENT_VIEW)) {
-					eventId = EventObserverUtil.recordViewEvent(req, params, device, ctxSession, eventName);
+					String eventId = EventObserverUtil.recordViewEvent(req, params, device, ctxSession, eventName);
 					if (StringUtil.isNotEmpty(eventId)) {
 						status = 200;
 					}
 				}
 				// event-action(click|play|touch|contact|watch|test,sessionKey,visitorId)
 				else if (urlPath.equalsIgnoreCase(PREFIX_EVENT_ACTION)) {
-					eventId = EventObserverUtil.recordActionEvent(req, params, device, ctxSession, eventName);
+					String eventId = EventObserverUtil.recordActionEvent(req, params, device, ctxSession, eventName);
 					if (StringUtil.isNotEmpty(eventId)) {
 						status = 200;
 					}
 				}
 			}
 
-			ObserverResponse.done(resp, status, visitorId, sessionKey, eventId);
+			ObserverResponse.done(resp, status, visitorId, sessionKey, 1);
 		}
 
 		// TOUCHPOINT
