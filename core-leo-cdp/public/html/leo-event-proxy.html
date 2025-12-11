@@ -23,6 +23,8 @@
             		INJECTED_VISITOR_ID = tok;
             	}
             }
+			console.info('ROOT_DOMAIN = ' + ROOT_DOMAIN)
+			console.info('PARENT_ORIGIN = ' + PARENT_ORIGIN)
         } else {
         	console.error('ROOT_DOMAIN is empty')
         }
@@ -94,14 +96,14 @@
     	var queueTracking = [], queueUpdating = [], synchVisitorCall = false;
     	
     	var proxyCallHandler = function(data){
-    		console.log('proxyCallHandler ', data);
+    		console.log('LEO OBSERVER proxyCallHandler ', data);
     		
-        	if(data.call === 'getContextSession' && data.params) {
-        		LeoEventObserver.getContextSession(data.params);
-        	}
-        	else if(data.call === 'doTracking' && data.eventType && data.params){
+        	if(data.call === 'doTracking' && data.eventType && data.params){
         		queueTracking.push(data);
         	} 
+			else if(data.call === 'getContextSession' && data.params) {
+        		LeoEventObserver.getContextSession(data.params);
+        	}
         	else if(data.call === 'updateProfile' && data.params ){
         		queueUpdating.push(data);
         	}
@@ -114,15 +116,16 @@
     		// call Fingerprint then do the jobs
     		LeoEventObserver.initFingerprint(function(fingerprintId){
     			
-    			// synch LEO visitor ID 
+    			// synch visitorId and fingerprintId
     			LeoEventObserver.visitorId = LeoEventObserver.getVisitorId();
+				LeoEventObserver.fingerprintId = fingerprintId;
     			
     			// done
     			setTimeout(function(){
     				// send ready signal to proxy 
             		sendMessage("LeoObserverProxyLoaded");
             		// check and get ContextSession
-            	},300);
+            	},500);
     			
             	// init for first-time loads
     			var queueProcessor = function() {
@@ -145,17 +148,18 @@
                 		synchVisitorCall = false;
             		}
             	}
-    			setInterval(queueProcessor,799);
+    			setInterval(queueProcessor,888);
     		});
     	}
 
-  		var cbKey = "20251016";
-	   	var leoObserverJsUrl = "https://gcore.jsdelivr.net/gh/USPA-Technology/leo-cdp-static-files@v0.9.1/js/leo-observer/leo.observer.min.js?cb="+cbKey;
-	   	var isDev = ROOT_DOMAIN === "obs.example.com";
+  		var cbKey = "20251211";
+	   	var leoObserverJsUrl = "https://gcore.jsdelivr.net/gh/USPA-Technology/leo-cdp-static-files@v0.9.2/js/leo-observer/leo.observer.min.js?cb="+cbKey;
+	   	var isDev = ROOT_DOMAIN.indexOf('.example.com')>0;
   		if(isDev) { 
 			leoObserverJsUrl = "https://obs.example.com/public/js/leo-observer-src/leo.observer.js?cb="+(new Date().getTime());
 		}
   		loadScript(leoObserverJsUrl, codeIsReady);
+		console.log("LEOCDP DEV MODE " + isDev)
     </script>
 </body>
 

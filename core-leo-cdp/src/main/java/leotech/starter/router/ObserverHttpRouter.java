@@ -104,9 +104,12 @@ public final class ObserverHttpRouter extends BaseHttpRouter {
 		outHeaders.set(CONNECTION, HttpTrackingUtil.HEADER_CONNECTION_CLOSE);
 		outHeaders.set(POWERED_BY, SERVER_VERSION);
 		
+		String contentType = StringUtil.safeString(reqHeaders.get(BaseHttpHandler.CONTENT_TYPE),BaseHttpHandler.CONTENT_TYPE_JSON);
 		String origin = StringUtil.safeString(reqHeaders.get(BaseHttpHandler.ORIGIN), "*");
 		String useragent = StringUtil.safeString(req.getHeader(BaseHttpHandler.USER_AGENT));
 		DeviceInfo device = DeviceInfoUtil.getDeviceInfo(useragent);
+
+		System.out.println("contentType: " + contentType + " urlPath: " + urlPath);
 
 		try {
 			if(urlPath.startsWith(CdpPublicApiRouter.PREFIX_API)) {
@@ -124,6 +127,9 @@ public final class ObserverHttpRouter extends BaseHttpRouter {
 						} 
 						else if(httpMethod.equalsIgnoreCase(HTTP_METHOD_POST) || httpMethod.equalsIgnoreCase(HTTP_METHOD_PUT)) {
 							ObserverHttpPostHandler.process(this.context, req, urlPath, reqHeaders, params, resp, outHeaders, device, origin, nodeInfo);
+						}
+						else {
+							resp.end("NO handler found");
 						}
 					});
 					return;

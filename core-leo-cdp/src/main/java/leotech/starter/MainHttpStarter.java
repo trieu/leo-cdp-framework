@@ -1,104 +1,160 @@
 package leotech.starter;
 
-import com.itfsw.query.builder.support.parser.AbstractArangoQueryRuleParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import com.itfsw.query.builder.support.parser.AbstractArangoQueryRuleParser;
 import leotech.system.HttpWorker;
 import leotech.system.domain.SystemControl;
 import leotech.system.util.LogUtil;
 import leotech.system.version.SystemMetaData;
 
 /**
- * the main starter for an instance of service, defined in the
- * configs/http-routing-configs.json
- * 
+ * The main starter for the LEO CDP service instance.
+ * Configuration is defined in configs/http-routing-configs.json.
  * @author tantrieuf31
  * @since 2020
- *
  */
 public final class MainHttpStarter {
 
-	static final String HELP = "help";
+	static Logger logger = LoggerFactory.getLogger(MainHttpStarter.class);
 
-	public static final String SETUP_NEW_SYSTEM = "setup-system-with-password";
+    private static final String CMD_HELP = "help";
+    private static final String CMD_SETUP_NEW_SYSTEM = "setup-system-with-password";
+    
+    // Upgrade Commands
+    private static final String CMD_UPGRADE_SYSTEM = "upgrade-system";
+    private static final String CMD_UPGRADE_RESET_CONFIGS = "upgrade-system-and-reset-configs";
+    private static final String CMD_UPGRADE_AI_AGENT = "upgrade-ai-agent-and-reset-configs";
+    private static final String CMD_UPGRADE_SYSTEM_DATA = "upgrade-system-and-data";
+    private static final String CMD_UPGRADE_INDEX_DB = "upgrade-index-database";
 
-	public static final String UPGRADE_SYSTEM = "upgrade-system";
+    // Private constructor to prevent instantiation
+    private MainHttpStarter() {
+        throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
+    }
 
-	public static final String UPGRADE_SYSTEM_AND_RESET_CONFIGS = "upgrade-system-and-reset-configs";
+    /**
+     * Main entry point.
+     * * @param args Command line arguments
+     */
+    public static void main(String[] args) {
+        try {
+            initializeSystemEnvironment();
+            dispatchCommand(args);
+        } catch (Exception e) {
+            logger.error(e.getMessage(),e);
+            System.exit(1);
+        }
+    }
 
-	public static final String UPGRADE_AI_AGENT_AND_RESET_CONFIGS = "upgrade-ai-agent-and-reset-configs";
+    private static void initializeSystemEnvironment() {
+        LogUtil.loadLoggerConfigs();
+        SystemMetaData.initTimeZoneGMT();
+        AbstractArangoQueryRuleParser.setTimeZone(SystemMetaData.DEFAULT_TIME_ZONE);
+    }
 
-	public static final String UPGRADE_SYSTEM_AND_DATA = "upgrade-system-and-data";
+    private static void dispatchCommand(String[] args) throws Exception {
+        int argCount = args.length;
+        // Case 0: Default Startup
+        if (argCount == 0) {
+            LogUtil.println("Starting HTTP Worker with default admin config...");
+            HttpWorker.start(SystemMetaData.HTTP_ROUTING_CONFIG_ADMIN);
+            return;
+        }
 
-	public static final String UPGRADE_INDEX_DATABASE = "upgrade-index-database";
+        var command = args[0].trim();
 
-	/**
-	 * @param args
-	 * @throws Exception
-	 */
-	public static void main(String[] args) throws Exception {
-		LogUtil.loadLoggerConfigs();
-		SystemMetaData.initTimeZoneGMT();
-		AbstractArangoQueryRuleParser.setTimeZone(SystemMetaData.DEFAULT_TIME_ZONE);
+        // Case 1: Single Argument Commands
+        if (argCount == 1) {
+            handleSingleArgCommand(command);
+            return;
+        }
+        // Case 2: Double Argument Commands
+        if (argCount == 2) {
+            var secondaryArg = args[1].trim();
+            handleDoubleArgCommand(command, secondaryArg);
+            return;
+        }
+        // Case Default: Invalid arguments
+        printHelpInfo();
+    }
 
-		int length = args.length;
+    private static void handleSingleArgCommand(String command) throws Exception {
+        // Use if-else for Java 11 compatibility (Switch expressions are Java 14+)
+        if (CMD_UPGRADE_SYSTEM.equalsIgnoreCase(command)) {
+            performSystemUpgrade();
+        } 
+        else if (CMD_UPGRADE_RESET_CONFIGS.equalsIgnoreCase(command)) {
+            performSystemUpgradeWithConfigReset();
+        } 
+        else if (CMD_UPGRADE_AI_AGENT.equalsIgnoreCase(command)) {
+            performAiAgentUpgrade();
+        } 
+        else if (CMD_UPGRADE_INDEX_DB.equalsIgnoreCase(command)) {
+            SystemControl.upgradeIndexDatabase();
+        } 
+        else if (command.toLowerCase().contains(CMD_HELP)) {
+            printHelpInfo();
+        } 
+        else {
+            // Assume the argument is a custom routing config key
+            LogUtil.println("Starting HTTP Worker with config key: " + command);
+            HttpWorker.start(command);
+        }
+    }
 
-		if (length == 0) {
-			// default key: httpRoutingConfigAdmin in configs/http-routing-configs.json
-			HttpWorker.start(SystemMetaData.HTTP_ROUTING_CONFIG_ADMIN);
-		} else if (length >= 1) {
-			String command = args[0];
+    private static void handleDoubleArgCommand(String command, String secondaryArg) throws Exception {
+        if (CMD_SETUP_NEW_SYSTEM.equalsIgnoreCase(command)) {
+            var superAdminPassword = secondaryArg;
+            SystemControl.setupNewSystem(superAdminPassword, true);
+        } 
+        else if (CMD_UPGRADE_SYSTEM_DATA.equalsIgnoreCase(command)) {
+            var jobClasspath = secondaryArg;
+            performSystemUpgradeWithData(jobClasspath);
+        } 
+        else {
+            LogUtil.println("Invalid 2-argument command: " + command);
+            printHelpInfo();
+        }
+    }
 
-			if (length == 1) {
-				// start main worker with key in configs/http-routing-configs.json
-				if (UPGRADE_SYSTEM.equalsIgnoreCase(command)) {
-					SystemControl.upgradeSystem(true, false, false, false, null);
-					return;
-				}
-				if (UPGRADE_SYSTEM_AND_RESET_CONFIGS.equalsIgnoreCase(command)) {
-					SystemControl.upgradeSystem(true, true, false, false, null);
-					return;
-				} else if (UPGRADE_AI_AGENT_AND_RESET_CONFIGS.equalsIgnoreCase(command)) {
-					SystemControl.upgradeSystem(true, false, true, false, null);
-					return;
-				} else if (UPGRADE_INDEX_DATABASE.equalsIgnoreCase(command)) {
-					SystemControl.upgradeIndexDatabase();
-					return;
-				} else if (command.contains(HELP)) {
-					printHelpInfo();
-				} else {
-					HttpWorker.start(args[0]);
-				}
-			} else if (length == 2) {
-				// start the process to setup database for first-time
-				if (SETUP_NEW_SYSTEM.equalsIgnoreCase(command)) {
-					String superAdminPassword = args[1];
-					SystemControl.setupNewSystem(superAdminPassword, true);
-					return;
-				} else if (UPGRADE_SYSTEM_AND_DATA.equalsIgnoreCase(command)) {
-					String jobClasspath = args[1];
-					SystemControl.upgradeSystem(true, false, false, false, jobClasspath);
-					return;
-				} else {
-					LogUtil.println("the first argument should be " + SETUP_NEW_SYSTEM);
-				}
-			} else {
-				printHelpInfo();
-			}
-		} else {
-			printHelpInfo();
-		}
-	}
+    // --- Helper Wrappers to eliminate "Magic Booleans" ---
 
-	protected static void printHelpInfo() {
-		LogUtil.println("Invalid arguments");
-		LogUtil.println("Please pass a valid argument from: ");
-		LogUtil.println("SETUP_NEW_SYSTEM: " + SETUP_NEW_SYSTEM);
+    private static void performSystemUpgrade() throws Exception {
+        // upgradeSystem(upgradeCode, resetConfig, resetAi, resetData, jobClass)
+        SystemControl.upgradeSystem(true, false, false, false, null);
+    }
 
-		LogUtil.println("UPGRADE_SYSTEM: " + UPGRADE_SYSTEM);
-		LogUtil.println("UPGRADE_SYSTEM_AND_RESET_CONFIGS: " + UPGRADE_SYSTEM_AND_RESET_CONFIGS);
-		LogUtil.println("UPGRADE_INDEX_DATABASE: " + UPGRADE_INDEX_DATABASE);
+    private static void performSystemUpgradeWithConfigReset() throws Exception {
+        SystemControl.upgradeSystem(true, true, false, false, null);
+    }
 
-		LogUtil.println("UPGRADE_SYSTEM_AND_DATA: " + UPGRADE_SYSTEM_AND_DATA + " [jobClasspath]");
-	}
+    private static void performAiAgentUpgrade() throws Exception {
+        SystemControl.upgradeSystem(true, false, true, false, null);
+    }
 
+    private static void performSystemUpgradeWithData(String jobClasspath) throws Exception {
+        SystemControl.upgradeSystem(true, false, false, false, jobClasspath);
+    }
+
+    // --- Help Output ---
+
+    private static void printHelpInfo() {
+        var helpMessage = new StringBuilder();
+        helpMessage.append("\n================ LEO CDP STARTER HELP ================\n")
+                   .append("Usage:\n")
+                   .append("  [No Args]                               Start with default Admin Config\n")
+                   .append("  [ConfigKey]                             Start with specific Routing Config\n\n")
+                   .append("System Management Commands:\n")
+                   .append("  ").append(CMD_SETUP_NEW_SYSTEM).append(" [password]   Setup new system\n")
+                   .append("  ").append(CMD_UPGRADE_SYSTEM).append("                 Upgrade system core\n")
+                   .append("  ").append(CMD_UPGRADE_RESET_CONFIGS).append("      Upgrade & reset configs\n")
+                   .append("  ").append(CMD_UPGRADE_AI_AGENT).append("     Upgrade AI agent & reset configs\n")
+                   .append("  ").append(CMD_UPGRADE_INDEX_DB).append("          Upgrade database indexes\n")
+                   .append("  ").append(CMD_UPGRADE_SYSTEM_DATA).append(" [jobCp]       Upgrade system & run data job\n")
+                   .append("======================================================");
+        
+        LogUtil.println(helpMessage.toString());
+    }
 }

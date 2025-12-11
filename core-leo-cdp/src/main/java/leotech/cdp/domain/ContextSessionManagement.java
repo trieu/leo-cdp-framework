@@ -189,7 +189,6 @@ public final class ContextSessionManagement {
 	 * @return
 	 */
 	public static ContextSession get(final String clientSessionKey, HttpServerRequest req, MultiMap params, DeviceInfo device) {
-
 		if (device.isWebCrawler())
 			return null;
 

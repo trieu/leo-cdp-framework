@@ -1,17 +1,15 @@
 /*
- * LEO JS code for LEO CDP - version 0.9.1 - built on 2025.10.16
+ * LEO JS code for LEO CDP - version 0.9.2 - built on 2025.12.11
  */
 // ------------ LEO Proxy ------------------
 (function() {
-	var leoObserverId = window.leoObserverId;
+	var leoObserverId = window.leoObserverId || "";
+    
     if (typeof window.LeoObserverProxy === "undefined" && typeof leoObserverId === 'string' ) {
     	
     	var leoProxyOrigin = location.protocol + '//' + location.hostname;
     	var targetPostMessage = 'https://' + window.leoObserverLogDomain;
         var proxyHtmlUrl = 'https://' + window.leoObserverLogDomain + "/public/html/leo-event-proxy.html#";
-        
-        // data touch-point metadata
-        var srcTouchpointUrl = window.srcTouchpointUrl || encodeURIComponent(location.href);
 
         var LeoObserverProxy = { 'synchLeoVisitorCallback' : false };
         window.LeoObserverProxy = LeoObserverProxy;
@@ -24,17 +22,17 @@
         	
         	var node = document.getElementById(iframeId);
         	if( node == null ){
-        		var iframeProxySrc = proxyHtmlUrl + window.leoObserverLogDomain + '_' + leoProxyOrigin;
+        		var iframeProxyUrl = proxyHtmlUrl + window.leoObserverLogDomain + '_' + leoProxyOrigin;
     	        if(typeof window.injectedVisitorId === 'string' ) {
-    	        	iframeProxySrc = iframeProxySrc + '_' +  window.injectedVisitorId;
-    	        	// alert(iframeProxySrc)
+    	        	iframeProxyUrl = iframeProxyUrl + '_' +  window.injectedVisitorId;
+    	        	// alert(iframeProxyUrl)
     	        }
     	        else if( location.search.indexOf(LEO_SYN_PREFIX) > 0 ) {
     	        	// inject Unique Visitor ID to landing page
     	        	var search = location.search.substring(1);
     	        	var map = JSON.parse('{"' + decodeURI(search).replace(/"/g, '\\"').replace(/&/g, '","').replace(/=/g,'":"') + '"}');
     	        	var leosyn = map['leosyn'] || '';
-    	        	iframeProxySrc = iframeProxySrc + '_' + leosyn;
+    	        	iframeProxyUrl = iframeProxyUrl + '_' + leosyn;
     	        }
 
     	        //cross domain iframe
@@ -44,7 +42,7 @@
     	        iframeProxy.height = 0;
     	        iframeProxy.id = iframeId;
     	        iframeProxy.name = iframeId;
-    	        iframeProxy.src = iframeProxySrc;
+    	        iframeProxy.src = iframeProxyUrl;
 
     	        //append to trigger iframe post back data to server
     	        var body = document.getElementsByTagName("body");
@@ -53,10 +51,10 @@
     	            window.LeoIframeProxy = iframeProxy;
     	        }
         	}
-        },800);
+        },999);
 
-        // Send a message to the child iframe
-        var sendMessage = function(msg) {
+        // Put message to the queue in the child iframe
+        var putEventToQueue = function(msg) {
             // Make sure you are sending a string, and to stringify JSON
         	if(window.LeoIframeProxy){
         		window.LeoIframeProxy.contentWindow.postMessage(msg, targetPostMessage);
@@ -98,25 +96,27 @@
         });
 
         var getObserverParams = function(metricName, eventData, profileObject, extData, transactionId, shoppingCartItems, transactionValue, currencyCode ) {
-			var tprefurl =  encodeURIComponent(document.referrer);
+			var tprefurl =  document.referrer;
 			var tprefdomain = extractRootDomain(document.referrer);
 			
-			var tpname = window.srcTouchpointName || encodeURIComponent(document.title);
-			var mediaHost = extractRootDomain(document.location.href);
-            var tpurl = window.srcTouchpointUrl || encodeURIComponent(document.location.href);
+            var mediaHost = extractRootDomain(document.location.href);
+			var tpname = window.srcTouchpointName || document.title;
+            var tpurl = window.srcTouchpointUrl || document.location.href;
+            var batchSize = window.leoObserverBatchSize || 1;
             
             // tracking parameters
             var params = {
                 'obsid': leoObserverId,
+                'batchsize': batchSize,
                 'mediahost': mediaHost,
-                'tprefurl': tprefurl,
+                'tprefurl': encodeURIComponent(tprefurl),
                 'tprefdomain': tprefdomain,
-                'tpurl': tpurl,
-                'tpname' : tpname
+                'tpurl': encodeURIComponent(tpurl),
+                'tpname' : encodeURIComponent(tpname)
             };
             
             if(typeof metricName === "string" && typeof eventData === "object"){
-            	params['metric'] = metricName;
+            	params['metric'] = metricName;                
              	params['eventdata'] = encodeURIComponent(JSON.stringify(eventData)); 
             }
             if(typeof profileObject === "object"){
@@ -147,8 +147,7 @@
                 'call': 'getContextSession',
                 'params': getObserverParams(false)
             });
-            sendMessage(payload);
-            console.log('LeoObserverProxy.initLeoContextSession')
+            putEventToQueue(payload);
 		}
 		
 		LeoObserverProxy.synchLeoVisitorId = function(callback) {
@@ -156,7 +155,7 @@
             var payload = JSON.stringify({
                 'call': 'synchLeoVisitorId'
             });
-            sendMessage(payload);
+            putEventToQueue(payload);
         }
 
         // event-view(pageview|screenview|storeview|trueview|placeview,contentId,sessionKey,visitorId)
@@ -170,7 +169,7 @@
                 'params': params,
                 'eventType': 'view'
             });
-            sendMessage(payload);
+            putEventToQueue(payload);
         }
 
         // event-action(click|play|touch|contact|watch|test,sessionKey,visitorId)
@@ -182,7 +181,7 @@
                     'params': params,
                     'eventType': 'action'
                 });
-                sendMessage(payload);
+                putEventToQueue(payload);
             }
         }
 
@@ -195,7 +194,7 @@
                     'params': params,
                     'eventType': 'conversion'
                 });
-                sendMessage(payload);
+                putEventToQueue(payload);
             }
         }
         
@@ -208,7 +207,7 @@
                     'params': params,
                     'eventType': 'feedback'
                 });
-                sendMessage(payload);
+                putEventToQueue(payload);
             }
         }
         
@@ -219,7 +218,7 @@
                     'call': 'updateProfile',
                     'params': getObserverParams(false,false,profileObject, extData)
                 });
-                sendMessage(payload);
+                putEventToQueue(payload);
             }
         }
 

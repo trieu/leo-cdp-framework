@@ -1,5 +1,5 @@
 /**
- * LeoEventObserver version 0.9.1 - built on 2025.10.16
+ * LeoEventObserver version 0.9.2 - built on 2025.12.11
  */
 
 // ------------------------------ LeoCorsRequest ----------------------------------------//
@@ -12,7 +12,7 @@
         }
     }
 
-    function CreateHTTPRequestObject() {
+    function createHTTPRequestObject() {
         // although IE supports the XMLHttpRequest object, but it does not work on local files.
         var forceActiveX = (window.ActiveXObject && location.protocol === "file:");
         if (window.XMLHttpRequest && !forceActiveX) {
@@ -26,72 +26,9 @@
         return null;
     }
 
-    function CreateMSXMLDocumentObject() {
-        if (typeof(ActiveXObject) != "undefined") {
-            var progIDs = [
-                "Msxml2.DOMDocument.6.0",
-                "Msxml2.DOMDocument.5.0",
-                "Msxml2.DOMDocument.4.0",
-                "Msxml2.DOMDocument.3.0",
-                "MSXML2.DOMDocument",
-                "MSXML.DOMDocument"
-            ];
-            for (var i = 0; i < progIDs.length; i++) {
-                try {
-                    return new ActiveXObject(progIDs[i]);
-                } catch (e) {};
-            }
-        }
-        return null;
-    }
-
-    function ParseHTTPResponse(httpRequest) {
-        var xmlDoc = httpRequest.responseXML;
-
-        // if responseXML is not valid, try to create the XML document from the responseText property
-        if (!xmlDoc || !xmlDoc.documentElement) {
-            if (window.DOMParser) {
-                var parser = new DOMParser();
-                try {
-                    xmlDoc = parser.parseFromString(httpRequest.responseText, "text/xml");
-                } catch (e) {
-                    alert("XML parsing error");
-                    return null;
-                };
-            } else {
-                xmlDoc = CreateMSXMLDocumentObject();
-                if (!xmlDoc) {
-                    return null;
-                }
-                xmlDoc.loadXML(httpRequest.responseText);
-
-            }
-        }
-
-        // if there was an error while parsing the XML document
-        var errorMsg = null;
-        if (xmlDoc.parseError && xmlDoc.parseError.errorCode != 0) {
-            errorMsg = "XML Parsing Error: " + xmlDoc.parseError.reason +
-                " at line " + xmlDoc.parseError.line +
-                " at position " + xmlDoc.parseError.linepos;
-        } else {
-            if (xmlDoc.documentElement) {
-                if (xmlDoc.documentElement.nodeName == "parsererror") {
-                    errorMsg = xmlDoc.documentElement.childNodes[0].nodeValue;
-                }
-            }
-        }
-        if (errorMsg) {
-            logError(errorMsg);
-            return null;
-        }
-
-        // ok, the XML document is valid
-        return xmlDoc;
-    }
 
     // returns whether the HTTP request was successful
-    function IsRequestSuccessful(httpRequest) {
+    function isRequestSuccessful(httpRequest) {
         // IE: sometimes 1223 instead of 204
         var success = (httpRequest.status == 0 ||
             (httpRequest.status >= 200 && httpRequest.status < 300) ||
@@ -105,7 +42,7 @@
         var httpRequest = null;
         var onStateChange = function() {
             if (httpRequest.readyState == 0 || httpRequest.readyState == 4) {
-                if (IsRequestSuccessful(httpRequest)) {
+                if (isRequestSuccessful(httpRequest)) {
                     var resHeaders = {};
                     for (var i = 0; i < respHeaderNames.length; i++) {
                         var name = respHeaderNames[i];
@@ -122,7 +59,7 @@
         }
 
         if (!httpRequest) {
-            httpRequest = CreateHTTPRequestObject();
+            httpRequest = createHTTPRequestObject();
         }
         if (httpRequest) {
             httpRequest.open("GET", url, true); // async
@@ -132,20 +69,12 @@
         }
     }
     
-    LeoCorsRequest.post = function(withCredentials, url, respHeaderNames, params, callback) {
+    LeoCorsRequest.post = function(url, params, callback) {
         var httpRequest = null;
         var onStateChange = function() {
             if ((httpRequest.readyState == 0 || httpRequest.readyState == 4) && httpRequest.status == 200) {
-                if (IsRequestSuccessful(httpRequest)) {
-                    var resHeaders = {};
-                    for (var i = 0; i < respHeaderNames.length; i++) {
-                        var name = respHeaderNames[i];
-                        var val = httpRequest.getResponseHeader(name);
-                        if (val) {
-                            resHeaders[name] = val;
-                        }
-                    }
-                    callback(resHeaders, httpRequest.responseText);
+                if (isRequestSuccessful(httpRequest)) {                    
+                    callback(httpRequest.responseText);
                 } else {
                     logError("Operation failed by LeoCorsRequest.post: " + url);
                 }
@@ -153,16 +82,99 @@
         }
 
         if (!httpRequest) {
-            httpRequest = CreateHTTPRequestObject();
+            httpRequest = createHTTPRequestObject();
         }
         if (httpRequest) {
             httpRequest.open("POST", url, true); // async
-            httpRequest.setRequestHeader('Content-type', 'application/x-www-form-urlencoded'); // form submit
+            httpRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded'); // form submit
             httpRequest.onreadystatechange = onStateChange;
-            httpRequest.withCredentials = withCredentials;
+            httpRequest.withCredentials = true;
             httpRequest.send(params);
         }
     }
+
+   
+    LeoCorsRequest.postAsJson = function(url, payload, callback) {
+        var httpRequest = null;
+
+        // 1. Define the state change handler (Closure)
+        var onStateChange = function() {
+            // We usually only care when the request is DONE (4)
+            if (httpRequest.readyState === 4) {
+                // Check HTTP Status (200-299 is usually success)
+                if (isRequestSuccessful(httpRequest)) { 
+                    // Safe execution of callback
+                    if (typeof callback === 'function') {
+                        callback(httpRequest.responseText);
+                    }
+                } else {
+                    // Log detailed error for debugging
+                    logError("LeoCorsRequest.postAsJsonArray failed. Status: " + httpRequest.status + " | URL: " + url);
+                }
+            }
+        };
+
+        // 2. Initialize Request
+        if (!httpRequest) {
+            httpRequest = createHTTPRequestObject();
+        }
+
+        if (httpRequest) {
+            httpRequest.open("POST", url, true); // Async is critical for performance
+            
+            // 3. Set Headers for JSON Batching
+            // This is the specific requirement for sending arrays/objects
+            httpRequest.setRequestHeader('Content-Type', 'application/json;charset=utf-8');
+            
+            // Add custom headers if your CDP requires specific Auth headers or Stream IDs here
+            // httpRequest.setRequestHeader('X-Leo-Auth', '...'); 
+
+            httpRequest.onreadystatechange = onStateChange;
+            httpRequest.withCredentials = true;
+            httpRequest.send(payload);
+        } else {
+             logError("Browser does not support CORS or XHR creation failed.");
+        }
+    }
+
+    LeoCorsRequest.eventQueueMap = {};
+    LeoCorsRequest.batchSend = function(url, paramsObj, batchSize) {
+        var queue =  LeoCorsRequest.eventQueueMap[url];
+        if(typeof queue !== 'object'){
+            queue = [];
+            LeoCorsRequest.eventQueueMap[url] = queue;
+        }
+
+        queue.push(paramsObj);
+        if( queue.length >= batchSize){
+            var payload = JSON.stringify(queue);
+            var eventcount = queue.length;
+            var finalUrl = url + "&eventcount=" + eventcount;
+            LeoCorsRequest.postAsJson(finalUrl, payload, function(rs){
+                console.log(rs)
+            })
+            LeoCorsRequest.eventQueueMap[url] = [];
+        }
+    }
+
+    setInterval(function(){
+        for(var url in LeoCorsRequest.eventQueueMap){  
+            if(typeof url === 'string'){
+                var queue =  LeoCorsRequest.eventQueueMap[url];
+                console.log(url); 
+                console.log(queue) 
+                var eventcount = queue.length;
+                if( eventcount > 0 ){
+                    var payload = JSON.stringify(queue);
+                    var finalUrl = url + "&eventcount=" + eventcount;
+                    LeoCorsRequest.postAsJson(finalUrl, payload, function(rs){
+                        console.log(rs)
+                    });
+                    LeoCorsRequest.eventQueueMap[url] = [];
+                }
+            }            
+        }        
+    },5000)
     
     global.LeoCorsRequest = LeoCorsRequest;
 })(typeof window === 'undefined' ? this : window);
@@ -597,8 +609,7 @@ var leoVisitorIdStringKey = "leocdp_vid";
   
     	    var oneWeekInMinutes = 10080;
     		lscache.set("leocdp_fgp", fingerprintId);
-    		LeoEventObserver.fingerprintId = fingerprintId;
-    		
+
     		// callback
     		if(typeof callback === 'function') callback(fingerprintId);
     	});
@@ -644,7 +655,7 @@ var leoVisitorIdStringKey = "leocdp_vid";
         return uuid;
     }
 
-    var doTracking = function(eventType, params, callback) {
+    var doTracking = function(eventType, params) {
 		var localSessionKey = getSessionKey(true);
         var trackingAjaxHandler = function(resHeaders, text) {
             var data = JSON.parse(text);
@@ -653,7 +664,11 @@ var leoVisitorIdStringKey = "leocdp_vid";
 	        }
         }
 
+        var batchSize = Number.parseInt(params['batchsize'] || 1);
+        delete params['batchsize'];
+
 		params["visid"] = getVisitorId();
+
         var queryStr = objectToQueryString(params);
 		var isHttpPost = false;
 	
@@ -674,7 +689,15 @@ var leoVisitorIdStringKey = "leocdp_vid";
         var url = "";
         if(isHttpPost) {
         	url = prefixUrl + '?ctxsk=' + localSessionKey;
-        	LeoCorsRequest.post(false, url , [], queryStr , trackingAjaxHandler);
+            
+            if(batchSize <= 1){
+                // send of batchSize is 1 or 0
+                LeoCorsRequest.post(url ,queryStr ,trackingAjaxHandler);
+            }
+            else {
+                LeoCorsRequest.batchSend(url, params, batchSize)
+            }
+        	
         } else {
         	url = prefixUrl + '?' + queryStr + '&ctxsk=' + localSessionKey;
         	LeoCorsRequest.get(false, url, [], trackingAjaxHandler);
@@ -695,7 +718,7 @@ var leoVisitorIdStringKey = "leocdp_vid";
          var sessionKey = getSessionKey();        
          var url = PREFIX_UPDATE_PROFILE_URL + '?' + 'ctxsk=' + sessionKey;
          
-         LeoCorsRequest.post(false, url , [], paramsStr , h);
+         LeoCorsRequest.post(url, paramsStr, h);
     }
        
     var objectToQueryString = function(params){

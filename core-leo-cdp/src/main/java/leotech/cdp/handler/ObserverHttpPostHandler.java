@@ -51,6 +51,16 @@ public final class ObserverHttpPostHandler {
 
 		outHeaders.set(CONTENT_TYPE, BaseHttpHandler.CONTENT_TYPE_JSON);
 		BaseHttpRouter.setCorsHeaders(outHeaders, origin);
+		int eventcount = StringUtil.safeParseInt(params.get("eventcount"));
+
+		if(eventcount > 0){
+			req.bodyHandler(body -> {
+				String jsonBody = body.toString();
+				System.out.println(jsonBody);
+			});
+			ObserverResponse.done(resp, 500, "", "", "");
+			return;
+		}
 
 		if (urlPath.equalsIgnoreCase(PREFIX_EVENT_ACTION)) {
 			// synch ContextSession with event tracking
@@ -71,7 +81,6 @@ public final class ObserverHttpPostHandler {
 				resp.end(new Gson().toJson(new ObserverResponse("", "", INVALID, status)));
 			}
 			ObserverResponse.done(resp, status, visitorId, sessionKey, eventId);
-
 		}
 		// conversion event
 		else if (urlPath.equalsIgnoreCase(PREFIX_EVENT_CONVERSION)) {
