@@ -4,6 +4,9 @@
 // ------------ LEO Proxy ------------------
 (function() {
 	var leoObserverId = window.leoObserverId || "";
+	if(typeof window.leoObserverBatchSize !== 'number') {
+		window.leoObserverBatchSize = 10;
+	}
     
     if (typeof window.LeoObserverProxy === "undefined" && typeof leoObserverId === 'string' ) {
     	
@@ -102,7 +105,7 @@
             var mediaHost = extractRootDomain(document.location.href);
 			var tpname = window.srcTouchpointName || document.title;
             var tpurl = window.srcTouchpointUrl || document.location.href;
-            var batchSize = window.leoObserverBatchSize || 1;
+            var batchSize = window.leoObserverBatchSize;
             
             // tracking parameters
             var params = {

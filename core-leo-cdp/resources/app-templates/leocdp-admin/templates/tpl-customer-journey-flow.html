@@ -134,6 +134,9 @@ LeoObserver.recordEvent<%- eventMetricName %> = function(eventData) {
 	// Observer ID
 	window.leoObserverId = "__leoObserverId__";
 	
+	// Default batch size of Event Tracking
+	window.leoObserverBatchSize = 10;
+	
 	// CDN of JS
 	window.leoObserverLogDomain = "__leoObserverDomain__";
   	window.leoObserverCdnDomain = "__staticFileDomain__";

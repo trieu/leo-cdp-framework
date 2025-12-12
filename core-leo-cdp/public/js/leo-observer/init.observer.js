@@ -1,3 +1,5 @@
+// Version: v_0.9.0_2025-12-12-16-12-53
+// Version: v_0.9.0_2025-12-12-15-54-53
 // Version: v_0.9.0_2025-12-12-12-24-40
 // ===============================
 // Global configs
@@ -150,9 +152,9 @@ function codeIsReady() {
 // Load remote observer script
 // ===============================
 
-var cbKey = "20251016";
+var cbKey = "20251212";
 var leoObserverJsUrl =
-  "https://gcore.jsdelivr.net/gh/USPA-Technology/leo-cdp-static-files@v0.9.1/js/leo-observer/leo.observer.min.js?cb=" + cbKey;
+  "https://gcore.jsdelivr.net/gh/USPA-Technology/leo-cdp-static-files@v0.9.3/js/leo-observer/leo.observer.min.js?cb=" + cbKey;
 
 var isDev = ROOT_DOMAIN === "obs.example.com";
 if (isDev) {
