@@ -257,7 +257,7 @@ public final class UpdateProfileEventProcessor {
 		ScoreCX cxScore = null;
 		Map<String, Object> eventData = new HashMap<>();
 		
-		if(BehavioralEvent.Feedback.SUBMIT_FEEDBACK_FORM.equals(metricName)) {
+		if (BehavioralEvent.Feedback.SUBMIT_FEEDBACK_FORM.equals(metricName)) {
 			// Survey Templates: handle code when profile submit a survey form
 			FeedbackSurveyReport report = FeedbackDataManagement.buildSurveyFeedbackReport(feedbackEvent);
 			if(report != null) {						

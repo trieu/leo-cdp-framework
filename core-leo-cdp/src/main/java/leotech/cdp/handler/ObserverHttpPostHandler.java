@@ -46,7 +46,8 @@ public final class ObserverHttpPostHandler {
 	private static final String PARAM_EVENT_COUNT = "eventcount";
 	private static final int DEFAULT_RESPONSE = 1;
 
-	private static final Type EVENT_LIST_TYPE = new TypeToken<ArrayList<EventPayload>>() {}.getType();
+	private static final Type EVENT_LIST_TYPE = new TypeToken<ArrayList<EventPayload>>() {
+	}.getType();
 
 	/**
 	 * Main Processing Entry Point
@@ -103,7 +104,6 @@ public final class ObserverHttpPostHandler {
 
 		// Resolve IP once for the batch
 		String ip = HttpWebParamUtil.getRemoteIP(req);
-		
 
 		ContextSession ctxSession = null;
 		for (EventPayload event : events) {
@@ -120,7 +120,7 @@ public final class ObserverHttpPostHandler {
 			if (StringUtil.isNotEmpty(event.getRawEventData())) {
 				// Assuming the Util looks for specific keys, or generic 'eventdata'
 				// You might need to adjust the key based on what EventObserverUtil expects
-				eventParams.set("eventdata", event.getDecodedEventData());
+				eventParams.set(HttpParamKey.EVENT_DATA, event.getDecodedEventData());
 			}
 
 			// 2. Resolve Session (Try to reuse session if possible, but safe to fetch per
@@ -128,19 +128,21 @@ public final class ObserverHttpPostHandler {
 			// If payload has visid, we might prioritize it
 			if (StringUtil.isNotEmpty(event.getVisId())) {
 				lastVisitorId = event.getVisId();
+				eventParams.set(HttpParamKey.VISITOR_ID, lastVisitorId);
 			}
 
-			eventParams.set("visid", lastVisitorId);
-			eventParams.set("fgp", event.getFgp());
-			eventParams.set("tpurl", event.getDecodedTpUrl());
-			eventParams.set("tpname", event.getDecodedTpName());
-			eventParams.set("mediahost", event.getMediaHost());
-			
-			if(ctxSession == null || StringUtil.isEmpty(sessionKey)) {
+			eventParams.set(HttpParamKey.OBSERVER_ID, event.getObsId());
+			eventParams.set(HttpParamKey.FINGERPRINT_ID, event.getFgp());
+			eventParams.set(HttpParamKey.TOUCHPOINT_URL, event.getDecodedTpUrl());
+			eventParams.set(HttpParamKey.TOUCHPOINT_NAME, event.getDecodedTpName());
+			eventParams.set(HttpParamKey.TOUCHPOINT_REFERRER_URL, event.getTpRefUrl());
+			eventParams.set(HttpParamKey.TOUCHPOINT_REFERRER_DOMAIN, event.getTpRefDomain());
+			eventParams.set(HttpParamKey.MEDIA_HOST, event.getMediaHost());
+
+			if (ctxSession == null || StringUtil.isEmpty(sessionKey)) {
 				ctxSession = ContextSessionManagement.get(sessionKey, ip, eventParams, device);
 				sessionKey = ctxSession.getSessionKey();
 			}
-			
 
 			// 3. Record Event
 			// Note: We default to ACTION logic for batch, unless metric implies otherwise.
@@ -154,11 +156,11 @@ public final class ObserverHttpPostHandler {
 
 	private static void saveEvent(HttpServerRequest req, DeviceInfo device, ContextSession ctxSession,
 			MultiMap eventParams, String metric) {
-		TaskRunner.runInThreadPools(() -> {
-			if (ctxSession != null) {
+		if (ctxSession != null) {
+			TaskRunner.runInThreadPools(() -> {
 				EventObserverUtil.recordActionEvent(req, eventParams, device, ctxSession, metric);
-			}
-		});
+			});
+		}
 	}
 
 	/**

@@ -1,19 +1,20 @@
 /**
- * LeoEventObserver version 0.9.2 - built on 2025.12.11
+ * LeoEventObserver version 0.9.3 - Updated for Beacon & Session Handling
  */
-
-// ------------------------------ Leo Data Request ----------------------------------------//
 
 (function(global) {
     'use strict';
 
     // Configuration
     var CONFIG = {
-        CONTENT_TYPE_JSON: 'application/json; charset=UTF-8',
         CONTENT_TYPE_FORM: 'application/x-www-form-urlencoded',
-        RETRY_DELAY: 2000,
+        RETRY_DELAY: 2222,
+        TIME_TO_FLUSH: 5555,
         DEBUG: false // Set to true to see logs
     };
+
+    // Global session tracking variable
+    var localSessionKey = "";
 
     // Logger Utility
     function log(msg, type) {
@@ -32,7 +33,6 @@
         if (window.XMLHttpRequest) {
             return new XMLHttpRequest();
         }
-        // Legacy IE Fallback (Only if absolutely necessary)
         try {
             return new ActiveXObject("Microsoft.XMLHTTP");
         } catch (e) {
@@ -42,16 +42,12 @@
     }
 
     var Network = {
-        /**
-         * Generic Request Handler
-         */
         request: function(method, url, data, headers, callback) {
             var xhr = createXHR();
             if (!xhr) return;
 
             xhr.open(method, url, true);
             
-            // Set Headers
             if (headers) {
                 for (var key in headers) {
                     if (headers.hasOwnProperty(key)) {
@@ -96,27 +92,57 @@
         },
 
         /**
-         * Tries to use sendBeacon (best for analytics), falls back to XHR
+         * Tries to use sendBeacon, falls back to XHR.
+         * Note: Beacon responses cannot be read by JS.
+         * @param {string} url 
+         * @param {string} payload 
+         * @param {function} callback - (success, responseText)
+         * @param {boolean} forceXHR - If true, bypasses Beacon to ensure we get a response
          */
-        sendBeaconOrXHR: function(url, payload, callback) {
-            // 1. Try Beacon API (Modern, non-blocking, survives page unload)
-            if (navigator.sendBeacon) {
-                // Note: sendBeacon sends POST by default. 
-                // We use Blob to ensure the correct Content-Type if the backend requires it.
-                var blob = new Blob([payload], { type: CONFIG.CONTENT_TYPE_FORM });
-                var queued = navigator.sendBeacon(url, blob);
-                if (queued) {
-                    if (callback) callback(true);
-                    return;
+        sendBeaconOrXHR: function(url, payload, callback, forceXHR) {
+            // 1. Force XHR if we need to read the response (e.g., to get sessionKey)
+            // or if Beacon is not supported.
+            if (!forceXHR && navigator.sendBeacon) {
+                try {
+                    var blob = new Blob([payload], { type: CONFIG.CONTENT_TYPE_FORM });
+                    var queued = navigator.sendBeacon(url, blob);
+                    if (queued) {
+                        // Beacon success: We assume success, but responseText is NULL
+                        if (callback) callback(true, null);
+                        return;
+                    }
+                } catch (e) {
+                    log("Beacon failed, falling back to XHR", "error");
                 }
             }
 
-            // 2. Fallback to XHR
+            // 2. Fallback (or forced) to XHR
             this.post(url, payload, function(resp) {
                 if (callback) callback(true, resp);
             });
         }
     };
+
+
+    function trackingCallback(text){
+        if(typeof text === "string" && text.length > 0){
+            try {
+                var data = JSON.parse(text);
+                // Check if server returned a new sessionKey
+                if(data.sessionKey && localSessionKey !== data.sessionKey){
+                    localSessionKey = data.sessionKey;
+                    
+                    // Update the main object if method exists
+                    if (global.LeoEventObserver && typeof global.LeoEventObserver.setSessionKey === 'function') {
+                        global.LeoEventObserver.setSessionKey(localSessionKey);
+                    }
+                    log("SessionKey updated: " + localSessionKey);
+                }
+            } catch (e) {
+                log("Failed to parse tracking response: " + e.message, "error");
+            }
+        }
+    }
 
     // --- Batching & Queue Layer ---
 
@@ -124,16 +150,13 @@
         queues: {},
         isFlushing: {},
 
-        /**
-         * Standardized payload creator
-         */
         createPayload: function(events) {
-            return "events=" + encodeURIComponent(JSON.stringify(events));
+            // Inject current session key into payload if available
+            var payloadStr = JSON.stringify(events);
+            return "events=" + encodeURIComponent(payloadStr) + 
+                   (localSessionKey ? "&sessionKey=" + encodeURIComponent(localSessionKey) : "");
         },
 
-        /**
-         * Adds item to queue and checks constraints
-         */
         enqueue: function(url, data, batchSize) {
             if (!this.queues[url]) {
                 this.queues[url] = [];
@@ -145,10 +168,6 @@
             }
         },
 
-        /**
-         * Sends data safely.
-         * Logic: Move data to buffer -> Send -> If Fail, return to queue.
-         */
         flush: function(url) {
             var self = this;
             var queue = this.queues[url];
@@ -157,79 +176,80 @@
                 return;
             }
 
-            // Lock this URL to prevent race conditions
             this.isFlushing[url] = true;
 
-            // Take a snapshot of current events (Buffer)
             var buffer = queue.slice(0); 
-            // Optimistically clear the main queue (we will restore if fail)
             this.queues[url] = []; 
 
             var eventCount = buffer.length;
             var payload = this.createPayload(buffer);
             var finalUrl = url + (url.indexOf('?') === -1 ? '?' : '&') + "eventcount=" + eventCount;
 
-            Network.sendBeaconOrXHR(finalUrl, payload, function(success) {
+            // SMART SENDING LOGIC:
+            // If we don't have a sessionKey yet, we MUST use XHR to read the response.
+            // If we already have a key, we can use Beacon (faster, background).
+            var forceXHR = (localSessionKey === "" || !localSessionKey);
+
+            Network.sendBeaconOrXHR(finalUrl, payload, function(success, responseText) {
                 self.isFlushing[url] = false;
                 
                 if (success) {
-                    log("Batch sent successfully: " + eventCount + " events to " + url);
+                    // Only process response if XHR was used (Beacon returns null text)
+                    if (responseText) {
+                        trackingCallback(responseText);
+                    }
+                    log("Batch sent successfully (" + (responseText ? "XHR" : "Beacon") + "): " + eventCount + " events");
                 } else {
-                    // FATAL: Network failed. Restore data to the FRONT of the queue to preserve order.
-                    log("Batch failed. Restoring " + eventCount + " events to queue.", "error");
+                    log("Batch failed. Restoring data.", "error");
                     self.queues[url] = buffer.concat(self.queues[url]);
                 }
-            });
+            }, forceXHR);
         }
     };
 
     // --- Global Interface ---
 
     var LeoCorsRequest = {
-        get: function(url, callback) {
-            Network.get(url, callback);
-        },
-        
-        post: function(url, params, callback) {
-            Network.post(url, params, callback);
+        // Allow external setting of key if needed
+        setSessionKey: function(key) {
+			if(key && key !== "") localSessionKey = key;
         },
 
-        /**
-         * Add event to batch queue.
-         * @param {string} url - The endpoint URL
-         * @param {object} paramsObj - The data object to send
-         * @param {number} batchSize - Trigger send when queue reaches this size
-         */
+        get: function(url) {
+            Network.get(url, trackingCallback);
+        },
+        
+        post: function(url, params) {
+            Network.post(url, params, trackingCallback);
+        },
+
         batchSend: function(url, paramsObj, batchSize) {
             BatchManager.enqueue(url, paramsObj, batchSize || 10);
         }
     };
 
     // --- Automatic Flush Timer ---
-    
-    // Flush all queues every 5 seconds
     setInterval(function() {
         for (var url in BatchManager.queues) {
             if (BatchManager.queues.hasOwnProperty(url)) {
-                // Use closure or pass variable explicitly to avoid loop scope issues
                 BatchManager.flush(url);
             }
         }
-    }, 5000);
+    }, CONFIG.TIME_TO_FLUSH);
 
-    // --- Flush on Page Unload (Crucial for CDPs) ---
-    // Ensures we don't lose the last few clicks when user closes tab
+    // --- Flush on Page Unload ---
     if (window.addEventListener) {
         window.addEventListener('unload', function() {
             for (var url in BatchManager.queues) {
                 if (BatchManager.queues.hasOwnProperty(url)) {
+                    // On unload, we don't care about the response/sessionKey
+                    // so we let the system decide (usually Beacon)
                     BatchManager.flush(url);
                 }
             }
         });
     }
 
-    // Expose to Global
     global.LeoCorsRequest = LeoCorsRequest;
 
 })(typeof window === 'undefined' ? this : window);
@@ -712,13 +732,8 @@ var leoVisitorIdStringKey = "leocdp_vid";
 
     var doTracking = function(eventType, params) {
 		var localSessionKey = getSessionKey(true);
-        var trackingAjaxHandler = function(resHeaders, text) {
-            var data = JSON.parse(text);
-	 		if(data.sessionKey && localSessionKey !== data.sessionKey){
-	        	setSessionKey(data.sessionKey);
-	        }
-        }
-
+		LeoCorsRequest.setSessionKey(localSessionKey)
+		
         var batchSize = Number.parseInt(params['batchsize'] || 1);
         delete params['batchsize'];
 
@@ -746,16 +761,17 @@ var leoVisitorIdStringKey = "leocdp_vid";
         	url = prefixUrl + '?ctxsk=' + localSessionKey;
             
             if(batchSize <= 1){
-                // send of batchSize is 1 or 0
-                LeoCorsRequest.post(url, queryStr, trackingAjaxHandler);
+                // send of batchSize is 1 or 0 using HTTP POST
+                LeoCorsRequest.post(url, queryStr);
             }
             else {
+				// push to queue
                 LeoCorsRequest.batchSend(url, params, batchSize)
             }
         	
         } else {
         	url = prefixUrl + '?' + queryStr + '&ctxsk=' + localSessionKey;
-        	LeoCorsRequest.get(url, trackingAjaxHandler);
+        	LeoCorsRequest.get(url); // HTTP GET
         }
        
         console.log("LeoCorsRequest url " + url)
@@ -833,6 +849,7 @@ var leoVisitorIdStringKey = "leocdp_vid";
     LeoEventObserver.updateProfile = updateProfile;
     LeoEventObserver.initFingerprint = initFingerprint;
     LeoEventObserver.getVisitorId = getVisitorId;
+	LeoEventObserver.setSessionKey = setSessionKey;
 
     global.LeoEventObserver = LeoEventObserver;
 

@@ -211,8 +211,9 @@ public final class ContextSessionManagement {
 				DateTime dateTime = new DateTime();
 				String dateTimeKey = ContextSession.getSessionDateTimeKey(dateTime);
 				
-
+				// FIXME refactoring this
 				ctxSession = createWebContextSession(ip, params, device, dateTime, dateTimeKey);
+				
 				if (ctxSession != null) {
 					// Update Redis asynchronously
 					final ContextSession finalSession = ctxSession;
