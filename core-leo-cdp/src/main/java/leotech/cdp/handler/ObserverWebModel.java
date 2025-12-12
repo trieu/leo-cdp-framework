@@ -72,7 +72,7 @@ public final class ObserverWebModel {
 		String defaultForm = TouchpointHubManagement.DEFAULT_FORM_NAME;
 		String formName = StringUtil.safeString(params.get(HttpParamKey.FORM_NAME), defaultForm);
 		
-		String defaultTrackingMetric = BehavioralEvent.STR_SUBMIT_FEEDBACK_FORM;
+		String defaultTrackingMetric = BehavioralEvent.Feedback.SUBMIT_FEEDBACK_FORM;
 		
 		if (StringUtil.isNotEmpty(templateId)) {
 			AssetTemplate template = AssetTemplateDaoUtil.getById(templateId);
@@ -91,7 +91,7 @@ public final class ObserverWebModel {
 					// lead contact
 					surveyJsonMetaData = template.getJsonMetadata();
 					formName = TEMPLATE_SURVEY_FORM;
-					defaultTrackingMetric = BehavioralEvent.STR_SUBMIT_CONTACT;
+					defaultTrackingMetric = BehavioralEvent.General.SUBMIT_CONTACT;
 				} 
 				else {
 					// star rating HTML

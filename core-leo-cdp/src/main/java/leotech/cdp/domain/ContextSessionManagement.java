@@ -367,9 +367,9 @@ public final class ContextSessionManagement {
 					ContextSessionDaoUtil.update(ctxSession);
 				}
 
-				String eventMetric = BehavioralEvent.STR_USER_LOGIN;
+				String eventMetric = BehavioralEvent.General.USER_LOGIN;
 				if (StringUtil.isEmpty(loginId)) {
-					eventMetric = BehavioralEvent.STR_SUBMIT_CONTACT;
+					eventMetric = BehavioralEvent.General.SUBMIT_CONTACT;
 				}
 
 				EventObserverManagement.recordEventFromWeb(new Date(), ctxSession, srcObserverId, environment,
@@ -388,7 +388,7 @@ public final class ContextSessionManagement {
 
 				EventObserverManagement.recordEventFromWeb(new Date(), ctxSession, srcObserverId, environment,
 						fingerprintId, deviceId, sourceIP, device, srcTouchpointName, srcTouchpointUrl,
-						refTouchpointUrl, touchpointRefDomain, BehavioralEvent.STR_SUBMIT_CONTACT, profileData);
+						refTouchpointUrl, touchpointRefDomain, BehavioralEvent.General.SUBMIT_CONTACT, profileData);
 			}
 		} catch (IllegalArgumentException e) {
 			System.err.println(e.getMessage());

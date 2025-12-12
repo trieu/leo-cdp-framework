@@ -70,7 +70,7 @@ public final class ObserverWedHandler {
 					
 					String referer = StringUtil.safeString(reqHeaders.get(BaseHttpHandler.REFERER), "");
 					String host = SystemMetaData.DOMAIN_CDP_ADMIN;
-					String eventName = BehavioralEvent.STR_SHORT_LINK_CLICK;
+					String eventName = BehavioralEvent.General.SHORT_LINK_CLICK;
 					
 					EventObserver observer = EventObserverManagement.getEventObserver(media);
 					if(observer != null) {
@@ -127,7 +127,7 @@ public final class ObserverWedHandler {
 					String referer = StringUtil.safeString(reqHeaders.get(BaseHttpHandler.REFERER), "");
 					String host = SystemMetaData.DOMAIN_CDP_ADMIN;
 					String tplFolderName = ObserverWebModel.TARGET_MEDIA_TPL_FOLDER;
-					String tpl = BehavioralEvent.STR_QR_CODE_SCAN;
+					String tpl = BehavioralEvent.General.QR_CODE_SCAN;
 					
 					WebData model = new WebData(host, tplFolderName, tpl);
 					model.setCustomData("observerId", media.getRefObserverId());

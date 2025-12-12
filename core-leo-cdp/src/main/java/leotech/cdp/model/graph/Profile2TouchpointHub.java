@@ -56,7 +56,7 @@ public final class Profile2TouchpointHub extends ProfileGraphEdge {
 	
 	public Profile2TouchpointHub(Profile profile, TouchpointHub toTouchpointHub, int score) {
 		super();
-		this.eventMetricId = BehavioralEvent.STR_PAGE_VIEW;
+		this.eventMetricId = BehavioralEvent.General.PAGE_VIEW;
 		this.totalEvent = 1;
 		this.eventScore = score;
 		

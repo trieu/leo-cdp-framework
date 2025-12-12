@@ -1862,17 +1862,17 @@ public class Profile extends AbstractProfile implements Comparable<Profile> {
 	 * @return true if has data
 	 */
 	public final boolean loadLastTrackingEvents() {
-		List<String> metrics = Arrays.asList(BehavioralEvent.STR_ITEM_VIEW, BehavioralEvent.STR_PURCHASE);
+		List<String> metrics = Arrays.asList(BehavioralEvent.General.ITEM_VIEW, BehavioralEvent.Commerce.PURCHASE);
 		// get last product that profile watched
 		LastTrackingEventMap eventMap = TrackingEventDao.getLastEventsOfProfileIdByMetricNames(this.id, "", metrics);
 		
-		this.lastItemViewEvent = eventMap.getEventByMetricName(BehavioralEvent.STR_ITEM_VIEW);
-		this.lastPurchaseEvent= eventMap.getEventByMetricName(BehavioralEvent.STR_PURCHASE);
+		this.lastItemViewEvent = eventMap.getEventByMetricName(BehavioralEvent.General.ITEM_VIEW);
+		this.lastPurchaseEvent= eventMap.getEventByMetricName(BehavioralEvent.Commerce.PURCHASE);
 		this.lastTrackingEvent = eventMap.getLastEvent();
 		
 		if(this.lastTrackingEvent == null) {
 			this.lastTrackingEvent = new TrackingEvent();
-			this.lastTrackingEvent.setMetricName(BehavioralEvent.STR_DATA_IMPORT);
+			this.lastTrackingEvent.setMetricName(BehavioralEvent.General.DATA_IMPORT);
 			this.lastTrackingEvent.setObserverId(this.lastObserverId);
 		}
 		

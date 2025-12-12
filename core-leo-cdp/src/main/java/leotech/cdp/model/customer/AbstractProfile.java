@@ -2976,30 +2976,30 @@ public abstract class AbstractProfile extends PersistentObject {
 	}
 	
 	public final boolean hasTransactionalData(String journeyId) {
-		long purchase = this.getEventCount(journeyId, BehavioralEvent.STR_PURCHASE);
-		long subscribe = this.getEventCount(journeyId, BehavioralEvent.STR_SUBSCRIBE);
-		long repurchase = this.getEventCount(journeyId, BehavioralEvent.STR_REPURCHASE);
-		long enrolled = this.getEventCount(journeyId, BehavioralEvent.STR_ENROLL);
-		long pay = this.getEventCount(journeyId, BehavioralEvent.STR_MADE_PAYMENT);
+		long purchase = this.getEventCount(journeyId, BehavioralEvent.Commerce.PURCHASE);
+		long subscribe = this.getEventCount(journeyId, BehavioralEvent.Commerce.SUBSCRIBE);
+		long repurchase = this.getEventCount(journeyId, BehavioralEvent.Commerce.REPURCHASE);
+		long enrolled = this.getEventCount(journeyId, BehavioralEvent.Education.ENROLL);
+		long pay = this.getEventCount(journeyId, BehavioralEvent.Commerce.MADE_PAYMENT);
 		boolean check = purchase > 0 || subscribe > 0 || repurchase > 0 || enrolled > 0 || pay > 0;
 		return check;
 	}
 	
 	public final boolean hasManyTransactions(String journeyId) {
-		long purchase = this.getEventCount(journeyId, BehavioralEvent.STR_PURCHASE);
-		long subscribe = this.getEventCount(journeyId, BehavioralEvent.STR_SUBSCRIBE);
-		long repurchase = this.getEventCount(journeyId, BehavioralEvent.STR_REPURCHASE);
-		long enrolled = this.getEventCount(journeyId, BehavioralEvent.STR_ENROLL);
-		long pay = this.getEventCount(journeyId, BehavioralEvent.STR_MADE_PAYMENT);
+		long purchase = this.getEventCount(journeyId, BehavioralEvent.Commerce.PURCHASE);
+		long subscribe = this.getEventCount(journeyId, BehavioralEvent.Commerce.SUBSCRIBE);
+		long repurchase = this.getEventCount(journeyId, BehavioralEvent.Commerce.REPURCHASE);
+		long enrolled = this.getEventCount(journeyId, BehavioralEvent.Education.ENROLL);
+		long pay = this.getEventCount(journeyId, BehavioralEvent.Commerce.MADE_PAYMENT);
 		boolean check = purchase > 1 || subscribe > 1 || repurchase > 1 || enrolled > 1 || pay > 1;
 		return check;
 	}
 	
 	public final boolean hasFeedbackData(String journeyId) {
-		long rating = this.getEventCount(journeyId, BehavioralEvent.STR_SUBMIT_RATING_FORM);
-		long csat = this.getEventCount(journeyId, BehavioralEvent.STR_SUBMIT_CSAT_FORM);
-		long ces = this.getEventCount(journeyId, BehavioralEvent.STR_SUBMIT_CES_FORM);
-		long nps = this.getEventCount(journeyId, BehavioralEvent.STR_SUBMIT_NPS_FORM);
+		long rating = this.getEventCount(journeyId, BehavioralEvent.Feedback.SUBMIT_RATING_FORM);
+		long csat = this.getEventCount(journeyId, BehavioralEvent.Feedback.SUBMIT_CSAT_FORM);
+		long ces = this.getEventCount(journeyId, BehavioralEvent.Feedback.SUBMIT_CES_FORM);
+		long nps = this.getEventCount(journeyId, BehavioralEvent.Feedback.SUBMIT_NPS_FORM);
 		boolean check = (rating > 0 || csat > 0 || nps > 0 || ces > 0);
 		return check;
 	}
@@ -3021,21 +3021,21 @@ public abstract class AbstractProfile extends PersistentObject {
 	}
 	
 	public final boolean hasViewActivities(String journeyId) {
-		long pageView = this.getEventCount(journeyId, BehavioralEvent.STR_PAGE_VIEW);
-		long itemView = this.getEventCount(journeyId, BehavioralEvent.STR_ITEM_VIEW);
-		long contentView = this.getEventCount(journeyId, BehavioralEvent.STR_CONTENT_VIEW);
+		long pageView = this.getEventCount(journeyId, BehavioralEvent.General.PAGE_VIEW);
+		long itemView = this.getEventCount(journeyId, BehavioralEvent.General.ITEM_VIEW);
+		long contentView = this.getEventCount(journeyId, BehavioralEvent.General.CONTENT_VIEW);
 		return pageView > 0 || itemView > 0 || contentView > 0;
 	}
 	
 	public final boolean hasActiveViewActivities(String journeyId) {
-		long pageView = this.getEventCount(journeyId, BehavioralEvent.STR_PAGE_VIEW);
-		long itemView = this.getEventCount(journeyId, BehavioralEvent.STR_ITEM_VIEW);
-		long contentView = this.getEventCount(journeyId, BehavioralEvent.STR_CONTENT_VIEW);
+		long pageView = this.getEventCount(journeyId, BehavioralEvent.General.PAGE_VIEW);
+		long itemView = this.getEventCount(journeyId, BehavioralEvent.General.ITEM_VIEW);
+		long contentView = this.getEventCount(journeyId, BehavioralEvent.General.CONTENT_VIEW);
 		return pageView > 10 || itemView > 10 || contentView > 10;
 	}
 	
 	public final boolean hasItemViewData(String journeyId) {
-		long itemView = this.getEventCount(journeyId, BehavioralEvent.STR_ITEM_VIEW);
+		long itemView = this.getEventCount(journeyId, BehavioralEvent.General.ITEM_VIEW);
 		return itemView > 0;
 	}
 	

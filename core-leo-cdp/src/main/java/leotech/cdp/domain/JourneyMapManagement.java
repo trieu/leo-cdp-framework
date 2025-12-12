@@ -40,23 +40,23 @@ import rfx.core.util.StringUtil;
 public final class JourneyMapManagement {
 
 	public static final String GOOGLE_COM = "https://google.com";
-	
+
 	private static final int CACHE_TIME = 5;
 
 	static CacheLoader<String, List<JourneyMap>> cacheLoader = new CacheLoader<>() {
 		@Override
 		public List<JourneyMap> load(String userLogin) {
 			System.out.println("MISS CACHE JourneyMap");
-			
-			if(userLogin.isEmpty()) {
+
+			if (userLogin.isEmpty()) {
 				return JourneyMapDao.getAllJourneyMaps();
 			}
 			return JourneyMapDao.getAllJourneyMapsForUser(userLogin);
 		}
 	};
-	static final LoadingCache<String, List<JourneyMap>> cache = CacheBuilder.newBuilder()
-			.maximumSize(50000).expireAfterWrite(CACHE_TIME, TimeUnit.MINUTES).build(cacheLoader);
-	
+	static final LoadingCache<String, List<JourneyMap>> cache = CacheBuilder.newBuilder().maximumSize(50000)
+			.expireAfterWrite(CACHE_TIME, TimeUnit.MINUTES).build(cacheLoader);
+
 	static CacheLoader<String, Set<JourneyMapRefKey>> cacheJourneyMapRefKeyLoader = new CacheLoader<>() {
 		@Override
 		public Set<JourneyMapRefKey> load(String idsAsStr) {
@@ -66,12 +66,12 @@ public final class JourneyMapManagement {
 	};
 	static final LoadingCache<String, Set<JourneyMapRefKey>> cacheJourneyMapRefKey = CacheBuilder.newBuilder()
 			.maximumSize(100000).expireAfterWrite(CACHE_TIME, TimeUnit.MINUTES).build(cacheJourneyMapRefKeyLoader);
-	
+
 	public static void clearCacheJourneyMap() {
 		// FIXME so stupid to clear all, think better solution
 		cache.invalidateAll();
 	}
-	
+
 	/**
 	 * @param idList
 	 * @return List<JourneyMap>
@@ -85,7 +85,7 @@ public final class JourneyMapManagement {
 		}
 		return set;
 	}
-	
+
 	/**
 	 * for admin only
 	 * 
@@ -93,9 +93,9 @@ public final class JourneyMapManagement {
 	 * @return
 	 */
 	public static JourneyMap getJourneyMapForAdminDashboard(String id) {
-		return getById(id, true, false , true);
+		return getById(id, true, false, true);
 	}
-	
+
 	/**
 	 * @param journeyId
 	 * @param withTouchpointHubs
@@ -103,27 +103,26 @@ public final class JourneyMapManagement {
 	 * @param returnDefaultMapIfNotFound
 	 * @return
 	 */
-	public static JourneyMap getById(String journeyId, boolean withTouchpointHubs, boolean withFullReports, boolean returnDefaultMapIfNotFound) {
+	public static JourneyMap getById(String journeyId, boolean withTouchpointHubs, boolean withFullReports,
+			boolean returnDefaultMapIfNotFound) {
 		// TODO caching data
 		JourneyMap map;
-		if(StringUtil.isEmpty(journeyId)) {
+		if (StringUtil.isEmpty(journeyId)) {
 			map = JourneyMapManagement.getDefaultJourneyMap(true);
-		}
-		else {
+		} else {
 			map = JourneyMapDao.getById(journeyId);
 		}
 		if (map != null) {
 			if (withTouchpointHubs) {
 				List<TouchpointHub> touchpointHubs = TouchpointHubDaoUtil.getTouchpointHubsByJourneyMap(journeyId);
 				List<TouchpointHubReport> reports = null;
-				if(withFullReports) {
-					//reports = JourneyMapDao.getProfileReportForJourney(journeyId);
+				if (withFullReports) {
+					// reports = JourneyMapDao.getProfileReportForJourney(journeyId);
 					reports = TouchpointHubDaoUtil.getTouchpointHubDetailReport(journeyId);
-				}
-				else {
+				} else {
 					reports = TouchpointHubDaoUtil.getTouchpointHubProfileReport(journeyId);
 				}
-				
+
 				return JourneyMap.setTouchpointHubsForJourneyMap(map, touchpointHubs, reports);
 			}
 			return map;
@@ -132,7 +131,7 @@ public final class JourneyMapManagement {
 		}
 		throw new InvalidDataException("Not found any JourneyMap with id: " + journeyId);
 	}
-	
+
 	/**
 	 * @param id
 	 * @return
@@ -140,7 +139,6 @@ public final class JourneyMapManagement {
 	public static JourneyMap getById(String id) {
 		return getById(id, false, false, true);
 	}
-	
 
 	/**
 	 * @param id
@@ -148,12 +146,13 @@ public final class JourneyMapManagement {
 	 * @param returnDefaultMapIfNotFound
 	 * @return
 	 */
-	public static JourneyMap getById(String id, boolean fullDataWithTouchpointHubs, boolean returnDefaultMapIfNotFound) {
+	public static JourneyMap getById(String id, boolean fullDataWithTouchpointHubs,
+			boolean returnDefaultMapIfNotFound) {
 		return getById(id, fullDataWithTouchpointHubs, false, returnDefaultMapIfNotFound);
 	}
-	
+
 	/**
-	 * get all authorized JourneyMap 
+	 * get all authorized JourneyMap
 	 * 
 	 * @return List<JourneyMap>
 	 */
@@ -161,19 +160,17 @@ public final class JourneyMapManagement {
 		List<JourneyMap> list;
 		String userLogin = loginUser.getUserLogin();
 		try {
-			if(loginUser.hasAdminRole()) {
+			if (loginUser.hasAdminRole()) {
 				list = cache.get("");
-			}
-			else {
+			} else {
 				list = cache.get(userLogin);
 			}
 			System.out.println("HIT CACHE JourneyMap");
 		} catch (Exception e) {
-			if(loginUser.hasAdminRole()) {
+			if (loginUser.hasAdminRole()) {
 				list = JourneyMapDao.getAllJourneyMaps();
 				cache.put("", list);
-			}
-			else {
+			} else {
 				list = JourneyMapDao.getAllJourneyMapsForUser(userLogin);
 				cache.put(userLogin, list);
 			}
@@ -190,7 +187,6 @@ public final class JourneyMapManagement {
 
 		TouchpointHub google = new TouchpointHub("Google", TouchpointType.SEARCH_ENGINE, false, GOOGLE_COM, 1);
 		hubs.add(google);
-		
 
 		JourneyMap map = JourneyMap.buildDefaultJourneyMap(hubs);
 		JourneyMapManagement.saveJourney(map);
@@ -243,17 +239,15 @@ public final class JourneyMapManagement {
 		JourneyMapManagement.saveJourney(map);
 	}
 
-
-	
 	/**
-	 * get all JourneyMap 
+	 * get all JourneyMap
 	 * 
 	 * @return List<JourneyMap>
 	 */
 	public static List<JourneyMap> getAllJourneyMaps() {
-		 return JourneyMapDao.getAllJourneyMaps();
+		return JourneyMapDao.getAllJourneyMaps();
 	}
-	
+
 	/**
 	 * @param filter
 	 * @return
@@ -261,8 +255,6 @@ public final class JourneyMapManagement {
 	public static JsonDataTablePayload loadJourneyMapsByFilter(DataFilter filter) {
 		return JourneyMapDao.loadJourneyMapsByFilter(filter);
 	}
-
-
 
 	/**
 	 * @param map
@@ -275,13 +267,14 @@ public final class JourneyMapManagement {
 	}
 
 	/**
-	 * for leocdp admin webapp, 
+	 * for leocdp admin webapp,
 	 * 
 	 * @param journeyMapId
 	 * @param touchpointHubs
 	 * @return
 	 */
-	public static JourneyMap saveTouchpointHubsAndEventObservers(String journeyMapId, List<TouchpointHub> touchpointHubs) {
+	public static JourneyMap saveTouchpointHubsAndEventObservers(String journeyMapId,
+			List<TouchpointHub> touchpointHubs) {
 		JourneyMap map = getById(journeyMapId);
 		map = JourneyMap.setTouchpointHubsForJourneyMap(map, touchpointHubs, true);
 		boolean ok = saveJourney(map);
@@ -291,25 +284,19 @@ public final class JourneyMapManagement {
 		return null;
 	}
 
-
-	
 	/**
 	 * @param journeyMapId
 	 * @return
 	 */
 	public final static JourneyMap getJourneyMap(String journeyMapId) {
 		JourneyMap journeyMap;
-		if(StringUtil.isEmpty(journeyMapId)) {
+		if (StringUtil.isEmpty(journeyMapId)) {
 			journeyMap = JourneyMapManagement.getDefaultJourneyMap(false);
-		}
-		else {
+		} else {
 			journeyMap = JourneyMapManagement.getById(journeyMapId, false, true);
 		}
 		return journeyMap;
 	}
-	
-	
-
 
 	/**
 	 * @param name
@@ -403,57 +390,61 @@ public final class JourneyMapManagement {
 				return map;
 			}
 		}
-		throw new InvalidDataException("Not found journey, system can not update name for journey map id:" + journeyMapId);
+		throw new InvalidDataException(
+				"Not found journey, system can not update name for journey map id:" + journeyMapId);
 	}
-	
+
 	/**
 	 * @param journeyMapId
 	 * @param authorizedViewers
 	 * @param authorizedEditors
 	 * @return
 	 */
-	public static JourneyMap updateJourneyDataAuthorization(String journeyMapId, Set<String> authorizedViewers, Set<String> authorizedEditors, boolean updateAllProfilesInJourney) {
+	public static JourneyMap updateJourneyDataAuthorization(String journeyMapId, Set<String> authorizedViewers,
+			Set<String> authorizedEditors, boolean updateAllProfilesInJourney) {
 		JourneyMap map = getById(journeyMapId, true, false, false);
 		if (map != null) {
 			Set<String> removedViewers = map.updateAuthorizedViewersAndReturnRemovedViewers(authorizedViewers);
 			Set<String> removedEditors = map.updateAuthorizedEditorsAndReturnRemovedEditors(authorizedEditors);
 			boolean ok = JourneyMapDao.save(map) != null;
-			if (ok) { 
+			if (ok) {
 				clearCacheJourneyMap();
-				ProfileDaoUtil.updateProfileAuthorizationByJourneyId(journeyMapId, authorizedViewers, authorizedEditors, removedViewers, removedEditors, updateAllProfilesInJourney);
+				ProfileDaoUtil.updateProfileAuthorizationByJourneyId(journeyMapId, authorizedViewers, authorizedEditors,
+						removedViewers, removedEditors, updateAllProfilesInJourney);
 				return map;
 			}
 		}
-		throw new InvalidDataException("Not found journey, system can not update User Authorization for journey map id:" + journeyMapId);
+		throw new InvalidDataException(
+				"Not found journey, system can not update User Authorization for journey map id:" + journeyMapId);
 	}
-	
-	public static JourneyMap updateJourneyDataAuthorization(String journeyMapId, String authorizedViewer, String authorizedEditor, String userLogin, boolean updateAllProfilesInJourney) {
+
+	public static JourneyMap updateJourneyDataAuthorization(String journeyMapId, String authorizedViewer,
+			String authorizedEditor, String userLogin, boolean updateAllProfilesInJourney) {
 		JourneyMap journey = getById(journeyMapId, true, false, false);
 		if (journey != null) {
-			Set<String> authorizedViewers = Sets.newHashSet(), authorizedEditors= Sets.newHashSet(), removedViewers= Sets.newHashSet(), removedEditors= Sets.newHashSet();
-			if(authorizedViewer.equals(userLogin)) {
+			Set<String> authorizedViewers = Sets.newHashSet(), authorizedEditors = Sets.newHashSet(),
+					removedViewers = Sets.newHashSet(), removedEditors = Sets.newHashSet();
+			if (authorizedViewer.equals(userLogin)) {
 				authorizedViewers = journey.setAuthorizedViewer(userLogin);
-			}
-			else {
+			} else {
 				removedViewers = journey.removeAuthorizedViewer(userLogin);
 			}
-			if(authorizedEditor.equals(userLogin)) {
+			if (authorizedEditor.equals(userLogin)) {
 				authorizedEditors = journey.setAuthorizedEditor(userLogin);
-			}
-			else {
+			} else {
 				removedEditors = journey.removeAuthorizedEditor(userLogin);
 			}
 			String saveId = JourneyMapDao.save(journey);
 			if (saveId != null) {
-				ProfileDaoUtil.updateProfileAuthorizationByJourneyId(journeyMapId, authorizedViewers, authorizedEditors, removedViewers, removedEditors, updateAllProfilesInJourney);
+				ProfileDaoUtil.updateProfileAuthorizationByJourneyId(journeyMapId, authorizedViewers, authorizedEditors,
+						removedViewers, removedEditors, updateAllProfilesInJourney);
 				return journey;
 			}
 		}
-		throw new InvalidDataException("Not found journey, system can not update User Authorization for journey map id:" + journeyMapId);
+		throw new InvalidDataException(
+				"Not found journey, system can not update User Authorization for journey map id:" + journeyMapId);
 	}
 
-
-	
 	/**
 	 * @param profileId
 	 * @param journeyId
@@ -465,7 +456,7 @@ public final class JourneyMapManagement {
 		List<TouchpointHub> touchpointHubs = TouchpointHubDaoUtil.getTouchpointHubsByJourneyMap(journeyId);
 		return JourneyMap.setTouchpointHubsForJourneyMap(map, touchpointHubs, reports);
 	}
-	
+
 	/**
 	 * @param userLogin
 	 */

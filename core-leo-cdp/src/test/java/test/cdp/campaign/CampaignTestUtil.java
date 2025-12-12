@@ -44,8 +44,8 @@ public class CampaignTestUtil {
 	public static ProfileSingleView buildTestProfile(long productView, ProductItem productItem) {
 		// define facts
 		Map<String, Long> eventStatistics = new HashMap<String, Long>();
-		eventStatistics.put(BehavioralEvent.STR_SUBMIT_CONTACT, 1L);
-		eventStatistics.put(BehavioralEvent.STR_ITEM_VIEW, productView);
+		eventStatistics.put(BehavioralEvent.General.SUBMIT_CONTACT, 1L);
+		eventStatistics.put(BehavioralEvent.General.ITEM_VIEW, productView);
 
 		ProfileSingleView pf = new ProfileSingleView();
 		pf.setType(ProfileType.LOGIN_USER_CONTACT);
@@ -69,7 +69,7 @@ public class CampaignTestUtil {
 	public static ProfileSingleView buildTestProfile() {
 		// define facts
 		Map<String, Long> eventStatistics = new HashMap<String, Long>();
-		eventStatistics.put(BehavioralEvent.STR_DATA_IMPORT, 1L);
+		eventStatistics.put(BehavioralEvent.General.DATA_IMPORT, 1L);
 
 		ProfileSingleView pf = new ProfileSingleView();
 		pf.setType(ProfileType.LOGIN_USER_CONTACT);

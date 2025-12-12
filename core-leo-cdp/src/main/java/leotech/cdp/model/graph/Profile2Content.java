@@ -56,7 +56,7 @@ public final class Profile2Content extends ProfileGraphEdge {
 	
 	public Profile2Content(ProfileIdentity fromProfile, AssetContent toContent, int score) {
 		super();
-		this.eventMetricId = BehavioralEvent.STR_RECOMMEND;
+		this.eventMetricId = BehavioralEvent.General.RECOMMEND;
 		this.eventScore = score;
 		this.totalEvent = 1;
 		
@@ -86,7 +86,7 @@ public final class Profile2Content extends ProfileGraphEdge {
 	
 	public Profile2Content(ProfileIdentity fromProfile, AssetContent toContent, int score, String targetMediaUnitId, String segmentId) {
 		super();
-		this.eventMetricId = BehavioralEvent.STR_RECOMMEND;
+		this.eventMetricId = BehavioralEvent.General.RECOMMEND;
 		this.eventScore = score;
 		
 		this.fromProfileId = fromProfile.getDocumentUUID();

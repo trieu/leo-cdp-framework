@@ -389,7 +389,7 @@ public class EventDataManagement {
 	public static List<TrackingEvent> getProductViewActivityFlowOfProfile(String profileId, int startIndex,int numberResults) {
 		// Product Event Activities
 		DataFilter filter = new DataFilter(startIndex, numberResults);
-		List<TrackingEvent> eventActivities = TrackingEventDao.getEventsByProfileIdAndMetricName(profileId,BehavioralEvent.STR_ITEM_VIEW,filter);
+		List<TrackingEvent> eventActivities = TrackingEventDao.getEventsByProfileIdAndMetricName(profileId,BehavioralEvent.General.ITEM_VIEW,filter);
 		return eventActivities;
 	}
 }

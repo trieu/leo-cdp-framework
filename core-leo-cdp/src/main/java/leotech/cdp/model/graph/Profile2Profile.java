@@ -106,7 +106,7 @@ public final class Profile2Profile extends ProfileGraphEdge {
 	
 	public Profile2Profile(ProfileIdentity fromProfileIdentity, ProfileIdentity toProfileIdentity, int singleViewScore) {
 		super();
-		this.eventMetricId = BehavioralEvent.STR_PAGE_VIEW;
+		this.eventMetricId = BehavioralEvent.General.PAGE_VIEW;
 		this.totalEvent = 1;
 		this.singleViewScore = singleViewScore;
 		this.relationshipTypes.put(RelationshipType.ONE_PERSON, singleViewScore);

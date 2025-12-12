@@ -434,7 +434,7 @@ public final class ProfileDataManagement {
 			// update the touchpoint-hub graph
 			String touchpointHubId = observer.getTouchpointHubId();
 			if (StringUtil.isNotEmpty(touchpointHubId)) {
-				EventMetric eventMetric = EventMetricManagement.getEventMetricByName(BehavioralEvent.STR_DATA_IMPORT);
+				EventMetric eventMetric = EventMetricManagement.getEventMetricByName(BehavioralEvent.General.DATA_IMPORT);
 				GraphProfile2TouchpointHub.updateEdgeData(profile, touchpointHubId, theJourneyMapId, eventMetric);
 			}
 		}
@@ -612,7 +612,7 @@ public final class ProfileDataManagement {
 			// update the touchpoint-hub graph
 			String touchpointHubId = observer.getTouchpointHubId();
 			if (StringUtil.isNotEmpty(touchpointHubId)) {
-				EventMetric eventMetric = EventMetricManagement.getEventMetricByName(BehavioralEvent.STR_DATA_IMPORT);
+				EventMetric eventMetric = EventMetricManagement.getEventMetricByName(BehavioralEvent.General.DATA_IMPORT);
 				GraphProfile2TouchpointHub.updateEdgeData(profile, touchpointHubId, theJourneyMapId, eventMetric);
 			}
 		} catch (Exception e) {
@@ -933,7 +933,7 @@ public final class ProfileDataManagement {
 
 					// commit event to Database
 					if (processAll) {
-						boolean isEventFromProfile = !eventName.equals(BehavioralEvent.STR_DATA_IMPORT);
+						boolean isEventFromProfile = !eventName.equals(BehavioralEvent.General.DATA_IMPORT);
 						if (isEventFromProfile) {
 							JourneyMap journeyMap = JourneyMapManagement.getById(journeyId);
 							int funnelIndex = eventMetric.getFunnelStage().getOrderIndex();
@@ -959,7 +959,7 @@ public final class ProfileDataManagement {
 					// reset to empty
 					event.setRawJsonData("");
 					profile.setLastTrackingEvent(event);
-					if (BehavioralEvent.STR_ITEM_VIEW.equals(eventName)) {
+					if (BehavioralEvent.General.ITEM_VIEW.equals(eventName)) {
 						profile.setLastItemViewEvent(event);
 					} 
 					else if (eventMetric.isPurchasingEvent()) {

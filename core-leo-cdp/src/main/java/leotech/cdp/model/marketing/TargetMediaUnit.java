@@ -29,8 +29,8 @@ import rfx.core.util.StringUtil;
  */
 public class TargetMediaUnit extends PersistentObject implements Comparable<TargetMediaUnit> {
 	
-	public static final String SHORT_LINK_CLICK = BehavioralEvent.STR_SHORT_LINK_CLICK;
-	public static final String QR_CODE_SCAN = BehavioralEvent.STR_QR_CODE_SCAN;
+	public static final String SHORT_LINK_CLICK = BehavioralEvent.General.SHORT_LINK_CLICK;
+	public static final String QR_CODE_SCAN = BehavioralEvent.General.QR_CODE_SCAN;
 
 	public static final String COLLECTION_NAME = getCdpCollectionName(TargetMediaUnit.class);
 	static ArangoCollection dbCollection;

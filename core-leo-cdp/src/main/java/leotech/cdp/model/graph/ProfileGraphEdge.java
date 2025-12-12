@@ -55,7 +55,7 @@ public abstract class ProfileGraphEdge extends PersistentObject implements Compa
 		StringBuilder aql = new StringBuilder();
 		aql.append(" LET edgeList = ( ");
 		aql.append(" FOR v, e, p IN 1..1 OUTBOUND @fromProfileId GRAPH ").append(graphName);
-		aql.append(" FILTER p.edges[0].eventMetricId == '").append(BehavioralEvent.STR_RECOMMEND).append("' ");
+		aql.append(" FILTER p.edges[0].eventMetricId == '").append(BehavioralEvent.General.RECOMMEND).append("' ");
 		aql.append(" SORT e.indexScore LIMIT @startIndex,@numberResult RETURN p.edges[0] ) ");
 		aql.append(" FOR e IN edgeList "); 
 		aql.append(" RETURN e ");

@@ -236,8 +236,8 @@ public class EventApiHandler extends BaseApiHandler {
 		
 
 		// --- Transaction construction (if this is a purchase/payment event) ---
-		boolean computeTotal = BehavioralEvent.STR_PURCHASE.equalsIgnoreCase(eventName)
-				|| BehavioralEvent.STR_MADE_PAYMENT.equalsIgnoreCase(eventName);
+		boolean computeTotal = BehavioralEvent.Commerce.PURCHASE.equalsIgnoreCase(eventName)
+				|| BehavioralEvent.Commerce.MADE_PAYMENT.equalsIgnoreCase(eventName);
 
 		OrderTransaction txn = new OrderTransaction(createdAt, json, computeTotal);
 

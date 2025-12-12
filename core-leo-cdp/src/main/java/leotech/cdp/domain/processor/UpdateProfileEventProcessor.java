@@ -257,7 +257,7 @@ public final class UpdateProfileEventProcessor {
 		ScoreCX cxScore = null;
 		Map<String, Object> eventData = new HashMap<>();
 		
-		if(BehavioralEvent.STR_SUBMIT_FEEDBACK_FORM.equals(metricName)) {
+		if(BehavioralEvent.Feedback.SUBMIT_FEEDBACK_FORM.equals(metricName)) {
 			// Survey Templates: handle code when profile submit a survey form
 			FeedbackSurveyReport report = FeedbackDataManagement.buildSurveyFeedbackReport(feedbackEvent);
 			if(report != null) {						
@@ -278,7 +278,7 @@ public final class UpdateProfileEventProcessor {
 				}	
 			}
 		}
-		else if(BehavioralEvent.STR_SUBMIT_CONTACT.equals(metricName)) {
+		else if(BehavioralEvent.General.SUBMIT_CONTACT.equals(metricName)) {
 			submitProfileAttributes.forEach((k,v)->{
 				String value = StringUtil.safeString(v, "");
 				if( ! value.isBlank() ) {
@@ -466,12 +466,12 @@ public final class UpdateProfileEventProcessor {
 		
 		if(updateCount > 0) {
 			String eventMetricId = eventMetric.getId();
-			if(eventMetricId.equals(BehavioralEvent.STR_PURCHASE)) {
+			if(eventMetricId.equals(BehavioralEvent.Commerce.PURCHASE)) {
 				profile.removeNextBestAction(NextBestAction.ADD_ITEM_TO_CART);
 				profile.removeNextBestAction(NextBestAction.CHECKOUT_ITEMS_IN_CART);
 				profile.setNextBestActions(NextBestAction.BROWSING_RALATED_ITEMS);
 			}
-			else if(eventMetricId.equals(BehavioralEvent.STR_SUBSCRIBE)) {
+			else if(eventMetricId.equals(BehavioralEvent.Commerce.SUBSCRIBE)) {
 				profile.setNextBestActions(NextBestAction.JOIN_A_COMMUNITY);
 			}
 		}
@@ -535,10 +535,10 @@ public final class UpdateProfileEventProcessor {
 		
 		// all marketing metrics must go to the checkout process, ready to make payment for a transaction
 		String id = eventMetric.getId();
-		if(id.equals(BehavioralEvent.STR_ADD_TO_CART)) {
+		if(id.equals(BehavioralEvent.Commerce.ADD_TO_CART)) {
 			profile.setNextActionForItems(NextBestAction.CHECKOUT_ITEMS_IN_CART, cartItems);
 		}
-		else if(id.equals(BehavioralEvent.STR_ORDER_CHECKOUT)) {
+		else if(id.equals(BehavioralEvent.Commerce.ORDER_CHECKOUT)) {
 			profile.setNextActionForItems(NextBestAction.BUY_SOME_ITEMS, cartItems);
 			profile.removeNextBestAction(NextBestAction.CHECKOUT_ITEMS_IN_CART);
 		}
@@ -690,7 +690,7 @@ public final class UpdateProfileEventProcessor {
 			int negativeCFS = profile.getNegativeCFS();
 			
 			// compute
-			if(BehavioralEvent.STR_SUBMIT_FEEDBACK_FORM.equalsIgnoreCase(eventName)) {
+			if(BehavioralEvent.Feedback.SUBMIT_FEEDBACK_FORM.equalsIgnoreCase(eventName)) {
 				score = ProcessorScoreCX.computeScale5double(fbScoreDouble, positiveCFS, neutralCFS, negativeCFS);
 			}
 			else {
@@ -768,9 +768,9 @@ public final class UpdateProfileEventProcessor {
 			// check for positive or negative CX
 			EventMetric cxMetric = null;
 			if (isHappy) {
-				cxMetric = EventMetricManagement.getEventMetricByName(BehavioralEvent.STR_POSITIVE_FEEDBACK);
+				cxMetric = EventMetricManagement.getEventMetricByName(BehavioralEvent.Feedback.POSITIVE_FEEDBACK);
 			} else {
-				cxMetric = EventMetricManagement.getEventMetricByName(BehavioralEvent.STR_NEGATIVE_FEEDBACK);
+				cxMetric = EventMetricManagement.getEventMetricByName(BehavioralEvent.Feedback.NEGATIVE_FEEDBACK);
 			}
 
 			// only customer, has contact  can send feedback at the happy or unhappy stage

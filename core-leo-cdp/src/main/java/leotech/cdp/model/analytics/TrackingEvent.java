@@ -437,7 +437,7 @@ public final class TrackingEvent extends PersistentObject implements SingleViewA
 		String journeyMapId = JourneyMap.DEFAULT_JOURNEY_MAP_ID;
 		int journeyStage = profile.hasContactData() ? 2 : 1;
 		String observerId = EventObserver.DEFAULT_EVENT_OBSERVER_ID;
-		String eventName = BehavioralEvent.STR_DATA_IMPORT;
+		String eventName = BehavioralEvent.General.DATA_IMPORT;
 		long eventValue = 1;
 		Date eventTime = profile.getUpdatedAt();
 		String profileId = profile.getId();
@@ -451,7 +451,7 @@ public final class TrackingEvent extends PersistentObject implements SingleViewA
 		String journeyMapId = JourneyMap.DEFAULT_JOURNEY_MAP_ID;
 		int journeyStage = profile.hasContactData() ? 2 : 1;
 		String observerId = EventObserver.DEFAULT_EVENT_OBSERVER_ID;
-		String eventName = BehavioralEvent.STR_PAGE_VIEW;
+		String eventName = BehavioralEvent.General.PAGE_VIEW;
 		long eventValue = 1;
 		Date eventTime = profile.getUpdatedAt();
 		String profileId = profile.getId();

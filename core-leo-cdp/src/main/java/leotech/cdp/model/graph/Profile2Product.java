@@ -63,7 +63,7 @@ public final class Profile2Product extends ProfileGraphEdge {
 	
 	public Profile2Product(Date createdAt, ProfileIdentity fromProfile, ProductItem toProduct, int score, String targetMediaUnitId, String segmentId) {
 		super();
-		this.eventMetricId = BehavioralEvent.STR_RECOMMEND;
+		this.eventMetricId = BehavioralEvent.General.RECOMMEND;
 		this.eventScore = score;
 		
 		this.fromProfileId = fromProfile.getDocumentUUID();
