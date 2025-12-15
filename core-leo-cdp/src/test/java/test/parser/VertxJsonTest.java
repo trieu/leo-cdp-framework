@@ -15,28 +15,28 @@ import rfx.core.util.StringUtil;
 
 public class VertxJsonTest {
 
-    public static void main(String[] args) {
-	Map<String, List<String>> keywordFilters = new HashMap<>(30);
-	keywordFilters.put("by Project", Arrays.asList("Retails", "Vinfast"));
-	keywordFilters.put("by Location", Arrays.asList("Mien Name", "Mien Bac"));
+	public static void main(String[] args) {
+		Map<String, List<String>> keywordFilters = new HashMap<>(30);
+		keywordFilters.put("by Project", Arrays.asList("Retails", "Vinfast"));
+		keywordFilters.put("by Location", Arrays.asList("Mien Name", "Mien Bac"));
 
-	String json = new Gson().toJson(keywordFilters);
+		String json = new Gson().toJson(keywordFilters);
 
-	System.out.println(json);
+		System.out.println(json);
 
-	JsonObject jsonKeywordFilters = new JsonObject(StringUtil.safeString(json, "{}"));
+		JsonObject jsonKeywordFilters = new JsonObject(StringUtil.safeString(json, "{}"));
 
-	jsonKeywordFilters.forEach(e -> {
-	    String groupName = e.getKey();
-	    JsonArray filterList = (JsonArray) e.getValue();
-	    List<String> list = new ArrayList<>(filterList.size());
-	    filterList.forEach(e1 -> {
-		list.add(e1.toString());
-	    });
+		jsonKeywordFilters.forEach(e -> {
+			String groupName = e.getKey();
+			JsonArray filterList = (JsonArray) e.getValue();
+			List<String> list = new ArrayList<>(filterList.size());
+			filterList.forEach(e1 -> {
+				list.add(e1.toString());
+			});
 
-	    System.out.println(groupName + " => " + list);
+			System.out.println(groupName + " => " + list);
 
-	});
+		});
 
-    }
+	}
 }

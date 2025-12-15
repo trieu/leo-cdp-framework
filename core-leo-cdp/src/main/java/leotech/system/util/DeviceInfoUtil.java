@@ -6,6 +6,7 @@ import java.util.Date;
 
 import leotech.cdp.model.customer.Device;
 import leotech.system.model.DeviceInfo;
+import rfx.core.util.StringUtil;
 
 /**
  * utility class to convert DeviceInfo to Device
@@ -16,28 +17,25 @@ import leotech.system.model.DeviceInfo;
 public final class DeviceInfoUtil {
 	
 	
-	public final static DeviceInfo getDeviceInfo(String useragent) {
+	public final static DeviceInfo getDeviceInfo(String useragent, String screensize) {
 		DeviceInfo device = null;
 		try {
-			if (useragent != null) {
-				device = DeviceParserUtil.parseWithCache(useragent);
+			if (StringUtil.isNotEmpty(useragent)) {
+				device = DeviceParserUtil.parseUserAgentAndScreenSize(useragent, screensize);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		if (device == null) {
-			device = new DeviceInfo("Unknown", 0, "Unknown_Device", "Unknown_OS", "", "Unknown");
+			device = new DeviceInfo("Unknown", 0, "Unknown_Device", "Unknown_OS", "", "Unknown","");
 		}
 		return device;
 	}
 	
-	public final static Device getUserDevice(String useragent) {
-		return new Device(getDeviceInfo(useragent));
+	public final static DeviceInfo getDeviceInfo(String useragent) {
+		return getDeviceInfo(useragent, "");
 	}
 	
-	public final static Device getUserDevice(String useragent, Date createdAt) {
-		return new Device(getDeviceInfo(useragent), createdAt);
-	}
 	
 	public final static Device getUserDevice(DeviceInfo dv, Date createdAt) {
 		return new Device(dv, createdAt);

@@ -20,10 +20,11 @@ public final class DeviceInfo {
 	public final String deviceOs;
 	public final String deviceOsVersion;
 	public final String browserName;
+	public final String screenSize;
 
 	public final int id;
 
-	public DeviceInfo(String deviceType, int platformType, String deviceName, String deviceOs, String deviceOsVersion, String browserName) {
+	public DeviceInfo(String deviceType, int platformType, String deviceName, String deviceOs, String deviceOsVersion, String browserName, String screenSize) {
 		super();
 		this.deviceType = deviceType;
 		this.platformType = platformType;
@@ -31,6 +32,7 @@ public final class DeviceInfo {
 		this.deviceOs = deviceOs;
 		this.deviceOsVersion = deviceOsVersion;
 		this.browserName = browserName;
+		this.screenSize = screenSize; // = window.screen.width + "x" + window.screen.height; 
 		this.id = hashCode();
 	}
 	
@@ -41,7 +43,10 @@ public final class DeviceInfo {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(platformType, deviceName, deviceOs, browserName);
+		if(StringUtil.isEmpty(screenSize)) {
+			return Objects.hash(platformType, deviceName, deviceOs, browserName);
+		}
+		return Objects.hash(platformType, deviceName, deviceOs, browserName, screenSize);
 	}
 
 	@Override

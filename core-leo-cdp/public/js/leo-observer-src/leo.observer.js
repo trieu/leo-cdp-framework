@@ -183,7 +183,7 @@
 
             var eventCount = buffer.length;
             var payload = this.createPayload(buffer);
-            var finalUrl = url + (url.indexOf('?') === -1 ? '?' : '&') + "eventcount=" + eventCount;
+            var finalUrl = url + (url.indexOf('?') === -1 ? '?' : '&') + "evc=" + eventCount;
 
             // SMART SENDING LOGIC:
             // If we don't have a sessionKey yet, we MUST use XHR to read the response.
@@ -737,45 +737,36 @@ var leoVisitorIdStringKey = "leocdp_vid";
         var batchSize = Number.parseInt(params['batchsize'] || 1);
         delete params['batchsize'];
 
-		params["visid"] = getVisitorId();
+		var screen = params['screen'] || "";
+		delete params['screen'];
 
+		params["visid"] = getVisitorId();
         var queryStr = objectToQueryString(params);
-		var isHttpPost = false;
-	
+		
     	var prefixUrl = PREFIX_EVENT_VIEW_URL;
         if(eventType === "action"){
         	prefixUrl = PREFIX_EVENT_ACTION_URL;
-        	isHttpPost = true;
         } 
         else if(eventType === "conversion"){
         	prefixUrl = PREFIX_EVENT_CONVERSION_URL;
-        	isHttpPost = true;
         } 
         else if(eventType === "feedback"){
         	prefixUrl = PREFIX_EVENT_FEEDBACK_URL;
-        	isHttpPost = true;
         }
         
-        var url = "";
-        if(isHttpPost) {
-        	url = prefixUrl + '?ctxsk=' + localSessionKey;
+        var url = prefixUrl + '?ctxsk=' + localSessionKey + "&screen=" + screen;
             
-            if(batchSize <= 1){
-                // send of batchSize is 1 or 0 using HTTP POST
-                LeoCorsRequest.post(url, queryStr);
-            }
-            else {
-				// push to queue
-                LeoCorsRequest.batchSend(url, params, batchSize)
-            }
-        	
-        } else {
-        	url = prefixUrl + '?' + queryStr + '&ctxsk=' + localSessionKey;
-        	LeoCorsRequest.get(url); // HTTP GET
+        if(batchSize <= 1){
+            // send of batchSize is 1 or 0 using HTTP POST
+            LeoCorsRequest.post(url, queryStr);
+ 			console.log("LeoCorsRequest post " + url, queryStr)
         }
-       
-        console.log("LeoCorsRequest url " + url)
-		
+        else {
+			// push to queue
+            LeoCorsRequest.batchSend(url, params, batchSize)
+			console.log("LeoCorsRequest batchSend " + url, params)
+        }
+      
     }
     
     var updateProfile = function(params) {

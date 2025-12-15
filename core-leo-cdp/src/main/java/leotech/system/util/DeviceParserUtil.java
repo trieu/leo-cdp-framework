@@ -54,15 +54,20 @@ public class DeviceParserUtil {
 
 	public static final class DeviceUserContext {
 		public String useragent;
+		public String screensize;
 
-		public DeviceUserContext(String useragent) {
+		public DeviceUserContext(String useragent, String screensize) {
 			super();
 			this.useragent = useragent;
+			this.screensize = screensize;
 		}
 
 		@Override
 		public int hashCode() {
-			return StringUtil.safeString(useragent).hashCode();
+			if(StringUtil.isEmpty(screensize)) {
+				return StringUtil.safeString(useragent).hashCode();
+			}
+			return StringUtil.safeString(useragent+screensize).hashCode();
 		}
 	}
 
@@ -78,6 +83,8 @@ public class DeviceParserUtil {
 
 	public static DeviceInfo parse(DeviceUserContext deviceUserContext) {
 		String useragent = deviceUserContext.useragent;
+		String screensize = deviceUserContext.screensize;
+		
 		Client uaClient = Parser.load().parse(useragent);
 		int platformType = PC;
 		String deviceName = "PC";
@@ -89,11 +96,17 @@ public class DeviceParserUtil {
 		String browserName = uaClient.userAgent.family;
 		String osVersion = StringUtil.safeString(uaClient.os.major) + "." + StringUtil.safeString(uaClient.os.minor)+ "." + StringUtil.safeString(uaClient.os.patch,"0");
 		
-		return new DeviceInfo(deviceType, platformType, deviceName, deviceOs, osVersion, browserName);
+		return new DeviceInfo(deviceType, platformType, deviceName, deviceOs, osVersion, browserName, screensize);
 	}
 
-	public static DeviceInfo parseWithCache(String useragent) throws ExecutionException {
-		DeviceUserContext k = new DeviceUserContext(useragent);
+	/**
+	 * @param useragent
+	 * @param screensize
+	 * @return
+	 * @throws ExecutionException
+	 */
+	public static DeviceInfo parseUserAgentAndScreenSize(String useragent, String screensize) throws ExecutionException {
+		DeviceUserContext k = new DeviceUserContext(useragent, screensize);
 		DeviceInfo v = deviceInfoCache.get(k);
 		return v;
 	}

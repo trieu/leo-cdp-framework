@@ -1,5 +1,5 @@
 /*
- * LEO JS code for LEO CDP - version 0.9.2 - built on 2025.12.11
+ * LEO JS code for LEO CDP - version 0.9.5 - built on 2025.12.15
  */
 // ------------ LEO Proxy ------------------
 (function() {
@@ -7,6 +7,7 @@
 	if(typeof window.leoObserverBatchSize !== 'number') {
 		window.leoObserverBatchSize = 10;
 	}
+	var TIME_TO_ADD_PROXY_IFRAME = 888;
     
     if (typeof window.LeoObserverProxy === "undefined" && typeof leoObserverId === 'string' ) {
     	
@@ -22,8 +23,8 @@
         setTimeout(function(){
         	
         	var LEO_SYN_PREFIX = 'leosyn=';
-        	
         	var node = document.getElementById(iframeId);
+
         	if( node == null ){
         		var iframeProxyUrl = proxyHtmlUrl + window.leoObserverLogDomain + '_' + leoProxyOrigin;
     	        if(typeof window.injectedVisitorId === 'string' ) {
@@ -54,7 +55,7 @@
     	            window.LeoIframeProxy = iframeProxy;
     	        }
         	}
-        },999);
+        },TIME_TO_ADD_PROXY_IFRAME);
 
         // Put message to the queue in the child iframe
         var putEventToQueue = function(msg) {
@@ -80,7 +81,6 @@
         }
         
         // Listen to messages from parent window
-        
         // addEventListener support for IE8
         function bindEvent(element, metricName, eventHandler) {
             if (element.addEventListener) {
@@ -106,12 +106,18 @@
 			var tpname = window.srcTouchpointName || document.title;
             var tpurl = window.srcTouchpointUrl || document.location.href;
             var batchSize = window.leoObserverBatchSize;
-            
+
+			var screen =  ""
+			if(window.screen) {
+				screen = window.screen.width + "x" + window.screen.height; 
+			}
+			            
             // tracking parameters
             var params = {
                 'obsid': leoObserverId,
                 'batchsize': batchSize,
                 'mediahost': mediaHost,
+				'screen': screen,
                 'tprefurl': encodeURIComponent(tprefurl),
                 'tprefdomain': tprefdomain,
                 'tpurl': encodeURIComponent(tpurl),

@@ -3,7 +3,6 @@ package leotech.system.util;
 import java.util.Arrays;
 import java.util.Random;
 
-import rfx.core.util.Utils;
 
 public class RamdomCodesUtil {
 	private static final Random RND = new Random(System.currentTimeMillis());

@@ -86,7 +86,7 @@ public final class HttpParamKey {
    
     public static final String TOUCHPOINT_REFERRER_URL = "tprefurl";
     public static final String TOUCHPOINT_REFERRER_DOMAIN = "tprefdomain";
-    
+    public static final String SCREEN_SIZE = "screensize";
     
     public static final String EVENT_TIME = "eventtime";
     public static final String IMAGE_URLS = "imageUrls";

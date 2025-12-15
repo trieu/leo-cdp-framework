@@ -56,12 +56,14 @@ public class UserAgentParserTest {
 
 	System.out.println("-------------------------------------");
 
+	String screenSize= "1920x1200";
 	for (int i = 0; i < 1; i++) {
 
-	    DeviceInfo deviceInfo = DeviceParserUtil.parseWithCache(ua);
+	    DeviceInfo deviceInfo = DeviceParserUtil.parseUserAgentAndScreenSize(ua,screenSize);
 	    System.out.println(deviceInfo.deviceName);
 	    System.out.println(deviceInfo.deviceOs);
 	    System.out.println(deviceInfo.platformType);
+	    System.out.println(deviceInfo.screenSize);
 	    Utils.sleep(1000);
 	}
 

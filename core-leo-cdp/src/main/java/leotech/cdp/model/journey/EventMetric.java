@@ -346,8 +346,8 @@ public final class EventMetric extends PersistentObject {
 		return BehavioralEvent.General.SHORT_LINK_CLICK.equals(this.eventName);
 	}
 	
-	public boolean isContentView() {
-		return BehavioralEvent.General.CONTENT_VIEW.equals(this.eventName);
+	public boolean isView() {
+		return this.eventName.contains("view");
 	}
 	
 	public boolean isScoreModelForCLV() {

@@ -37,6 +37,7 @@ public final class ObserverHttpRouter extends BaseHttpRouter {
 	// CONSTANTS
 	// ------------------------------------------------------------
 
+	private static final String SCREEN = "screen";
 	public static final String INVALID = "invalid";
 	public static final String FAILED = "failed";
 	public static final String OK = "ok";
@@ -62,6 +63,7 @@ public final class ObserverHttpRouter extends BaseHttpRouter {
 	public static final String PREFIX_HTML_RECOMMENDER_PRODUCTS = "/ris/html/products";
 	public static final String PREFIX_HTML_RECOMMENDER_CONTENTS = "/ris/html/contents";
 
+	public static final String PREFIX_STANDARD_EVENT_PREFIX = "/et";
 	public static final String PREFIX_EVENT_VIEW = "/etv";
 	public static final String PREFIX_EVENT_ACTION = "/eta";
 	public static final String PREFIX_EVENT_CONVERSION = "/etc";
@@ -105,7 +107,9 @@ public final class ObserverHttpRouter extends BaseHttpRouter {
 		prepareDefaultHeaders(resp);
 
 		String origin = safe(headers.get(BaseHttpHandler.ORIGIN), "*");
-		DeviceInfo device = DeviceInfoUtil.getDeviceInfo(req.getHeader(BaseHttpHandler.USER_AGENT));
+		String screenSize = safe(params.get(SCREEN),"");
+		String userAgent = safe(req.getHeader(BaseHttpHandler.USER_AGENT),"");
+		DeviceInfo device = DeviceInfoUtil.getDeviceInfo(userAgent, screenSize);
 
 		System.out.println("contentType=" + headers.get(BaseHttpHandler.CONTENT_TYPE) + " urlPath=" + urlPath);
 

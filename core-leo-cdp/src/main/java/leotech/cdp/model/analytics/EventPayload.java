@@ -38,6 +38,7 @@ public class EventPayload {
 
 	@SerializedName("fgp")
 	private String fgp;
+	
 
 	// --- Getters ---
 

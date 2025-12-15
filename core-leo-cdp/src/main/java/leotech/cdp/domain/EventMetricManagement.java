@@ -15,6 +15,7 @@ import leotech.cdp.domain.cache.EventMetricCache;
 import leotech.cdp.domain.comparators.EventMetricComparators;
 import leotech.cdp.domain.schema.JourneyFlowSchema;
 import leotech.cdp.model.journey.EventMetric;
+import rfx.core.util.StringUtil;
 
 /**
  * Manages EventMetric metadata with in-memory caching for high-throughput data processing. <br>
@@ -148,7 +149,7 @@ public class EventMetricManagement {
     }
 
     public static EventMetric getEventMetricByName(String eventName) {
-        if (eventName == null) return UNCLASSIFIED_EVENT;
+        if (StringUtil.isEmpty(eventName)) return UNCLASSIFIED_EVENT;
         return loadCache().get(eventName).orElse(UNCLASSIFIED_EVENT);
     }
 

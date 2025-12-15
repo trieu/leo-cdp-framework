@@ -5,8 +5,9 @@ import static leotech.starter.router.ObserverHttpRouter.INVALID;
 import static leotech.starter.router.ObserverHttpRouter.OK;
 import static leotech.starter.router.ObserverHttpRouter.PREFIX_CONTEXT_SESSION_PROFILE_UPDATE;
 import static leotech.starter.router.ObserverHttpRouter.PREFIX_EVENT_ACTION;
-import static leotech.starter.router.ObserverHttpRouter.PREFIX_EVENT_CONVERSION;
 import static leotech.starter.router.ObserverHttpRouter.PREFIX_EVENT_FEEDBACK;
+import static leotech.starter.router.ObserverHttpRouter.PREFIX_EVENT_VIEW;
+import static leotech.starter.router.ObserverHttpRouter.PREFIX_STANDARD_EVENT_PREFIX;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -21,9 +22,11 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.ext.web.RoutingContext;
 import leotech.cdp.domain.ContextSessionManagement;
+import leotech.cdp.domain.EventMetricManagement;
 import leotech.cdp.model.analytics.ContextSession;
 import leotech.cdp.model.analytics.EventPayload;
 import leotech.cdp.model.analytics.FeedbackEvent;
+import leotech.cdp.model.journey.EventMetric;
 import leotech.system.common.BaseHttpHandler;
 import leotech.system.common.BaseHttpRouter;
 import leotech.system.model.DeviceInfo;
@@ -38,16 +41,17 @@ import rfx.core.util.StringUtil;
  */
 public final class ObserverHttpPostHandler {
 
+	private static final String CDP_OBSERVER_API = "CDP Observer API";
+
 	// Thread-safe singleton for Gson
 	private static final Gson gson = new Gson();
 
 	// Constants
 	private static final String PARAM_EVENTS = "events";
-	private static final String PARAM_EVENT_COUNT = "eventcount";
+	private static final String PARAM_EVENT_COUNT = "evc";
 	private static final int DEFAULT_RESPONSE = 1;
 
-	private static final Type EVENT_LIST_TYPE = new TypeToken<ArrayList<EventPayload>>() {
-	}.getType();
+	private static final Type EVENT_LIST_TYPE = new TypeToken<ArrayList<EventPayload>>() {}.getType();
 
 	/**
 	 * Main Processing Entry Point
@@ -63,9 +67,11 @@ public final class ObserverHttpPostHandler {
 		int eventCount = StringUtil.safeParseInt(params.get(PARAM_EVENT_COUNT));
 
 		if (eventCount > 0) {
-			processBatchEvents(req, params, resp, device, ctxSessionKey, serverInfo);
+			// batch tracking 
+			processBatchEvents(req, params, resp, device, ctxSessionKey);
 		} else {
-			processSingleEvent(req, urlPath, params, resp, device, ctxSessionKey, serverInfo);
+			// legacy tracking
+			processSingleEvent(req, urlPath, params, resp, device, ctxSessionKey);
 		}
 	}
 
@@ -73,7 +79,7 @@ public final class ObserverHttpPostHandler {
 	 * Handles Batch Events (Queue flushing)
 	 */
 	private static void processBatchEvents(HttpServerRequest req, MultiMap globalParams, HttpServerResponse resp,
-			DeviceInfo device, String ctxSessionKey, String serverInfo) {
+			DeviceInfo device, String ctxSessionKey) {
 
 		String eventsStr = globalParams.get(PARAM_EVENTS);
 
@@ -154,11 +160,19 @@ public final class ObserverHttpPostHandler {
 		ObserverResponse.done(resp, 200, lastVisitorId, sessionKey, successCount);
 	}
 
-	private static void saveEvent(HttpServerRequest req, DeviceInfo device, ContextSession ctxSession,
-			MultiMap eventParams, String metric) {
+	private static void saveEvent(HttpServerRequest req, DeviceInfo device, ContextSession ctxSession, MultiMap eventParams, String metricName) {
 		if (ctxSession != null) {
 			TaskRunner.runInThreadPools(() -> {
-				EventObserverUtil.recordActionEvent(req, eventParams, device, ctxSession, metric);
+				EventMetric metric = EventMetricManagement.getEventMetricByName(metricName);
+				if(metric.isConversion()) {
+					EventObserverUtil.recordConversionEvent(req, eventParams, device, ctxSession, metricName);
+				}
+				else if(metric.isView()) {
+					EventObserverUtil.recordViewEvent(req, eventParams, device, ctxSession, metricName);
+				}
+				else {
+					EventObserverUtil.recordActionEvent(req, eventParams, device, ctxSession, metricName);
+				}
 			});
 		}
 	}
@@ -167,29 +181,25 @@ public final class ObserverHttpPostHandler {
 	 * Handles Single Event
 	 */
 	static void processSingleEvent(HttpServerRequest req, String urlPath, MultiMap params, HttpServerResponse resp,
-			DeviceInfo device, String ctxSessionKey, String serverInfo) {
+			DeviceInfo device, String ctxSessionKey) {
 
 		String ip = HttpWebParamUtil.getRemoteIP(req);
 
-		// 1. Standard Action Event
-		if (urlPath.equalsIgnoreCase(PREFIX_EVENT_ACTION)) {
-			handleStandardEvent(req, params, resp, device, ctxSessionKey, ip, false);
+		// 1. Standard Event
+		if (urlPath.startsWith(PREFIX_STANDARD_EVENT_PREFIX)) {
+			handleStandardEvent(req, params, resp, device, ctxSessionKey, ip, urlPath);
 		}
-		// 2. Conversion Event
-		else if (urlPath.equalsIgnoreCase(PREFIX_EVENT_CONVERSION)) {
-			handleStandardEvent(req, params, resp, device, ctxSessionKey, ip, true);
-		}
-		// 3. Feedback / Survey
+		// 2. Feedback / Survey
 		else if (urlPath.equalsIgnoreCase(PREFIX_EVENT_FEEDBACK)) {
 			handleFeedbackEvent(req, params, resp, device, ctxSessionKey, ip);
 		}
-		// 4. Profile Update (Leo Form)
+		// 3. Profile Update (Leo Form)
 		else if (urlPath.equalsIgnoreCase(PREFIX_CONTEXT_SESSION_PROFILE_UPDATE)) {
 			handleProfileUpdate(req, params, resp, device, ctxSessionKey, ip);
 		}
-		// 5. 404
+		// 4. 404
 		else {
-			resp.end("CDP Observer_" + serverInfo);
+			resp.end(CDP_OBSERVER_API);
 		}
 	}
 
@@ -197,7 +207,7 @@ public final class ObserverHttpPostHandler {
 	 * Helper to reduce duplication between Action and Conversion events
 	 */
 	private static void handleStandardEvent(HttpServerRequest req, MultiMap params, HttpServerResponse resp,
-			DeviceInfo device, String ctxSessionKey, String ip, boolean isConversion) {
+			DeviceInfo device, String ctxSessionKey, String ip, String urlPath) {
 
 		ContextSession ctxSession = ContextSessionManagement.get(ctxSessionKey, ip, params, device);
 		int status = 404;
@@ -211,10 +221,12 @@ public final class ObserverHttpPostHandler {
 			String eventName = StringUtil.safeString(params.get(HttpParamKey.EVENT_METRIC_NAME)).toLowerCase();
 			String eventId;
 
-			if (isConversion) {
-				eventId = EventObserverUtil.recordConversionEvent(req, params, device, ctxSession, eventName);
-			} else {
+			if (urlPath.equalsIgnoreCase(PREFIX_EVENT_VIEW)) {
+				eventId = EventObserverUtil.recordViewEvent(req, params, device, ctxSession, eventName);
+			} else if (urlPath.equalsIgnoreCase(PREFIX_EVENT_ACTION)) {
 				eventId = EventObserverUtil.recordActionEvent(req, params, device, ctxSession, eventName);
+			} else {
+				eventId = EventObserverUtil.recordConversionEvent(req, params, device, ctxSession, eventName);
 			}
 
 			if (StringUtil.isNotEmpty(eventId)) {
@@ -254,7 +266,6 @@ public final class ObserverHttpPostHandler {
 
 		ContextSession session = ContextSessionManagement.get(ctxSessionKey, ip, params, device);
 		int status = 404;
-
 		if (session != null) {
 			String profileId = session.getProfileId();
 			if (StringUtil.isNotEmpty(profileId)) {

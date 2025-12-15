@@ -49,8 +49,8 @@ public class TestSearchAndQueryContent {
 	@Order(2)
 	public void listPostsByCategoriesAndKeywords() {
 
-		String[] defCategoryIds = new String[]{"1329181", "1329376", "1329482"};
-		String[] keywords = new String[]{};
+		String[] defCategoryIds = new String[] { "1329181", "1329376", "1329482" };
+		String[] keywords = new String[] {};
 		Map<String, List<MeasurableItem>> results = ContentQueryDaoUtil.listPostsByCategoriesAndKeywords(defCategoryIds,
 				keywords, true, true, true);
 
@@ -87,7 +87,7 @@ public class TestSearchAndQueryContent {
 		ccpQueries.add(new ContentClassPostQuery("project_list", "project", "1329482"));
 
 		System.out.println(AssetContentDaoPublicUtil.buildContentClassPostQuery(ccpQueries));
-	
+
 		testQueryPostsForHomepage();
 	}
 
