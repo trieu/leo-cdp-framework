@@ -1,230 +1,584 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LEO CDP - Agent Campaign Builder</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+
     <style>
-        /* Custom CSS to modernize Bootstrap 3 */
-        body { background-color: #f4f7f6; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333; }
-        
+        /* ==================================== */
+        /* CSS REFACTORING & USAGE VERIFICATION */
+        /* ==================================== */
+
+        /* Base Styles */
+        body {
+            background-color: #f4f7f6;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            color: #333;
+        }
+
         /* Layout Tweaks */
-        .main-content { padding: 20px; }
-        .panel { border: none; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border-radius: 8px; }
-        .panel-heading { border-top-left-radius: 8px; border-top-right-radius: 8px; padding: 15px 20px; font-weight: bold; }
-        
-        /* Modern Header */
-        .page-header-custom { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .page-title { font-size: 24px; color: #2c3e50; font-weight: 600; }
-        .page-title i { color: #6c5ce7; margin-right: 10px; }
+        .main-content {
+            padding: 20px;
+        }
+
+        /* Panel Styling (used across all major sections) */
+        .panel-leoadmin {
+            margin-bottom: 20px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-shadow: 0 1px 1px rgba(0, 0, 0, .05);
+        }
+
+        /* Panel Heading Customization (The specific selector requested by the user) */
+        .panel-leoadmin>.panel-heading {
+            color: #fff;
+            background-color: #6c5ce7;
+            border-color: #6c5ce7;
+            padding: 10px 15px;
+            border-bottom: 1px solid transparent;
+            border-top-left-radius: 3px;
+            border-top-right-radius: 3px;
+            font-weight: bold;
+        }
+
+        /* Modern Header (used for the top header bar) */
+        .page-header-custom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .page-title {
+            font-size: 24px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .page-title i {
+            color: #6c5ce7;
+            margin-right: 10px;
+        }
 
         /* Agent Selection Cards */
-        .agent-card { border: 2px solid #eee; padding: 15px; border-radius: 8px; cursor: pointer; transition: all 0.3s; text-align: center; height: 100%; }
-        .agent-card:hover { border-color: #6c5ce7; background: #fdfdff; transform: translateY(-2px); }
-        .agent-card.active { border-color: #6c5ce7; background: #f0f3ff; }
-        .agent-icon { font-size: 32px; margin-bottom: 10px; display: block; }
-        .agent-name { font-weight: bold; display: block; color: #2d3436; }
-        .agent-desc { font-size: 12px; color: #636e72; }
-        
-        /* Flow Visualization Container */
-        .flow-viz-container { background: #fff; border-radius: 8px; padding: 20px; min-height: 300px; position: relative; border: 1px dashed #ccc; display: flex; align-items: center; justify-content: space-between; }
-        
+        .agent-card {
+            border: 2px solid #eee;
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            height: 100%;
+        }
+
+        .agent-card.active {
+            border-color: #6c5ce7;
+            background: #f0f3ff;
+        }
+
+        .agent-icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .agent-name {
+            font-weight: bold;
+            display: block;
+            color: #2d3436;
+        }
+
+        .agent-desc {
+            font-size: 12px;
+            color: #636e72;
+        }
+
+        /* Flow Visualization Container (Used for the See-Think-Act box) */
+        .flow-viz-container {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            height: 150px;
+            position: relative;
+            border: 1px dashed #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
         /* AI Flow Nodes */
-        .ai-node { width: 140px; background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 10px; text-align: center; position: relative; z-index: 2; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .ai-node.start { border-left: 4px solid #00b894; }
-        .ai-node.brain { border: 2px solid #6c5ce7; background: #f8f7ff; }
-        .ai-node.action { border-right: 4px solid #e17055; }
-        
-        .ai-node h5 { margin: 5px 0; font-size: 14px; font-weight: bold; }
-        .ai-node small { font-size: 11px; color: #888; }
-        
+        .ai-node {
+            width: 140px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 10px;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .ai-node.start {
+            border-left: 4px solid #00b899;
+        }
+
+        .ai-node.brain {
+            border: 2px solid #6c5ce7;
+            background: #f8f7ff;
+        }
+
+        .ai-node.action {
+            border-right: 4px solid #e17055;
+        }
+
+        .ai-node h5 {
+            font-size: 18px;
+        }
+
         /* Connecting Lines */
-        .flow-arrow { flex-grow: 1; height: 2px; background: #ddd; position: relative; margin: 0 10px; }
-        .flow-arrow::after { content: '\f0da'; font-family: FontAwesome; position: absolute; right: -5px; top: -10px; font-size: 18px; color: #ddd; }
-        
-        /* Stats Chips */
-        .stat-chip { display: inline-block; padding: 4px 10px; background: #e0e0e0; border-radius: 20px; font-size: 12px; margin-right: 5px; margin-bottom: 5px; }
-        .stat-chip.blue { background: #e3f2fd; color: #1565c0; }
-        .stat-chip.green { background: #e8f5e9; color: #2e7d32; }
+        .flow-arrow {
+            flex-grow: 1;
+            height: 2px;
+            background: #616060;
+            position: relative;
+            margin: 0 10px;
+        }
+
+        .flow-arrow::after {
+            content: '\f0da';
+            font-family: FontAwesome;
+            position: absolute;
+            right: -5px;
+            top: -12px;
+            font-size: 20px;
+            color: #616060;
+        }
+
+        .flow-viz-container {
+            background: linear-gradient(180deg,
+                    #fafaff 0%,
+                    #ffffff 100%);
+        }
+
 
         /* Form Controls Override */
-        .form-control { border-radius: 4px; box-shadow: none; border: 1px solid #ddd; height: 40px; }
-        .form-control:focus { border-color: #6c5ce7; box-shadow: 0 0 0 2px rgba(108, 92, 231, 0.1); }
-        .input-group-addon { background: #f9f9f9; }
+        .form-control {
+            border-radius: 4px;
+            box-shadow: none;
+            border: 1px solid #ddd;
+            height: 40px;
+        }
+
+        .input-group-addon {
+            background: #f9f9f9;
+        }
+
+        /* Chart Container */
+        .chart-container {
+            position: relative;
+            height: 340px;
+            width: 100%;
+        }
+
+        /* Utility class to combine select and button inline */
+        .form-group-with-button {
+            display: flex;
+            align-items: center;
+        }
+
+        .form-group-with-button .form-control {
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+
+        /* jQuery UI Dialog Styling */
+        .ui-dialog {
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .ui-widget-header {
+            background: #6c5ce7;
+            border: 1px solid #6c5ce7;
+            color: white;
+        }
+
+        /* View Mode Specific Styles for displaying data */
+        .view-field-label {
+            font-weight: bold;
+            color: #555;
+            margin-top: 10px;
+            display: block;
+        }
+
+        .view-field-value {
+            background: #f9f9f9;
+            padding: 8px 12px;
+            border-radius: 4px;
+            border-left: 3px solid #6c5ce7;
+            margin-bottom: 15px;
+        }
+
+
+        #viewModeContainer .panel-body {
+            padding-top: 10px;
+            padding-bottom: 10px;
+        }
+
+        .view-field-label {
+            margin-top: 6px;
+            margin-bottom: 4px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .col-md-9 .panel-leoadmin {
+            margin-bottom: 15px;
+        }
+
+        #viewModeContainer .panel-heading {
+            background-color: #5a4fdc;
+        }
     </style>
 </head>
+
 <body>
 
-<div class="container-fluid main-content">
-    
-    <div class="page-header-custom">
-        <div class="page-title">
-            <i class="fa fa-magic"></i> Agent-driven Campaign Builder
+    <div class="container-fluid main-content">
+
+        <div class="page-header-custom">
+            <div class="page-title">
+                <i class="fa fa-magic"></i> AI Campaign Builder
+                <div style="font-size: 12px; color: #636e72;  margin-top: 2px; max-width: 520px;">
+                    Design how AI reacts to customer behavior — who to target, what to say, and when to act.
+                </div>
+
+            </div>
+            <div class="action-buttons">
+                <button class="btn btn-primary" id="modeToggleBtn" data-mode="editor">
+                    <i class="fa fa-eye"></i> Preview Campaign
+                </button>
+            </div>
         </div>
-        <div class="action-buttons">
-            <button class="btn btn-default">Cancel</button>
-            <button class="btn btn-success"><i class="fa fa-play"></i> Activate Agent</button>
+
+
+        <div id="editorModeContainer">
+            <div class="row">
+                <div class="panel panel-leoadmin">
+                    <div class="panel-heading">
+                        <i class="fa fa-sitemap"></i> Agent Workflow Visualization
+                    </div>
+                    <div class="panel-body">
+                        <p class="text-muted">
+                            AI observes behavior and acts automatically.
+                        </p>
+
+                        <div class="flow-viz-container">
+                            <div class="ai-node start">
+                                <i class="fa fa-eye fa-2x text-success"></i>
+                                <h5>Sense</h5>
+                                <small id="seeTargetSegmentEditor">High Intent Shoppers</small>
+                            </div>
+
+                            <div class="flow-arrow"></div>
+
+                            <div class="ai-node brain">
+                                <i class="fa fa-microchip fa-2x" style="color: #6c5ce7;"></i>
+                                <h5>Think</h5>
+                                <small>Analyzing data...</small>
+                            </div>
+
+                            <div class="flow-arrow"></div>
+
+                            <div class="ai-node action">
+                                <i class="fa fa-paper-plane fa-2x text-danger"></i>
+                                <h5>Act</h5>
+                                <small>Dynamic Intervention</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+
+
+
+                <div class="col-md-3">
+
+                    <div class="panel panel-leoadmin">
+                        <div class="panel-heading"><i class="fa fa-info-circle"></i> Campaign Objective (Editor)
+                        </div>
+                        <div class="panel-body">
+                            <div class="form-group">
+                                <label>Campaign Name</label>
+                                <input type="text" class="form-control" id="campaignName"
+                                    value="Cart Recovery - AI Automated" placeholder="e.g. Winter Sale Push">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Target Segment</label>
+                                <div class="form-group-with-button">
+                                    <select class="form-control" id="targetSegmentSelect">
+                                        <option value="high-intent">High Intent Shoppers (AI Segment)</option>
+                                        <option value="churn-risk">Churn Risk Users</option>
+                                        <option value="vip">VIP Customers</option>
+                                    </select>
+                                    <button class="btn btn-default btn-sm" id="manageSegmentBtn"
+                                        title="Manage Segments">
+                                        <i class="fa fa-pencil"></i>
+                                    </button>
+                                </div>
+                                <small class="text-muted"><i class="fa fa-bolt"></i> AI will update this list in
+                                    real-time.</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="panel panel-leoadmin">
+                        <div class="panel-heading"><i class="fa fa-users"></i> Choose Your AI's Job (Persona)</div>
+
+                        <div class="panel-body">
+                            <div class="row" id="agentPersonaSelection">
+
+                                <div class="col-xs-6" style="padding-right: 5px; margin-bottom: 10px;">
+                                    <div class="agent-card" data-persona="sales">
+                                        <i class="fa fa-handshake-o agent-icon" style="color: #6c5ce7;"></i>
+                                        <span class="agent-name">The Sales Expert</span>
+                                        <span class="agent-desc">AI focused on making sales and getting users to
+                                            buy.</span>
+                                    </div>
+                                </div>
+
+                                <div class="col-xs-6" style="padding-left: 5px; margin-bottom: 10px;">
+                                    <div class="agent-card" data-persona="support">
+                                        <i class="fa fa-life-ring agent-icon" style="color: #00b899;"></i>
+                                        <span class="agent-name">The Customer Helper</span>
+                                        <span class="agent-desc">AI focused on answering questions and offering
+                                            support.</span>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="panel panel-leoadmin">
+                        <div class="panel-heading"><i class="fa fa-shield"></i> Agent Constraints (Guardrails)</div>
+                        <div class="panel-body">
+                            <div class="form-group">
+                                <label>Max Budget / Day</label>
+                                <div class="input-group">
+                                    <span class="input-group-addon">$</span>
+                                    <input type="number" class="form-control" id="maxBudget" value="50">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Communication Frequency</label>
+                                <select class="form-control" id="commFrequency">
+                                    <option value="smart">Smart Capping (AI Decides)</option>
+                                    <option value="strict">Strict: Max 1 msg / 24h</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-9">
+
+                    <div class="panel panel-leoadmin">
+                        <div class="panel-heading">
+                            <i class="fa fa-fw fa-cogs" aria-hidden="true"></i> Campaign Report
+                        </div>
+                        <div class="panel-body">
+                            <div class="chart-container">
+                                <canvas id="campaignChartInEditor"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="panel panel-leoadmin">
+                        <div class="panel-heading">
+                            <i class="fa fa-list-alt"></i> Agent Logic Preview (User Scenarios)
+                            <button class="btn btn-info btn-xs pull-right" id="addUserScenarioBtn">
+                                <i class="fa fa-plus"></i> Add Scenario
+                            </button>
+                        </div>
+                        <div class="panel-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover" id="userScenarioTableEditor">
+                                    <thead>
+                                        <tr>
+                                            <th>User Scenario</th>
+                                            <th>Agent Decision</th>
+                                            <th>Reasoning</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr data-scenario-id="1">
+                                            <td><i class="fa fa-user"></i> User A (Price Sensitive)</td>
+                                            <td><span class="label label-success">Send 10% Coupon</span></td>
+                                            <td>High intent but hesitated at checkout.</td>
+                                            <td><button class="btn btn-warning btn-xs edit-scenario-btn"><i
+                                                        class="fa fa-pencil"></i> Edit</button></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        <div id="viewModeContainer" style="display: none;">
+            <div class="row">
+                <div class="panel panel-leoadmin">
+                    <div class="panel-heading">
+                        <i class="fa fa-sitemap"></i> Agent Workflow Visualization
+                    </div>
+                    <div class="panel-body">
+                        <p class="text-muted">
+                            AI observes behavior and acts automatically.
+                        </p>
+                        <div class="flow-viz-container">
+                            <div class="ai-node start">
+                                <i class="fa fa-eye fa-2x text-success"></i>
+                                <h5>Sense</h5>
+                                <small id="seeTargetSegmentViewer">High Intent Shoppers</small>
+                            </div>
+                            <div class="flow-arrow"></div>
+                            <div class="ai-node brain">
+                                <i class="fa fa-microchip fa-2x" style="color: #6c5ce7;"></i>
+                                <h5>Think</h5>
+                                <small>Active Logic</small>
+                            </div>
+                            <div class="flow-arrow"></div>
+                            <div class="ai-node action">
+                                <i class="fa fa-paper-plane fa-2x text-danger"></i>
+                                <h5>Act</h5>
+                                <small>Dynamic Channels</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-3">
+
+                    <div class="panel panel-leoadmin">
+                        <div class="panel-heading"><i class="fa fa-info-circle"></i> Campaign Objective (View)</div>
+                        <div class="panel-body">
+                            <label class="view-field-label">Campaign Name</label>
+                            <div class="view-field-value" id="viewCampaignName"></div>
+
+                            <label class="view-field-label">Target Segment</label>
+                            <div class="view-field-value" id="viewTargetSegment"></div>
+                        </div>
+                    </div>
+
+                    <div class="panel panel-leoadmin">
+                        <div class="panel-heading"><i class="fa fa-users"></i> Agent Persona</div>
+                        <div class="panel-body">
+                            <label class="view-field-label">Selected Persona</label>
+                            <div class="view-field-value" id="viewAgentPersona"></div>
+                        </div>
+                    </div>
+
+                    <div class="panel panel-leoadmin">
+                        <div class="panel-heading"><i class="fa fa-shield"></i> Agent Constraints</div>
+                        <div class="panel-body">
+                            <label class="view-field-label">Max Budget / Day</label>
+                            <div class="view-field-value" id="viewMaxBudget"></div>
+
+                            <label class="view-field-label">Communication Frequency</label>
+                            <div class="view-field-value" id="viewCommFrequency"></div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="col-md-9">
+
+                    <div class="panel panel-leoadmin">
+                        <div class="panel-heading">
+                            <i class="fa fa-fw fa-cogs" aria-hidden="true"></i> Campaign Report
+                        </div>
+                        <div class="panel-body">
+                            <div class="chart-container">
+                                <canvas id="campaignChartInView"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+
+
+                    <div class="panel panel-leoadmin">
+                        <div class="panel-heading"><i class="fa fa-list-alt"></i> Agent Logic Preview (User Scenarios)
+                        </div>
+                        <div class="panel-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover" id="userScenarioTableViewer">
+                                    <thead>
+                                        <tr>
+                                            <th>User Scenario</th>
+                                            <th>Agent Decision</th>
+                                            <th>Reasoning</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+
+
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="row">
-        <div class="col-md-4">
-            
-            <div class="panel panel-default">
-                <div class="panel-heading"><i class="fa fa-info-circle"></i> Campaign Objective</div>
-                <div class="panel-body">
-                    <div class="form-group">
-                        <label>Campaign Name</label>
-                        <input type="text" class="form-control" value="Cart Recovery - AI Automated" placeholder="e.g. Winter Sale Push">
-                    </div>
-                    <div class="form-group">
-                        <label>Target Audience (Dynamic)</label>
-                        <select class="form-control">
-                            <option>High Intent Shoppers (AI Segment)</option>
-                            <option>Churn Risk Users</option>
-                            <option>VIP Customers</option>
-                        </select>
-                        <small class="text-muted"><i class="fa fa-bolt"></i> AI will update this list in real-time.</small>
-                    </div>
-                </div>
+    <div id="scenarioDialog" title="Edit/Add User Scenario" style="display: none;">
+        <form>
+            <div class="form-group">
+                <label for="scenarioName">Scenario Description</label>
+                <input type="text" id="scenarioName" class="form-control"
+                    placeholder="e.g., User has 3 items in cart for 2 days">
             </div>
-
-            <div class="panel panel-default">
-                <div class="panel-heading"><i class="fa fa-users"></i> Select Agent Persona</div>
-                <div class="panel-body">
-                    <div class="row">
-                        <div class="col-xs-6" style="padding-right: 5px; margin-bottom: 10px;">
-                            <div class="agent-card active">
-                                <i class="fa fa-handshake-o agent-icon" style="color: #6c5ce7;"></i>
-                                <span class="agent-name">The Closer</span>
-                                <span class="agent-desc">Focus on Conversion</span>
-                            </div>
-                        </div>
-                        <div class="col-xs-6" style="padding-left: 5px; margin-bottom: 10px;">
-                            <div class="agent-card">
-                                <i class="fa fa-life-ring agent-icon" style="color: #00b894;"></i>
-                                <span class="agent-name">The Concierge</span>
-                                <span class="agent-desc">Focus on Support</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <div class="form-group">
+                <label for="agentDecision">Agent Decision</label>
+                <select id="agentDecision" class="form-control">
+                    <option value="coupon">Send 10% Coupon</option>
+                    <option value="reminder">Send Reminder (No Discount)</option>
+                    <option value="popup">Web Popup</option>
+                    <option value="none">Do Nothing</option>
+                </select>
             </div>
-
-            <div class="panel panel-default">
-                <div class="panel-heading"><i class="fa fa-shield"></i> Agent Constraints (Guardrails)</div>
-                <div class="panel-body">
-                    <div class="form-group">
-                        <label>Max Budget / Day</label>
-                        <div class="input-group">
-                            <span class="input-group-addon">$</span>
-                            <input type="number" class="form-control" value="50">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Communication Frequency</label>
-                        <select class="form-control">
-                            <option>Smart Capping (AI Decides)</option>
-                            <option>Strict: Max 1 msg / 24h</option>
-                        </select>
-                    </div>
-                </div>
+            <div class="form-group">
+                <label for="reasoning">Reasoning/Logic</label>
+                <textarea id="reasoning" class="form-control" rows="3"
+                    placeholder="Explain the AI logic for this decision."></textarea>
             </div>
-
-        </div>
-
-        <div class="col-md-8">
-            
-            <div class="panel panel-primary" style="border-color: #6c5ce7;">
-                <div class="panel-heading" style="background-color: #6c5ce7; border-color: #6c5ce7;">
-                    <i class="fa fa-sitemap"></i> Agent Workflow Visualization
-                </div>
-                <div class="panel-body">
-                    <p class="text-muted">This workflow adapts automatically based on user behavior.</p>
-                    
-                    <div class="flow-viz-container">
-                        <div class="ai-node start">
-                            <i class="fa fa-eye fa-2x text-success"></i>
-                            <h5>Sense</h5>
-                            <small>Detect: Abandon Cart > $50</small>
-                        </div>
-
-                        <div class="flow-arrow"></div>
-
-                        <div class="ai-node brain">
-                            <i class="fa fa-microchip fa-2x" style="color: #6c5ce7;"></i>
-                            <h5>Decide</h5>
-                            <small>Analyzing Context...</small>
-                            <div style="margin-top:5px; font-size: 10px; color:#555; text-align: left; padding-left: 5px;">
-                                <div><i class="fa fa-check text-success"></i> Price Sensitivity</div>
-                                <div><i class="fa fa-check text-success"></i> Channel Preference</div>
-                            </div>
-                        </div>
-
-                        <div class="flow-arrow"></div>
-
-                        <div class="ai-node action">
-                            <i class="fa fa-paper-plane fa-2x text-danger"></i>
-                            <h5>Act</h5>
-                            <small>Dynamic Intervention</small>
-                            <div style="margin-top:8px;">
-                                <span class="label label-default">Email</span>
-                                <span class="label label-primary">SMS</span>
-                                <span class="label label-info">Web Popup</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="panel-footer">
-                    <div class="row">
-                        <div class="col-md-4">
-                            <strong>Predicted Reach:</strong> <span class="text-primary">1,250 Users</span>
-                        </div>
-                        <div class="col-md-4">
-                            <strong>Est. Conversion Uplift:</strong> <span class="text-success">+15%</span>
-                        </div>
-                        <div class="col-md-4 text-right">
-                            <a href="#" class="text-muted"><i class="fa fa-cog"></i> Advanced Logic</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="panel panel-default">
-                <div class="panel-heading"><i class="fa fa-list-alt"></i> Agent Logic Preview (Example)</div>
-                <div class="panel-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>User Scenario</th>
-                                    <th>Agent Decision</th>
-                                    <th>Reasoning</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td><i class="fa fa-user"></i> User A (Price Sensitive)</td>
-                                    <td><span class="label label-success">Send 10% Coupon</span></td>
-                                    <td>High intent but hesitated at checkout.</td>
-                                </tr>
-                                <tr>
-                                    <td><i class="fa fa-user"></i> User B (VIP, Low Churn)</td>
-                                    <td><span class="label label-info">Send Reminder (No Discount)</span></td>
-                                    <td>Loyal user, likely to buy without discount.</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-        </div>
+        </form>
     </div>
-</div>
 
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+
+
+    <script src="/documents/wireframe/js/agentic-campaign.js"></script>
 </body>
+
 </html>
