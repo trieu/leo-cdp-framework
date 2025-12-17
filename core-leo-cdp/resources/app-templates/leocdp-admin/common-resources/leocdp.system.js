@@ -397,7 +397,7 @@ function renderSsoSettings(leocdpMetadata){
 	
 	        // Sync changes back to metadata object
 	        $el.on('change input', function () {
-	            leocdpMetadata[field] = $(this).val();
+	            leocdpMetadata[field] = $(this).val().trim();
 	        });
 	    }
 	});
