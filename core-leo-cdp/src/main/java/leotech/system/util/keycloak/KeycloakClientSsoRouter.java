@@ -21,6 +21,8 @@ import rfx.core.nosql.jedis.RedisClientFactory;
  */
 public class KeycloakClientSsoRouter {
 
+	private static final int HTTP_CLIENT_TIMEOUT = 8000;
+
 	private static final Logger logger = LoggerFactory.getLogger(KeycloakClientSsoRouter.class);
 
 	private static final JedisPool jedisPool = RedisClientFactory.buildRedisPool("clusterInfoRedis");
@@ -48,8 +50,6 @@ public class KeycloakClientSsoRouter {
 	}
 
 	private void configureKeycloakRoutes(Router router) {
-		router.get(SsoRoutePaths.ROOT_PREFIX).handler(handlers::handleInfo);
-		router.get(SsoRoutePaths.ME).handler(handlers::handleInfo);
 		
 		router.get(SsoRoutePaths.LOGIN).handler(handlers::handleLogin);
 		router.get(SsoRoutePaths.REFRESH).handler(handlers::handleRefreshToken);
@@ -60,6 +60,10 @@ public class KeycloakClientSsoRouter {
 		router.get(SsoRoutePaths.CHECK_ROLE).handler(handlers::handleCheckRole);
 
 		router.get(SsoRoutePaths.ERROR).handler(this::handleErrorRoute);
+		
+		router.get(SsoRoutePaths.ROOT_PREFIX).handler(handlers::handleInfo);
+		router.get(SsoRoutePaths.PREFIX).handler(handlers::handleInfo);
+		router.get(SsoRoutePaths.ME).handler(handlers::handleInfo);
 	}
 
 
@@ -115,13 +119,37 @@ public class KeycloakClientSsoRouter {
 		return router;
 	}
 
+	/**
+	 * @param vertxInstance
+	 * @return
+	 */
 	public static WebClient createWebClient(Vertx vertxInstance) {
-		KeycloakConfig config = KeycloakConfig.getInstance();
-		boolean isHttps = config.getUrl() != null && config.getUrl().toLowerCase().startsWith("https");
-		
-		WebClientOptions opt = new WebClientOptions().setSsl(isHttps).setTrustAll(!config.isVerifySSL())
-				.setVerifyHost(config.isVerifySSL());
+	    KeycloakConfig config = KeycloakConfig.getInstance();
 
-		return WebClient.create(vertxInstance, opt);
+	    boolean isHttps =
+	        config.getUrl() != null &&
+	        config.getUrl().toLowerCase().startsWith("https");
+
+	    WebClientOptions opt = new WebClientOptions()
+	        .setSsl(isHttps)
+	        .setConnectTimeout(HTTP_CLIENT_TIMEOUT)     // TCP connect
+	        .setIdleTimeout(10)          // seconds
+	        .setKeepAlive(true);
+
+	    if (isHttps) {
+	        if (config.isVerifySSL()) {
+	            // 🔒 REAL SSL verification (UI = Verify SSL)
+	            opt.setTrustAll(false)
+	               .setVerifyHost(true);
+	            // relies on JVM truststore
+	        } else {
+	            // ⚠️ Dev / internal / self-signed
+	            opt.setTrustAll(true)
+	               .setVerifyHost(false);
+	        }
+	    }
+
+	    return WebClient.create(vertxInstance, opt);
 	}
+
 }

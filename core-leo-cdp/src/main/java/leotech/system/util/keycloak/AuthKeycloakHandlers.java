@@ -103,6 +103,8 @@ public class AuthKeycloakHandlers {
     }
 
     public void handleCallback(RoutingContext ctx) {
+    	logger.info(">>> ENTER handleCallback <<<");
+
         String code = getQueryParam(ctx, PARAM_CODE);
         String error = getQueryParam(ctx, ERROR);
         String logoutFlag = getQueryParam(ctx, LOGOUT);
