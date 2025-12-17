@@ -30,7 +30,7 @@ import rfx.core.util.FileUtils;
 public final class SystemConfigsManagement {
 	
 	static final int CACHE_SIZE = 200;
-	static final long CACHE_TIME = 90;
+	static final long CACHE_TIME = 15;
 
 	public static final String SYSTEM_INIT_CONFIG_JSON = "./resources/data-for-new-setup/init-system-services.json";
 	public static final int DEFAULT_ITEM_FOR_PROFILE = 30;
@@ -145,6 +145,7 @@ public final class SystemConfigsManagement {
 			if(cf != null) {
 				// return from database
 				if( cf.getConfigs().isEmpty()) {
+					// check empty then set a new one
 					cf.getConfigs().putAll(SystemMetaData.getMetaDataMap());
 				}
 				return cf;
@@ -157,6 +158,7 @@ public final class SystemConfigsManagement {
 			Map<String,Object> metadata = new HashMap<String, Object>();
 			cf = new SystemService(LEO_CDP_METADATA, "LEO CDP METADATA", metadata );
 			if( cf.getConfigs().isEmpty()) {
+				// check empty then set a new one
 				cf.getConfigs().putAll(SystemMetaData.getMetaDataMap());
 			}
 			systemConfigsCache.put(LEO_CDP_METADATA, cf);

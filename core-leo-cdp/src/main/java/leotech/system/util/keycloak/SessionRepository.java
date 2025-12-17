@@ -32,7 +32,7 @@ import rfx.core.util.StringUtil;
  */
 public class SessionRepository {
 	
-	public static final int SSO_SESSION_LIFETIME = 60 * 60; // 60 min
+	public static final long SSO_SESSION_LIFETIME = 60L * 60L; // 60 min
 
 	private final Vertx vertx;
 	private final JedisPool jedisPool;
@@ -64,14 +64,13 @@ public class SessionRepository {
 
 	public void createSession(JsonObject userInfo, JsonObject tokenData, Handler<AsyncResult<String>> resultHandler) {
 		String sessionId = "sid:" + UUID.randomUUID();
-		JsonObject data = new JsonObject().put("user", userInfo).put(AuthKeycloakHandlers.TOKEN, tokenData).put("timestamp",
-				System.currentTimeMillis() / 1000);
+		JsonObject data = new JsonObject().put("user", userInfo).put(AuthKeycloakHandlers.TOKEN, tokenData).put("timestamp",System.currentTimeMillis() / 1000);
 
 		vertx.executeBlocking(future -> {
 			RedisCommand<Boolean> cmd = new RedisCommand<Boolean>(jedisPool) {
 				@Override
 				protected Boolean build(Jedis jedis) {
-					String ok = jedis.setex(sessionId, 3600L, data.toString());
+					String ok = jedis.setex(sessionId, SSO_SESSION_LIFETIME, data.toString());
 					return StringUtil.isNotEmpty(ok);
 				}
 			};
@@ -101,7 +100,7 @@ public class SessionRepository {
 			RedisCommand<Boolean> cmd = new RedisCommand<Boolean>(jedisPool) {
 				@Override
 				protected Boolean build(Jedis jedis) {
-					jedis.setex(sid, 3600, data.toString());
+					jedis.setex(sid, SSO_SESSION_LIFETIME, data.toString());
 					return true;
 				}
 			};

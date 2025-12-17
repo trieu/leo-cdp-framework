@@ -24,7 +24,7 @@ import rfx.core.util.StringUtil;
  */
 public final class KeycloakUtils {
 
-	private static final int MAX_AGE_SSO_COOKIE = 8; // in seconds
+	private static final int MAX_AGE_SSO_COOKIE = 30; // in seconds
 	private static final int HTTP_CODE_SEE_OTHER_303 = 303;
 
 	private KeycloakUtils() {
