@@ -132,9 +132,11 @@ public class KeycloakClientSsoRouter {
 
 	    WebClientOptions opt = new WebClientOptions()
 	        .setSsl(isHttps)
-	        .setConnectTimeout(HTTP_CLIENT_TIMEOUT)     // TCP connect
-	        .setIdleTimeout(10)          // seconds
-	        .setKeepAlive(true);
+	        .setConnectTimeout(HTTP_CLIENT_TIMEOUT)     // 8 seconds to establish TCP connection
+	        .setIdleTimeout(10)         // 10 seconds to close idle connections
+	        .setKeepAlive(true)
+			.setLogActivity(true);   // Helpful for debugging network issues
+			;
 
 	    if (isHttps) {
 	        if (config.isVerifySSL()) {

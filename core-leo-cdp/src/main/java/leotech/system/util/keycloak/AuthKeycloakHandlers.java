@@ -274,6 +274,14 @@ public class AuthKeycloakHandlers {
         }
 
         String tokenUrl = kcEndpoint(config, URI_OPENID_CONNECT_TOKEN);
+        
+        // --- STEP 1: Set a hard safety timer ---
+        long timerId = ctx.vertx().setTimer(KC_REQUEST_TIMEOUT_MS, id -> {
+            if (!ctx.response().ended()) {
+                logger.error("Hard Timeout reached for ExchangeCode. Keycloak is unreachable.");
+                redirect(ctx, SsoRoutePaths.ERROR + "?error=timeout&detail=connection_to_iam_failed");
+            }
+        });
 
         MultiMap form = MultiMap.caseInsensitiveMultiMap()
                 .add(PARAM_GRANT_TYPE, GRANT_AUTH_CODE)
@@ -285,12 +293,18 @@ public class AuthKeycloakHandlers {
             form.add(PARAM_CLIENT_SECRET, config.getClientSecret());
         }
 
-        logger.info("Exchanging code at: {}", tokenUrl);
+        logger.info("Attempting code exchange: {}", tokenUrl);
 
         webClient.postAbs(tokenUrl)
-                .timeout(KC_REQUEST_TIMEOUT_MS) // <--- CRITICAL: Handle Timeout
+                .timeout(KC_REQUEST_TIMEOUT_MS) 
                 .sendForm(form, ar -> {
+                    // --- STEP 2: Cancel the safety timer as we got a response ---
+                    ctx.vertx().cancelTimer(timerId);
+
+                    if (ctx.response().ended()) return; // Already handled by timer
+
                     if (ar.failed()) {
+                        // This will catch "Connection Refused" or "Connect Timeout"
                         handleWebClientFailure(ctx, ar.cause(), "Token Exchange");
                         return;
                     }
@@ -301,22 +315,8 @@ public class AuthKeycloakHandlers {
                         return;
                     }
 
-                    try {
-                        JsonObject tokenJson = response.bodyAsJsonObject();
-                        String accessToken = tokenJson.getString(ACCESS_TOKEN);
-                        
-                        if(StringUtil.isEmpty(accessToken)) {
-                            logger.error("Token exchange succeeded but access_token is empty");
-                            redirect(ctx, SsoRoutePaths.ERROR + "?error=empty_access_token");
-                            return;
-                        }
-
-                        logger.info("Token exchange successful. Fetching user info...");
-                        fetchUserInfo(ctx, accessToken, tokenJson);
-                    } catch (Exception e) {
-                        logger.error("Failed to parse token JSON", e);
-                        redirect(ctx, SsoRoutePaths.ERROR + "?error=token_parse_error");
-                    }
+                    // ... proceed to fetchUserInfo
+                    fetchUserInfo(ctx, response.bodyAsJsonObject().getString(ACCESS_TOKEN), response.bodyAsJsonObject());
                 });
     }
 
@@ -423,12 +423,18 @@ public class AuthKeycloakHandlers {
      */
     private void handleWebClientFailure(RoutingContext ctx, Throwable cause, String actionName) {
         String errorMsg = "network_error";
-        if (cause instanceof TimeoutException) {
-            logger.error("{} timed out after {}ms", actionName, KC_REQUEST_TIMEOUT_MS);
+        
+        // Log the detailed exception to find out if it's DNS, Connection Refused, or Timeout
+        logger.error("Network Failure during {}: {}", actionName, cause.getMessage());
+
+        if (cause instanceof java.net.ConnectException || cause.getMessage().contains("Connection refused")) {
+            errorMsg = "connection_refused"; // Server is down or firewall blocked
+        } else if (cause instanceof java.util.concurrent.TimeoutException || cause.getMessage().contains("timeout")) {
             errorMsg = "timeout";
-        } else {
-            logger.error("{} failed: {}", actionName, cause.getMessage(), cause);
+        } else if (cause instanceof java.net.UnknownHostException) {
+            errorMsg = "dns_error"; // Cannot find iam.ttcgroup.vn
         }
+
         redirect(ctx, SsoRoutePaths.ERROR + "?error=" + errorMsg + "&action=" + actionName.replace(" ", "_"));
     }
 
