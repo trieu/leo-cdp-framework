@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>AI Touchpoints Table</title>
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet"/>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+<style>
+  body {
+    margin: 0;
+    background: #f7f9fc;
+    font-family: Inter, Segoe UI, Roboto, Arial, sans-serif;
+  }
+
+  svg {
+    width: 100%;
+    display: block;
+  }
+
+  .title { font-size: 26px; font-weight: 700; fill: #1f2a44; }
+  .subtitle { font-size: 16px; fill: #5b6b8b; }
+
+  .header { font-size: 14px; font-weight: 600; fill: #fff; }
+  .cell-text { font-size: 14px; fill: #1f2a44; cursor: pointer; }
+  .check { font-size: 18px; fill: #2e7d32; cursor: pointer; }
+
+  .stage-text {
+    font-size: 14px;
+    font-weight: 600;
+    fill: #fff;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+  }
+
+  .row-even { fill: #ffffff; }
+  .row-odd { fill: #f2f5fa; }
+
+  .row-bg:hover { fill: #e8f0fe; }
+
+  .grid-line { stroke: #e1e6ef; stroke-width: 1; }
+  .col-line { stroke: #d7ddea; stroke-width: 1; }
+</style>
+</head>
+
+<body>
+
+<svg id="chart"></svg>
+
+<script src="./js/matrix-touchpoint-render.js"></script>
+</body>
+</html>
