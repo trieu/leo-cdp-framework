@@ -37,11 +37,10 @@ import rfx.core.util.StringUtil;
  * - Adds comments and small clarifications to improve maintainability.
  */
 public class EventApiHandler extends BaseApiHandler {
-	
+
 	// API endpoints handled by this class
 	static final String API_EVENT_LIST = "/api/event/list";
 	static final String API_EVENT_SAVE = "/api/event/save";
-
 
 	// --------------------------
 	// HTTP handlers
@@ -57,11 +56,10 @@ public class EventApiHandler extends BaseApiHandler {
 				String metric = jsonData.getString(FIELD_METRIC, "").trim().toLowerCase();
 
 				if (metric.isEmpty()) {
-					return JsonDataPayload.fail("Missing event 'metric'");
+					return JsonDataPayload.fail("Missing field 'metric' in the event data");
 				}
 
 				String eventId = saveEventHandler(observer, req, metric, jsonData);
-
 				return JsonDataPayload.ok(uri, eventId);
 
 			default:
@@ -130,18 +128,16 @@ public class EventApiHandler extends BaseApiHandler {
 	}
 
 	/**
-	 * Save incoming event JSON payload into the system:
-	 * - parse identity and device/touchpoint info
-	 * - resolve or create profile
-	 * - build transaction if event is purchase/payment
-	 * - delegate to EventObserverManagement to persist
+	 * Save incoming event JSON payload into the system: - parse identity and
+	 * device/touchpoint info - resolve or create profile - build transaction if
+	 * event is purchase/payment - delegate to EventObserverManagement to persist
 	 *
 	 * All JSON field names pulled from constants at top of class.
 	 *
-	 * @param observer current EventObserver handling the request
-	 * @param req      HTTP request (used for fallback IP/user-agent retrieval)
+	 * @param observer  current EventObserver handling the request
+	 * @param req       HTTP request (used for fallback IP/user-agent retrieval)
 	 * @param eventName normalized event name (metric)
-	 * @param json     payload from client
+	 * @param json      payload from client
 	 * @return id of saved event (string) or error marker as produced by downstream
 	 */
 	protected static String saveEventHandler(EventObserver observer, HttpServerRequest req, String eventName,
@@ -177,13 +173,14 @@ public class EventApiHandler extends BaseApiHandler {
 		String sourceIP = json.getString(FIELD_SOURCE_IP, HttpWebParamUtil.getRemoteIP(req));
 		String userAgent = json.getString(FIELD_USER_AGENT, req.headers().get("User-Agent"));
 		Device userDevice = new Device(userAgent);
-		String userDeviceUUID = json.getString(FIELD_USER_DEVICE_UUID,"");
-		String fingerprintId = HashUtil.sha256(userDeviceUUID + observerId + userAgent + environment +journeyMapId);
+		String userDeviceUUID = json.getString(FIELD_USER_DEVICE_UUID, "");
+		String fingerprintId = HashUtil.sha256(userDeviceUUID + observerId + userAgent + environment);
 
 		// --- Touchpoint Info and creation/retrieval of Touchpoint entity ---
 		int tpType = json.getInteger(FIELD_TOUCHPOINT_TYPE, TouchpointType.DATA_OBSERVER);
 
-		// sanitize incoming touchpoint name / url via XSS filter util; fallback to observer defaults
+		// sanitize incoming touchpoint name / url via XSS filter util; fallback to
+		// observer defaults
 		String tpName = XssFilterUtil.safeGet(json, FIELD_TOUCHPOINT_NAME, observer.getName());
 		String tpUrl = XssFilterUtil.safeGet(json, FIELD_TOUCHPOINT_URL, observer.getDataSourceUrl());
 
@@ -203,7 +200,7 @@ public class EventApiHandler extends BaseApiHandler {
 		}
 
 		// --- Profile Lookup or Create using identity hierarchy ---
-		Profile profile = queryProfileByKeys(email, phone, crmId, appId, socialId, govId, fingerprintId);
+		Profile profile = getProfileByKeys(email, phone, crmId, appId, socialId, govId, fingerprintId);
 
 		if (profile != null) {
 			profile.setFirstName(firstName);
@@ -216,12 +213,11 @@ public class EventApiHandler extends BaseApiHandler {
 			profile.setLastSeenIp(sourceIP);
 			profile.setLastTouchpoint(sourceTp);
 			profile.setFingerprintId(fingerprintId);
-		}
-		else {
+		} else {
 			// create a minimal profile when none found
-			profile = ProfileDataManagement.createNewProfileAndSave(firstName, lastName, createdAt, observerId,
-					sourceTp, sourceIP, govId, phone, email, socialId, appId, crmId);
-			
+			profile = ProfileDataManagement.createNewProfile(firstName, lastName, createdAt, observerId, sourceTp,
+					sourceIP, govId, phone, email, socialId, appId, crmId);
+
 		}
 
 		// --- Extra Event Data fields ---
@@ -233,7 +229,6 @@ public class EventApiHandler extends BaseApiHandler {
 
 		// event-specific key/value map (nested object)
 		Map<String, Object> eventData = HttpWebParamUtil.getMapFromRequestParams(json, FIELD_EVENT_DATA);
-		
 
 		// --- Transaction construction (if this is a purchase/payment event) ---
 		boolean computeTotal = BehavioralEvent.Commerce.PURCHASE.equalsIgnoreCase(eventName)
@@ -242,74 +237,64 @@ public class EventApiHandler extends BaseApiHandler {
 		OrderTransaction txn = new OrderTransaction(createdAt, json, computeTotal);
 
 		// --- Persist the event via the observer management layer ---
-		return EventObserverManagement.saveEventFromApi(profile, observerId, fingerprintId, createdAt, journeyMapId, environment,
-				sourceIP, userDevice, tpType, tpName, tpUrl, refUrl, refDomain, eventName, message, eventData, rawJson,
-				txn, rating, imageUrls, videoUrls);
+		return EventObserverManagement.saveEventFromApi(profile, observerId, fingerprintId, createdAt, journeyMapId,
+				environment, sourceIP, userDevice, tpType, tpName, tpUrl, refUrl, refDomain, eventName, message,
+				eventData, rawJson, txn, rating, imageUrls, videoUrls);
 	}
 
 	/**
 	 * Resolve a Profile using identity keys in strict priority order.
 	 *
-	 * Identity resolution hierarchy:
-	 *   1. Government-issued ID   (strongest, unique)
-	 *   2. Phone number
-	 *   3. Email address
-	 *   4. CRM reference ID
-	 *   5. Application ID         (KiotViet, Pancake, Google, FB...)
-	 *   6. Social media ID        (zalo, facebook, linkedIn...)
-	 *   7. Fingerprint ID      = sha256(userDeviceUUID + observerId + userAgent + environment +journeyMapId)
+	 * Identity resolution hierarchy: 1. Government-issued ID (strongest, unique) 2.
+	 * Phone number 3. Email address 4. CRM reference ID 5. Application ID
+	 * (KiotViet, Pancake, Google, FB...) 6. Social media ID (zalo, facebook,
+	 * linkedIn...) 7. Fingerprint ID = sha256(userDeviceUUID + observerId +
+	 * userAgent + environment +journeyMapId)
 	 *
-	 * The method returns as soon as one match is found.
-	 * If no identity matches, returns null.
+	 * The method returns as soon as one match is found. If no identity matches,
+	 * returns null.
 	 */
-	private static Profile queryProfileByKeys(String email,
-	                                          String phone,
-	                                          String crmId,
-	                                          String appId,
-	                                          String socialId,
-	                                          String govId,
-	                                          String fingerprintId
-	                                          ) {
+	private static Profile getProfileByKeys(String email, String phone, String crmId, String appId, String socialId,
+			String govId, String fingerprintId) {
 
+		// 1. Email
+		if (StringUtil.isNotEmpty(email)) {
+			return ProfileQueryManagement.getByPrimaryEmail(email);
+		}
+
+
+		// 2. Phone
+		if (StringUtil.isNotEmpty(phone)) {
+			return ProfileQueryManagement.getByPrimaryPhone(phone);
+		}
 		
-		
-	    // 1. Government ID
-	    if (StringUtil.isNotEmpty(govId)) {
-	        return ProfileQueryManagement.getByGovernmentIssuedID(govId);
-	    }
+		// 3. Government ID
+		if (StringUtil.isNotEmpty(govId)) {
+			return ProfileQueryManagement.getByGovernmentIssuedID(govId);
+		}
 
-	    // 2. Phone
-	    if (StringUtil.isNotEmpty(phone)) {
-	        return ProfileQueryManagement.getByPrimaryPhone(phone);
-	    }
+		// 4. CRM ID
+		if (StringUtil.isNotEmpty(crmId)) {
+			return ProfileQueryManagement.getByCrmId(crmId);
+		}
 
-	    // 3. Email
-	    if (StringUtil.isNotEmpty(email)) {
-	        return ProfileQueryManagement.getByPrimaryEmail(email);
-	    }
+		// 5. Application ID
+		if (StringUtil.isNotEmpty(appId)) {
+			return ProfileQueryManagement.getByApplicationID(appId);
+		}
 
-	    // 4. CRM ID
-	    if (StringUtil.isNotEmpty(crmId)) {
-	        return ProfileQueryManagement.getByCrmId(crmId);
-	    }
+		// 6. Social Media ID
+		if (StringUtil.isNotEmpty(socialId)) {
+			return ProfileQueryManagement.getBySocialMediaId(socialId);
+		}
 
-	    // 5. Application ID
-	    if (StringUtil.isNotEmpty(appId)) {
-	        return ProfileQueryManagement.getByApplicationID(appId);
-	    }
+		// 7. fingerprintId (only for mobile app)
+		if (StringUtil.isNotEmpty(fingerprintId)) {
+			return ProfileQueryManagement.getByFingerprintId(fingerprintId);
+		}
 
-	    // 6. Social Media ID
-	    if (StringUtil.isNotEmpty(socialId)) {
-	        return ProfileQueryManagement.getBySocialMediaId(socialId);
-	    }
-	    
-	    // 7. fingerprintId (only for mobile app)
-	    if (StringUtil.isNotEmpty(fingerprintId)) {
-	        return ProfileQueryManagement.getByFingerprintId(fingerprintId);
-	    }
-
-	    // No identities found
-	    return null;
+		// No identities found
+		return null;
 	}
 
 }

@@ -216,7 +216,7 @@ public final class ProfileDataManagement {
 	 * @param crmId
 	 * @return
 	 */
-	public static ProfileSingleView createNewProfileAndSave(String fName, String lName, Date createdAt,
+	public static ProfileSingleView createNewProfile(String fName, String lName, Date createdAt,
 			String observerId, Touchpoint fromTouchpoint, String sourceIP, String govId, String phone, String email,
 			String socialId, String appId, String crmId) {
 		// create new profile from input data

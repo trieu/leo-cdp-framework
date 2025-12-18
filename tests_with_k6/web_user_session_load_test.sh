@@ -12,7 +12,7 @@ missing=""
 if [ -n "$missing" ]; then
     echo "ERROR: Missing required environment variables:$missing"
     echo "Usage example:"
-    echo "  CDP_HOSTNAME=datahub.1invest.vn EVENT_OBSERVER_ID=xxxx MAX_USER=1000 ./run_k6.sh"
+    echo "  CDP_HOSTNAME=obs.example.com EVENT_OBSERVER_ID=xxxx MAX_USER=1000 ./run_k6.sh"
     exit 1
 fi
 

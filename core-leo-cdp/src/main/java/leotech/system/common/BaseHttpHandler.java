@@ -1,11 +1,6 @@
 package leotech.system.common;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import leotech.system.model.JsonDataPayload;
-import redis.clients.jedis.JedisPool;
-import rfx.core.stream.cluster.ClusterDataManager;
 
 /**
  * @author Trieu Nguyen
@@ -29,10 +24,6 @@ public abstract class BaseHttpHandler {
 	public static final String CONTENT_TYPE_HTML = "text/html;charset=UTF-8";
 	public static final String CONTENT_TYPE_IMAGE_ICON = "image/x-icon";
 	
-	protected static JedisPool redisLocalCache = ClusterDataManager.getJedisClient();
-	protected static Logger logger = LoggerFactory.getLogger(BaseHttpHandler.class);
-	
-	
 	public final static class JsonErrorPayload {
 		public static final JsonDataPayload INVALID_CAPCHA_NUMBER = JsonDataPayload.fail("Invalid captcha number", 203);
 		public static final JsonDataPayload WRONG_USER_LOGIN = JsonDataPayload.fail("Invalid user login ID or password",202);
@@ -47,5 +38,4 @@ public abstract class BaseHttpHandler {
 		public static final JsonDataPayload INVALID_SSO_USER_SESSION = JsonDataPayload.fail("Invalid data, can not create SSO User Session", 508);
 		public static final JsonDataPayload ERROR = JsonDataPayload.fail("ERROR", 509);
 	}
-
 }

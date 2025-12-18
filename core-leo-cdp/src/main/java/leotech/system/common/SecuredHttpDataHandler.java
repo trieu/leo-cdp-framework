@@ -3,12 +3,15 @@ package leotech.system.common;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.devskiller.friendly_id.FriendlyId;
 
@@ -32,10 +35,12 @@ import leotech.system.util.keycloak.SessionRepository;
 import leotech.system.util.keycloak.SsoUserProfile;
 import leotech.system.version.SystemMetaData;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Pipeline;
 import redis.clients.jedis.Response;
 import redis.clients.jedis.exceptions.JedisException;
 import rfx.core.nosql.jedis.RedisCommand;
+import rfx.core.stream.cluster.ClusterDataManager;
 import rfx.core.util.StringUtil;
 
 /**
@@ -46,18 +51,20 @@ import rfx.core.util.StringUtil;
  */
 public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 
-	
+	static JedisPool redisCluster = ClusterDataManager.getJedisClient();
+	static Logger logger = LoggerFactory.getLogger(SecuredHttpDataHandler.class);
+
 	public static final int AFTER_15_MINUTES = 60 * 15;
 	public static final int AFTER_60_MINUTES = 60 * 60;
 	public static final int AFTER_3_DAYS = 60 * 60 * 24 * 3;
-	public static final int AFTER_7_DAYS = 60 * 60 * 24 * 7;	
+	public static final int AFTER_7_DAYS = 60 * 60 * 24 * 7;
 	public static final int SESSION_LIVE_TIME = AFTER_7_DAYS * 3; // 3 weeks = 21 days
 
 	private static final String CAPTCHA_IMAGE = "captchaImage";
 	private static final String USER_SESSION = "userSession";
 	private static final String SSO_USER_SESSION = "ssoUserSession";
 	private static final String SSO_USER_EMAIL = "ssoUserEmail";
-	
+
 	public static final boolean DEV_MODE = SystemMetaData.isDevMode();
 
 	// USER SESSION KEYS
@@ -73,8 +80,11 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 
 	public static final String ADMIN_HANDLER_SESSION_KEY = "leouss";
 	public static final String DATA_ACCESS_KEY = "dataAccessKey";
-
+	
+	final static String SSO_KEY = "sso";
 	final static int MAX_NUMBER = 1000000;
+	
+	private static final SecureRandom secureRandom = new SecureRandom();
 
 	// Define classes requiring operational role
 	private static final Set<Class<?>> OPERATION_ROLE_CLASS = Set.of(leotech.cdp.model.customer.Profile.class,
@@ -93,8 +103,7 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 	}
 
 	protected static int randomNumber() {
-		Random rand = new Random();
-		int n = rand.nextInt(MAX_NUMBER) + 1;
+		int n = secureRandom.nextInt(MAX_NUMBER) + 1;
 		return n;
 	}
 
@@ -155,7 +164,7 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 	 */
 	public static void setDataAccessKeyForSystemUser(String dataAccessKey, String systemUserId) {
 		try {
-			new RedisCommand<Void>(redisLocalCache) {
+			new RedisCommand<Void>(redisCluster) {
 				@Override
 				protected Void build(Jedis jedis) throws JedisException {
 					Pipeline p = jedis.pipelined();
@@ -177,7 +186,7 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 	public static boolean isAuthorization(String usersession) {
 		if (isValidUserSession(usersession)) {
 			try {
-				return new RedisCommand<Boolean>(redisLocalCache) {
+				return new RedisCommand<Boolean>(redisCluster) {
 					@Override
 					protected Boolean build(Jedis jedis) throws JedisException {
 						return jedis.exists(usersession);
@@ -200,7 +209,7 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 	public static SystemUser getUserByDataAccessKey(String dataAccessKey) {
 		CompletableFuture<SystemUser> systemUser = null;
 		try {
-			systemUser = new RedisCommand<SystemUser>(redisLocalCache) {
+			systemUser = new RedisCommand<SystemUser>(redisCluster) {
 				@Override
 				protected SystemUser build(Jedis jedis) throws JedisException {
 
@@ -240,7 +249,7 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 	public static SystemUser getSystemUserFromSession(String userSession) {
 		if (isValidUserSession(userSession)) {
 			try {
-				RedisCommand<SystemUser> cmd = new RedisCommand<SystemUser>(redisLocalCache) {
+				RedisCommand<SystemUser> cmd = new RedisCommand<SystemUser>(redisCluster) {
 					@Override
 					protected SystemUser build(Jedis jedis) throws JedisException {
 						Pipeline p = jedis.pipelined();
@@ -410,15 +419,15 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 	 * @param paramJson
 	 * @return
 	 */
-	protected static JsonDataPayload userLoginHandler(String userSession, String uri, JsonObject paramJson, Map<String, Cookie> cookieMap) {
+	protected static JsonDataPayload userLoginHandler(String userSession, String uri, JsonObject paramJson,
+			Map<String, Cookie> cookieMap) {
 		if (uri.equalsIgnoreCase(API_LOGIN_SESSION)) {
 			if (StringUtil.isEmpty(userSession)) {
 				return buildLoginSession(uri, paramJson, cookieMap);
 			} else {
 				return JsonDataPayload.ok(uri, userSession);
 			}
-		} 
-		else if (uri.equalsIgnoreCase(API_CHECK_LOGIN)) {
+		} else if (uri.equalsIgnoreCase(API_CHECK_LOGIN)) {
 			String userlogin = paramJson.getString("userlogin", "").trim();
 			String userpass = paramJson.getString("userpass", "").trim();
 			String captcha = paramJson.getString("captcha", "").trim();
@@ -442,10 +451,9 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 			} else {
 				return JsonErrorPayload.WRONG_USER_LOGIN;
 			}
-		}
-		else if( uri.equalsIgnoreCase(API_CHECK_SSO)) {
-			String userEmail = paramJson.getString(SSO_USER_EMAIL, "").trim();			
-			if(ProfileDataValidator.isValidEmail(userEmail)) {
+		} else if (uri.equalsIgnoreCase(API_CHECK_SSO)) {
+			String userEmail = paramJson.getString(SSO_USER_EMAIL, "").trim();
+			if (ProfileDataValidator.isValidEmail(userEmail)) {
 				JsonDataPayload checkLoginResult = JsonErrorPayload.INVALID_SSO_USER_SESSION;
 				try {
 					String ssosid = KeycloakUtils.getValueOfCookie(cookieMap, KeycloakConstants.COOKIE_SSO_SESSION_ID);
@@ -456,10 +464,9 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 					logger.error("userEmail " + userEmail + " " + e.getMessage());
 				}
 				return checkLoginResult;
-			}
-			else {
+			} else {
 				return JsonDataPayload.fail("SSO Login is failed, not valid email" + userEmail, 507);
-			}			
+			}
 		}
 		return JsonErrorPayload.NO_AUTHENTICATION;
 	}
@@ -471,42 +478,40 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 	 * @return
 	 */
 	private static JsonDataPayload buildLoginSession(String uri, JsonObject paramJson, Map<String, Cookie> cookieMap) {
-		String SSO_KEY = "sso";
 		boolean sso = paramJson.getBoolean(SSO_KEY, false);
-
 		if (sso) {
-			String encryptedValue = ADMIN_HANDLER_SESSION_KEY + SESSION_SPLITER + System.currentTimeMillis()
-					+ SESSION_SPLITER + randomNumber() + SESSION_SPLITER + SSO_KEY;
+			String encryptedValue = buildSessionData(SSO_KEY);
 			String userSession = EncryptorAES.encrypt(encryptedValue);
-			Map<String, String> data = new HashMap<>(2);
+			Map<String, String> data = new HashMap<>(5);
 			data.put(USER_SESSION, userSession);
 
 			Cookie sidCookie = cookieMap.get(KeycloakConstants.COOKIE_SSO_SESSION_ID);
 			String ssosid = sidCookie != null ? sidCookie.getValue() : "";
 			SsoUserProfile ssoUser = SessionRepository.getSsoUserProfileFromRedis(ssosid);
-			
-			if(ssoUser != null) {
-				data.put(SSO_USER_SESSION, ssosid);				
+
+			if (ssoUser != null) {
+				data.put(SSO_USER_SESSION, ssosid);
 				data.put(SSO_USER_EMAIL, ssoUser.getEmail());
-			}
-			else {
+			} else {
 				data.put(SSO_USER_EMAIL, "");
 			}
 			return JsonDataPayload.ok(uri, data);
 		} else {
 			CaptchaData capcha = CaptchaUtil.getRandomCaptcha();
 			String capchaContent = capcha.content;
-			String encryptedValue = ADMIN_HANDLER_SESSION_KEY + SESSION_SPLITER + System.currentTimeMillis()
-					+ SESSION_SPLITER + randomNumber() + SESSION_SPLITER + capchaContent;
+			String encryptedValue = buildSessionData(capchaContent);
 			String userSession = EncryptorAES.encrypt(encryptedValue);
-			Map<String, String> data = new HashMap<>(2);
+			Map<String, String> data = new HashMap<>(5);
 			data.put(USER_SESSION, userSession);
 			data.put(CAPTCHA_IMAGE, capcha.base64Image);
 			return JsonDataPayload.ok(uri, data);
 		}
 	}
 
-
+	private static String buildSessionData(String ssoKey) {
+		return ADMIN_HANDLER_SESSION_KEY + SESSION_SPLITER + System.currentTimeMillis()
+				+ SESSION_SPLITER + randomNumber() + SESSION_SPLITER + ssoKey;
+	}
 
 	/**
 	 * step 3:
@@ -534,8 +539,6 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 		}
 		return JsonErrorPayload.INVALID_CAPCHA_NUMBER;
 	}
-	
-
 
 	/**
 	 * @param segmentId
@@ -574,7 +577,7 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 	 */
 	private static void saveUserSession(String userLogin, String usersession, String encryptionKey) {
 		try {
-			new RedisCommand<Void>(redisLocalCache) {
+			new RedisCommand<Void>(redisCluster) {
 				@Override
 				protected Void build(Jedis jedis) throws JedisException {
 					Pipeline p = jedis.pipelined();
@@ -589,9 +592,6 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 			e.printStackTrace();
 		}
 	}
-	
-
-	
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -604,7 +604,8 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	abstract public JsonDataPayload httpPostHandler(String userSession, String uri, JsonObject paramJson, Map<String, Cookie> cookieMap) throws Exception;
+	abstract public JsonDataPayload httpPostHandler(String userSession, String uri, JsonObject paramJson,
+			Map<String, Cookie> cookieMap) throws Exception;
 
 	/**
 	 * HTTP get data handler for JSON
@@ -615,6 +616,7 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	abstract public JsonDataPayload httpGetHandler(String userSession, String uri, MultiMap params, Map<String, Cookie> cookieMap) throws Exception;
+	abstract public JsonDataPayload httpGetHandler(String userSession, String uri, MultiMap params,
+			Map<String, Cookie> cookieMap) throws Exception;
 
 }
