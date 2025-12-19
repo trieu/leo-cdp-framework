@@ -33,7 +33,8 @@ public class KeycloakVerticle extends AbstractVerticle {
 	}
 
 	private void startHttpServer(Router router, Promise<Void> startPromise) {
-		vertx.createHttpServer(new HttpServerOptions().setCompressionSupported(true)).requestHandler(router)
+		HttpServerOptions serverOptions = new HttpServerOptions().setCompressionSupported(true);
+		vertx.createHttpServer(serverOptions).requestHandler(router)
 				.listen(port, host, ar -> {
 					if (ar.succeeded()) {
 						logger.info("✅ Keycloak HTTP server started on {}:{}", host, ar.result().actualPort());

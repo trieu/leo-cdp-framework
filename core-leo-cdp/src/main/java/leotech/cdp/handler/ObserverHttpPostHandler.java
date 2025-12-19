@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 
 import io.vertx.core.MultiMap;
@@ -89,16 +88,13 @@ public final class ObserverHttpPostHandler {
 		}
 
 		if (StringUtil.isEmpty(eventsStr)) {
-			ObserverResponse.done(resp, 400, "", ctxSessionKey, 0);
+			ObserverResponse.done(resp, 400, "events in HTTP Body is empty!", ctxSessionKey, 0);
 			return;
 		}
 
-		List<EventPayload> events;
-		try {
-			events = gson.fromJson(eventsStr, EVENT_LIST_TYPE);
-		} catch (JsonSyntaxException e) {
-			System.err.println("JSON Parsing Error: " + e.getMessage());
-			ObserverResponse.done(resp, 400, "", ctxSessionKey, 0);
+		List<EventPayload> events = convertJsonToEvents(resp, ctxSessionKey, eventsStr);
+		if(events == null) {
+			ObserverResponse.done(resp, 500, "Processing batch events failed, can not parse JSON to EventPayload", ctxSessionKey, 0);
 			return;
 		}
 
@@ -158,6 +154,18 @@ public final class ObserverHttpPostHandler {
 		}
 
 		ObserverResponse.done(resp, 200, lastVisitorId, sessionKey, successCount);
+	}
+
+	private static List<EventPayload> convertJsonToEvents(HttpServerResponse resp, String ctxSessionKey,
+			String eventsStr) {
+		List<EventPayload> events = null;
+		try {
+			events = gson.fromJson(eventsStr, EVENT_LIST_TYPE);
+		} catch (Exception e) {
+			System.err.println("JSON Parsing Error: " + e.getMessage());
+			return events;
+		}
+		return events;
 	}
 
 	private static void saveEvent(HttpServerRequest req, DeviceInfo device, ContextSession ctxSession, MultiMap eventParams, String metricName) {
@@ -248,14 +256,12 @@ public final class ObserverHttpPostHandler {
 		ContextSession ctxSession = ContextSessionManagement.get(ctxSessionKey, ip, params, device);
 
 		int status = 500;
-
 		if (ctxSession != null && feedbackEvent != null) {
 			String eventId = EventObserverUtil.recordFeedbackEvent(req, device, ctxSession, feedbackEvent);
 			if (StringUtil.isNotEmpty(eventId)) {
 				status = 200;
 			}
-			ObserverResponse.done(resp, status, ctxSession.getVisitorId(), ctxSession.getSessionKey(),
-					DEFAULT_RESPONSE);
+			ObserverResponse.done(resp, status, ctxSession.getVisitorId(), ctxSession.getSessionKey(), DEFAULT_RESPONSE);
 		} else {
 			sendInvalidSessionError(resp, status);
 		}

@@ -1070,7 +1070,7 @@ AQL_GET_PROFILE_BY_FINGERPRINT_ID_FOR_ADMIN =>
 	LET fingerprintId = TO_STRING(@fingerprintId)
 	FOR p in cdp_profile 
 	FILTER p.status == 1 AND fingerprintId != "" AND p.fingerprintId == fingerprintId 
-			AND (@loginUsername IN p.authorizedViewers[*] OR @hasAdminRole == TRUE)
+			AND (@hasAdminRole == TRUE OR @loginUsername IN p.authorizedViewers[*])
 	SORT p.dataQualityScore DESC
 	LIMIT 1
 	RETURN p

@@ -148,7 +148,6 @@ public final class HttpWorker extends BaseWorker {
 				}
 			});
 
-			
 			HttpServer server = checkAndCreateHttpServer(host, port);
 			if (server == null) {
 				System.err.println("registerWorkerHttpRouter return NULL value");
@@ -187,10 +186,14 @@ public final class HttpWorker extends BaseWorker {
 	 * @return
 	 */
 	final void initEventBusHandler(Router router) {
-		 // EventBus bridge options
-	    BridgeOptions opts = new BridgeOptions()
-		  .addInboundPermitted(new PermittedOptions().setAddressRegex(WS_ADDRESS_NOTIFICATIONS))  // Allow inbound messages to any notification address
-		  .addOutboundPermitted(new PermittedOptions().setAddressRegex(WS_ADDRESS_NOTIFICATIONS));  // Allow outbound messages from any notification address
+		// EventBus bridge options
+	    BridgeOptions opts = new BridgeOptions();
+	    
+	    // Allow inbound messages to any notification address
+		opts.addInboundPermitted(new PermittedOptions().setAddressRegex(WS_ADDRESS_NOTIFICATIONS)) ; 
+		
+		// Allow outbound messages from any notification address
+		opts.addOutboundPermitted(new PermittedOptions().setAddressRegex(WS_ADDRESS_NOTIFICATIONS));  
 
 		SharedData data =  this.vertxInstance.sharedData();
 		WebSocketDataService repository = new WebSocketDataService(data);

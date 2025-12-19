@@ -43,7 +43,11 @@ import leotech.system.model.JsonDataPayload;
  */
 public final class AdminHttpRouter extends BaseWebRouter {
 
-    static Logger logger = LoggerFactory.getLogger(AdminHttpRouter.class);
+    private static final String HTTP_GET_HANDLER = "httpGetHandler";
+
+	private static final String HTTP_POST_HANDLER = "httpPostHandler";
+
+	static Logger logger = LoggerFactory.getLogger(AdminHttpRouter.class);
 
     // --- Route Constants ---
     public static final String CDP_JOURNEY_MAP_PREFIX = "/cdp/journeymap";
@@ -108,12 +112,11 @@ public final class AdminHttpRouter extends BaseWebRouter {
     @Override
     protected void callHttpPostHandler(HttpServerRequest req, String userSession, String uri, JsonObject paramJson,
             Consumer<JsonDataPayload> done) {
-        System.out.println("AdminHttpRouter paramJson " + paramJson);
         handleRequest(req, uri, done, (handler, cookies) -> {
             // reflection or casting required if no common interface exists.
             // Assuming common methods are available via reflection or BaseHandler
             // interface.
-            return invokeHandlerMethod(handler, "httpPostHandler",
+            return invokeHandlerMethod(handler, HTTP_POST_HANDLER,
                     new Object[] { userSession, uri, paramJson, cookies },
                     new Class[] { String.class, String.class, JsonObject.class, Map.class });
         });
@@ -123,7 +126,7 @@ public final class AdminHttpRouter extends BaseWebRouter {
     protected void callHttpGetHandler(HttpServerRequest req, String userSession, String uri, MultiMap urlParams,
             Consumer<JsonDataPayload> done) {
         handleRequest(req, uri, done, (handler, cookies) -> {
-            return invokeHandlerMethod(handler, "httpGetHandler", new Object[] { userSession, uri, urlParams, cookies },
+            return invokeHandlerMethod(handler, HTTP_GET_HANDLER, new Object[] { userSession, uri, urlParams, cookies },
                     new Class[] { String.class, String.class, MultiMap.class, Map.class });
         });
     }
@@ -142,8 +145,7 @@ public final class AdminHttpRouter extends BaseWebRouter {
                 if (handler != null) {
                     payload = action.apply(handler, cookieMap);
                 } else {
-                    // Fallback if no route matches (though BaseWebRouter likely handles routing
-                    // before this)
+                    // Fallback if no route matches (though BaseWebRouter likely handles routing before this)
                     payload = JsonDataPayload.fail("No handler found for URI: " + uri, 404);
                 }
             } catch (Throwable e) {

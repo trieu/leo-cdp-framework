@@ -261,37 +261,37 @@ public class EventApiHandler extends BaseApiHandler {
 		if (StringUtil.isNotEmpty(email)) {
 			return ProfileQueryManagement.getByPrimaryEmail(email);
 		}
+		
+		// 2. fingerprintId (only for mobile app)
+		if (StringUtil.isNotEmpty(fingerprintId)) {
+			return ProfileQueryManagement.getByFingerprintId(fingerprintId);
+		}
 
-
-		// 2. Phone
+		// 3. Phone
 		if (StringUtil.isNotEmpty(phone)) {
 			return ProfileQueryManagement.getByPrimaryPhone(phone);
 		}
 		
-		// 3. Government ID
+		// 4. Government ID
 		if (StringUtil.isNotEmpty(govId)) {
 			return ProfileQueryManagement.getByGovernmentIssuedID(govId);
 		}
 
-		// 4. CRM ID
+		// 5. CRM ID
 		if (StringUtil.isNotEmpty(crmId)) {
 			return ProfileQueryManagement.getByCrmId(crmId);
 		}
 
-		// 5. Application ID
+		// 6. Application ID
 		if (StringUtil.isNotEmpty(appId)) {
 			return ProfileQueryManagement.getByApplicationID(appId);
 		}
 
-		// 6. Social Media ID
+		// 7. Social Media ID
 		if (StringUtil.isNotEmpty(socialId)) {
 			return ProfileQueryManagement.getBySocialMediaId(socialId);
 		}
 
-		// 7. fingerprintId (only for mobile app)
-		if (StringUtil.isNotEmpty(fingerprintId)) {
-			return ProfileQueryManagement.getByFingerprintId(fingerprintId);
-		}
 
 		// No identities found
 		return null;
