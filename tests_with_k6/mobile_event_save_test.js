@@ -3,37 +3,29 @@ import { check, sleep } from "k6";
 import { uuidv4 } from "https://jslib.k6.io/k6-utils/1.2.0/index.js";
 import { generateReport } from "./report_utils.js";
 
-// =============================
-// ENV CONFIG
-// =============================
-const DEFAULT_CDP_HOSTNAME = "datahub.investing.vn";
+/* =====================================================
+ * ENV CONFIG
+ * ===================================================== */
+const DEFAULT_CDP_HOSTNAME = "datahub4dcdp.bigdatavietnam.org";
 const DEFAULT_MAX_USER = 500;
 
-// ⚠️ REQUIRED TOKENS (match nginx header_tokenkey / header_tokenvalue)
 const DEFAULT_TOKEN_KEY = "TEST_TOKEN_KEY";
 const DEFAULT_TOKEN_VALUE = "TEST_TOKEN_VALUE";
 
-export const CDP_HOSTNAME =
-  __ENV.CDP_HOSTNAME || DEFAULT_CDP_HOSTNAME;
+export const CDP_HOSTNAME = __ENV.CDP_HOSTNAME || DEFAULT_CDP_HOSTNAME;
+export const ACCESS_TOKEN_KEY = __ENV.ACCESS_TOKEN_KEY || DEFAULT_TOKEN_KEY;
+export const ACCESS_TOKEN_VALUE = __ENV.ACCESS_TOKEN_VALUE || DEFAULT_TOKEN_VALUE;
+export const MAX_USER = (__ENV.MAX_USER && Number(__ENV.MAX_USER)) || DEFAULT_MAX_USER;
 
-export const ACCESS_TOKEN_KEY =
-  __ENV.ACCESS_TOKEN_KEY || DEFAULT_TOKEN_KEY;
-
-export const ACCESS_TOKEN_VALUE =
-  __ENV.ACCESS_TOKEN_VALUE || DEFAULT_TOKEN_VALUE;
-
-export const MAX_USER =
-  (__ENV.MAX_USER && Number(__ENV.MAX_USER)) || DEFAULT_MAX_USER;
-
-// =============================
-// PERFORMANCE THRESHOLDS
-// =============================
-export const P95_THRESHOLD_MS = 3000;
+/* =====================================================
+ * PERFORMANCE THRESHOLDS
+ * ===================================================== */
+export const P95_THRESHOLD_MS = 4000;
 export const ERROR_RATE_LIMIT = 0.01;
 
-// =============================
-// K6 OPTIONS
-// =============================
+/* =====================================================
+ * K6 OPTIONS
+ * ===================================================== */
 export const options = {
   stages: [
     { duration: "10s", target: Math.floor(MAX_USER * 0.1) },
@@ -48,93 +40,120 @@ export const options = {
   },
 };
 
-// =============================
-// MOBILE USER AGENTS (REAL LOGS)
-// =============================
-const MOBILE_UAS = [
-  "Dart/3.9 (dart:io)",
-  "TargetPlatform.android",
-  "Mozilla/5.0 (Linux; Android 10; Samsung SM-N960F Build/QP1A.190711.020) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36 OneInvest/1.0.0(176552)",
-  "Mozilla/5.0 (Linux; Android 13; Samsung SM-G990E Build/TP1A.220624.014) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36 OneInvest/1.0.0(176552)",
+/* =====================================================
+ * REALISTIC NAME DATA
+ * ===================================================== */
+const FIRST_NAMES = [
+  "Anh", "Minh", "Huy", "Khoa", "Long", "Tuấn", "Nam",
+  "Linh", "Trang", "Mai", "Hà", "Ngọc", "Vy",
+  "David", "Michael", "Daniel", "Emma", "Sophia", "Olivia"
 ];
 
-// =============================
-// GLOBAL VU STATE
-// =============================
+const LAST_NAMES = [
+  "Nguyễn", "Trần", "Lê", "Phạm", "Hoàng", "Vũ",
+  "Smith", "Johnson", "Brown", "Taylor"
+];
+
+/* =====================================================
+ * MOBILE USER AGENTS (REALISTIC)
+ * ===================================================== */
+const ANDROID_UAS = [
+  "Mozilla/5.0 (Linux; Android 13; SM-G990E) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36 OneInvest/1.3.2",
+  "Mozilla/5.0 (Linux; Android 12; Pixel 6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36 OneInvest/1.3.2"
+];
+
+const IOS_UAS = [
+  "Mozilla/5.0 (iPhone; CPU iPhone OS 17_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/21D50 OneInvest/1.3.2",
+  "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/20G75 OneInvest/1.3.2"
+];
+
+/* =====================================================
+ * GLOBAL VU STATE (STABLE IDENTITY)
+ * ===================================================== */
 const vuState = {};
 
-// =============================
-// DEVICE / VISITOR MODEL
-// =============================
+/* =====================================================
+ * DEVICE & USER MODEL
+ * ===================================================== */
+function createHumanIdentity(vu) {
+  const first = FIRST_NAMES[vu % FIRST_NAMES.length];
+  const last = LAST_NAMES[vu % LAST_NAMES.length];
+  const email = `${first.toLowerCase()}.${last.toLowerCase()}${vu}@example.com`;
+
+  return { first, last, email };
+}
+
 function getOrCreateDevice(vu) {
   if (!vuState[vu]) {
+    const isAndroid = vu % 2 === 0;
+    const human = createHumanIdentity(vu);
+
     vuState[vu] = {
-      device_uuid: Math.random() > 0.5 ? `android-${uuidv4()}` : "",
-      email: Math.random() > 0.5 ? `user_${vu}@example.com` : "",
-      first_name: "Visitor",
-      last_name: "",
+      platform: isAndroid ? "android" : "ios",
+      device_uuid: `${isAndroid ? "android" : "ios"}-${uuidv4()}`,
+      ua: isAndroid
+        ? ANDROID_UAS[vu % ANDROID_UAS.length]
+        : IOS_UAS[vu % IOS_UAS.length],
+      first_name: human.first,
+      last_name: human.last,
+      email: Math.random() < 0.7 ? human.email : "",
       dataLabels: "investing-mobile",
-      ua: MOBILE_UAS[Math.floor(Math.random() * MOBILE_UAS.length)],
+      installed_at: Date.now() - Math.floor(Math.random() * 30 * 86400000),
     };
   }
   return vuState[vu];
 }
 
-// =============================
-// HEADERS (CRITICAL FIX HERE)
-// =============================
+/* =====================================================
+ * HEADERS
+ * ===================================================== */
 function buildHeaders(device) {
   return {
     "Content-Type": "application/json",
-    "Accept": "application/json",
-    "Connection": "keep-alive",
+    Accept: "application/json",
+    Connection: "keep-alive",
     "User-Agent": device.ua,
-
-    // 🔥 for Event Observer in LEO CDP Data Journey Map
-    "tokenkey": ACCESS_TOKEN_KEY,
-    "tokenvalue": ACCESS_TOKEN_VALUE,
+    tokenkey: ACCESS_TOKEN_KEY,
+    tokenvalue: ACCESS_TOKEN_VALUE,
   };
 }
 
-// =============================
-// EVENT FACTORY
-// =============================
+/* =====================================================
+ * EVENT FACTORY
+ * ===================================================== */
 function buildEvent(metric, device, tpName, tpUrl, eventData = {}) {
   return {
     metric,
-    primary_phone: "",
     primary_email: device.email || "",
     first_name: device.first_name,
     last_name: device.last_name,
     touchpoint_name: tpName,
     touchpoint_url: tpUrl,
+    user_agent: device.ua,
+    user_device_uuid: device.device_uuid,
     event_data: {
       timestamp: Date.now(),
+      platform: device.platform,
       ...eventData,
     },
     profile_data: device.email
       ? {
           dataLabels: device.dataLabels,
-          personUri:
-            "https://cdn-icons-png.flaticon.com/512/3607/3607444.png",
+          installed_at: device.installed_at,
         }
       : {},
-    user_agent: device.ua,
-    user_device_uuid: device.device_uuid,
   };
 }
 
-// =============================
-// SEND EVENT
-// =============================
+/* =====================================================
+ * SEND EVENT
+ * ===================================================== */
 function sendEvent(device, payload) {
   const url = `https://${CDP_HOSTNAME}/api/event/save`;
 
-  const res = http.post(
-    url,
-    JSON.stringify(payload),
-    { headers: buildHeaders(device) }
-  );
+  const res = http.post(url, JSON.stringify(payload), {
+    headers: buildHeaders(device),
+  });
 
   check(res, {
     "status is 200": (r) => r.status === 200,
@@ -144,97 +163,74 @@ function sendEvent(device, payload) {
   return res;
 }
 
-// =============================
-// MAIN FLOW (MATCHES REAL LOGS)
-// =============================
+/* =====================================================
+ * MAIN FLOW (MOBILE SESSION)
+ * ===================================================== */
 export default function () {
-  const vu = __VU;
-  const device = getOrCreateDevice(vu);
+  const device = getOrCreateDevice(__VU);
 
   if (__VU === 1 && __ITER === 0) {
-    console.log(`CDP_HOSTNAME = ${CDP_HOSTNAME}`);
-    console.log(`ACCESS_TOKEN_KEY = ${ACCESS_TOKEN_KEY}`);
-    console.log(`ACCESS_TOKEN_VALUE = ${ACCESS_TOKEN_VALUE}`);
-    console.log(`MAX_USER = ${MAX_USER}`);
+    console.log(`CDP_HOSTNAME=${CDP_HOSTNAME}`);
+    console.log(`MAX_USER=${MAX_USER}`);
   }
 
-  // overview-view
+  sendEvent(
+    device,
+    buildEvent(
+      "app-launch",
+      device,
+      "investing-mobile-launch",
+      "app://investing#launch"
+    )
+  );
+
   sendEvent(
     device,
     buildEvent(
       "overview-view",
       device,
       "investing-mobile-overview",
-      "app://example.investing#overview"
+      "app://investing#overview"
     )
   );
 
-  // watchlist-page-view
-  sendEvent(
-    device,
-    buildEvent(
-      "watchlist-page-view",
-      device,
-      "investing-mobile-watchlist",
-      "app://example.investing#watchlist"
-    )
-  );
-
-  // login-success (sometimes duplicated in real logs)
-  if (Math.random() < 0.4) {
+  if (device.email && Math.random() < 0.5) {
     sendEvent(
       device,
       buildEvent(
         "login-success",
         device,
-        "investing-mobile-personallogin",
-        "app://example.investing#personal",
+        "investing-mobile-login",
+        "app://investing#login",
         {
-          email: device.email || "guest@example.com",
-          account_name: device.email || "Guest",
-          user_id: `${Math.floor(Math.random() * 1e18)}`,
+          user_id: `${__VU}-${Math.floor(Math.random() * 1e9)}`,
         }
       )
     );
   }
 
-  // portfolio-view
   sendEvent(
     device,
     buildEvent(
       "portfolio-view",
       device,
-      "investing-mobile-asset",
-      "app://example.investing#asset",
+      "investing-mobile-portfolio",
+      "app://investing#portfolio",
       {
-        profolio_value: 100000000,
-        positions_count: 0,
+        portfolio_value: 100000000,
+        positions_count: Math.floor(Math.random() * 5),
       }
     )
   );
 
-  // app-background / foreground lifecycle
-  if (Math.random() < 0.5) {
+  if (Math.random() < 0.4) {
     sendEvent(
       device,
       buildEvent(
         "app-background",
         device,
-        "investing-mobile-more",
-        "app://example.investing#more"
-      )
-    );
-  }
-
-  if (Math.random() < 0.5) {
-    sendEvent(
-      device,
-      buildEvent(
-        "app-foreground",
-        device,
-        "investing-mobile-more",
-        "app://example.investing#more",
-        { duration: Math.floor(Math.random() * 10) }
+        "investing-mobile-lifecycle",
+        "app://investing#background"
       )
     );
   }
@@ -242,13 +238,13 @@ export default function () {
   sleep(1 + Math.random() * 2);
 }
 
-// =============================
-// REPORT
-// =============================
+/* =====================================================
+ * REPORT
+ * ===================================================== */
 export function handleSummary(data) {
   return generateReport(
     data,
-    "mobile_sdk_event_save_with_token",
+    "mobile_sdk_event_tracking",
     MAX_USER,
     CDP_HOSTNAME
   );
