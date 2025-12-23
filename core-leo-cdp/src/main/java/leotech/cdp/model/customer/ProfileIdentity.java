@@ -57,7 +57,10 @@ public final class ProfileIdentity {
 	
 	
 	public final static String buildIdPrefix(String provider, String id) {
-		return provider + id;
+		if(provider.trim().endsWith(":")) {
+			return provider + id;
+		}
+		return provider + ":" + id;
 	}
 
 	@Key
