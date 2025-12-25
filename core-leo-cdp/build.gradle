@@ -121,9 +121,6 @@ dependencies {
     // ────────────────────── CSV / TSV Parser ──────────────────────
     implementation 'com.univocity:univocity-parsers:2.9.1'
 
-    // ────────────────────── Expression Language ──────────────────────
-    implementation 'org.mvel:mvel2:2.5.2.Final'
-
     // ────────────────────── Database Drivers ──────────────────────
     implementation 'com.mysql:mysql-connector-j:9.5.0'
     implementation 'org.postgresql:postgresql:42.7.8'

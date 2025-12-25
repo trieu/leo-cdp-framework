@@ -13,6 +13,7 @@ import leotech.cdp.domain.ActivationRuleManagement;
 import leotech.cdp.domain.AgentManagement;
 import leotech.cdp.model.activation.ActivationRule;
 import leotech.cdp.model.activation.Agent;
+import leotech.cdp.model.activation.TimeUnitCode;
 import leotech.system.common.BaseHttpRouter;
 import leotech.system.common.SecuredHttpDataHandler;
 import leotech.system.model.JsonDataPayload;
@@ -101,6 +102,7 @@ public final class AgentHandler extends SecuredHttpDataHandler {
 					// default Do immediately and only once
 					String timeToStart = HttpWebParamUtil.getString(paramJson, "timeToStart", "");
 					int schedulingTime = HttpWebParamUtil.getInteger(paramJson, "schedulingTime", 0);
+					int timeUnit = HttpWebParamUtil.getInteger(paramJson, "timeUnit", TimeUnitCode.SECOND);
 
 					String triggerEventName = HttpWebParamUtil.getString(paramJson,"triggerEventName", DataServiceJob.EVENT_RUN_DEFAULT_JOB);
 					if (StringUtil.isEmpty(triggerEventName)) {
@@ -108,7 +110,7 @@ public final class AgentHandler extends SecuredHttpDataHandler {
 					}
 					
 					// ok, ready to run
-					String id = AgentManagement.activate(loginUser, purpose, dataServiceId, timeToStart, schedulingTime, segmentId, triggerEventName);
+					String id = AgentManagement.activate(loginUser, purpose, dataServiceId, timeToStart, schedulingTime, timeUnit, segmentId, triggerEventName);
 					if (id != null) {
 						return JsonDataPayload.ok(uri, id, loginUser, Agent.class);
 					}

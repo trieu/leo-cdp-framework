@@ -48,7 +48,6 @@ import leotech.cdp.model.journey.JourneyMapRefKey;
 import leotech.cdp.model.journey.Touchpoint;
 import leotech.cdp.model.journey.TouchpointHub;
 import leotech.cdp.model.journey.TouchpointType;
-import leotech.cdp.model.marketing.NextBestAction;
 import leotech.system.util.LogUtil;
 import leotech.system.util.TaskRunner;
 import leotech.system.util.XssFilterUtil;
@@ -464,17 +463,7 @@ public final class UpdateProfileEventProcessor {
 			}
 		}
 		
-		if(updateCount > 0) {
-			String eventMetricId = eventMetric.getId();
-			if(eventMetricId.equals(BehavioralEvent.Commerce.PURCHASE)) {
-				profile.removeNextBestAction(NextBestAction.ADD_ITEM_TO_CART);
-				profile.removeNextBestAction(NextBestAction.CHECKOUT_ITEMS_IN_CART);
-				profile.setNextBestActions(NextBestAction.BROWSING_RALATED_ITEMS);
-			}
-			else if(eventMetricId.equals(BehavioralEvent.Commerce.SUBSCRIBE)) {
-				profile.setNextBestActions(NextBestAction.JOIN_A_COMMUNITY);
-			}
-		}
+		
 	}
 
 	private static void commitTransactionDataToDb(ProfileSingleView profile, EventMetric eventMetric,
@@ -533,16 +522,6 @@ public final class UpdateProfileEventProcessor {
 			}
 		}
 		
-		// all marketing metrics must go to the checkout process, ready to make payment for a transaction
-		String id = eventMetric.getId();
-		if(id.equals(BehavioralEvent.Commerce.ADD_TO_CART)) {
-			profile.setNextActionForItems(NextBestAction.CHECKOUT_ITEMS_IN_CART, cartItems);
-		}
-		else if(id.equals(BehavioralEvent.Commerce.ORDER_CHECKOUT)) {
-			profile.setNextActionForItems(NextBestAction.BUY_SOME_ITEMS, cartItems);
-			profile.removeNextBestAction(NextBestAction.CHECKOUT_ITEMS_IN_CART);
-		}
-		// end
 	}
 	
 
@@ -586,7 +565,7 @@ public final class UpdateProfileEventProcessor {
 				
 				Set<OrderedItem> cartItems = new HashSet<>(1);
 				cartItems.add(cartItem);
-				profile.setNextActionForItems(NextBestAction.ADD_ITEM_TO_CART, cartItems);
+				profile.setShoppingItems(cartItems);
 			}
 		}
 		else if(StringUtil.isNotEmpty(contentId)) {

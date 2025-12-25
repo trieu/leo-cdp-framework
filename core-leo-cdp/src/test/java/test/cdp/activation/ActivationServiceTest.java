@@ -6,7 +6,7 @@ import rfx.core.util.Utils;
 public class ActivationServiceTest {
 
 	public static void main(String[] args) {
-		ActivationRuleManagement.startScheduledJobsForAllDataServices();
+		ActivationRuleManagement.startDataServices();
 		Utils.exitSystemAfterTimeout(60000);
 	}
 	

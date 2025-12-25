@@ -3,9 +3,7 @@ package leotech.cdp.model.marketing;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import com.arangodb.ArangoCollection;
 import com.arangodb.ArangoDatabase;
@@ -14,24 +12,33 @@ import com.arangodb.model.PersistentIndexOptions;
 import com.github.slugify.Slugify;
 import com.google.gson.annotations.Expose;
 
+import leotech.cdp.model.activation.TimeUnitCode;
 import leotech.system.model.SystemUser;
 import leotech.system.util.database.PersistentObject;
 import rfx.core.util.StringUtil;
 
 /**
- * Campaign is defined as a series of organized actions which are done for one purpose <br><br>
+ * Campaign is defined as a series of organized actions which are done for one
+ * purpose <br>
+ * <br>
  * 
- * It can target directly into all profiles in a customer segment in omni-channel. 
- * It can send directly reports to marketer via email or notification <br><br>
+ * It can target directly into all profiles in a customer segment in
+ * omni-channel. It can send directly reports to marketer via email or
+ * notification <br>
+ * <br>
  * 
  * It contains 4 financial metrics for ROI calculation: estimated cost, real
- * cost, estimated revenue and real revenue <br><br>
+ * cost, estimated revenue and real revenue <br>
+ * <br>
  * 
- * A campaign can have products or/and services to offer customer
- * directly via email or push notification <br><br>
+ * A campaign can have products or/and services to offer customer directly via
+ * email or push notification <br>
+ * <br>
  * 
- * Also need a set of activation rules (stored in automatedFlowJson) to evaluate real-time profile data and
- * fire reactive actions: sending email or message to offer a product <br><br>
+ * Also need a set of activation rules (stored in automatedFlowJson) to evaluate
+ * real-time profile data and fire reactive actions: sending email or message to
+ * offer a product <br>
+ * <br>
  * 
  * <b> Final Goal: Increasing the average customer lifetime value </b> <br>
  * 
@@ -59,9 +66,6 @@ public final class Campaign extends PersistentObject implements Comparable<Campa
 	String id = null;
 
 	@Expose
-	String tagName;
-
-	@Expose
 	String name;
 
 	@Expose
@@ -72,55 +76,64 @@ public final class Campaign extends PersistentObject implements Comparable<Campa
 
 	@Expose
 	int type = CampaignType.USER_DEFINED;
-	
+
 	@Expose
 	String automatedFlowJson = "";
 
 	@Expose
 	int status = STATUS_DRAFT;
-
-	@Expose
-	Set<String> targetedSegmentIds = new HashSet<>(); // what are the targeted segments of campaign
+	
 	
 	@Expose
+	String agentPersona = ""; // Agent Persona
+	
+	@Expose
+	List<Scenario> scenarios = new ArrayList<Scenario>();
+	
+	@Expose
+	String targetSegmentId = ""; // what is the targeted segment of campaign
+
+	@Expose
 	@com.arangodb.velocypack.annotations.Expose(serialize = false, deserialize = true)
-	List<String> targetedSegmentNames = new ArrayList<>(); // will be load from query
+	String targetSegmentName = ""; // will be load from AQL join
 
 	@Expose
-	String ownerUsername  =SystemUser.SUPER_ADMIN_LOGIN; // the owner or creator of campaign
+	String ownerUsername = SystemUser.SUPER_ADMIN_LOGIN; // the owner or creator of campaign
 
 	@Expose
-	List<String> reportedUsernames = Arrays.asList("superadmin");// whose (in the organization) can be received campaign report via email
+	List<String> reportedUsernames = Arrays.asList(SystemUser.SUPER_ADMIN_LOGIN);// whos can be received reports via email
 
 	@Expose
-	double estimatedCost = 0; // the estimated cost to run marketing campaign
+	double maxBudget = 0; // the estimated maximum budget to run marketing campaign
 
 	@Expose
-	double realCost = 0;  // the real cost to run marketing campaign
+	double spentBudget = 0; // the real spending budget to run marketing campaign
 
 	@Expose
-	double estimatedRevenue = 0;
+	int communicationFrequency = 1; // default is daily communication via Email or Chatbot
 
 	@Expose
-	double realRevenue = 0;
+	int timeUnit = TimeUnitCode.DAY;
 
 	@Expose
 	Date createdAt = null;
 
 	@Expose
 	Date updatedAt = null;
-	
+
 	// the time will set when run a campaign
 
 	@Expose
 	Date startDate = null; // if == null, means run immediately after status == STATUS_IN_PROGRESS
-	
+
 	@Expose
 	Date lastRunAt = null;
 
 	@Expose
 	Date endDate = null; // if == null, means run forever likes email marketing
 	
+	@Expose
+	String tagName;
 
 	@Override
 	public ArangoCollection getDbCollection() {
@@ -129,13 +142,17 @@ public final class Campaign extends PersistentObject implements Comparable<Campa
 			dbCollection = arangoDatabase.collection(COLLECTION_NAME);
 			// ensure indexing key fields for fast lookup
 			dbCollection.ensurePersistentIndex(Arrays.asList("tagName"), new PersistentIndexOptions().unique(false));
-			dbCollection.ensurePersistentIndex(Arrays.asList("ownerUsername"), new PersistentIndexOptions().unique(false));
-			dbCollection.ensurePersistentIndex(Arrays.asList("reportedUsernames[*]"),new PersistentIndexOptions().unique(false));
+			dbCollection.ensurePersistentIndex(Arrays.asList("ownerUsername"),
+					new PersistentIndexOptions().unique(false));
+			dbCollection.ensurePersistentIndex(Arrays.asList("reportedUsernames[*]"),
+					new PersistentIndexOptions().unique(false));
 			dbCollection.ensurePersistentIndex(Arrays.asList("type"), new PersistentIndexOptions().unique(false));
 			dbCollection.ensurePersistentIndex(Arrays.asList("status"), new PersistentIndexOptions().unique(false));
 			dbCollection.ensurePersistentIndex(Arrays.asList("name"), new PersistentIndexOptions().unique(false));
-			dbCollection.ensurePersistentIndex(Arrays.asList("keywords[*]"),new PersistentIndexOptions().unique(false));
-			dbCollection.ensurePersistentIndex(Arrays.asList("targetedSegmentIds[*]"),new PersistentIndexOptions().unique(false));
+			dbCollection.ensurePersistentIndex(Arrays.asList("keywords[*]"),
+					new PersistentIndexOptions().unique(false));
+			dbCollection.ensurePersistentIndex(Arrays.asList("targetSegmentId"),
+					new PersistentIndexOptions().unique(false));
 			dbCollection.ensurePersistentIndex(Arrays.asList("createdAt"), new PersistentIndexOptions().unique(false));
 		}
 		return dbCollection;
@@ -143,8 +160,8 @@ public final class Campaign extends PersistentObject implements Comparable<Campa
 
 	@Override
 	public boolean dataValidation() {
-		boolean ok = StringUtil.isNotEmpty(name) && StringUtil.isNotEmpty(ownerUsername) 
-				&& StringUtil.isNotEmpty(automatedFlowJson) && this.targetedSegmentIds.size() > 0;
+		boolean ok = StringUtil.isNotEmpty(name) && StringUtil.isNotEmpty(ownerUsername)
+				&& StringUtil.isNotEmpty(automatedFlowJson) && StringUtil.isNotEmpty(targetSegmentId);
 		return ok;
 	}
 
@@ -153,43 +170,41 @@ public final class Campaign extends PersistentObject implements Comparable<Campa
 	}
 
 	/**
-	 * @param targetedSegmentIds
+	 * @param targetedSegmentId
 	 * @param name
 	 * @param tagName
 	 * @param type
 	 * @param automatedFlowJson
 	 */
-	public Campaign(List<String> targetedSegmentIds, String name, String tagName, int type, String automatedFlowJson) {
+	public Campaign(String targetedSegmentId, String name, String tagName, int type, String automatedFlowJson) {
 		super();
-		setTargetedSegmentIds(targetedSegmentIds);
+		setTargetSegmentId(targetedSegmentId);
 		initData(name, tagName, type, automatedFlowJson);
 	}
-	
 
 	/**
-	 * @param targetedSegmentIds
+	 * @param targetedSegmentId
 	 * @param name
 	 * @param tagName
 	 * @param automatedFlowJson
 	 */
-	public Campaign(List<String> targetedSegmentIds, String name, String tagName, String automatedFlowJson) {
+	public Campaign(String targetedSegmentId, String name, String tagName, String automatedFlowJson) {
 		super();
-		setTargetedSegmentIds(targetedSegmentIds);
+		setTargetSegmentId(targetedSegmentId);
 		initData(name, tagName, CampaignType.USER_DEFINED, automatedFlowJson);
 	}
-	
+
 	/**
-	 * @param targetedSegmentIds
+	 * @param targetedSegmentId
 	 * @param name
 	 * @param automatedFlowJson
 	 */
-	public Campaign(List<String> targetedSegmentIds, String name, String automatedFlowJson) {
+	public Campaign(String targetedSegmentId, String name, String automatedFlowJson) {
 		super();
-		setTargetedSegmentIds(targetedSegmentIds);
+		setTargetSegmentId(targetedSegmentId);
 		initData(name, "", CampaignType.USER_DEFINED, automatedFlowJson);
 	}
 
-	
 	/**
 	 * @param name
 	 * @param tagName
@@ -199,10 +214,9 @@ public final class Campaign extends PersistentObject implements Comparable<Campa
 	void initData(String name, String tagName, int type, String automatedFlowJson) {
 		this.name = name;
 		this.type = type;
-		if(StringUtil.isNotEmpty(tagName)) {
+		if (StringUtil.isNotEmpty(tagName)) {
 			this.tagName = tagName;
-		}
-		else {
+		} else {
 			// if tagName is empty, then slugify the name as tagName
 			this.tagName = new Slugify().slugify(name).replace("-", "_").replace(" ", "_");
 		}
@@ -215,7 +229,8 @@ public final class Campaign extends PersistentObject implements Comparable<Campa
 	@Override
 	public String buildHashedId() throws IllegalArgumentException {
 		if (dataValidation()) {
-			String keyHint = this.name + this.type + this.createdAt + this.automatedFlowJson + this.targetedSegmentIds.toString();
+			String keyHint = this.name + this.type + this.createdAt + this.communicationFrequency + this.maxBudget
+					+ this.automatedFlowJson + this.targetSegmentId;
 			this.id = createId(this.id, keyHint);
 		} else {
 			newIllegalArgumentException("name and tagName are required ");
@@ -262,21 +277,21 @@ public final class Campaign extends PersistentObject implements Comparable<Campa
 	public void setStatus(int status) {
 		this.status = status;
 	}
-	
-	public double getEstimatedRevenue() {
-		return estimatedRevenue;
+
+	public String getTargetSegmentId() {
+		return targetSegmentId;
 	}
 
-	public void setEstimatedRevenue(double estimatedRevenue) {
-		this.estimatedRevenue = estimatedRevenue;
+	public void setTargetSegmentId(String targetSegmentId) {
+		this.targetSegmentId = targetSegmentId;
 	}
 
-	public double getRealRevenue() {
-		return realRevenue;
+	public String getTargetSegmentName() {
+		return targetSegmentName;
 	}
 
-	public void setRealRevenue(double realRevenue) {
-		this.realRevenue = realRevenue;
+	public void setTargetSegmentName(String targetedSegmentName) {
+		this.targetSegmentName = targetedSegmentName;
 	}
 
 	@Override
@@ -301,7 +316,7 @@ public final class Campaign extends PersistentObject implements Comparable<Campa
 	public Date getUpdatedAt() {
 		return updatedAt;
 	}
-	
+
 	@Override
 	public long getMinutesSinceLastUpdate() {
 		return getDifferenceInMinutes(this.updatedAt);
@@ -328,25 +343,6 @@ public final class Campaign extends PersistentObject implements Comparable<Campa
 		this.keywords = keywords;
 	}
 //
-	public Set<String> getTargetedSegmentIds() {
-		return targetedSegmentIds;
-	}
-
-	public void setTargetedSegmentIds(Set<String> targetedSegmentIds) {
-		if(targetedSegmentIds != null) {
-			if(targetedSegmentIds.size() > 0) {
-				this.targetedSegmentIds = targetedSegmentIds;
-			}
-		}
-	}
-	
-	public void setTargetedSegmentIds(List<String> targetedSegmentIds) {
-		if(targetedSegmentIds != null) {
-			targetedSegmentIds.forEach(e->{
-				this.targetedSegmentIds.add(e);
-			});
-		}
-	}
 
 	public String getOwnerUsername() {
 		return ownerUsername;
@@ -355,7 +351,6 @@ public final class Campaign extends PersistentObject implements Comparable<Campa
 	public void setOwnerUsername(String ownerUsername) {
 		this.ownerUsername = ownerUsername;
 	}
-
 
 	public String getAutomatedFlowJson() {
 		return automatedFlowJson;
@@ -373,20 +368,46 @@ public final class Campaign extends PersistentObject implements Comparable<Campa
 		this.reportedUsernames = reportedUsernames;
 	}
 
-	public double getEstimatedCost() {
-		return estimatedCost;
+	public double getMaxBudget() {
+		return maxBudget;
 	}
 
-	public void setEstimatedCost(double estimatedCost) {
-		this.estimatedCost = estimatedCost;
+	public void setMaxBudget(double maxBudget) {
+		this.maxBudget = maxBudget;
 	}
 
-	public double getRealCost() {
-		return realCost;
+	public double getSpentBudget() {
+		return spentBudget;
 	}
 
-	public void setRealCost(double realCost) {
-		this.realCost = realCost;
+	public void setSpentBudget(double spentBudget) {
+		this.spentBudget = spentBudget;
+	}
+
+
+
+	public String getAgentPersona() {
+		return agentPersona;
+	}
+
+	public void setAgentPersona(String agentPersona) {
+		this.agentPersona = agentPersona;
+	}
+
+	public int getCommunicationFrequency() {
+		return communicationFrequency;
+	}
+
+	public void setCommunicationFrequency(int communicationFrequency) {
+		this.communicationFrequency = communicationFrequency;
+	}
+
+	public int getTimeUnit() {
+		return timeUnit;
+	}
+
+	public void setTimeUnit(int timeUnit) {
+		this.timeUnit = timeUnit;
 	}
 
 	public Date getStartDate() {
@@ -411,14 +432,6 @@ public final class Campaign extends PersistentObject implements Comparable<Campa
 
 	public void setLastRunAt(Date lastRunAt) {
 		this.lastRunAt = lastRunAt;
-	}
-	
-	public double getRatioRevenuePerCost() {
-		if (realCost > 0 && realRevenue > 0) {
-			double ratio = realRevenue / realCost;
-			return ratio;
-		}
-		return -1;
 	}
 
 	@Override

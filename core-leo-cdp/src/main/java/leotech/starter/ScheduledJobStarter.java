@@ -42,7 +42,7 @@ public class ScheduledJobStarter {
 			startDataJobs();
 			break;
 		case DATA_SERVICE_SCHEDULER:
-			startDataServiceJobs();
+			startDataServices();
 			break;
 		case REACTIVE_JOB_SCHEDULER:
 			startReactiveJobs();
@@ -64,8 +64,8 @@ public class ScheduledJobStarter {
 		Utils.foreverLoop();
 	}
 
-	public static void startDataServiceJobs() {	
-		ActivationRuleManagement.startScheduledJobsForAllDataServices();
+	public static void startDataServices() {	
+		ActivationRuleManagement.startDataServices();
 		System.out.println("DATA_SERVICE_SCHEDULER is started");
 		SchedulerRedisCacheUtil.start(DATA_SERVICE_SCHEDULER);
 		Utils.foreverLoop();

@@ -161,7 +161,7 @@ public abstract class DataServiceJob implements Job {
 	protected final String processSegmentDataActivation() {
 		long size = 0;
 		long beginTime = System.currentTimeMillis();
-		List<ActivationRule> rules = ActivationRuleManagement.getAllActiveActivationRulesByServiceId(this.dataService.getId());
+		List<ActivationRule> rules = ActivationRuleManagement.getAllActiveActivationRulesByAgentId(this.dataService.getId());
 		for (ActivationRule rule : rules) {
 			String segmentId = rule.getSegmentId();
 			Segment segment = SegmentDataManagement.getSegmentById(segmentId);

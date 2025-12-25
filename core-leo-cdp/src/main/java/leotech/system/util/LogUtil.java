@@ -108,6 +108,11 @@ public class LogUtil {
 		logger.error(now() + message);
 	}
 
+	public static void logError(Class<?> clazz, String message, Exception e) {
+		Logger logger = LoggerFactory.getLogger(clazz.getClass());
+		logger.error(now() + message + " | Exception " + e.getMessage());
+	}
+
 	public static String readLastRowsLog(String logFileUri, int maxRows) throws IOException {
 		StringBuilder log = new StringBuilder();
 

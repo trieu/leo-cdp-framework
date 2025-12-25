@@ -1848,16 +1848,6 @@ public abstract class AbstractProfile extends PersistentObject {
 		}
 	}
 	
-	public final void setNextActionForItems(String nextAction, Set<OrderedItem> items) {
-		if(StringUtil.isNotEmpty(nextAction) && items != null) {
-			if(items.size() > 0 ) {
-				this.nextBestActions.add(nextAction);
-				setShoppingItems(items);
-				
-			}
-		}
-	}
-	
 
 	public Set<String> getPurchasedBrands() {
 		return purchasedBrands;

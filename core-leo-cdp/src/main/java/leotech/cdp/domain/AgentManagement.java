@@ -29,7 +29,6 @@ public final class AgentManagement {
 
 	public static final String INIT_DATA_SERVICE_JSON = "./resources/data-for-new-setup/init-agent-configs.json";
 
-
 	/**
 	 * @return List<DataService> from file
 	 */
@@ -110,15 +109,14 @@ public final class AgentManagement {
 	 * @param keywords
 	 * @return
 	 */
-	public static List<Agent> list(int startIndex, int numberResult, String keywords,
-			String filterServiceValue, boolean forSynchronization, boolean forDataEnrichment,
-			boolean forPersonalization) {
-		return AgentDaoUtil.list(startIndex, numberResult, keywords, filterServiceValue,
-				forSynchronization, forDataEnrichment, forPersonalization);
+	public static List<Agent> list(int startIndex, int numberResult, String keywords, String filterServiceValue,
+			boolean forSynchronization, boolean forDataEnrichment, boolean forPersonalization) {
+		return AgentDaoUtil.list(startIndex, numberResult, keywords, filterServiceValue, forSynchronization,
+				forDataEnrichment, forPersonalization);
 	}
 
 	/**
-	 * open the service, then activate segment data with an event
+	 * open the agent, then activate segment data with an event
 	 * 
 	 * @param purpose
 	 * @param agentId
@@ -128,7 +126,8 @@ public final class AgentManagement {
 	 * @param eventName
 	 * @return
 	 */
-	public static String activate(SystemUser loginUser, String purpose, String agentId, String timeToStart, int schedulingTime, String segmentId, String triggerEventName) {
+	public static String activate(SystemUser loginUser, String purpose, String agentId, String timeToStart,
+			int schedulingTime, int timeUnit, String segmentId, String triggerEventName) {
 		String userLogin = loginUser.getUserLogin();
 
 		Agent agent = AgentDaoUtil.getById(agentId);
@@ -140,7 +139,8 @@ public final class AgentManagement {
 				String defaultName = StringUtil.join("-", purpose, agentId, segmentId);
 				String description = "";
 				ActivationRule activationRule = ActivationRule.create(userLogin, purpose, activationType, defaultName,
-						description, priority, agentId, segmentId, timeToStart, schedulingTime, triggerEventName);
+						description, priority, agentId, segmentId, timeToStart, schedulingTime, timeUnit,
+						triggerEventName);
 				String activationRuleId = ActivationRuleManagement.save(activationRule);
 				if (activationRuleId != null) {
 					return activationRuleId;

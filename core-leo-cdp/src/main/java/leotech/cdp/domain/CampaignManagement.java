@@ -20,7 +20,6 @@ import leotech.cdp.model.asset.ProductItem;
 import leotech.cdp.model.customer.Profile;
 import leotech.cdp.model.customer.Segment;
 import leotech.cdp.model.marketing.Campaign;
-import leotech.cdp.model.marketing.FlowFacts;
 import leotech.cdp.model.marketing.TargetMediaUnit;
 import leotech.cdp.query.filters.CampaignFilter;
 import leotech.cdp.utils.ProfileDataValidator;
@@ -182,21 +181,17 @@ public class CampaignManagement {
 	/**
 	 * @param campaignId
 	 */
+
 	public static void runCampaign(String campaignId) {
 		Campaign cam = CampaignDaoUtil.getCampaignById(campaignId);
 		if(cam != null) {
 			
-			Set<String> targetedSegmentIds = cam.getTargetedSegmentIds();
-			for (String targetedSegmentId : targetedSegmentIds) {
-				TaskRunner.run(()->{
-					Segment targetSegment = SegmentDaoUtil.getSegmentById(targetedSegmentId);
-					SegmentDataManagement.processProfilesInSegment(targetSegment, PROFILE_PROCESS_BATCH_SIZE, profile ->{
-						String flow = cam.getAutomatedFlowJson();
-						FlowFacts facts = FlowFacts.buildFacts(profile);
-						AutomatedFlowManagement.processFlowchartJson(flow, facts);
-					});
+			TaskRunner.run(()->{
+				Segment targetSegment = SegmentDaoUtil.getSegmentById(cam.getTargetSegmentId());
+				SegmentDataManagement.processProfilesInSegment(targetSegment, PROFILE_PROCESS_BATCH_SIZE, profile ->{
+					// TODO 
 				});
-			}
+			});
 		}
 		else {
 			LogUtil.logError(CampaignManagement.class, "Not found any campaign with id: " +campaignId );

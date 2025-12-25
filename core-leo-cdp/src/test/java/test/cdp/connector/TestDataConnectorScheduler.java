@@ -9,7 +9,7 @@ public class TestDataConnectorScheduler {
 	public static void main(String[] args) {
 		
 		TaskRunner.run(()->{
-			ScheduledJobStarter.startDataServiceJobs();
+			ScheduledJobStarter.startDataServices();
 		});
 		
 		Utils.foreverLoop();
