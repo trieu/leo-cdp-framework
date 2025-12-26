@@ -1,4 +1,4 @@
-// Version: v_0.9.0_2025-12-19-13-31-59
+// Version: v_0.9.0_2025-12-26-14-27-28
 'use strict';function profileAddNewTextHashSet(a){var c=$('\x3cli class\x3d"list-group-item" \x3e\x3cdiv class\x3d"row" \x3e\x3cdiv class\x3d"col-md-11" \x3e\x3cinput class\x3d"form-control" type\x3d"text" placeholder\x3d"Value" data-fieldholder\x3d"hashset" data-fieldtype\x3d"string" autocomplete\x3d"off"\x3e\x3c/div\x3e\x3cdiv class\x3d"col-md-1" \x3e\x3ch4 onclick\x3d"$(this).parent().parent().parent().remove()" \x3e\x3ci class\x3d"fa fa-times-circle delete-item-btn" aria-hidden\x3d"true"\x3e\x3c/i\x3e\x3c/h4\x3e \x3c/div\x3e\x3c/div\x3e\x3c/li\x3e');
 $('p[data-field\x3d"'+a+'"] \x3e ul').append(c);c.effect("highlight",{},3600);c.find("input:first").focus()}function profileAddNewCustomField(a){var c=$(loadCustomFieldEditor(a,"",""));$('p[data-field\x3d"'+a+'"] \x3e ul').append(c);c.effect("highlight",{},3600);c.find("input:first").focus()}
 function handleProfileListFiltersBy(a,c){$("#profile_filter_inputs \x3e .form-control").val("").hide();$(c).show();$("#profile_filter_input_label").text($(a).text()).show();$("#main_search_profile").val("");showDeleteNotActiveProfile()}

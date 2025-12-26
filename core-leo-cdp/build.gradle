@@ -184,6 +184,7 @@ dependencies {
     implementation 'commons-io:commons-io:2.5'
     implementation 'redis.clients:jedis:7.0.0'
     implementation 'org.apache.httpcomponents:httpclient:4.5.13'
+    implementation 'org.mvel:mvel2:2.5.2.Final'
 
     // ────────────────────── Performance & Templates ──────────────────────
     implementation 'org.databene:contiperf:2.3.4'
