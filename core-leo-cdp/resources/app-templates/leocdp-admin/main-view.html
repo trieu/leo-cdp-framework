@@ -137,8 +137,8 @@
 								data-content="Manage digital data assets: short URL links, content catalogs, product catalogs, voucher catalogs, presentation slides, feedback forms, HTML email templates, text message templates"  > 
 							<i class="fa fa-fw fa-list" ></i> Marketing Assets </a>
 					</li>					
-					<li >
-						<a id="AI_Agent_Activation" href="#calljs-leoCdpRouter('AI_Agent_Activation')" 
+					<li id="AI_Agent_Activation_Menu" style="display: none">
+						<a id="AI_Agent_Activation"  href="#calljs-leoCdpRouter('AI_Agent_Activation')" 
 							title="AI Agent Services" data-container="body" data-toggle="popover" data-placement="right" data-content="Manage AI agent services: synchronization, data enrichment & personalization"  >
 							<i class="fa fa-fw fa-exchange" aria-hidden="true" ></i> AI Agent Activation</a>
 					</li>
@@ -147,10 +147,7 @@
 							title="Automation Rules" data-container="body" data-toggle="popover" data-placement="right" data-content="Manage Automation Rules for email marketing, Zalo marketing, SMS marketing, Facebook Ads,... " >
 							<i class="fa fa-fw fa-cogs" aria-hidden="true" ></i> Automated Campaigns </a>
 					</li>
-					<li id="Activation_Rules_Menu" style="display: none" >
-						<a id="Activation_Rules" href="#calljs-leoCdpRouter('Activation_Rules')">
-							<i class="fa fa-fw fa-cogs" aria-hidden="true" ></i> Activation Rules </a>
-					</li>					
+										
 				</ul>
 			</li>
 
@@ -316,6 +313,10 @@
         $("#system_management_menu").on("show.bs.collapse", function(){
         	$("#system_management_collapse_icon").attr('class','fa fa-fw fa-caret-down');
         });
+        
+        if(location.href.indexOf('example.com')>0){
+        	$('#Automated_Campaigns_Menu, #AI_Agent_Activation_Menu').show();
+        }
 	}
 
 	function mainViewReady() {

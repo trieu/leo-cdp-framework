@@ -20,7 +20,7 @@ import com.google.gson.annotations.Expose;
 import com.google.gson.reflect.TypeToken;
 
 import leotech.cdp.dao.TrackingEventDao;
-import leotech.cdp.domain.ActivationFlowManagement;
+import leotech.cdp.domain.EmailFlowManagement;
 import leotech.cdp.domain.schema.BehavioralEvent;
 import leotech.cdp.model.AutoSetData;
 import leotech.cdp.model.ExposeInSegmentList;
@@ -1498,12 +1498,12 @@ public class Profile extends AbstractProfile implements Comparable<Profile> {
 	
 	@Override
 	public boolean recommendProductItems(AssetTemplate assetTemplate, List<ProductItem> productItems) {
-		return ActivationFlowManagement.recommendProductItems(this, assetTemplate, productItems);
+		return EmailFlowManagement.recommendProductItems(this, assetTemplate, productItems);
 	}
 	
 	@Override
 	public boolean recommendContentItems(AssetTemplate assetTemplate, List<AssetContent> contentItems) {
-		return ActivationFlowManagement.recommendContentItems(this, assetTemplate, contentItems);
+		return EmailFlowManagement.recommendContentItems(this, assetTemplate, contentItems);
 	}
 	
 	@Override
