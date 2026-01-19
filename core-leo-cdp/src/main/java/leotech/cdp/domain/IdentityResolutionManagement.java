@@ -128,21 +128,18 @@ public class IdentityResolutionManagement {
 		// TODO add dynamic query and improve for more identity fields
 		
 		logger.info("\n ==> [pivotProfile] " + sourceProfileId + " " + sourceProfile.getFirstName() );
-		List<Profile> allProfilesOfOnePerson = ProfileDaoUtil.getProfilesByFilter(srcProfileFilter);
+		List<Profile> allProfilesToMerge = ProfileDaoUtil.getProfilesByFilter(srcProfileFilter);
 
-		int allProfilesOfOnePersonSize = allProfilesOfOnePerson.size();
-		logger.info("\n ==> allProfilesOfOnePersonSize = " + allProfilesOfOnePersonSize );
-		for (Profile p : allProfilesOfOnePerson) {
-			logger.info("==> Profile Of One Person.ID = " + p.getId() );
-		}
+		int size = allProfilesToMerge.size();
+		logger.info("\n ==> allProfilesToMerge size = " + size );
 		
 		int mergeResult = 0;
 		// minimum is 2 to de-duplicate
-		if(allProfilesOfOnePersonSize >= 2) {
+		if(size > 1) {
 			// pick the first profile that has maximum data quality score
-			Profile targetProfile = allProfilesOfOnePerson.get(0);
-			allProfilesOfOnePerson.remove(0);
-			mergeResult = buildFinalListAndMerge(targetProfile, allProfilesOfOnePerson);
+			Profile targetProfile = allProfilesToMerge.get(0);
+			allProfilesToMerge.remove(0);
+			mergeResult = buildFinalListAndMerge(targetProfile, allProfilesToMerge);
 			
 			if(mergeResult > 0) {
 				Analytics360Management.clearCacheProfileReport();

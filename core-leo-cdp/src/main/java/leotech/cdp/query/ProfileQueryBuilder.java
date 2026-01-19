@@ -585,10 +585,13 @@ public class ProfileQueryBuilder {
 			aql.append(" RETURN p._key ");
 		} 
 		else {
-			// pagination
-			aql.append(" SORT p.dataQualityScore DESC ");
-			if( ! filter.isDataDeduplicationJob() ) {
-				// listing in profile info
+			
+			if( filter.isDataDeduplicationJob() ) {
+				// sort profiles for Data Deduplication Job
+				aql.append(" SORT p.dataQualityScore DESC ");
+			}
+			else {
+				// pagination listing in profile info
 				aql.append(" LIMIT @startIndex, @numberResult ");
 			}
 			

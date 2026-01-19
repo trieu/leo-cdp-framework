@@ -1,6 +1,7 @@
 package leotech.cdp.domain;
 
 import java.util.List;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +14,8 @@ import leotech.cdp.domain.processor.UpdateProfileEventProcessor;
 import leotech.cdp.job.reactive.JobUpdateProfileSingleView;
 import leotech.cdp.model.customer.Profile;
 import leotech.cdp.model.customer.ProfileSingleView;
+import leotech.cdp.model.journey.JourneyMap;
+import leotech.cdp.model.journey.JourneyMapRefKey;
 import rfx.core.util.StringUtil;
 
 /**
@@ -50,8 +53,16 @@ public class ProfileMergeService {
             mergeSingleProfile(finalProfile, srcProfile);
             performSideEffects(srcProfile, destProfileId, finalProfile);
         }
+        
+        // update profile data authorization inherit from Journey Maps
+        Set<JourneyMapRefKey> journeyMaps = finalProfile.getInJourneyMaps();
+		journeyMaps.forEach(m->{
+			JourneyMap map = JourneyMapManagement.getById(m.getId());
+			finalProfile.setAuthorizedEditors(map.getAuthorizedEditors());
+			finalProfile.setAuthorizedViewers(map.getAuthorizedViewers());
+		});
 
-        return finalizeMerge(finalProfile, listToBeUnified.size());
+        return commitMergedProfile(finalProfile, listToBeUnified.size());
     }
 
     // ----------------- Core merge logic -----------------
@@ -160,9 +171,11 @@ public class ProfileMergeService {
         DailyReportUnitDaoUtil.updateDailyReportUnitsToNewProfile(sourceId, destId);
         ProfileGraphManagement.updateEdgeDataProfileToProfile(sourceId, destId);
         ProfileDaoUtil.updateMergedProfile(source, destId);
+        
+       
     }
 
-    protected static int finalizeMerge(ProfileSingleView finalProfile, int mergedCount) {
+    protected static int commitMergedProfile(ProfileSingleView finalProfile, int mergedCount) {
         if (finalProfile == null) return 0;
         String finalProfileId = ProfileDaoUtil.saveProfile(finalProfile);
         if (finalProfileId != null) {

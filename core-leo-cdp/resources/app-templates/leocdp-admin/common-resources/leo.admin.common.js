@@ -473,9 +473,10 @@ if (LeoAdminApiUtil.isLoaded !== true) {
 				onClosingCallback = function(instance, toast, closedBy) {
 					// reload page if error Authentication
 					LeoAdminApiUtil.logout(function() {
-						location.reload();						
+						location.reload();
 					});
-				};
+				};		
+				setTimeout(onClosingCallback,6666)		
 			}
 			else {
 				onClosingCallback = function() {
@@ -484,7 +485,7 @@ if (LeoAdminApiUtil.isLoaded !== true) {
 			}
 
 			iziToast.error({
-				timeout: 4000,
+				timeout: 5000,
 				title: title,
 				message: message,
 				onClosing: onClosingCallback
