@@ -140,80 +140,164 @@
 
 
 <!-- dialog html -->
-<div class="modal fade" id="dialogSetAgentInfo" role="dialog">
-	<div class="modal-dialog modal-lg" >
-		<!-- Modal content-->
-		<div class="modal-content">   
-			<div class="modal-header">
-				<h4 class="modal-title text-center" > <i class="fa fa-info-circle" aria-hidden="true"></i> Agent Information </h4>
-			</div>         
-			<div class="modal-body">
-			
-				<div class="row form-group">
-					<label class="control-label col-md-3" for="dataServiceName" > Name </label>
-					<div class="col-md-9 float-left" >
-				    	<input type="text" id="dataServiceName"  placeholder="Enter the name of A.I Agent" class="form-control" style="width: 98%" >
-				   	</div>
-				</div>
-				
-				<div class="row form-group">
-					<label class="control-label col-md-3" for="dataServiceDescription" > Description </label>
-					<div class="col-md-9 float-left" >
-				    	<textarea id="dataServiceDescription" placeholder="Enter the description of A.I Agent" class="form-control" rows="2" style="width: 98%" ></textarea>
-				   	</div>
-				</div>
-				
-				
-				<div class="row form-group">
-					<label class="control-label col-md-3" for="dataServiceDagId" > Airflow DAG ID </label>
-					<div class="col-md-9 float-left" >
-				    	<input type="text" id="dataServiceDagId"  placeholder="Enter Airflow DAG ID" class="form-control" style="width: 98%" >
-				   	</div>
-				</div>
-				<div class="row form-group">
-					<label class="control-label col-md-3" for="agentStatus" > Status </label>
-					<div class="col-md-9 float-left" >
-				    	<label class="checkbox-inline control-label" >
-					      	<input id="agentStatus" type="checkbox" > Ready
-					    </label>
-				   	</div>
-				</div>
-				
-				<hr>
-				<div class="row form-group">
-					<label class="control-label col-md-3" > Purpose </label>
-					<div class="col-md-9 float-left" >
-						<label class="checkbox-inline control-label" >
-					      	<input id="forPersonalization" type="checkbox" value="true"> <b>  Data Personalization (E.g: Use your own recommendation engine) </b>
-					    </label>
-					    <br>
-						<label class="checkbox-inline control-label">
-					      	<input id="forDataEnrichment" type="checkbox" value="true"> <b>  Data Enrichment (E.g: CLV scoring, predict customer interests) </b>
-					    </label>
-					    <br>
-					    <label class="checkbox-inline control-label">
-					      	<input id="forSynchronization" type="checkbox" value="true" > <b>  Data Synchronization (E.g: Synch contact to email marketing platforms) </b>
-					    </label>
-				    </div>
-				</div>
-				<hr>
-				<div style="margin-bottom: 10px" > 
-					<strong> Configurations </strong>
-					<button type="button" class="btn btn-primary btn-sm" title="Add a configuration" onclick="addNewConfigForAgent('newConfig')" > 
-		  			<i class="fa fa-plus" aria-hidden="true"></i> New Config
-		  		</button>
-				</div>
-				<div id="dataServiceConfigList" style="max-height: 220px; overflow-y: scroll; overflow-x: hidden; margin-top: 5px;" > </div>
+<div class="modal fade" id="dialogSetAgentInfo" role="dialog" aria-labelledby="agentInfoTitle">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+
+			<!-- Modal Header -->
+			<div class="modal-header bg-primary text-center">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+				<h4 class="modal-title" id="agentInfoTitle">
+					<i class="fa fa-info-circle"></i> Computational Agent Information
+				</h4>
 			</div>
-			<div class="modal-footer" >
-				<button type="button" class="btn btn-info" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"></i> Close</button>
-				<button type="button" class="btn btn-goto-router" onclick="saveAgentInfo(this)" id="dataServiceSaveButton"  >
-					<i class="fa fa-check-square-o" aria-hidden="true"></i> Save 
-				</button>		        
-		    </div>  
+
+			<!-- Modal Body -->
+			<div class="modal-body">
+
+				<!-- BASIC INFO -->
+				<div class="form-horizontal">
+
+					<div class="form-group">
+						<label class="control-label col-md-3" for="dataServiceName">
+							Name <span class="text-danger">*</span>
+						</label>
+						<div class="col-md-9">
+							<input
+								type="text"
+								id="dataServiceName"
+								class="form-control"
+								placeholder="e.g. Personalization Engine"
+								required
+							>
+							<p class="help-block">A unique, human-readable name for this agent.</p>
+						</div>
+					</div>
+
+					<div class="form-group">
+						<label class="control-label col-md-3" for="dataServiceDescription">
+							Description
+						</label>
+						<div class="col-md-9">
+							<textarea
+								id="dataServiceDescription"
+								class="form-control"
+								rows="3"
+								placeholder="Describe what this agent does and how it is used"
+							></textarea>
+						</div>
+					</div>
+
+					<div class="form-group">
+						<label class="control-label col-md-3" for="dataServiceDagId">
+							Dataflow Graph ID
+						</label>
+						<div class="col-md-9">
+							<input
+								type="text"
+								id="dataServiceDagId"
+								class="form-control"
+								placeholder="graph_id or DAG identifier"
+							>
+						</div>
+					</div>
+
+					<div class="form-group">
+						<label class="control-label col-md-3">Status</label>
+						<div class="col-md-9">
+							<div class="checkbox">
+								<label>
+									<input id="agentStatus" type="checkbox">
+									<strong>Ready</strong>
+								</label>
+							</div>
+							<p class="help-block">Only ready agents can be executed in workflows.</p>
+						</div>
+					</div>
+
+				</div>
+
+				<hr>
+
+				<!-- PURPOSE -->
+				<h5><strong>Purpose</strong></h5>
+				<div class="form-group">
+					<div class="checkbox">
+						<label>
+							<input id="forPersonalization" type="checkbox" value="true">
+							<strong>Data Personalization</strong>
+							<span class="text-muted">
+								– recommendation engines, decisioning logic
+							</span>
+						</label>
+					</div>
+
+					<div class="checkbox">
+						<label>
+							<input id="forDataEnrichment" type="checkbox" value="true">
+							<strong>Data Enrichment</strong>
+							<span class="text-muted">
+								– CLV scoring, interest prediction
+							</span>
+						</label>
+					</div>
+
+					<div class="checkbox">
+						<label>
+							<input id="forSynchronization" type="checkbox" value="true">
+							<strong>Data Synchronization</strong>
+							<span class="text-muted">
+								– push data to email / marketing platforms
+							</span>
+						</label>
+					</div>
+				</div>
+
+				<hr>
+
+				<!-- CONFIGURATIONS -->
+				<div class="clearfix" style="margin-bottom: 10px;">
+					<strong class="pull-left">Configurations</strong>
+					<button
+						type="button"
+						class="btn btn-primary btn-xs pull-right"
+						title="Add a configuration"
+						onclick="addNewConfigForAgent('newConfig')">
+						<i class="fa fa-plus"></i> New Config
+					</button>
+				</div>
+
+				<div
+					id="dataServiceConfigList"
+					class="well well-sm"
+					style="max-height: 220px; overflow-y: auto;">
+					<p class="text-muted text-center">
+						No configurations added yet.
+					</p>
+				</div>
+
+			</div>
+
+			<!-- Modal Footer -->
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">
+					<i class="fa fa-times"></i> Close
+				</button>
+				<button
+					type="button"
+					class="btn btn-success"
+					id="dataServiceSaveButton"
+					onclick="saveAgentInfo(this)">
+					<i class="fa fa-check"></i> Save Agent
+				</button>
+			</div>
+
 		</div>
 	</div>
 </div>
+
 
 
 <script>
