@@ -1138,7 +1138,7 @@ public class Profile extends AbstractProfile implements Comparable<Profile> {
 	public void setWeeklyMobileUsage(Map<String, Integer> weeklyMobileUsage) {
 		if(weeklyMobileUsage != null) {
 			weeklyMobileUsage.forEach((dayNameOfWeek, updateCount )->{
-				int count = this.weeklyMobileUsage.getOrDefault(dayNameOfWeek, 0) + updateCount;
+				int count = StringUtil.safeParseInt(this.weeklyMobileUsage.get(dayNameOfWeek))  + updateCount;
 				this.weeklyMobileUsage.put(dayNameOfWeek, count);
 			});
 		}
@@ -1759,32 +1759,71 @@ public class Profile extends AbstractProfile implements Comparable<Profile> {
 	 * @param eventData
 	 */
 	public void updateFromEventData(Map<String, Object> eventData) {
-		if(eventData != null) {
-			// 
-			this.setCrmRefId(eventData.getOrDefault("user_id","").toString());
-			this.setCrmRefId(eventData.getOrDefault("crm_ref_id","").toString());
-			
-			this.setFirstName(eventData.getOrDefault("name","").toString());
-			this.setFirstName(eventData.getOrDefault("first_name","").toString());
-			this.setLastName(eventData.getOrDefault("last_name","").toString());
-			
-			this.setEmail(eventData.getOrDefault("email","").toString());
-			this.setPhone( eventData.getOrDefault("phone","").toString());
-			this.setPrimaryUsername(eventData.getOrDefault("user_name","").toString());
-			
-			if(this.hasContactData() && this.type == ProfileType.ANONYMOUS_VISITOR) {
-				// convert visitor into user login
-				this.type = ProfileType.CUSTOMER_CONTACT;
-			}
-			
-			// UTM data of Google Analytics
-			this.setEmail(eventData.getOrDefault("utm_email","").toString());
-			this.setPhone( eventData.getOrDefault("utm_phone","").toString());
-			this.updateReferrerChannel(eventData.getOrDefault("utm_source","").toString());
-			this.setContentKeywords(eventData.getOrDefault("utm_term","").toString());
-			this.setGoogleUtmData(new GoogleUTM(eventData));
-		}
+	    if (eventData == null) {
+	        return;
+	    }
+
+	    try {
+	        // --- Google Analytics UTM data ---
+	        this.setEmail(
+	            StringUtil.safeString(eventData.get("utm_email"), "")
+	        );
+
+	        this.setPhone(
+	            StringUtil.safeString(eventData.get("utm_phone"), "")
+	        );
+
+	        this.updateReferrerChannel(
+	            StringUtil.safeString(eventData.get("utm_source"), "")
+	        );
+
+	        this.setContentKeywords(
+	            StringUtil.safeString(eventData.get("utm_term"), "")
+	        );
+
+	        this.setGoogleUtmData(new GoogleUTM(eventData));
+
+	        // --- CRM & Identity ---
+	        this.setCrmRefId(
+	            StringUtil.safeString(eventData.get("crm_ref_id"), "")
+	        );
+
+	        // name fields (support multiple formats)
+	        this.setFirstName(
+	            StringUtil.safeString(eventData.get("name"), "")
+	        );
+
+	        this.setFirstName(
+	            StringUtil.safeString(eventData.get("first_name"), "")
+	        );
+
+	        this.setLastName(
+	            StringUtil.safeString(eventData.get("last_name"), "")
+	        );
+
+	        // contact info
+	        this.setEmail(
+	            StringUtil.safeString(eventData.get("email"), "")
+	        );
+
+	        this.setPhone(
+	            StringUtil.safeString(eventData.get("phone"), "")
+	        );
+
+	        this.setPrimaryUsername(
+	            StringUtil.safeString(eventData.get("user_name"), "")
+	        );
+
+	        // --- Visitor → Contact auto-upgrade ---
+	        if (this.hasContactData() && this.type == ProfileType.ANONYMOUS_VISITOR) {
+	            this.type = ProfileType.CUSTOMER_CONTACT;
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
 	}
+
 
 	/**
 	 * for export data to CSV row's format

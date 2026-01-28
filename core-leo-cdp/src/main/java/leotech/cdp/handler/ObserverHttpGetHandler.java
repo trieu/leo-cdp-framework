@@ -95,20 +95,13 @@ public final class ObserverHttpGetHandler {
 			if (ctxSession != null) {
 				visitorId = ctxSession.getVisitorId();
 				sessionKey = ctxSession.getSessionKey();
-				// event-view(pageview|screenview|storeview|trueview|placeview,contentId,sessionKey,visitorId)
-				if (urlPath.equalsIgnoreCase(PREFIX_EVENT_VIEW)) {
-					String eventId = EventObserverUtil.recordViewEvent(req, params, device, ctxSession, eventName);
+				
+				if (urlPath.equalsIgnoreCase(PREFIX_EVENT_VIEW) || urlPath.equalsIgnoreCase(PREFIX_EVENT_ACTION)) {
+					String eventId = EventObserverUtil.recordBehavioralEvent(req, params, device, ctxSession, eventName);
 					if (StringUtil.isNotEmpty(eventId)) {
 						status = 200;
 					}
-				}
-				// event-action(click|play|touch|contact|watch|test,sessionKey,visitorId)
-				else if (urlPath.equalsIgnoreCase(PREFIX_EVENT_ACTION)) {
-					String eventId = EventObserverUtil.recordActionEvent(req, params, device, ctxSession, eventName);
-					if (StringUtil.isNotEmpty(eventId)) {
-						status = 200;
-					}
-				}
+				}				
 			}
 
 			ObserverResponse.done(resp, status, visitorId, sessionKey, 1);

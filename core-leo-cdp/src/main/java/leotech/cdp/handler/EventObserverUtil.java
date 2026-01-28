@@ -20,134 +20,163 @@ import leotech.system.util.UrlUtil;
 import rfx.core.util.StringUtil;
 
 /**
- *  Event Observer Util for API and http handler
- * 
+ * Event Observer Util for API and HTTP handlers
+ *
  * @author tantrieuf31
  * @since 2020
- *
  */
 public final class EventObserverUtil {
 
 	/**
+	 * Unified method for VIEW + ACTION events
+	 *
 	 * @param req
 	 * @param params
 	 * @param device
 	 * @param ctxSession
 	 * @param eventName
-	 * @return
+	 * @return eventId
 	 */
-	public final static String recordViewEvent(HttpServerRequest req, MultiMap params, DeviceInfo device, ContextSession ctxSession, String eventName) {
-		String sourceIP = HttpWebParamUtil.getRemoteIP(req);
+	public static String recordBehavioralEvent(
+			HttpServerRequest req,
+			MultiMap params,
+			DeviceInfo device,
+			ContextSession ctxSession,
+			String eventName
+	) {
+		final Date createdAt = new Date();
 
-		String srcObserverId = params.get(HttpParamKey.OBSERVER_ID);
-		String srcTouchpointName = HttpWebParamUtil.getString(params, HttpParamKey.TOUCHPOINT_NAME);
-		String srcTouchpointUrl = HttpWebParamUtil.getString(params, HttpParamKey.TOUCHPOINT_URL);
-		String refTouchpointUrl = HttpWebParamUtil.getString(params, HttpParamKey.TOUCHPOINT_REFERRER_URL);
-		String touchpointRefDomain = UrlUtil.getHostName(refTouchpointUrl);
-		
-		String deviceId = DeviceManagement.getDeviceId(params, device);
-		String fingerprintId = StringUtil.safeString(params.get(HttpParamKey.FINGERPRINT_ID));
-		String environment = StringUtil.safeString(params.get(HttpParamKey.DATA_ENVIRONMENT),HttpParamKey.PRO_ENV);
-		Map<String, Object> eventData = HttpWebParamUtil.getEventData(params);
+		final String sourceIP = HttpWebParamUtil.getRemoteIP(req);
+		final String srcObserverId = params.get(HttpParamKey.OBSERVER_ID);
 
-		Date createdAt = new Date();
+		final String srcTouchpointName = HttpWebParamUtil.getString(params, HttpParamKey.TOUCHPOINT_NAME);
+		final String srcTouchpointUrl = HttpWebParamUtil.getString(params, HttpParamKey.TOUCHPOINT_URL);
+		final String refTouchpointUrl = HttpWebParamUtil.getString(params, HttpParamKey.TOUCHPOINT_REFERRER_URL);
+		final String touchpointRefDomain = UrlUtil.getHostName(refTouchpointUrl);
 
-		return EventObserverManagement.recordEventFromWeb(createdAt, ctxSession,srcObserverId, environment, fingerprintId, deviceId, sourceIP, device,
-				srcTouchpointName, srcTouchpointUrl, refTouchpointUrl, touchpointRefDomain, eventName, eventData);
+		final String deviceId = DeviceManagement.getDeviceId(params, device);
+		final String fingerprintId = StringUtil.safeString(params.get(HttpParamKey.FINGERPRINT_ID));
+		final String environment = StringUtil.safeString(
+				params.get(HttpParamKey.DATA_ENVIRONMENT),
+				HttpParamKey.PRO_ENV
+		);
+
+		final Map<String, Object> eventData = HttpWebParamUtil.getEventData(params);
+
+		return EventObserverManagement.recordEventFromWeb(
+				createdAt,
+				ctxSession,
+				srcObserverId,
+				environment,
+				fingerprintId,
+				deviceId,
+				sourceIP,
+				device,
+				srcTouchpointName,
+				srcTouchpointUrl,
+				refTouchpointUrl,
+				touchpointRefDomain,
+				eventName,
+				eventData
+		);
 	}
 
 	/**
-	 * @param req
-	 * @param params
-	 * @param device
-	 * @param ctxSession
-	 * @param eventName
-	 * @return
+	 * Conversion / Transaction event
 	 */
-	public final static String recordActionEvent(HttpServerRequest req, MultiMap params, DeviceInfo device, ContextSession ctxSession, String eventName) {
-		Date createdAt = new Date();
-		
-		String sourceIP = HttpWebParamUtil.getRemoteIP(req);
-		String srcObserverId = params.get(HttpParamKey.OBSERVER_ID);
-		
-		String srcTouchpointName = HttpWebParamUtil.getString(params, HttpParamKey.TOUCHPOINT_NAME);
-		String srcTouchpointUrl = HttpWebParamUtil.getString(params, HttpParamKey.TOUCHPOINT_URL);
-		
-		String refTouchpointUrl = HttpWebParamUtil.getString(params, HttpParamKey.TOUCHPOINT_REFERRER_URL);
-		String touchpointRefDomain = UrlUtil.getHostName(refTouchpointUrl);
-		
-		String deviceId = DeviceManagement.getDeviceId(params, device);
-		String fingerprintId = StringUtil.safeString(params.get(HttpParamKey.FINGERPRINT_ID));
-		String environment = StringUtil.safeString(params.get(HttpParamKey.DATA_ENVIRONMENT), HttpParamKey.PRO_ENV);	
-		Map<String, Object> eventData = HttpWebParamUtil.getEventData(params);
-		
-		return EventObserverManagement.recordEventFromWeb(createdAt, ctxSession, srcObserverId, environment, fingerprintId, deviceId, sourceIP, device,
-				srcTouchpointName, srcTouchpointUrl, refTouchpointUrl,  touchpointRefDomain, eventName, eventData);
+	public static String recordConversionEvent(
+			HttpServerRequest req,
+			MultiMap params,
+			DeviceInfo deviceInfo,
+			ContextSession ctxSession,
+			String eventName
+	) {
+		final Date createdAt = new Date();
+		final String sourceIP = HttpWebParamUtil.getRemoteIP(req);
+		final MultiMap formData = req.formAttributes();
+
+		final String deviceId = DeviceManagement.getDeviceId(formData, deviceInfo);
+		final String fingerprintId = StringUtil.safeString(params.get(HttpParamKey.FINGERPRINT_ID));
+		final String environment = StringUtil.safeString(
+				params.get(HttpParamKey.DATA_ENVIRONMENT),
+				HttpParamKey.PRO_ENV
+		);
+
+		final String srcObserverId = formData.get(HttpParamKey.OBSERVER_ID);
+		final String srcTouchpointName = HttpWebParamUtil.getString(formData, HttpParamKey.TOUCHPOINT_NAME);
+		final String srcTouchpointUrl = HttpWebParamUtil.getString(formData, HttpParamKey.TOUCHPOINT_URL);
+		final String refTouchpointUrl = HttpWebParamUtil.getString(formData, HttpParamKey.TOUCHPOINT_REFERRER_URL);
+		final String touchpointRefDomain = UrlUtil.getHostName(refTouchpointUrl);
+
+		final Map<String, Object> eventData = HttpWebParamUtil.getEventData(params);
+
+		final OrderTransaction transaction = new OrderTransaction(createdAt, formData);
+		final String transactionId = transaction.getTransactionId();
+		final double totalTransactionValue = transaction.getTotalTransactionValue();
+		final String currencyCode = transaction.getCurrencyCode();
+		final Set<OrderedItem> orderedItems = transaction.getOrderedItems();
+
+		return EventObserverManagement.recordConversionFromWeb(
+				createdAt,
+				ctxSession,
+				srcObserverId,
+				environment,
+				fingerprintId,
+				deviceId,
+				sourceIP,
+				deviceInfo,
+				srcTouchpointName,
+				srcTouchpointUrl,
+				refTouchpointUrl,
+				touchpointRefDomain,
+				eventName,
+				eventData,
+				transactionId,
+				orderedItems,
+				totalTransactionValue,
+				currencyCode
+		);
 	}
 
 	/**
-	 * @param req
-	 * @param params
-	 * @param deviceInfo
-	 * @param ctxSession
-	 * @param eventName
-	 * @return
+	 * Feedback / Survey event
 	 */
-	public final static String recordConversionEvent(HttpServerRequest req, MultiMap params, DeviceInfo deviceInfo, ContextSession ctxSession, String eventName) {
-		Date createdAt = new Date();
-		
-		String sourceIP = HttpWebParamUtil.getRemoteIP(req);
-		MultiMap formData = req.formAttributes();
-		
-		String deviceId = DeviceManagement.getDeviceId(formData, deviceInfo);
-		String fingerprintId = StringUtil.safeString(params.get(HttpParamKey.FINGERPRINT_ID));
-		String environment = StringUtil.safeString(params.get(HttpParamKey.DATA_ENVIRONMENT), HttpParamKey.PRO_ENV);
-		//String srcEventKey = StringUtil.safeString(params.get(TrackingApiParam.SRC_EVENT_KEY));
-		
-		String srcObserverId = formData.get(HttpParamKey.OBSERVER_ID);
-		String srcTouchpointName = HttpWebParamUtil.getString(formData, HttpParamKey.TOUCHPOINT_NAME);
-		String srcTouchpointUrl = HttpWebParamUtil.getString(formData, HttpParamKey.TOUCHPOINT_URL);
-		String refTouchpointUrl = HttpWebParamUtil.getString(formData, HttpParamKey.TOUCHPOINT_REFERRER_URL);
-		String touchpointRefDomain = UrlUtil.getHostName(refTouchpointUrl);
-		
-		Map<String, Object> eventData = HttpWebParamUtil.getEventData(params);
-						
-		OrderTransaction transaction = new OrderTransaction(createdAt, formData); 		
-		String transactionId = transaction.getTransactionId();
-		double totalTransactionValue = transaction.getTotalTransactionValue();
-		String currencyCode = transaction.getCurrencyCode();
-		Set<OrderedItem> orderedItems = transaction.getOrderedItems();
+	public static String recordFeedbackEvent(
+			HttpServerRequest req,
+			DeviceInfo device,
+			ContextSession ctxSession,
+			FeedbackEvent feedbackEvent
+	) {
+		final Date createdAt = new Date();
+		final String sourceIP = HttpWebParamUtil.getRemoteIP(req);
+		final MultiMap formData = req.formAttributes();
 
-		return EventObserverManagement.recordConversionFromWeb(createdAt, ctxSession, srcObserverId, environment, fingerprintId, deviceId, sourceIP, deviceInfo, srcTouchpointName,
-				srcTouchpointUrl, refTouchpointUrl, touchpointRefDomain, eventName, eventData, transactionId, orderedItems, totalTransactionValue, currencyCode);
-	}
-	
-	/**
-	 * @param req
-	 * @param device
-	 * @param ctxSession
-	 * @param eventName
-	 * @return
-	 */
-	public final static String recordFeedbackEvent(HttpServerRequest req, DeviceInfo device, ContextSession ctxSession, FeedbackEvent feedbackEvent) {
-		Date createdAt = new Date();
-		String sourceIP = HttpWebParamUtil.getRemoteIP(req);
-		MultiMap formData = req.formAttributes();
-		String srcObserverId = StringUtil.safeString(formData.get(HttpParamKey.OBSERVER_ID));	
-		String touchpointName =  HttpWebParamUtil.getString(formData, HttpParamKey.TOUCHPOINT_NAME);
-		String touchpointUrl =  HttpWebParamUtil.getString(formData, HttpParamKey.TOUCHPOINT_URL);
-		String fingerprintId = StringUtil.safeString(formData.get(HttpParamKey.FINGERPRINT_ID));
-		
+		final String srcObserverId = StringUtil.safeString(formData.get(HttpParamKey.OBSERVER_ID));
+		String touchpointName = HttpWebParamUtil.getString(formData, HttpParamKey.TOUCHPOINT_NAME);
+		String touchpointUrl = HttpWebParamUtil.getString(formData, HttpParamKey.TOUCHPOINT_URL);
+
+		final String fingerprintId = StringUtil.safeString(formData.get(HttpParamKey.FINGERPRINT_ID));
+		final String deviceId = DeviceManagement.getDeviceId(formData, device);
+		final String environment = StringUtil.safeString(
+				formData.get(HttpParamKey.DATA_ENVIRONMENT),
+				HttpParamKey.PRO_ENV
+		);
+
 		touchpointName = StringEscapeUtils.unescapeHtml4(touchpointName);
 		touchpointUrl = StringEscapeUtils.unescapeHtml4(touchpointUrl);
-		
-		String deviceId = DeviceManagement.getDeviceId(formData, device);
-		String environment = StringUtil.safeString(formData.get(HttpParamKey.DATA_ENVIRONMENT), HttpParamKey.PRO_ENV);	
-		
-		return EventObserverManagement.recordFeedbackEvent(createdAt, ctxSession, environment, fingerprintId, deviceId, sourceIP, device, srcObserverId,
-				touchpointName, touchpointUrl, feedbackEvent);
+
+		return EventObserverManagement.recordFeedbackEvent(
+				createdAt,
+				ctxSession,
+				environment,
+				fingerprintId,
+				deviceId,
+				sourceIP,
+				device,
+				srcObserverId,
+				touchpointName,
+				touchpointUrl,
+				feedbackEvent
+		);
 	}
-	
-
-
 }

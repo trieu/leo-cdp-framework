@@ -31,6 +31,7 @@ import leotech.system.common.BaseHttpRouter;
 import leotech.system.model.DeviceInfo;
 import leotech.system.util.HttpWebParamUtil;
 import leotech.system.util.TaskRunner;
+import rfx.core.util.StringPool;
 import rfx.core.util.StringUtil;
 
 /**
@@ -100,60 +101,79 @@ public final class ObserverHttpPostHandler {
 
 		System.out.println("Processing Batch: " + events.size() + " events.");
 
-		String lastVisitorId = "";
-		String sessionKey = ctxSessionKey;
-		int successCount = events.size();
-
-		// Resolve IP once for the batch
-		String ip = HttpWebParamUtil.getRemoteIP(req);
-
-		ContextSession ctxSession = null;
-		for (EventPayload event : events) {
-			// 1. Prepare Params for this specific event
-			// We create a copy of global params and inject specific event data
-			MultiMap eventParams = MultiMap.caseInsensitiveMultiMap();
-			eventParams.addAll(globalParams);
-
-			// Map EventPayload fields to HttpParamKey expected by EventObserverUtil
-			String metric = event.getMetric();
-			eventParams.set(HttpParamKey.EVENT_METRIC_NAME, metric);
-
-			// If the payload has encoded JSON data, pass it so Util can read it
-			if (StringUtil.isNotEmpty(event.getRawEventData())) {
-				// Assuming the Util looks for specific keys, or generic 'eventdata'
-				// You might need to adjust the key based on what EventObserverUtil expects
-				eventParams.set(HttpParamKey.EVENT_DATA, event.getDecodedEventData());
-			}
-
-			// 2. Resolve Session (Try to reuse session if possible, but safe to fetch per
-			// event)
-			// If payload has visid, we might prioritize it
-			if (StringUtil.isNotEmpty(event.getVisId())) {
-				lastVisitorId = event.getVisId();
-				eventParams.set(HttpParamKey.VISITOR_ID, lastVisitorId);
-			}
-
-			eventParams.set(HttpParamKey.OBSERVER_ID, event.getObsId());
-			eventParams.set(HttpParamKey.FINGERPRINT_ID, event.getFgp());
-			eventParams.set(HttpParamKey.TOUCHPOINT_URL, event.getDecodedTpUrl());
-			eventParams.set(HttpParamKey.TOUCHPOINT_NAME, event.getDecodedTpName());
-			eventParams.set(HttpParamKey.TOUCHPOINT_REFERRER_URL, event.getTpRefUrl());
-			eventParams.set(HttpParamKey.TOUCHPOINT_REFERRER_DOMAIN, event.getTpRefDomain());
-			eventParams.set(HttpParamKey.MEDIA_HOST, event.getMediaHost());
-
-			if (ctxSession == null || StringUtil.isEmpty(sessionKey)) {
-				ctxSession = ContextSessionManagement.get(sessionKey, ip, eventParams, device);
-				sessionKey = ctxSession.getSessionKey();
-			}
-
-			// 3. Record Event
-			// Note: We default to ACTION logic for batch, unless metric implies otherwise.
-			// You could add logic here: if(metric.startsWith("buy")) recordConversion...
-			saveEvent(req, device, ctxSession, eventParams, metric);
-
+		String visitorId;
+		// 2. Resolve Session (Try to reuse session if possible, but safe to fetch per
+		// event)
+		// If payload has visid, we might prioritize it
+		if (events.size() >0) {
+			EventPayload event = events.get(0);
+			visitorId = StringUtil.safeString(event.getVisId());
 		}
+		else {
+			visitorId = "";
+		}
+		
+		int successCount = events.size();
+		ObserverResponse.done(resp, 200, visitorId, ctxSessionKey, successCount);
+		
+		
+		TaskRunner.runInThreadPools(()->{
+			// Resolve IP once for the batch
+			String ip = HttpWebParamUtil.getRemoteIP(req);
+			String sessionKey = ctxSessionKey;
 
-		ObserverResponse.done(resp, 200, lastVisitorId, sessionKey, successCount);
+			ContextSession ctxSession = null;
+			for (EventPayload event : events) {
+				// 1. Prepare Params for this specific event
+				// We create a copy of global params and inject specific event data
+				MultiMap eventParams = MultiMap.caseInsensitiveMultiMap();
+				eventParams.addAll(globalParams);
+
+				// Map EventPayload fields to HttpParamKey expected by EventObserverUtil
+				String metric = event.getMetric();
+				eventParams.set(HttpParamKey.EVENT_METRIC_NAME, metric);
+
+				// If the payload has encoded JSON data, pass it so Util can read it
+				if (StringUtil.isNotEmpty(event.getRawEventData())) {
+					// Assuming the Util looks for specific keys, or generic 'eventdata'
+					// You might need to adjust the key based on what EventObserverUtil expects
+					eventParams.set(HttpParamKey.EVENT_DATA, event.getDecodedEventData());
+				}
+
+				eventParams.set(HttpParamKey.VISITOR_ID, visitorId);
+				eventParams.set(HttpParamKey.OBSERVER_ID, event.getObsId());
+				eventParams.set(HttpParamKey.FINGERPRINT_ID, event.getFgp());
+				eventParams.set(HttpParamKey.TOUCHPOINT_URL, event.getDecodedTpUrl());
+				eventParams.set(HttpParamKey.TOUCHPOINT_NAME, event.getDecodedTpName());
+				eventParams.set(HttpParamKey.TOUCHPOINT_REFERRER_URL, event.getTpRefUrl());
+				eventParams.set(HttpParamKey.TOUCHPOINT_REFERRER_DOMAIN, event.getTpRefDomain());
+				eventParams.set(HttpParamKey.MEDIA_HOST, event.getMediaHost());
+
+				if (ctxSession == null || StringUtil.isEmpty(sessionKey)) {
+					ctxSession = ContextSessionManagement.get(sessionKey, ip, eventParams, device);
+					sessionKey = ctxSession.getSessionKey();
+				}
+
+				// 3. Record Event
+				// Note: We default to ACTION logic for batch, unless metric implies otherwise.
+				// You could add logic here: if(metric.startsWith("buy")) recordConversion...
+				saveEvent(req, device, ctxSession, eventParams, metric);
+			}
+
+		});
+
+	}
+	
+	private static void saveEvent(HttpServerRequest req, DeviceInfo device, ContextSession ctxSession, MultiMap eventParams, String metricName) {
+		if (ctxSession != null) {
+			EventMetric metric = EventMetricManagement.getEventMetricByName(metricName);
+			if(metric.isConversion()) {
+				EventObserverUtil.recordConversionEvent(req, eventParams, device, ctxSession, metricName);
+			}
+			else {				
+				EventObserverUtil.recordBehavioralEvent(req, eventParams, device, ctxSession, metricName);
+			}
+		}
 	}
 
 	private static List<EventPayload> convertJsonToEvents(HttpServerResponse resp, String ctxSessionKey,
@@ -168,22 +188,7 @@ public final class ObserverHttpPostHandler {
 		return events;
 	}
 
-	private static void saveEvent(HttpServerRequest req, DeviceInfo device, ContextSession ctxSession, MultiMap eventParams, String metricName) {
-		if (ctxSession != null) {
-			TaskRunner.runInThreadPools(() -> {
-				EventMetric metric = EventMetricManagement.getEventMetricByName(metricName);
-				if(metric.isConversion()) {
-					EventObserverUtil.recordConversionEvent(req, eventParams, device, ctxSession, metricName);
-				}
-				else if(metric.isView()) {
-					EventObserverUtil.recordViewEvent(req, eventParams, device, ctxSession, metricName);
-				}
-				else {
-					EventObserverUtil.recordActionEvent(req, eventParams, device, ctxSession, metricName);
-				}
-			});
-		}
-	}
+
 
 	/**
 	 * Handles Single Event
@@ -212,7 +217,15 @@ public final class ObserverHttpPostHandler {
 	}
 
 	/**
-	 * Helper to reduce duplication between Action and Conversion events
+	 *  Helper to reduce duplication between Action and Conversion events
+	 * 
+	 * @param req
+	 * @param params
+	 * @param resp
+	 * @param device
+	 * @param ctxSessionKey
+	 * @param ip
+	 * @param urlPath
 	 */
 	private static void handleStandardEvent(HttpServerRequest req, MultiMap params, HttpServerResponse resp,
 			DeviceInfo device, String ctxSessionKey, String ip, String urlPath) {
@@ -227,13 +240,12 @@ public final class ObserverHttpPostHandler {
 			sessionKey = ctxSession.getSessionKey();
 
 			String eventName = StringUtil.safeString(params.get(HttpParamKey.EVENT_METRIC_NAME)).toLowerCase();
-			String eventId;
+			String eventId = StringPool.BLANK;
 
-			if (urlPath.equalsIgnoreCase(PREFIX_EVENT_VIEW)) {
-				eventId = EventObserverUtil.recordViewEvent(req, params, device, ctxSession, eventName);
-			} else if (urlPath.equalsIgnoreCase(PREFIX_EVENT_ACTION)) {
-				eventId = EventObserverUtil.recordActionEvent(req, params, device, ctxSession, eventName);
-			} else {
+			if (urlPath.equalsIgnoreCase(PREFIX_EVENT_ACTION) || urlPath.equalsIgnoreCase(PREFIX_EVENT_VIEW)) {
+				eventId = EventObserverUtil.recordBehavioralEvent(req, params, device, ctxSession, eventName);
+			}
+			else {
 				eventId = EventObserverUtil.recordConversionEvent(req, params, device, ctxSession, eventName);
 			}
 
@@ -248,6 +260,14 @@ public final class ObserverHttpPostHandler {
 		ObserverResponse.done(resp, status, visitorId, sessionKey, DEFAULT_RESPONSE);
 	}
 
+	/**
+	 * @param req
+	 * @param params
+	 * @param resp
+	 * @param device
+	 * @param ctxSessionKey
+	 * @param ip
+	 */
 	private static void handleFeedbackEvent(HttpServerRequest req, MultiMap params, HttpServerResponse resp,
 			DeviceInfo device, String ctxSessionKey, String ip) {
 

@@ -101,6 +101,7 @@ public final class ProfileDataManagement {
 	 */
 	public static void updateProfileByEvent(UpdateProfileEvent event) {
 		JobUpdateProfileByEvent.job().enqueue(event);
+		// TODO save into queue
 	}
 
 	/**
@@ -950,7 +951,6 @@ public final class ProfileDataManagement {
 
 					// UTM tracking and contact
 					profile.updateFromEventData(eventData);
-					
 
 					// update to Daily Report Unit of profile
 					profile.updateDailyReportUnit(event.getCreatedAt(), eventName, journeyId);

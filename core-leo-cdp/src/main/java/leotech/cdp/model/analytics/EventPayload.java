@@ -1,8 +1,8 @@
 package leotech.cdp.model.analytics;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.regex.Pattern;
 
 import com.google.gson.annotations.SerializedName;
 
@@ -106,21 +106,44 @@ public class EventPayload {
 	}
 
 	// Utility to handle URL decoding (handles double encoding if present)
+	private static final Pattern VALID_URL_ENCODED_PATTERN =
+			Pattern.compile("%[0-9a-fA-F]{2}");
+
 	private String decode(String value) {
-		if (value == null)
-			return null;
+		if (value == null || value.isEmpty()) {
+			return value;
+		}
+
+		String result = value;
+
 		try {
-			// First decode
-			String decoded = URLDecoder.decode(value, StandardCharsets.UTF_8.name());
-			// Check if it needs a second pass (common in complex JS SDKs)
-			if (decoded.contains("%")) {
-				return URLDecoder.decode(decoded, StandardCharsets.UTF_8.name());
+			// First decode only if it looks URL-encoded
+			if (looksUrlEncoded(result)) {
+				result = URLDecoder.decode(result, StandardCharsets.UTF_8.name());
 			}
-			return decoded;
-		} catch (UnsupportedEncodingException e) {
+
+			// Second pass ONLY if it still contains valid escape patterns
+			if (looksUrlEncoded(result)) {
+				result = URLDecoder.decode(result, StandardCharsets.UTF_8.name());
+			}
+
+			return result;
+		} catch (IllegalArgumentException ex) {
+			// Broken encoding from client / SDK — return original safely
+			return value;
+		} catch (Exception ex) {
 			return value;
 		}
 	}
+
+	private boolean looksUrlEncoded(String input) {
+		if (input == null) {
+			return false;
+		}
+		// Must contain at least one valid %HH sequence
+		return VALID_URL_ENCODED_PATTERN.matcher(input).find();
+	}
+
 
 	@Override
 	public String toString() {

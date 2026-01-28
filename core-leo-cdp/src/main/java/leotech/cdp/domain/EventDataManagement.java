@@ -229,7 +229,7 @@ public class EventDataManagement {
 			int journeyStage = eventMetric.getJourneyStage();
 			
 			Date createdAt = Date.from(Instant.parse(eventTime));
-			boolean isConversionEvent = eventMetric.isScoreModelForCLV();
+			boolean isConversionEvent = eventMetric.isScoringForCLV();
 			boolean isExperienceEvent = eventMetric.isScoreModelForCX();
 			
 			Touchpoint sourceTouchpoint = TouchpointManagement.importTouchpoint(sourceTouchpointURL, sourceTouchpointName, sourceTouchpointType);

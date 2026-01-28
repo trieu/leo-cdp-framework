@@ -12,7 +12,6 @@ import com.google.gson.Gson;
 import com.google.gson.annotations.Expose;
 
 import leotech.cdp.domain.DataFlowManagement;
-import leotech.cdp.domain.schema.BehavioralEvent;
 import leotech.system.util.database.PersistentObject;
 import rfx.core.util.StringUtil;
 
@@ -336,21 +335,9 @@ public final class EventMetric extends PersistentObject {
 			this.journeyStage = journeyStage;
 		}
 	}
+
 	
-	
-	public boolean isItemView() {
-		return BehavioralEvent.General.ITEM_VIEW.equals(this.eventName);
-	}
-	
-	public boolean isShortLinkClick() {
-		return BehavioralEvent.General.SHORT_LINK_CLICK.equals(this.eventName);
-	}
-	
-	public boolean isView() {
-		return this.eventName.contains("view");
-	}
-	
-	public boolean isScoreModelForCLV() {
+	public boolean isScoringForCLV() {
 		return this.scoreModel == EventMetric.SCORING_LIFETIME_VALUE_METRIC;
 	}
 	
@@ -360,15 +347,15 @@ public final class EventMetric extends PersistentObject {
 	}
 	
 	public boolean isLeadMetric() {
-		return this.isItemView() || this.isShortLinkClick();
+		return this.scoreModel == SCORING_LEAD_METRIC || this.scoreModel == SCORING_ACQUISITION_METRIC;
 	}
 	
 	public boolean isProspectiveMetric() {
-		return isScoreModelForCLV() && PROSPECT.equals(this.funnelStageId);
+		return this.scoreModel == SCORING_PROSPECT_METRIC || this.scoreModel == SCORING_ACQUISITION_METRIC;
 	}
 	
 	public boolean isConversion() {
-		return isScoreModelForCLV() && this.score > 0;
+		return isScoringForCLV() && this.getFunnelStage().isCustomerMetric();
 	}
 	
 	public int getScoreModel() {
@@ -434,6 +421,8 @@ public final class EventMetric extends PersistentObject {
 	}
 
 	public final boolean isPurchasingEvent() {
-		return isConversion() && getFunnelStage().isCustomerMetric();
+		return isScoringForCLV() && getFunnelStage().isCustomerMetric();
 	}
+
+
 }

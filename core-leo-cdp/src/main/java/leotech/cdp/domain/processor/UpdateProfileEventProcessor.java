@@ -214,7 +214,7 @@ public final class UpdateProfileEventProcessor {
 	 * @return
 	 */
 	private static boolean processTrackingEvent(EventObserver eventObserver, TrackingEvent trackingEvent,
-			EventMetric eventMetric, DataFlowStage funnelStage, ProfileSingleView profile, String journeyId) {
+			EventMetric eventMetric, DataFlowStage funnelStage, ProfileSingleView p, String journeyId) {
 		// save tracking event
 		trackingEvent.setRefJourneyId(journeyId);
 		trackingEvent.setJourneyStage(eventMetric.getJourneyStage());
@@ -222,16 +222,22 @@ public final class UpdateProfileEventProcessor {
 		// commit to database 
 		boolean saveEventOk = TrackingEventDao.save(trackingEvent);
 		
-		// updating attributes from event
-		if(SystemMetaData.isAutoMergeProfileData() && profile.isMergeableProfile()) {
-			profile = mergeEventDataToProfile(profile, trackingEvent);
-		}
-
-		// update Behavioral Graph 
-		updateBehavioralGraph(profile, trackingEvent, eventMetric);
 		
-		// inJourneyMap
-		saveJourneyMapAndTouchpointHub(eventObserver, profile, journeyId, eventMetric, funnelStage, null);
+		TaskRunner.run(()->{
+			// updating attributes from event
+			ProfileSingleView profile = p;
+			if(SystemMetaData.isAutoMergeProfileData() && p.isMergeableProfile()) {
+				profile = mergeEventDataToProfile(p, trackingEvent);
+			}
+
+			// update Behavioral Graph 
+			updateBehavioralGraph(profile, trackingEvent, eventMetric);
+			
+			// inJourneyMap
+			saveJourneyMapAndTouchpointHub(eventObserver, profile, journeyId, eventMetric, funnelStage, null);
+		});
+		
+		
 		return saveEventOk;
 	}
 

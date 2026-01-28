@@ -395,7 +395,7 @@ public class EventObserverManagement {
 //		System.out.println("refTouchPoint " + refTouchPoint);
 //		System.out.println("srcTouchpoint " + srcTouchpoint);
 				
-		boolean isConversion = EventMetricManagement.getEventMetricByName(eventName).isScoreModelForCLV();
+		boolean isConversion = EventMetricManagement.getEventMetricByName(eventName).isScoringForCLV();
 		long eventCount = 1L; // this could be computed at the Redis
 
 		TrackingEvent trackingEvent = new TrackingEvent(srcObserverId, sessionKey, eventName, eventCount, refProfileId, refVisitorId,
