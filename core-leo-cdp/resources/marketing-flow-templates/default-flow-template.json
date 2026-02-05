@@ -16,7 +16,7 @@
     "C_frequency_capping": {
       "id": "C_frequency_capping",
       "type": "condition_node",
-      "label": "<img class=\"questionIcon\" src=\"https://cdn-icons-png.flaticon.com/256/2867/2867335.png\" />  Check the limit to do action ?",
+      "label": "<img class=\"questionIcon\" src=\"https://cdn-icons-png.flaticon.com/256/2867/2867335.png\" />  Check frequency limit per profile",
       "condition": "context.checkAndIncrementMessageCount(\"{{campaign_action_type}}\",\"{{frequency_capping_timeunit}}\",{{frequency_capping_limit}})"
     },
     "A_actionCommands": {

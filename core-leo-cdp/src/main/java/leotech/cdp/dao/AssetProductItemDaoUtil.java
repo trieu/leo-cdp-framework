@@ -167,7 +167,7 @@ public class AssetProductItemDaoUtil extends AssetItemDao {
 		ArangoDatabase db = getCdpDatabase();
 		Map<String, Object> bindVars = new HashMap<>(4);
 		if(searchValue.length()>1) {
-			bindVars.put("keywords", "%" + searchValue + "%");
+			bindVars.put("keywords", searchValue);
 		}
 		else {
 			bindVars.put("keywords", "");

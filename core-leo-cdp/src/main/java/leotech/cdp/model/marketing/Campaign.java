@@ -10,6 +10,7 @@ import com.arangodb.ArangoDatabase;
 import com.arangodb.entity.Key;
 import com.arangodb.model.PersistentIndexOptions;
 import com.github.slugify.Slugify;
+import com.google.gson.Gson;
 import com.google.gson.annotations.Expose;
 
 import leotech.cdp.model.activation.TimeUnitCode;
@@ -79,6 +80,9 @@ public final class Campaign extends PersistentObject implements Comparable<Campa
 
 	@Expose
 	String automatedFlowJson = "";
+	
+	@Expose
+	FlowchartDefinition flowchartDefinition;
 
 	@Expose
 	int status = STATUS_DRAFT;
@@ -352,12 +356,9 @@ public final class Campaign extends PersistentObject implements Comparable<Campa
 		this.ownerUsername = ownerUsername;
 	}
 
-	public String getAutomatedFlowJson() {
-		return automatedFlowJson;
-	}
-
 	public void setAutomatedFlowJson(String automatedFlowJson) {
 		this.automatedFlowJson = automatedFlowJson;
+		this.flowchartDefinition = new Gson().fromJson(automatedFlowJson, FlowchartDefinition.class);
 	}
 
 	public List<String> getReportedUsernames() {

@@ -1840,11 +1840,18 @@ AQL_GET_PRODUCT_ITEM_BY_PRODUCT_ID_AND_ID_TYPE =>
 ;
 
 AQL_GET_PRODUCT_ITEMS_IN_GROUP =>
-	FOR p in cdp_productitem 
-		FILTER @groupId IN p.groupIds[*] AND p.status >= 0 AND ( @keywords == "" OR LOWER(p.title) LIKE LOWER(@keywords) )
-		SORT p.updatedAt DESC
-		LIMIT @startIndex,@numberResult 
-		RETURN p
+	LET search = LOWER(TRIM(@keywords))
+	FOR p IN cdp_productitem
+	    FILTER @groupId IN p.groupIds
+	        AND p.status >= 0
+	        AND (
+	            search == ""
+	            OR CONTAINS(LOWER(p.title), search)
+	            OR CONTAINS(LOWER(p.productId), search)
+	        )
+	    SORT p.updatedAt DESC
+	    LIMIT @startIndex, @numberResult
+	    RETURN p
 ;
 
 AQL_GET_PRODUCT_ITEMS_BY_CAMPAIGN => 

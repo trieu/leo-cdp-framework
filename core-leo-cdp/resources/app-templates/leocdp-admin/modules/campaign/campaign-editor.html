@@ -67,13 +67,22 @@
 			                    </select>
 							</div>
 						</div>
+
+						<div id="runWithConditionRules" class="form-group row" >
+			                <label class="control-label col-sm-3" for="eventForCampaignCondition"> Condition Rules </label>
+							
+							<div class="col-sm-9" style="padding-top: 10px" >
+								<textarea id="campaign_condition_rules" class="form-control" rows="3" placeholder="Enter condition rules"></textarea>
+							</div>
+			            </div> 
 						
 						<div class="form-group row">
 							<label class="control-label col-sm-3" for="campaign_condition">Condition</label>
 							<div class="col-sm-9" style="padding-top: 10px">
 								<select id="campaign_condition" name="condition" data-placeholder="Select a condition to run in this campaign" class="select"  >
-			                        <option value="runAtDateAndTime"> Run at the date and time </option>
-			                        <option value="getEventAtUrl"> Get an event at a specific URL</option>		                        
+			                        <option value="runAtDateAndTime"> If ondition Rules is OK, then run at the date and time </option>
+			                        <option value="getEventAtUrl"> Get an event at a specific URL</option>		
+									<option value="getEventAtUrl"> Get an event at a specific URL</option>		                          
 			                    </select>
 							</div>
 						</div>
@@ -90,6 +99,8 @@
 					            </div>
 							</div>
 			            </div> 
+
+						
 			            
 						<div id="eventMetricWithUrlForCondition" class="form-group row" style="display: none;">
 			                <label class="control-label col-sm-3" for="eventForCampaignCondition"> Event Trigger at the URL </label>
@@ -109,8 +120,9 @@
 							<div class="col-sm-9" style="padding-top: 10px">
 								<select id="campaign_action_type" name="action_type" data-placeholder="Select an action type when a customer profile is matched with condition" class="select"  >
 			                    	<option value="email"> Send Email </option>
-			                        <option value="zalo_oa"> Send Notification Message via Zalo OA</option>
-			                        <option value="zns"> Send ZNS (Zalo Notification Service)</option>
+									<option value="webhook"> Send Webhook </option>
+			                        <option value="zalo_oa" style="display: none;"> Send Notification Message via Zalo OA</option>
+			                        <option value="zns" style="display: none;"> Send ZNS (Zalo Notification Service)</option>
 			                    </select>
 							</div>
 						</div>
@@ -119,6 +131,8 @@
 			                <label class="control-label col-sm-3" for="campaignFrequencyCappingTimeUnit"> Frequency Capping of <span id="frequencyCappingType" class="highlight_text"></span> </label>
 							<div class="col-sm-3" style="padding-top: 10px" >
 								<select id="frequencyCappingTimeUnit"  data-placeholder="Time Unit" class="select" >
+									<option value="seconds"> SECONDS </option>
+									<option value="minutes"> MINUTES </option>
 								  	<option value="hours"> HOURS </option>
 			                        <option value="days"> DAYS </option>
 			                        <option value="weeks"> WEEKS </option>

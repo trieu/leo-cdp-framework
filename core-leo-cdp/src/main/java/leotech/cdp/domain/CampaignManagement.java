@@ -1,5 +1,6 @@
 package leotech.cdp.domain;
 
+import java.io.IOException;
 import java.util.List;
 
 import com.google.gson.Gson;
@@ -12,6 +13,7 @@ import leotech.cdp.query.filters.CampaignFilter;
 import leotech.system.model.JsonDataTablePayload;
 import leotech.system.util.LogUtil;
 import leotech.system.util.TaskRunner;
+import rfx.core.util.FileUtils;
 
 /**
  * Data Activation Campaign
@@ -52,7 +54,13 @@ public class CampaignManagement {
 
 	public static Campaign newCampaign() {
 		Campaign campaign = new Campaign();
-
+		try {
+			String json = FileUtils.readFileAsString("./resources/marketing-flow-templates/default-flow-template.json");
+			campaign.setAutomatedFlowJson(json);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
 		return campaign;
 	}
 
