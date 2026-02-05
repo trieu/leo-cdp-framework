@@ -1,130 +1,252 @@
 <style>
-.active_agent_box {
-	border-color: #0E0E0E!important;
-}
-.active_agent_box > .panel-heading {
-	background-color: #fcf8e3!important;
-}
-#filter_agent_keywords {
+/* =========================
+   Agent Activation Hub – UI
+   Bootstrap 3.4.1 Safe
+   ========================= */
+#filter_agents_keywords {
 	width: 100%;
 }
 
+/* ---------- Toolbar ---------- */
+.agent-toolbar {
+	margin-bottom: 15px;
+}
+
+/* ---------- Filter Panel ---------- */
+.agent-filter-panel .panel-heading {
+	background-color: #eef6fb;
+	font-weight: 600;
+}
+
+.agent-filter-panel .panel-body {
+	padding: 15px 20px;
+}
+
+/* ---------- Agent Cards ---------- */
+.agent_box {
+	padding-left: 8px;
+	padding-right: 8px;
+	margin-bottom: 15px;
+}
+
+.agent-card {
+	border: 1px solid #ddd;
+	transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.agent-card:hover {
+	border-color: #3498db;
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.active_agent_box {
+	border-color: #2ecc71 !important;
+}
+
+.agent-card .panel-heading {
+	background-color: #f7f9fb;
+}
+
+.agent-name {
+	font-weight: 600;
+	font-size: 14px;
+}
+
+.agent-desc {
+	font-size: 12px;
+	color: #777;
+	margin-top: 2px;
+}
+
+/* ---------- Read-only fields ---------- */
+.agent-meta input[disabled] {
+	background-color: #fafafa;
+	font-size: 12px;
+	cursor: default;
+}
+
+/* ---------- Action buttons ---------- */
+.agent-actions .btn {
+	width: 100%;
+}
+
+.agent-actions .btn+.btn {
+	margin-top: 6px;
+}
+
+.btn-agent-config {
+	background-color: #3498db;
+	color: #fff;
+}
+
+.btn-agent-reset {
+	background-color: #f39c12;
+	color: #fff;
+}
+
+.btn-agent-delete {
+	background-color: #e74c3c;
+	color: #fff;
+}
 </style>
 
-<!-- Data Service Services -->
-
-<div class="row">
+<!-- ================= Toolbar ================= -->
+<div class="row agent-toolbar">
 	<div class="col-lg-10">
 		<h5 class="page-header" id="page_breadcrumb"></h5>
 	</div>
-	<div class="col-lg-2 text-right" style="padding: 10px;">
-		<button type="button" class="btn btn-goto-router data-control-insert" onclick="newAgent()" title="Activate new A.I Agent" >
-			<i class="fa fa-plus-circle" aria-hidden="true"></i> Activate Agent
+	<div class="col-lg-2 text-right">
+		<button type="button" class="btn btn-primary data-control-insert"
+			onclick="newAgent()" title="Activate new A.I Agent">
+			<i class="fa fa-plus-circle"></i> Activate Agent
 		</button>
 	</div>
 </div>
 
-<div class="top_page_header" >
-	<h4> 
-		<i class="fa fa-exchange " aria-hidden="true"></i> Agent Activation Hub 
-		<i id="agents_tooltip" class="fa fa-question-circle" aria-hidden="true" title="Please set configuration to activate Agent" ></i>
-	</h4>
+<!-- ================= Page Title ================= -->
+<div class="top_page_header">
+    <h4 class="agent-page-title">
+        <i class="fa fa-exchange"></i>
+        Agent Activation Hub
+        <i id="agents_tooltip"
+           class="fa fa-question-circle"
+           title="Configure and activate AI agents to execute data activation, personalization, and synchronization workflows.">
+        </i>
+    </h4>
+
+    <p class="agent-page-subtitle">
+        Manage, configure, and activate AI agents that power data-driven actions across the LEO CDP ecosystem.
+    </p>
 </div>
 
+
 <div class="col-lg-12 row">
-	<div class="panel panel-info" >
-	   	<div class="panel-heading">
-	   		<b> <i class="fa fa-search" aria-hidden="true"></i> Data Query Filter </b>
-	   	</div>
-	    <div class="panel-body">
-	      	<div class="col-lg-12 row">
-	      		<div class="col-lg-8" >
-	      			<div class="col-md-7" >
-						<input id="filter_agent_keywords" type="text" placeholder="Enter keywords to filter by name" autocomplete="off">		
-					</div>	
-					<div class="col-md-5" >	
-						<select class="form-control" id="select_filter_agents" >
-					    	<option value="all"> Show all A.I Agents </option>
-					    	<option value="active"> Show only active A.I Agents </option>
-					    	<option value="active_for_personalization" title="filter only active A.I Agents for personalization" > Show active Agents for personalization</option>
-					    	<option value="active_for_enrichment" title="filter only active A.I Agents for data-enrichment"> Show active Agents for data-enrichment</option>
-					    	<option value="active_for_synchronization" title="filter only active A.I Agent for synchronization"> Show active Agent for synchronization</option>
-					    </select>
-				    </div>
-				</div>
-				<div class="col-lg-4">
-					<div class="col-md-6 text-center" >
-					 	<button type="button" style="width: 160px;" class="btn btn-do-now" onclick="resetAgentFilter()" >
-					 		<i class="fa fa-fw fa-undo"></i> Reset 
-					 	</button>
-					</div>
-					<div class="col-md-5 text-center" >
-					 	<button type="button" style="width: 160px;" class="btn btn-goto-router" onclick="loadAllAgents()" >
-					 		<i class="fa fa-fw fa-filter"></i> Filter 
-					 	</button>
-					</div>
-				</div>
-	      	</div>
+	<div class="panel panel-default agent-filter-panel">
+		<div class="panel-heading">
+	        <i class="fa fa-search"></i> Data Query Filter
 	    </div>
+		<div class="panel-body">
+			<div class="row">
+				<div class="col-md-4">
+					<input id="filter_agents_keywords" type="text" class="form-control"
+						placeholder="Search agent name" autocomplete="off">
+				</div>
+
+				<div class="col-md-4">
+					<select class="form-control" id="select_filter_agents">
+						<option value="all">Show all A.I Agents</option>
+						<option value="active">Show only active A.I Agents</option>
+						<option value="active_for_personalization">Personalization</option>
+						<option value="active_for_enrichment">Data Enrichment</option>
+						<option value="active_for_synchronization">Synchronization</option>
+					</select>
+				</div>
+
+				<div class="col-md-4 text-right">
+					<button type="button" class="btn btn-default"
+						onclick="resetAgentFilter()">
+						<i class="fa fa-undo"></i> Reset
+					</button>
+					<button type="button" class="btn btn-primary"
+						onclick="loadAllAgents()">
+						<i class="fa fa-filter"></i> Apply
+					</button>
+				</div>
+			</div>
+		</div>
 	</div>
 	<div class="row gridholder">
 		<div id="agents_loader" class="loader"></div>
 		<div class="col-lg-12" id="agents_holder" style="display: none;">
 			<!-- list -->
 		</div>
-		<div class="col-lg-12" id="agents_pagination" > </div>
-	</div>	
+		<div class="col-lg-12" id="agents_pagination"></div>
+	</div>
 </div>
 
-<script id='tpl_agent_view' type="text/html" >
-<div class="agent_box col-lg-4">
-  <div class="panel panel-default" id="agent_box_<%- id %>">
-	<div class="panel-heading"   > 
-		<b id="service_box_header_<%- id %>" > 
-			<i class="fa fa-exchange " aria-hidden="true"></i> <span style="font-size:13px"> <%- name %> </span> 
-		</b>
-		<i class="fa fa-question-circle config_description" aria-hidden="true" style="float:right" title="<%- description %>" ></i>
-	</div>
-	<div class="panel-body">
-		<div class="row" >
-			<div class="col-md-12">
-				<div class="form-group">
-					<div id="<%- id %>_api_key_div" >
-						<label id="<%- id %>_dag_id_label" for="<%- id %>_api_key"> Apache Airflow DAG ID </label>
-						<input id="<%- id %>_dag_id"  autocomplete="off" type="text" value="<%- dagId %>" class="form-control" placeholder="Apache Airflow DAG ID" disabled >
-						<br>
-					</div>
-					<div id="<%- id %>_api_url_div" >
-  						<label for="<%- id %>_api_url">  API URL </label>
-  						<input id="<%- id %>_api_url" autocomplete="off" type="text" value="<%- configs.service_api_url %>" class="form-control"  placeholder="API URL" disabled >
-					</div>
-				</div>
-			</div>
-		</div>
-	 	<div id="<%- id %>_buttons_div" class="row" style="margin-top:10px">
-			<div class="col-md-4 text-center">
-		    	<button type="button" class="btn btn-goto-router btn-sm" title="Set configs for this agent" onclick="loadAgent('<%- id %>')" > 
-		  			<i class="fa fa-cog" aria-hidden="true"></i> Configs 
-		  		</button>
-		    </div>
-			<div class="col-md-4 text-center">
-		    	<button type="button" class="btn btn-danger btn-sm" title="Delete this data service" onclick="deleteAgent('<%- id %>')" > 
-		  			<i class="fa fa-trash" aria-hidden="true"></i> Delete
-		  		</button>
-		    </div>
-			<div class="col-md-4 text-center">
-		    	<button type="button" class="btn btn-danger btn-sm" title="Delete all configs of this data service" onclick="resetAgent('<%- id %>')" > 
-		  			<i class="fa fa-undo" aria-hidden="true"></i> Reset
-		  		</button>
-		    </div>
-	 	</div>
-	</div>
+<script id="tpl_agent_view" type="text/html">
+<div class="agent_box col-lg-4 col-md-6">
+  <div class="panel panel-default agent-card"
+       id="service_box_<%- id %>">
+
+    <!-- HEADER -->
+    <div class="panel-heading">
+        <b id="service_box_header_<%- id %>">
+            <i class="fa fa-exchange"></i>
+            <span style="font-size:13px"><%- name %></span>
+        </b>
+
+        <i class="fa fa-question-circle config_description"
+           style="float:right; cursor:pointer"
+           title="<%- description %>"></i>
+    </div>
+
+    <!-- BODY -->
+    <div class="panel-body agent-meta">
+
+        <!-- DAG -->
+        <div class="form-group">
+            <label id="<%- id %>_api_key_label">
+                Apache Airflow DAG ID
+            </label>
+            <input id="<%- id %>_dag_id"
+                   type="text"
+                   class="form-control"
+                   value="<%- dagId %>"
+                   disabled>
+        </div>
+
+        <!-- API URL -->
+        <div class="form-group">
+            <label>API URL</label>
+            <input id="<%- id %>_api_url"
+                   type="text"
+                   class="form-control"
+                   value="<%- configs.service_api_url %>"
+                   disabled>
+        </div>
+
+        <!-- ACTIONS -->
+        <div id="<%- id %>_buttons_div"
+             class="row agent-actions"
+             style="margin-top:10px">
+
+            <div class="col-xs-4 text-center">
+                <button type="button"
+                        class="btn btn-agent-config btn-sm"
+                        title="Set configs for this agent"
+                        onclick="loadAgent('<%- id %>')">
+                    <i class="fa fa-cog"></i> Configs
+                </button>
+            </div>
+
+            <div class="col-xs-4 text-center">
+                <button type="button"
+                        class="btn btn-agent-delete btn-sm"
+                        title="Delete this agent"
+                        onclick="deleteAgent('<%- id %>')">
+                    <i class="fa fa-trash"></i> Delete
+                </button>
+            </div>
+
+            <div class="col-xs-4 text-center">
+                <button type="button"
+                        class="btn btn-agent-reset btn-sm"
+                        title="Reset all configs of this agent"
+                        onclick="resetAgent('<%- id %>')">
+                    <i class="fa fa-undo"></i> Reset
+                </button>
+            </div>
+
+        </div>
+    </div>
   </div>
 </div>
 </script>
 
 
-<script id='tpl_config_row_item' type="text/html" >
+
+<script id='tpl_config_row_item' type="text/html">
 <div class="col-md-12 form-group config_item"  id="configAgent_<%- serviceId %>_<%- time %>" >
 	<div class="col-md-3 float-left" >
     	<input type="text" name="configName" placeholder="Enter key" class="form-control" value="<%- configName %>" >
@@ -140,13 +262,15 @@
 
 
 <!-- dialog html -->
-<div class="modal fade" id="dialogSetAgentInfo" role="dialog" aria-labelledby="agentInfoTitle">
+<div class="modal fade" id="dialogSetAgentInfo" role="dialog"
+	aria-labelledby="agentInfoTitle">
 	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
 
 			<!-- Modal Header -->
 			<div class="modal-header bg-primary text-center">
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+				<button type="button" class="close" data-dismiss="modal"
+					aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				</button>
 				<h4 class="modal-title" id="agentInfoTitle">
@@ -165,42 +289,29 @@
 							Name <span class="text-danger">*</span>
 						</label>
 						<div class="col-md-9">
-							<input
-								type="text"
-								id="dataServiceName"
-								class="form-control"
-								placeholder="e.g. Personalization Engine"
-								required
-							>
-							<p class="help-block">A unique, human-readable name for this agent.</p>
+							<input type="text" id="dataServiceName" class="form-control"
+								placeholder="e.g. Personalization Engine" required>
+							<p class="help-block">A unique, human-readable name for this
+								agent.</p>
 						</div>
 					</div>
 
 					<div class="form-group">
 						<label class="control-label col-md-3" for="dataServiceDescription">
-							Description
-						</label>
+							Description </label>
 						<div class="col-md-9">
-							<textarea
-								id="dataServiceDescription"
-								class="form-control"
+							<textarea id="dataServiceDescription" class="form-control"
 								rows="3"
-								placeholder="Describe what this agent does and how it is used"
-							></textarea>
+								placeholder="Describe what this agent does and how it is used"></textarea>
 						</div>
 					</div>
 
 					<div class="form-group">
 						<label class="control-label col-md-3" for="dataServiceDagId">
-							Dataflow Graph ID
-						</label>
+							Dataflow Graph ID </label>
 						<div class="col-md-9">
-							<input
-								type="text"
-								id="dataServiceDagId"
-								class="form-control"
-								placeholder="graph_id or DAG identifier"
-							>
+							<input type="text" id="dataServiceDagId" class="form-control"
+								placeholder="graph_id or DAG identifier">
 						</div>
 					</div>
 
@@ -208,12 +319,12 @@
 						<label class="control-label col-md-3">Status</label>
 						<div class="col-md-9">
 							<div class="checkbox">
-								<label>
-									<input id="agentStatus" type="checkbox">
+								<label> <input id="agentStatus" type="checkbox">
 									<strong>Ready</strong>
 								</label>
 							</div>
-							<p class="help-block">Only ready agents can be executed in workflows.</p>
+							<p class="help-block">Only ready agents can be executed in
+								workflows.</p>
 						</div>
 					</div>
 
@@ -222,35 +333,30 @@
 				<hr>
 
 				<!-- PURPOSE -->
-				<h5><strong>Purpose</strong></h5>
+				<h5>
+					<strong>Purpose</strong>
+				</h5>
 				<div class="form-group">
 					<div class="checkbox">
-						<label>
-							<input id="forPersonalization" type="checkbox" value="true">
-							<strong>Data Personalization</strong>
-							<span class="text-muted">
-								– recommendation engines, decisioning logic
-							</span>
+						<label> <input id="forPersonalization" type="checkbox"
+							value="true"> <strong>Data Personalization</strong> <span
+							class="text-muted"> – recommendation engines, decisioning
+								logic </span>
 						</label>
 					</div>
 
 					<div class="checkbox">
-						<label>
-							<input id="forDataEnrichment" type="checkbox" value="true">
-							<strong>Data Enrichment</strong>
-							<span class="text-muted">
-								– CLV scoring, interest prediction
-							</span>
+						<label> <input id="forDataEnrichment" type="checkbox"
+							value="true"> <strong>Data Enrichment</strong> <span
+							class="text-muted"> – CLV scoring, interest prediction </span>
 						</label>
 					</div>
 
 					<div class="checkbox">
-						<label>
-							<input id="forSynchronization" type="checkbox" value="true">
-							<strong>Data Synchronization</strong>
-							<span class="text-muted">
-								– push data to email / marketing platforms
-							</span>
+						<label> <input id="forSynchronization" type="checkbox"
+							value="true"> <strong>Data Synchronization</strong> <span
+							class="text-muted"> – push data to email / marketing
+								platforms </span>
 						</label>
 					</div>
 				</div>
@@ -260,21 +366,16 @@
 				<!-- CONFIGURATIONS -->
 				<div class="clearfix" style="margin-bottom: 10px;">
 					<strong class="pull-left">Configurations</strong>
-					<button
-						type="button"
-						class="btn btn-primary btn-xs pull-right"
+					<button type="button" class="btn btn-primary btn-xs pull-right"
 						title="Add a configuration"
 						onclick="addNewConfigForAgent('newConfig')">
 						<i class="fa fa-plus"></i> New Config
 					</button>
 				</div>
 
-				<div
-					id="dataServiceConfigList"
-					class="well well-sm"
+				<div id="dataServiceConfigList" class="well well-sm"
 					style="max-height: 220px; overflow-y: auto;">
-					<p class="text-muted text-center">
-						No configurations added yet.
+					<p class="text-muted text-center">No configurations added yet.
 					</p>
 				</div>
 
@@ -285,11 +386,8 @@
 				<button type="button" class="btn btn-default" data-dismiss="modal">
 					<i class="fa fa-times"></i> Close
 				</button>
-				<button
-					type="button"
-					class="btn btn-success"
-					id="dataServiceSaveButton"
-					onclick="saveAgentInfo(this)">
+				<button type="button" class="btn btn-success"
+					id="dataServiceSaveButton" onclick="saveAgentInfo(this)">
 					<i class="fa fa-check"></i> Save Agent
 				</button>
 			</div>
@@ -302,6 +400,6 @@
 
 <script>
 	var initAgentManagement = function() {
-		loadAllAgents();		
+		loadAllAgents();
 	}
 </script>

@@ -75,9 +75,7 @@
 	.event_matrix_active {
 		width: 100%; background-color: #e8e8e8; border-radius: 10px;
 	}
-	.btn-import-data {
-		background-color: #FBF95A; color: black; border:solid 1px black;
-	} 
+	
 	.btn-taxonomy {
 	    color: #3300ff;
 	    background-color: #ECECEC;
@@ -90,6 +88,96 @@
 	    width: 100%;
 	    overflow-y: scroll;
 	}
+	/* =========================
+   Import Button (Data Ingestion)
+   ========================= */
+
+.btn-import-data {
+    background-color: #f4d03f;          /* warm, controlled yellow */
+    color: #1f2933;                      /* near-black for readability */
+    border: 1px solid #d4ac0d;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+}
+
+.btn-import-data:hover,
+.btn-import-data:focus {
+    background-color: #f1c40f;
+    color: #111;
+    border-color: #b7950b;
+    outline: none;
+}
+
+.btn-import-data:active,
+.btn-import-data.active {
+    background-color: #e1b80d;
+    border-color: #a88706;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.15);
+}
+
+/* Dropdown caret alignment */
+.btn-import-data .caret {
+    margin-left: 6px;
+}
+
+/* Dropdown menu styling */
+.btn-group .dropdown-menu {
+    min-width: 180px;
+}
+
+.btn-group .dropdown-menu > li > a {
+    padding: 8px 14px;
+    font-size: 13px;
+}
+
+.btn-group .dropdown-menu > li > a i {
+    margin-right: 6px;
+    color: #f1c40f;
+}
+	
+/* =========================
+   Deduplicate Button
+   High-impact system action
+   ========================= */
+
+.btn-deduplicate {
+    background-color: #e74c3c;          /* controlled danger red */
+    color: #ffffff;
+    border: 1px solid #c0392b;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+}
+
+.btn-deduplicate:hover,
+.btn-deduplicate:focus {
+    background-color: #d62c1a;
+    border-color: #a93226;
+    color: #ffffff;
+    outline: none;
+}
+
+.btn-deduplicate:active,
+.btn-deduplicate.active {
+    background-color: #b92d21;
+    border-color: #922b21;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.25);
+}
+
+/* Disabled state */
+.btn-deduplicate.disabled,
+.btn-deduplicate[disabled] {
+    background-color: #f5b7b1;
+    border-color: #e6b0aa;
+    color: #ffffff;
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* Icon spacing */
+.btn-deduplicate i {
+    margin-right: 6px;
+}
+
 </style>
 
 <script id='engaged-touchpoint-tpl' type="text/html" >
@@ -649,28 +737,52 @@
     </div>
 </div>
 
-<!-- Merge Duplicate for all Profiles -->
-<div class="modal fade" id="deduplicateAllProfilesDialog" role="dialog">
-    <div class="modal-dialog">
-        <!-- Modal content-->
-        <div class="modal-content">
+<!-- Deduplicate All Profiles -->
+<div class="modal fade" id="deduplicateAllProfilesDialog" role="dialog" aria-labelledby="deduplicateAllTitle">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content deduplicate-modal">
+
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h3 class="modal-title"> <i class="fa fa-compress" aria-hidden="true"></i> Deduplicate All Profiles </h3>
+                <h3 class="modal-title" id="deduplicateAllTitle">
+                    <i class="fa fa-compress"></i> Deduplicate All Profiles
+                </h3>
             </div>
-			<div class="modal-body">
-                <div class="alert alert-info">
-                    <h4> <i class="fa fa-question-circle-o" aria-hidden="true"></i> Would you like to deduplicate your data? </h4>
+
+            <div class="modal-body">
+                <div class="alert alert-warning deduplicate-warning">
+                    <h4>
+                        <i class="fa fa-exclamation-triangle"></i>
+                        This action affects all profiles
+                    </h4>
+                    <p>
+                        The system will automatically detect and merge duplicated customer profiles
+                        across all data sources.
+                    </p>
+                    <p class="text-danger">
+                        <strong>This process cannot be undone.</strong>
+                    </p>
                 </div>
             </div>
-            <div class="modal-footer">
-            	<button type="button" class="btn btn-primary" data-dismiss="modal"> <i class="fa fa-minus-circle" aria-hidden="true"></i> CANCEL </button>
-                <button type="button" class="btn btn-goto-router" onclick="okDeduplicateAllProfiles()"> <i class="fa fa-check" aria-hidden="true"></i> OK </button>
-            </div>
-        </div>
 
+            <div class="modal-footer">
+                <button type="button"
+                        class="btn btn-default"
+                        data-dismiss="modal">
+                    <i class="fa fa-times-circle"></i> Cancel
+                </button>
+
+                <button type="button"
+                        class="btn btn-deduplicate"
+                        onclick="okDeduplicateAllProfiles()">
+                    <i class="fa fa-check-circle"></i> Yes, Deduplicate All
+                </button>
+            </div>
+
+        </div>
     </div>
 </div>
+
 
 
 <!-- Merge Duplicate from Current Profile -->

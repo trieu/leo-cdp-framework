@@ -15,30 +15,64 @@
 </style>
 
 <div class="row">
-    <div class="col-lg-5">
-        <h5 class="page-header" id="page_breadcrumb" > </h5>
+    <div class="col-lg-6">
+        <h5 class="page-header" id="page_breadcrumb"></h5>
     </div>
-    <div class="col-lg-7 text-right" style="padding: 10px">
-    	<button type="button" class="btn btn-info" title="Go back" onclick="history.back()" > 
-			<i class="fa fa-arrow-circle-left" aria-hidden="true"></i> Back 
+
+    <div class="col-lg-6 text-right" style="padding: 10px">
+
+        <button type="button"
+                class="btn btn-do-now"
+                title="Refresh Profile List"
+                onclick="refreshAllProfiles()">
+            <i class="fa fa-refresh"></i> Refresh
+        </button>
+
+        <!-- Critical action -->
+        <button type="button"
+		        class="btn btn-deduplicate data-control-update"
+		        onclick="showMergeDuplicateProfileDialog()"
+		        title="Merge duplicated profiles into a single profile">
+		    <i class="fa fa-compress"></i> Deduplicate All
 		</button>
-    	<button type="button" class="btn btn-info" onclick="refreshAllProfiles()" title="Refresh Profile List" > 
-    		<i class="fa fa-refresh" aria-hidden="true"></i> Refresh
-    	</button>
-    	<button type="button" class="btn btn-do-now data-control-update" onclick="showMergeDuplicateProfileDialog()" title="Process all duplicated profiles into a single profile" > 
-    		<i class="fa fa-compress" aria-hidden="true"></i> Deduplicate All
-    	</button>
-    	<button type="button" class="btn btn-import-data data-control-update" onclick="importProfileHandler()" title="Import Profile from uploaded CSV file" > 
-    		<i class="fa fa-cloud-upload" aria-hidden="true"></i> Import Profile
-    	</button>
-    	<button type="button" class="btn btn-import-data data-control-update" onclick="importEventHandler()" title="Import Event from uploaded CSV file" > 
-    		<i class="fa fa-cloud-upload" aria-hidden="true"></i> Import Event
-    	</button>
-    	<button type="button" class="btn btn-goto-router data-control-insert" onclick="newProfileHandler()" title="Open editor to input new profile"> 
-    		<i class="fa fa-plus-circle" aria-hidden="true"></i> New Profile 
-    	</button>
+
+
+        <!-- Import group -->
+        <div class="btn-group">
+            <button type="button"
+                    class="btn btn-import-data dropdown-toggle data-control-update"
+                    data-toggle="dropdown"
+                    aria-haspopup="true"
+                    aria-expanded="false"
+                    title="Import data">
+                <i class="fa fa-cloud-upload"></i> Import
+                <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-right">
+                <li>
+                    <a href="javascript:void(0);" onclick="importProfileHandler()">
+                        <i class="fa fa-user"></i> Import Profiles
+                    </a>
+                </li>
+                <li>
+                    <a href="javascript:void(0);" onclick="importEventHandler()">
+                        <i class="fa fa-bolt"></i> Import Events
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Primary creation action -->
+        <button type="button"
+                class="btn btn-goto-router data-control-insert"
+                title="Open editor to input new profile"
+                onclick="newProfileHandler()">
+            <i class="fa fa-plus-circle"></i> New Profile
+        </button>
+
     </div>
 </div>
+
     
 <div class="top_page_header" >
 	<h4> <i class="fa fa-address-card-o" aria-hidden="true"></i> Profile Data Management </h4>
