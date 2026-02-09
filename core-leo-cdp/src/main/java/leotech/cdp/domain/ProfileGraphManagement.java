@@ -1,9 +1,10 @@
 package leotech.cdp.domain;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
@@ -33,287 +34,246 @@ import leotech.cdp.query.TargetMediaUnitQuery;
 import rfx.core.util.DateTimeUtil;
 
 /**
- * Profile Graph to match creative contents and product items
+ * Manages the Graph relationships between Profiles and Assets (Products,
+ * Content, Conversions). Acting as a Service layer over Graph DAOs with caching
+ * support. 
  * 
  * @author tantrieuf31
  * @since 2021
- *
  */
 public final class ProfileGraphManagement {
-	
-	private static final String REMOVE_ALL = "remove_all";
 
-	static Logger logger = LoggerFactory.getLogger(ProfileGraphManagement.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(ProfileGraphManagement.class);
 
-	private static final int QUERY_CACHE_TIME = 30;
+	private static final String CMD_REMOVE_ALL = "remove_all";
+	private static final int CACHE_DURATION_SECONDS = 30;
+	private static final int CACHE_DURATION_DAYS = 30;
+	private static final int MAX_CACHE_SIZE = 1_000_000;
 
-	static CacheLoader<TargetMediaUnitQuery, List<TargetMediaUnit>> cacheRecommendLoader = new CacheLoader<>() {
-		@Override
-		public List<TargetMediaUnit> load(TargetMediaUnitQuery query) {
-			return queryRecommendedProductItems(query);
-		}
-	};
+	// =================================================================================
+	// Caches
+	// =================================================================================
 
-	static LoadingCache<TargetMediaUnitQuery, List<TargetMediaUnit>> cacheRecommend = CacheBuilder.newBuilder()
-			.maximumSize(1000000).expireAfterWrite(QUERY_CACHE_TIME, TimeUnit.SECONDS).build(cacheRecommendLoader);
-	
-	static CacheLoader<String, String> cacheProfileIdsLoader = new CacheLoader<>() {
-		@Override
-		public String load(String visitorId) {
-			String fromProfileId = ProfileDaoUtil.getProfileIdByVisitorId(visitorId);
-			return fromProfileId;
-		}
-	};
+	// Cache for Profile ID lookup based on Visitor ID
+	private static final LoadingCache<String, String> PROFILE_ID_CACHE = CacheBuilder.newBuilder()
+			.maximumSize(MAX_CACHE_SIZE).expireAfterWrite(CACHE_DURATION_DAYS, TimeUnit.DAYS)
+			.build(new CacheLoader<>() {
+				@Override
+				public String load(String visitorId) {
+					return ProfileDaoUtil.getProfileIdByVisitorId(visitorId);
+				}
+			});
 
-	static LoadingCache<String, String> cacheProfileIds = CacheBuilder.newBuilder()
-			.maximumSize(1000000).expireAfterWrite(QUERY_CACHE_TIME, TimeUnit.DAYS).build(cacheProfileIdsLoader);
+	// Cache for Product Recommendations
+	private static final LoadingCache<TargetMediaUnitQuery, List<TargetMediaUnit>> RECOMMENDATION_CACHE = CacheBuilder
+			.newBuilder().maximumSize(MAX_CACHE_SIZE).expireAfterWrite(CACHE_DURATION_SECONDS, TimeUnit.SECONDS)
+			.build(new CacheLoader<>() {
+				@Override
+				public List<TargetMediaUnit> load(TargetMediaUnitQuery query) {
+					return fetchRecommendedProductsFromDb(query);
+				}
+			});
 
-	public static List<TargetMediaUnit> queryRecommendedProductItems(TargetMediaUnitQuery query) {
-		String visitorId = query.getVisitorId();
-		
-		String fromProfileId = null;
+	private ProfileGraphManagement() {
+		// Prevent instantiation
+	}
+
+	// =================================================================================
+	// Read Operations (Recommendations & Queries)
+	// =================================================================================
+
+	/**
+	 * Public API to get cached product recommendations.
+	 */
+	public static List<TargetMediaUnit> queryRecommendedProductItems(String observerId, String visitorId,
+			String touchpointUrl, int startIndex, int numberResult) {
 		try {
-			fromProfileId = cacheProfileIds.get(visitorId);
-		} catch (Exception e) {
-			e.printStackTrace();
+			TargetMediaUnitQuery query = new TargetMediaUnitQuery(visitorId, startIndex, numberResult);
+			return RECOMMENDATION_CACHE.get(query);
+		} catch (ExecutionException e) {
+			LOGGER.error("Error fetching recommended products for visitorId: {}", visitorId, e);
+			return Collections.emptyList();
 		}
-		if (fromProfileId != null) {
-			int startIndex = query.getStartIndex();
-			int numberResult = query.getNumberResult();
-			List<TargetMediaUnit> rsList = GraphProfile2Product.getRecommendedProductItemsForUser(fromProfileId, startIndex, numberResult);
-			return rsList;
-		}
-		return new ArrayList<>(0);
 	}
 
 	/**
-	 * 
-	 * for public query
-	 * 
-	 * @param pmIds
-	 * @param visitorId
-	 * @param sourceUrl
-	 * @return
+	 * Internal method used by CacheLoader to fetch data from DB.
 	 */
-	public static List<TargetMediaUnit> queryRecommendedProductItems(String observerId, String visitorId, String touchpointUrl, int startIndex, int numberResult) {
-		List<TargetMediaUnit> rsList = null;
-		try {
-			rsList = cacheRecommend.get(new TargetMediaUnitQuery(visitorId, startIndex, numberResult));
-		} catch (Exception e) {
-			e.printStackTrace();
+	private static List<TargetMediaUnit> fetchRecommendedProductsFromDb(TargetMediaUnitQuery query) {
+		String profileId = getProfileId(query.getVisitorId());
+		if (profileId != null) {
+			return GraphProfile2Product.getRecommendedProductItemsForUser(profileId, query.getStartIndex(),query.getNumberResult());
 		}
-		return rsList != null ? rsList : new ArrayList<>(0);
+		return Collections.emptyList();
 	}
 
-	/**
-	 * @param groupId
-	 * @param segmentId
-	 * @return
-	 */
-	public static int setRecommendationItems(boolean isProductGroup, String groupId, String segmentId) {
-		int c = 0;
-		if (isProductGroup) {
-			c = GraphProfile2Product.setRecommenderDataFromAssetGroup(groupId, segmentId);
+	public static List<TargetMediaUnit> queryRecommendedContents(String observerId, String visitorId, String sourceUrl,
+			int startIndex, int numberResult) {
+		String profileId = getProfileId(visitorId);
+		if (profileId != null) {
+			// TODO: Refactor to allow dynamic configuration of ranking strategy
+			boolean rankedByIndexScore = true;
+			return GraphProfile2Content.getRecommendedAssetContents(profileId, startIndex, numberResult,
+					rankedByIndexScore);
 		}
-		else {
-			c = GraphProfile2Content.setRecommenderDataFromAssetGroup(groupId, segmentId);
-		}
-		return c;
+		return Collections.emptyList();
 	}
 
-	/**
-	 * for admin
-	 * 
-	 * @param fromProfileId
-	 * @return
-	 */
-	public static List<Profile2Product> getRecommendedProductItemsByIndexScore(String fromProfileId, int startIndex, int numberResult) {
-		List<Profile2Product> rsList = GraphProfile2Product.getRecommendedProductItemsForAdmin(fromProfileId, startIndex, numberResult);
-		return rsList;
+	public static List<Profile2Product> getRecommendedProductItemsByIndexScore(String fromProfileId, int startIndex,
+			int numberResult) {
+		List<Profile2Product> list = GraphProfile2Product.getRecommendedProductItemsForAdmin(fromProfileId, startIndex,
+				numberResult);
+		return list != null ? list : Collections.emptyList();
 	}
 
-	/**
-	 * @param fromProfileId
-	 * @return
-	 */
-	public static List<Profile2Conversion> getPurchasedProductItems(String fromProfileId, int startIndex, int numberResult) {
-		List<Profile2Conversion> rsList = GraphProfile2Conversion.getPurchasedProductItems(fromProfileId, startIndex, numberResult);
-		return rsList;
+	public static List<Profile2Content> getRecommendedContentItemsByIndexScore(String fromProfileId, int startIndex,
+			int numberResult) {
+		List<Profile2Content> list = GraphProfile2Content.getRecommendedContentItems(fromProfileId, startIndex,
+				numberResult);
+		return list != null ? list : Collections.emptyList();
 	}
 
-	/**
-	 * @param fromProfileId
-	 * @return
-	 */
-	public static List<Profile2Content> getRecommendedContentItemsByIndexScore(String fromProfileId, int startIndex, int numberResult) {
-		List<Profile2Content> rsList = GraphProfile2Content.getRecommendedContentItems(fromProfileId, startIndex,numberResult);
-		return rsList;
+	public static List<Profile2Conversion> getPurchasedProductItems(String fromProfileId, int startIndex,
+			int numberResult) {
+		List<Profile2Conversion> list = GraphProfile2Conversion.getPurchasedProductItems(fromProfileId, startIndex,
+				numberResult);
+		return list != null ? list : Collections.emptyList();
 	}
 
+	// =================================================================================
+	// Write Operations (Updates)
+	// =================================================================================
 
-	/**
-	 * @param observerId
-	 * @param visitorId
-	 * @param sourceUrl
-	 * @param startIndex
-	 * @param numberResult
-	 * @return
-	 */
-	public static List<TargetMediaUnit> queryRecommendedContents(String observerId, String visitorId, String sourceUrl, int startIndex, int numberResult) {
-		String fromProfileId = null;
-		try {
-			fromProfileId = cacheProfileIds.get(visitorId);
-		} catch (Exception e) {
-			System.err.println("No profile is founded with visitorId " + visitorId);
-		}
-		if (fromProfileId != null) {
-			boolean rankedByIndexScore = true;//profile.getRecommendationModel() == 1;
-			List<TargetMediaUnit> rsList = GraphProfile2Content.getRecommendedAssetContents(fromProfileId, startIndex, numberResult, rankedByIndexScore);
-			return rsList;
-		}
-		return new ArrayList<>(0);
-	}
+	public static void updateTransactionalData(Date createdAt, Profile profile, ProductItem product, int quantity,
+			EventMetric eventMetric, String transactionId, double transactionValue, String currency) {
 
-	/**
-	 * @param profile
-	 * @param product
-	 * @param eventMetric
-	 * @param transactionId
-	 */
-	public final static void updateTransactionalData(Date createdAt, Profile profile, ProductItem product, int quantity, EventMetric eventMetric, String transactionId, double transactionValue, String currency) {
-		GraphProfile2Conversion.updateEdgeData(createdAt, profile, product, quantity, eventMetric, transactionId, transactionValue, currency);
+		GraphProfile2Conversion.updateEdgeData(createdAt, profile, product, quantity, eventMetric, transactionId,
+				transactionValue, currency);
+
+		// Post-purchase: Update recommendation score
 		int score = DateTimeUtil.currentUnixTimestamp();
-		GraphProfile2Product.batchUpdateEdgeData(createdAt, profile, product, EventMetricManagement.RECOMMENDATION, score);
+		GraphProfile2Product.batchUpdateEdgeData(createdAt, profile, product, EventMetricManagement.RECOMMENDATION,
+				score);
 	}
 
-	/**
-	 * @param profile
-	 * @param product
-	 * @param eventMetric
-	 */
-	public final static void updateEdgeProductData(Date createdAt, Profile profile, ProductItem product, EventMetric eventMetric) {
+	public static void updateEdgeProductData(Date createdAt, Profile profile, ProductItem product,
+			EventMetric eventMetric) {
 		GraphProfile2Product.batchUpdateEdgeData(createdAt, profile, product, eventMetric);
 	}
-	
-	/**
-	 * @param fromProfile
-	 * @param creative
-	 * @param eventMetric
-	 */
-	public final static void updateEdgeContentData(ProfileIdentity profileIdentity, AssetContent content) {
+
+	public static void updateEdgeContentData(ProfileIdentity profileIdentity, AssetContent content) {
+		// Default recommendation score is negative timestamp to reverse sort order (newest first)
 		int score = -1 * DateTimeUtil.currentUnixTimestamp();
 		GraphProfile2Content.updateEdgeData(profileIdentity, content, EventMetricManagement.RECOMMENDATION, score);
 	}
 
-	/**
-	 * add event to profile graph edge collection and update ranking of item (set indexScore = -1)
-	 * 
-	 * @param profile
-	 * @param product
-	 * @param eventMetric
-	 * @param score
-	 */
-	public final static void updateEdgeDataForRecommendation(Date createdAt, Profile profile, ProductItem product, EventMetric eventMetric, int score) {
+	public static void updateEdgeDataForRecommendation(Date createdAt, Profile profile, ProductItem product,
+			EventMetric eventMetric, int score) {
+
 		GraphProfile2Product.batchUpdateEdgeData(createdAt, profile, product, eventMetric);
-		logger.info("profile " + profile.getId() + " product " + product.getId() + " score " + score);
-		GraphProfile2Product.batchUpdateEdgeData(createdAt, profile, product, EventMetricManagement.RECOMMENDATION, score);
-	}
 
-
-
-	/**
-	 * @param profileId
-	 * @param recommendationModel
-	 * @param graphName
-	 * @param updateItemMap
-	 * @return
-	 */
-	public final static boolean updateItemRanking(String profileId, int recommendationModel, String graphName, Map<String, Integer> updateItemMap) {
-		boolean rs = false;
-		// update profile recommendation model
-		ProfileSingleView profile = ProfileDaoUtil.getProfileById(profileId);
-		if (profile != null) {
-			// update recommendationModel
-			if (profile.getRecommendationModel() != 1 && recommendationModel == 1) {
-				profile.setRecommendationModel(1);
-				ProfileDaoUtil.saveProfile(profile);
-			}
-			// update item ranking for product graph
-			if (Profile2Product.GRAPH_NAME.equals(graphName)) {
-				updateItemMap.forEach((key, indexScore) -> {
-					GraphProfile2Product.updateRanking(key, indexScore);
-				});
-				rs = true;
-			}
-			// update item ranking for content graph
-			else if (Profile2Content.GRAPH_NAME.equals(graphName)) {
-				updateItemMap.forEach((key, indexScore) -> {
-					GraphProfile2Content.updateRanking(key, indexScore);
-				});
-				rs = true;
-			}
+		if (LOGGER.isDebugEnabled()) {
+			LOGGER.debug("Update recommendation: profile={}, product={}, score={}", profile.getId(), product.getId(),
+					score);
 		}
-		return rs;
+
+		GraphProfile2Product.batchUpdateEdgeData(createdAt, profile, product, EventMetricManagement.RECOMMENDATION,
+				score);
 	}
 
-	/**
-	 * @param groupId
-	 * @param segmentId
-	 * @return
-	 */
+	public static boolean updateItemRanking(String profileId, int recommendationModel, String graphName,
+			Map<String, Integer> updateItemMap) {
+		ProfileSingleView profile = ProfileDaoUtil.getProfileById(profileId);
+		if (profile == null) {
+			return false;
+		}
+
+		// 1. Update Profile Model if changed
+		if (profile.getRecommendationModel() != 1 && recommendationModel == 1) {
+			profile.setRecommendationModel(1);
+			ProfileDaoUtil.saveProfile(profile);
+		}
+
+		// 2. Update Graph Rankings
+		if (Profile2Product.GRAPH_NAME.equals(graphName)) {
+			updateItemMap.forEach(GraphProfile2Product::updateRanking);
+			return true;
+		} else if (Profile2Content.GRAPH_NAME.equals(graphName)) {
+			updateItemMap.forEach(GraphProfile2Content::updateRanking);
+			return true;
+		}
+
+		return false;
+	}
+
+	public static void updateEdgeDataProfileToProfile(String sourceProfileId, String destProfileId) {
+		LOGGER.info("Merging graph data from profile {} to {}", sourceProfileId, destProfileId);
+		GraphProfile2Conversion.updateFromOldProfileToNewProfile(sourceProfileId, destProfileId);
+		GraphProfile2Content.updateFromOldProfileToNewProfile(sourceProfileId, destProfileId);
+		GraphProfile2Product.updateFromOldProfileToNewProfile(sourceProfileId, destProfileId);
+		GraphProfile2TouchpointHub.updateFromOldProfileToNewProfile(sourceProfileId, destProfileId);
+	}
+
+	// =================================================================================
+	// Management Operations (Set/Remove)
+	// =================================================================================
+
+	public static int setRecommendationItems(boolean isProductGroup, String groupId, String segmentId) {
+		if (isProductGroup) {
+			return GraphProfile2Product.setRecommenderDataFromAssetGroup(groupId, segmentId);
+		} else {
+			return GraphProfile2Content.setRecommenderDataFromAssetGroup(groupId, segmentId);
+		}
+	}
+
 	public static boolean removeRecommendationItemsForGroup(String groupId) {
 		AssetGroup group = AssetGroupManagement.getAssetGroupById(groupId);
+		if (group == null) {
+			return false;
+		}
+
 		if (group.isProduct()) {
 			GraphProfile2Product.removeAllGraphEdgesByGroupId(groupId);
 			return true;
-		}
-		else if (group.isContent()) {
+		} else if (group.isContent()) {
 			GraphProfile2Content.removeAllGraphEdgesByGroupId(groupId);
 			return true;
 		}
 		return false;
 	}
-	
-	/**
-	 * @param groupId
-	 * @param segmentId
-	 * @return
-	 */
+
 	public static void removeRecommendationItems(boolean isProductGroup, String groupId, String segmentId) {
-		if(REMOVE_ALL.equals(groupId)) {
-			if (isProductGroup) {
+		boolean removeAll = CMD_REMOVE_ALL.equals(groupId);
+
+		if (isProductGroup) {
+			if (removeAll) {
 				GraphProfile2Product.removeAllGraphEdgesBySegmentId(segmentId);
-			}
-			else {
-				GraphProfile2Content.removeAllGraphEdgesBySegmentId(segmentId);
-			}
-		}
-		else {
-			if (isProductGroup) {
+			} else {
 				GraphProfile2Product.removeAllGraphEdgesByGroupIdAndSegmentId(groupId, segmentId);
 			}
-			else {
+		} else {
+			// Content Group
+			if (removeAll) {
+				GraphProfile2Content.removeAllGraphEdgesBySegmentId(segmentId);
+			} else {
 				GraphProfile2Content.removeAllGraphEdgesByGroupIdAndSegmentId(groupId, segmentId);
 			}
 		}
 	}
-	
-	/**
-	 * update profile graph data
-	 * 
-	 * @param sourceProfileId
-	 * @param destProfileId
-	 */
-	public static void updateEdgeDataProfileToProfile(String sourceProfileId, String destProfileId) {
-		// Purchased Products
-		GraphProfile2Conversion.updateFromOldProfileToNewProfile(sourceProfileId, destProfileId);
-		// recommended contents
-		GraphProfile2Content.updateFromOldProfileToNewProfile(sourceProfileId, destProfileId);
-		// recommended products
-		GraphProfile2Product.updateFromOldProfileToNewProfile(sourceProfileId, destProfileId);
-		// touchpointhub graph
-		GraphProfile2TouchpointHub.updateFromOldProfileToNewProfile(sourceProfileId, destProfileId);
-	}
 
-	// TODO add caching with Redis here
+	// =================================================================================
+	// Helper Methods
+	// =================================================================================
+
+	private static String getProfileId(String visitorId) {
+		try {
+			return PROFILE_ID_CACHE.get(visitorId);
+		} catch (ExecutionException e) {
+			LOGGER.warn("Failed to retrieve profileId for visitorId: {}", visitorId);
+			return null;
+		} catch (Exception e) {
+			LOGGER.error("Unexpected error in profile cache lookup", e);
+			return null;
+		}
+	}
 }
