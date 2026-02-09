@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8" />
     <title>LEO Personalization Manual Test</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <style>
         body {
@@ -55,8 +56,6 @@
             color: #fff;
         }
 
-
-
         .personalization-zone {
             background: #ffffff;
             border: 2px dashed #3b82f6;
@@ -72,124 +71,153 @@
         }
     </style>
 
-    <!-- ===================================================== -->
-    <!-- LeoObserverProxy (uses localStorage leo_vid)          -->
-    <!-- ===================================================== -->
-    <script>
-        window.LeoObserverProxy = {
-            synchLeoVisitorId: function (callback) {
-                const vid = localStorage.getItem("leo_vid");
-                if (!vid) {
-                    console.warn("leo_vid not set");
-                    return;
-                }
-                callback(vid);
-            }
-        };
-    </script>
+
 </head>
 
 <body>
 
-<header>
-    <h1>LEO Personalization Demo</h1>
-    <p>Manual Visitor ID Control</p>
-</header>
+    <header>
+        <h1>LEO Personalization Demo</h1>
+        <p>Manual Visitor & Event Control</p>
+    </header>
 
-<main>
+    <main>
 
-    <!-- ================================================= -->
-    <!-- VISITOR CONTROL PANEL                             -->
-    <!-- ================================================= -->
-    <section class="card">
-        <h3>Set Visitor ID</h3>
-        <div class="control-panel">
-            <input
-                id="leoVidInput"
-                placeholder="Enter leo_vid (e.g. vid_123)"
-            />
-            <button onclick="applyVisitorId()">Apply Visitor ID</button>
-        </div>
-        <p style="margin-top:10px;font-size:13px;color:#555">
-            Stored as <code>localStorage.leo_vid</code> and triggers personalization
-        </p>
-    </section>
+        <!-- ================= VISITOR ================= -->
+        <section class="card">
+            <h3>Set Visitor ID</h3>
+            <div class="control-panel">
+                <input id="leoVidInput" placeholder="Enter leo_vid (e.g. vid_123)" />
+                <button onclick="applyVisitorId()">Apply Visitor ID</button>
+            </div>
+        </section>
+
+        <!-- ================= ITEM VIEW ================= -->
+        <section class="card">
+            <h3>Simulate Item View</h3>
+            <div class="control-panel">
+                <input id="productIdsInput" placeholder="Enter productids (e.g. AAPL,MSFT,GOOG)" />
+                <button onclick="simulateItemView()">Simulate Item View</button>
+            </div>
+            <p style="font-size:13px;color:#555;margin-top:8px">
+                Comma-separated product IDs, sent as <code>productids[]</code>
+            </p>
+        </section>
+
+        <!-- ================= PERSONALIZATION ================= -->
+        <section class="personalization-zone">
+            <strong>🔮 Personalized Recommendations (LEO)</strong>
+            <script id="leo_recommender_45ePNkROy1pGi5Dc6pDnn2"></script>
+        </section>
+
+    </main>
+
+    <footer>
+        LEO Activation • Manual Personalization Trigger
+    </footer>
 
 
-    <!-- ================================================= -->
-    <!-- PERSONALIZATION ZONE                              -->
-    <!-- ================================================= -->
-    <section class="personalization-zone">
-        <strong>🔮 Personalized Recommendations (LEO)</strong>
 
-        <!-- Anchor -->
-        <script id="leo_recommender_74rtY7eCqrfiEHh0huZPvG"></script>
-    </section>
 
-</main>
+    <!-- ===================================================== -->
+    <!-- MANUAL CONTROLS                                       -->
+    <!-- ===================================================== -->
+    <script>
+        const OBSERVER_ID = "45ePNkROy1pGi5Dc6pDnn2";
 
-<footer>
-    LEO Activation • Manual Personalization Trigger
-</footer>
+        function applyVisitorId() {
+            const vid = document.getElementById("leoVidInput").value.trim();
+            if (!vid) return alert("leo_vid is required");
+            localStorage.setItem("leo_vid", vid);
 
-<!-- ===================================================== -->
-<!-- MANUAL TRIGGER LOGIC                                  -->
-<!-- ===================================================== -->
-<script>
-    const OBSERVER_ID = "74rtY7eCqrfiEHh0huZPvG";
+            document.querySelectorAll(`iframe[id^="${OBSERVER_ID}_leo_iframe_"]`).forEach(el => el.remove());
 
-    function applyVisitorId() {
-        const input = document.getElementById("leoVidInput");
-        const vid = input.value.trim();
-
-        if (!vid) {
-            alert("leo_vid is required");
-            return;
+            renderLeoPersonalization();
         }
 
-        localStorage.setItem("leo_vid", vid);
+        function simulateItemView() {
+            const productids = document.getElementById("productIdsInput").value.trim();
+            if (!productids) return alert("productids required");
 
-        // Remove old iframe(s)
-        document
-            .querySelectorAll(`iframe[id^="${OBSERVER_ID}_leo_iframe_"]`)
-            .forEach(el => el.remove());
+            LeoObserver.recordEventItemView(productids);
+        }
 
-        // Trigger personalization
-        renderLeoPersonalization();
-    }
+        function renderLeoPersonalization() {
+            LeoObserverProxy.synchLeoVisitorId(function (vid) {
+                const anchorId = "leo_recommender_" + OBSERVER_ID;
+                const cb = Math.floor(Math.random() * 100000);
+                let src = "https://obs.example.com/ris/html/products";
 
-    // Enter key support
-    document.getElementById("leoVidInput")
-        .addEventListener("keydown", e => {
-            if (e.key === "Enter") applyVisitorId();
-        });
+                src += "?visid=" + encodeURIComponent(vid);
+                src += "&obsid=" + OBSERVER_ID;
+                src += "&tpurl=" + encodeURIComponent(location.href);
+                src += "&cb=" + cb;
 
-    function renderLeoPersonalization() {
-        LeoObserverProxy.synchLeoVisitorId(function(vid) {
-            const jsDomId = "leo_recommender_" + OBSERVER_ID;
-            const cb = Math.floor(Math.random() * 100000);
-            let src = "https://obs.example.com/ris/html/products";
+                const container = document.getElementById(anchorId).parentElement;
+                const iframe = document.createElement("iframe");
 
-            src += "?visid=" + encodeURIComponent(vid);
-            src += "&obsid=" + OBSERVER_ID;
-            src += "&tpurl=" + encodeURIComponent(location.href);
-            src += "&cb=" + cb;
+                iframe.id = OBSERVER_ID + "_leo_iframe_" + cb;
+                iframe.src = src;
+                iframe.style = "width:100%;height:800px;border:none;";
 
-            const container = document.getElementById(jsDomId).parentElement;
-            const w = container.offsetWidth + "px";
-            const h = "800px";
+                container.appendChild(iframe);
+            });
+        }
+    </script>
 
-            const iframe = document.createElement("iframe");
-            iframe.id = OBSERVER_ID + "_leo_iframe_" + cb;
-            iframe.src = src;
-            iframe.style =
-                `width:${w};height:${h};border:none;` +
-                `overflow-y:scroll;overflow-x:hidden;display:block;margin:auto;`;
+    <!-- ===================================================== -->
+    <!-- CDP OBSERVER BOOTSTRAP                                -->
+    <!-- ===================================================== -->
+    <script>
+        (function () {
+            // Observer ID
+            window.leoObserverId = OBSERVER_ID;
 
-            container.appendChild(iframe);
-        });
-    }
-</script>
+            // Default batch size of Event Tracking
+            window.leoObserverBatchSize = 10;
+
+            // CDN of JS
+            window.leoObserverLogDomain = "obs.example.com";
+            window.leoObserverCdnDomain = "leocdp.example.com/public";
+
+            // Data Touchpoint Metadata 
+            window.srcTouchpointName = encodeURIComponent(document.title);
+            window.srcTouchpointUrl = encodeURIComponent(location.href);
+
+            // the main proxy CDP JS
+            var leoproxyJsPath = '/js/leo-observer-src/leo.proxy.js';
+            var src = location.protocol + '//' + window.leoObserverCdnDomain + leoproxyJsPath;
+            var jsNode = document.createElement('script');
+            jsNode.async = true; jsNode.defer = true; jsNode.src = src;
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jsNode, s);
+        })();
+
+        var LeoObserver = {};
+
+        LeoObserver.recordEventPageView = function (eventData) {
+            LeoObserverProxy.recordViewEvent("page-view", eventData || {});
+        };
+
+        LeoObserver.recordEventItemView = function (productids) {
+            LeoObserverProxy.recordViewEvent("item-view", {
+                productids: productids,
+                idtype: "TICKER"
+            });
+        };
+
+
+        function leoObserverProxyReady() {
+            // AUTO PAGE VIEW
+            LeoObserver.recordEventPageView();
+
+            // Sync visitor ID
+            LeoObserverProxy.synchLeoVisitorId(function (vid) {
+                console.log("Visitor synced:", vid);
+            });
+        }
+    </script>
 
 </body>
+
 </html>

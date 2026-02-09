@@ -418,7 +418,7 @@ public final class UpdateProfileEventProcessor {
 		
 		// product or service impression
 		if(eventMetric.isLeadMetric()) {
-			itemViewEventMetricHandler(profile, event, eventMetric);
+			updateItemRankingHandler(profile, event, eventMetric);
 		}
 		// has an intent to do a transaction
 		else if(eventMetric.isProspectiveMetric()) {
@@ -538,12 +538,12 @@ public final class UpdateProfileEventProcessor {
 	 * @param event
 	 * @param eventMetric
 	 */
-	protected static void itemViewEventMetricHandler(ProfileSingleView profile, TrackingEvent event, EventMetric eventMetric) {
+	protected static void updateItemRankingHandler(ProfileSingleView profile, TrackingEvent event, EventMetric eventMetric) {
 		
 		Map<String, Object> eventData = event.getEventData();
 		String contentId = StringUtil.safeString(eventData.get(TrackingEvent.CONTENT_ID),"");
 		String productIds = StringUtil.safeString(eventData.get(TrackingEvent.PRODUCT_IDS),"");
-		String itemIdType = StringUtil.safeString(eventData.get(TrackingEvent.ID_TYPE),"");
+		String itemIdType = StringUtil.safeString(eventData.get(TrackingEvent.ID_TYPE),"");// e.g: TICKER, SKU, ISBN-13, URL, ASIN, item_ID
 
 		if(StringUtil.isNotEmpty(productIds) && StringUtil.isNotEmpty(itemIdType)) {
 			// check from internal database first

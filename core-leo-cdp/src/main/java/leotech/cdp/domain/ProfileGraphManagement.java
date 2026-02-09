@@ -167,8 +167,7 @@ public final class ProfileGraphManagement {
 		GraphProfile2Content.updateEdgeData(profileIdentity, content, EventMetricManagement.RECOMMENDATION, score);
 	}
 
-	public static void updateEdgeDataForRecommendation(Date createdAt, Profile profile, ProductItem product,
-			EventMetric eventMetric, int score) {
+	public static void updateEdgeDataForRecommendation(Date createdAt, Profile profile, ProductItem product, EventMetric eventMetric, int score) {
 
 		GraphProfile2Product.batchUpdateEdgeData(createdAt, profile, product, eventMetric);
 

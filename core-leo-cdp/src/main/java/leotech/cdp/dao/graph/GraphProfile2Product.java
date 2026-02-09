@@ -37,8 +37,9 @@ import leotech.system.util.database.ArangoDbCommand.CallbackQuery;
 
 /**
  * Data Access Object for managing Graph Edges between Profiles and Products.
- * Refactored for performance and maintainability. * @author tantrieuf31
+ * Refactored for performance and maintainability. 
  * 
+ * @author tantrieuf31
  * @since 2021
  */
 public final class GraphProfile2Product extends AbstractCdpDatabaseUtil {
@@ -55,9 +56,7 @@ public final class GraphProfile2Product extends AbstractCdpDatabaseUtil {
 	private static final String PARAM_START_INDEX = "startIndex";
 	private static final String PARAM_NUMBER_RESULT = "numberResult";
 
-	// Optimized Upsert AQL
-	// This allows us to insert or update in a single DB round trip, atomic and
-	// fast.
+	// This allows us to insert or update in a single DB round trip, atomic and fast.
 	private static final String AQL_UPSERT_EDGE = "UPSERT { _from: @fromId, _to: @toId } "
 			+ "INSERT { _from: @fromId, _to: @toId, eventScore: @score, indexScore: @indexScore, createdAt: @now, updatedAt: @now } "
 			+ "UPDATE { eventScore: OLD.eventScore + @score, indexScore: (@indexScore > 0 ? @indexScore : OLD.indexScore), updatedAt: @now } "
@@ -377,9 +376,9 @@ public final class GraphProfile2Product extends AbstractCdpDatabaseUtil {
 	}
 
 	/**
-	 * Migrates edges from an old profile to a new profile (e.g., after profile
-	 * merging). * @param oldProfileId The source profile ID.
+	 * Migrates edges from an old profile to a new profile (e.g., after profile merging). 
 	 * 
+	 * @param oldProfileId The source profile ID.
 	 * @param newProfileId The destination profile ID.
 	 * @return Number of edges updated.
 	 */
