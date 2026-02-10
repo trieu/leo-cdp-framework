@@ -2,12 +2,12 @@ package leotech.cdp.dao.graph;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,16 +20,17 @@ import com.arangodb.entity.EdgeDefinition;
 import leotech.cdp.dao.AbstractCdpDatabaseUtil;
 import leotech.cdp.dao.AssetProductItemDaoUtil;
 import leotech.cdp.dao.TargetMediaUnitDaoUtil;
-import leotech.cdp.domain.AssetItemManagement;
 import leotech.cdp.domain.SegmentQueryManagement;
 import leotech.cdp.domain.TargetMediaUnitManagement;
 import leotech.cdp.model.asset.ProductItem;
 import leotech.cdp.model.customer.Profile;
 import leotech.cdp.model.customer.ProfileIdentity;
+import leotech.cdp.model.graph.ProductRecommendation;
 import leotech.cdp.model.graph.Profile2Product;
 import leotech.cdp.model.graph.ProfileGraphEdge;
 import leotech.cdp.model.journey.EventMetric;
 import leotech.cdp.model.marketing.TargetMediaUnit;
+import leotech.system.config.AqlTemplate;
 import leotech.system.domain.SystemConfigsManagement;
 import leotech.system.util.TaskRunner;
 import leotech.system.util.database.ArangoDbCommand;
@@ -61,6 +62,8 @@ public final class GraphProfile2Product extends AbstractCdpDatabaseUtil {
 			+ "INSERT { _from: @fromId, _to: @toId, eventScore: @score, indexScore: @indexScore, createdAt: @now, updatedAt: @now } "
 			+ "UPDATE { eventScore: OLD.eventScore + @score, indexScore: (@indexScore > 0 ? @indexScore : OLD.indexScore), updatedAt: @now } "
 			+ "IN " + COLLECTION_NAME;
+	
+	static final String AQL_GET_RECOMMENDED_PRODUCTS_FOR_PROFILE = AqlTemplate.get("AQL_GET_RECOMMENDED_PRODUCTS_FOR_PROFILE");
 
 	private GraphProfile2Product() {
 		// Utility class
@@ -208,6 +211,12 @@ public final class GraphProfile2Product extends AbstractCdpDatabaseUtil {
 	// Read / Query Operations
 	// =================================================================================
 
+	/**
+	 * @param fromProfileId
+	 * @param startIndex
+	 * @param numberResult
+	 * @return
+	 */
 	public static List<Profile2Product> getRecommendedProductItemsForAdmin(String fromProfileId, int startIndex,
 			int numberResult) {
 		ArangoDatabase db = getCdpDatabase();
@@ -239,58 +248,40 @@ public final class GraphProfile2Product extends AbstractCdpDatabaseUtil {
 		return new ArangoDbCommand<>(db, aql, bindVars, Profile2Product.class, callback).getResultsAsList();
 	}
 
-	public static List<TargetMediaUnit> getRecommendedProductItemsForUser(String fromProfileId, int startIndex,
-			int numberResult) {
-		return getRecommendedProductItemsForUser(fromProfileId, startIndex, numberResult, false);
-	}
 
-	public static List<TargetMediaUnit> getRecommendedProductItemsForUser(String fromProfileId, int startIndex,
-			int numberResult, boolean withProductItem) {
+	
+	
+
+	/**
+	 * @param fromProfileId
+	 * @param startIndex
+	 * @param numberResult
+	 * @return
+	 */
+	public static List<TargetMediaUnit> getRecommendedProductItemsForProfile(String fromProfileId, int startIndex, int numberResult) {
 		ArangoDatabase db = getCdpDatabase();
 
 		// Using HashMap for compatibility with the rest of your DAO pattern
-		Map<String, Object> bindVars = new HashMap<>();
+		Map<String, Object> bindVars = new HashMap<>(3);
 		bindVars.put(PARAM_FROM_PROFILE_ID, Profile.getDocumentUUID(fromProfileId));
 		bindVars.put(PARAM_START_INDEX, startIndex);
 		bindVars.put(PARAM_NUMBER_RESULT, numberResult);
 
-		List<TargetMediaUnit> resultList = Collections.synchronizedList(new ArrayList<>());
-		String aql = ProfileGraphEdge.getGraphQueryRecommendation(GRAPH_NAME);
+		String aql = AQL_GET_RECOMMENDED_PRODUCTS_FOR_PROFILE;
+		List<ProductRecommendation> resultList = new ArangoDbCommand<>(db, aql, bindVars, ProductRecommendation.class).getResultsAsList();
 
-		CallbackQuery<Profile2Product> callback = new CallbackQuery<Profile2Product>() {
-			@Override
-			public Profile2Product apply(Profile2Product edge) {
-				if (edge == null) {
-					return null;
-				}
-
-				String mediaId = edge.getTargetMediaUnitId();
-				TargetMediaUnit media = TargetMediaUnitDaoUtil.getByIdForProductRecommendation(mediaId, false);
-
-				if (media != null) {
-					if (withProductItem) {
-						ProductItem item = AssetItemManagement.getProductItemById(media.getRefProductItemId());
-						media.setProductItem(item);
-					} else {
-						media.clearPrivateData();
-					}
-					resultList.add(media);
-				} else {
-					// Ensure LOGGER is defined in your class scope
-					LOGGER.warn("TargetMediaUnit missing for ID: {} in Edge: {}", mediaId, edge.getKey());
-				}
-				return null;
-			}
-		};
-
-		// Execute the command and apply the callback logic
-		new ArangoDbCommand<>(db, aql, bindVars, Profile2Product.class, callback).applyCallback();
-
-		return resultList;
+		// mapping from ProductRecommendation to TargetMediaUnit
+		return resultList.stream().map(r->{return r.getTargetMediaUnit();}).filter(e->{ return e != null;}).collect(Collectors.toList());
 	}
 
-	public static List<Profile2Product> query(Profile profile, int startIndex, int numberResult,
-			EventMetric eventMetric) {
+	/**
+	 * @param profile
+	 * @param startIndex
+	 * @param numberResult
+	 * @param eventMetric
+	 * @return
+	 */
+	public static List<Profile2Product> queryProfile2Products(Profile profile, int startIndex, int numberResult, EventMetric eventMetric) {
 		ArangoDatabase db = getCdpDatabase();
 		Map<String, Object> bindVars = new HashMap<>();
 		bindVars.put(PARAM_FROM_PROFILE_ID, profile.getDocumentUUID());
@@ -316,6 +307,12 @@ public final class GraphProfile2Product extends AbstractCdpDatabaseUtil {
 		return new ArangoDbCommand<>(db, aql, bindVars, Profile2Product.class, callback).getResultsAsList();
 	}
 
+	/**
+	 * @param profileId
+	 * @param startIndex
+	 * @param numberResult
+	 * @return
+	 */
 	public static List<Profile2Product> getProductEdges(String profileId, int startIndex, int numberResult) {
 		ArangoDatabase db = getCdpDatabase();
 		Map<String, Object> bindVars = new HashMap<>();
@@ -331,6 +328,9 @@ public final class GraphProfile2Product extends AbstractCdpDatabaseUtil {
 	// Deletion / Maintenance Operations
 	// =================================================================================
 
+	/**
+	 * @param groupId
+	 */
 	public static void removeAllGraphEdgesByGroupId(String groupId) {
 		executeDeleteQuery(Profile2Product.AQL_REMOVE_EDGES_BY_GROUP, Map.of(PARAM_GROUP_ID, groupId));
 	}
@@ -342,6 +342,10 @@ public final class GraphProfile2Product extends AbstractCdpDatabaseUtil {
 		executeDeleteQuery(Profile2Product.AQL_REMOVE_EDGES_BY_GROUP_AND_SEGMENT, bindVars);
 	}
 
+	/**
+	 * @param segmentId
+	 * @return
+	 */
 	public static int removeAllGraphEdgesBySegmentId(String segmentId) {
 		Consumer<? super ProfileIdentity> removeAction = profileIdentity -> {
 			executeDeleteQuery(Profile2Product.AQL_REMOVE_EDGES_BY_PROFILE,
@@ -350,12 +354,21 @@ public final class GraphProfile2Product extends AbstractCdpDatabaseUtil {
 		return SegmentQueryManagement.applyConsumerForAllProfilesInSegment(segmentId, removeAction);
 	}
 
+	/**
+	 * @param aql
+	 * @param bindVars
+	 */
 	private static void executeDeleteQuery(String aql, Map<String, Object> bindVars) {
 		ArangoDatabase db = getCdpDatabase();
 		db.query(aql, bindVars, Void.class);
 		LOGGER.info("Executed Delete AQL: {} Params: {}", aql, bindVars);
 	}
 
+	/**
+	 * @param groupId
+	 * @param segmentId
+	 * @return
+	 */
 	public static int setRecommenderDataFromAssetGroup(String groupId, String segmentId) {
 		int countProfile = 0;
 		int limit = SystemConfigsManagement.DEFAULT_ITEM_FOR_PROFILE;
@@ -369,6 +382,11 @@ public final class GraphProfile2Product extends AbstractCdpDatabaseUtil {
 		return countProfile;
 	}
 
+	/**
+	 * @param product
+	 * @param segmentId
+	 * @return
+	 */
 	public static int updateRecommendedEdgeForProduct(ProductItem product, String segmentId) {
 		Consumer<? super ProfileIdentity> action = profileIdentity -> createRecommendedEdgeData(profileIdentity,
 				product, 1, segmentId);

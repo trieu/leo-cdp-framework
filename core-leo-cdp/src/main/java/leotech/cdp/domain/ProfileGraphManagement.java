@@ -85,8 +85,7 @@ public final class ProfileGraphManagement {
 	/**
 	 * Public API to get cached product recommendations.
 	 */
-	public static List<TargetMediaUnit> queryRecommendedProductItems(String observerId, String visitorId,
-			String touchpointUrl, int startIndex, int numberResult) {
+	public static List<TargetMediaUnit> queryRecommendedProductItems(String observerId, String visitorId, String touchpointUrl, int startIndex, int numberResult) {
 		try {
 			TargetMediaUnitQuery query = new TargetMediaUnitQuery(visitorId, startIndex, numberResult);
 			return RECOMMENDATION_CACHE.get(query);
@@ -102,7 +101,7 @@ public final class ProfileGraphManagement {
 	private static List<TargetMediaUnit> fetchRecommendedProductsFromDb(TargetMediaUnitQuery query) {
 		String profileId = getProfileId(query.getVisitorId());
 		if (profileId != null) {
-			return GraphProfile2Product.getRecommendedProductItemsForUser(profileId, query.getStartIndex(),query.getNumberResult());
+			return GraphProfile2Product.getRecommendedProductItemsForProfile(profileId, query.getStartIndex(),query.getNumberResult());
 		}
 		return Collections.emptyList();
 	}
@@ -168,16 +167,10 @@ public final class ProfileGraphManagement {
 	}
 
 	public static void updateEdgeDataForRecommendation(Date createdAt, Profile profile, ProductItem product, EventMetric eventMetric, int score) {
+		LOGGER.info("Update recommendation: profile={}, product={}, score={}", profile.getId(), product.getId(),score);
 
 		GraphProfile2Product.batchUpdateEdgeData(createdAt, profile, product, eventMetric);
-
-		if (LOGGER.isDebugEnabled()) {
-			LOGGER.debug("Update recommendation: profile={}, product={}, score={}", profile.getId(), product.getId(),
-					score);
-		}
-
-		GraphProfile2Product.batchUpdateEdgeData(createdAt, profile, product, EventMetricManagement.RECOMMENDATION,
-				score);
+		GraphProfile2Product.batchUpdateEdgeData(createdAt, profile, product, EventMetricManagement.RECOMMENDATION, score);
 	}
 
 	public static boolean updateItemRanking(String profileId, int recommendationModel, String graphName,

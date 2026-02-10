@@ -222,8 +222,7 @@ public final class UpdateProfileEventProcessor {
 		// commit to database 
 		boolean saveEventOk = TrackingEventDao.save(trackingEvent);
 		
-		
-		TaskRunner.run(()->{
+		TaskRunner.runInThreadPools(()->{
 			// updating attributes from event
 			ProfileSingleView profile = p;
 			if(SystemMetaData.isAutoMergeProfileData() && p.isMergeableProfile()) {
@@ -266,7 +265,7 @@ public final class UpdateProfileEventProcessor {
 			// Survey Templates: handle code when profile submit a survey form
 			FeedbackSurveyReport report = FeedbackDataManagement.buildSurveyFeedbackReport(feedbackEvent);
 			if(report != null) {						
-				System.out.println("STR_SUBMIT_FEEDBACK_FORM. score " + cxScore);
+				logger.info("STR_SUBMIT_FEEDBACK_FORM. score " + cxScore);
 				feedbackEvent.setFeedbackScore(report.getAvgFeedbackScore());
 				
 				eventData.put("Header", feedbackEvent.getHeader());
@@ -348,11 +347,8 @@ public final class UpdateProfileEventProcessor {
 		try {
 			JourneyMap journeyMap = JourneyMapManagement.getById(updateJourneyId, false, true);
 			
-			// System.out.println(updateJourneyId + " updateJourneyMapForProfile.journeyMap " + journeyMap);
-			
 			JourneyMapRefKey journeyRef = profile.getOrCreateJourneyMapRefKey(journeyMap);
 			int funnelIndex = profile.classifyFunnelStageIndex(funnelStage, journeyRef, scoreCX);
-			//System.out.println(" classifyFunnelStageIndex = " + funnelIndex);
 			
 			// update current journey map
 			int journeyStage = eventMetric.getJourneyStage();
@@ -363,8 +359,6 @@ public final class UpdateProfileEventProcessor {
 			
 			String tpHubId = eventObserver.getTouchpointHubId();
 			GraphProfile2TouchpointHub.updateEdgeData(profile, tpHubId, updateJourneyId , eventMetric);
-			
-			// System.out.println("profile.getInJourneyMaps "+profile.getInJourneyMaps());
 		} catch (Exception e) {
 			// deleted journey map ? 
 			profile.removeJourneyMap(updateJourneyId);
@@ -416,21 +410,20 @@ public final class UpdateProfileEventProcessor {
 	 */
 	static void updateBehavioralGraph(ProfileSingleView profile, TrackingEvent event, EventMetric eventMetric) {
 		
-		// product or service impression
-		if(eventMetric.isLeadMetric()) {
-			updateItemRankingHandler(profile, event, eventMetric);
-		}
-		// has an intent to do a transaction
-		else if(eventMetric.isProspectiveMetric()) {
-			prospectMetricHandler(profile, event, eventMetric);
-		}
-		// purchased or made-payment or subscribe
-		else if(eventMetric.isConversion()) {
-			customerMetricHandler(profile, event, eventMetric);
-		}  
-		else {
-			System.out.println(" ==> Skip updateProfileCustomerGraph for event " + event.getMetricName());
-		}
+		boolean hasdata = event.getEventData().size()>0;
+		logger.info("[updateBehavioralGraph] EventData: " + event.getEventData());
+		if(hasdata) {
+			// has an intent to do a transaction
+			if(eventMetric.isProspectiveMetric()) {
+				prospectMetricHandler(profile, event, eventMetric);
+			}
+			// purchased or made-payment or subscribe
+			else if(eventMetric.isConversion()) {
+				customerMetricHandler(profile, event, eventMetric);
+			} else {
+				updateItemRankingHandler(profile, event, eventMetric);
+			}
+		}		
 		// end
 	}
 
@@ -494,36 +487,36 @@ public final class UpdateProfileEventProcessor {
 	 */
 	protected static void prospectMetricHandler(ProfileSingleView profile, TrackingEvent event, EventMetric eventMetric) {
 		String sessionKey = event.getSessionKey();
-		Set<OrderedItem> cartItems = event.getOrderedItems();
+		Set<OrderedItem> orderedItems = event.getOrderedItems();
 		
 		// loop to all shopping items in cart
-		for (OrderedItem shoppingItem : cartItems) {
-			String itemId = shoppingItem.getItemId();
-			String itemIdType = shoppingItem.getIdType();
+		for (OrderedItem orderedItem : orderedItems) {
+			String itemId = orderedItem.getItemId();
+			String itemIdType = orderedItem.getIdType();
 			
-			if(StringUtil.isNotEmpty(itemId) && shoppingItem.isTransactionalItem() && StringUtil.isNotEmpty(itemIdType) ) {
+			if(StringUtil.isNotEmpty(itemId) && orderedItem.isTransactionalItem() && StringUtil.isNotEmpty(itemIdType) ) {
 				// check from internal database first
 				ProductItem pItem = AssetProductItemDaoUtil.getByProductId(itemId, itemIdType);
-				System.out.println(itemId + " getByProductId " + pItem);
 				if(pItem != null) {
-					System.out.println("marketingEventMetric for "+shoppingItem);
+					logger.info(" ProductItem " + pItem.getTitle());
+					logger.info(" OrderedItem "+orderedItem);
 					
 					// data enrichment
-					shoppingItem.setSessionKey(sessionKey);
-					shoppingItem.setFullUrl(pItem.getFullUrl());
-					shoppingItem.setOriginalPrice(pItem.getOriginalPrice());
-					shoppingItem.setSalePrice(pItem.getSalePrice());
-					shoppingItem.setStoreId(pItem.getStoreIds());
-					shoppingItem.setName(pItem.getTitle());
-					shoppingItem.setImageUrl(pItem.getHeadlineImageUrl());
-					shoppingItem.setVideoUrl(pItem.getHeadlineVideoUrl());
-					shoppingItem.setCurrency(pItem.getPriceCurrency());
+					orderedItem.setSessionKey(sessionKey);
+					orderedItem.setFullUrl(pItem.getFullUrl());
+					orderedItem.setOriginalPrice(pItem.getOriginalPrice());
+					orderedItem.setSalePrice(pItem.getSalePrice());
+					orderedItem.setStoreId(pItem.getStoreIds());
+					orderedItem.setName(pItem.getTitle());
+					orderedItem.setImageUrl(pItem.getHeadlineImageUrl());
+					orderedItem.setVideoUrl(pItem.getHeadlineVideoUrl());
+					orderedItem.setCurrency(pItem.getPriceCurrency());
 					
 					// add event to profile graph edge collection and update indexScore of item 
 					int score = -1 * DateTimeUtil.currentUnixTimestamp();
 					ProfileGraphManagement.updateEdgeDataForRecommendation(event.getCreatedAt(), profile, pItem, eventMetric, score);
 					
-					profile.addShoppingItem(shoppingItem);
+					profile.addShoppingItem(orderedItem);
 				}
 			}
 		}
@@ -545,10 +538,12 @@ public final class UpdateProfileEventProcessor {
 		String productIds = StringUtil.safeString(eventData.get(TrackingEvent.PRODUCT_IDS),"");
 		String itemIdType = StringUtil.safeString(eventData.get(TrackingEvent.ID_TYPE),"");// e.g: TICKER, SKU, ISBN-13, URL, ASIN, item_ID
 
+		logger.info("updateItemRankingHandler productIds " + productIds +" itemIdType " +itemIdType);
 		if(StringUtil.isNotEmpty(productIds) && StringUtil.isNotEmpty(itemIdType)) {
 			// check from internal database first
 			ProductItem pdItem = AssetProductItemDaoUtil.getByProductId(productIds, itemIdType);
-			System.out.println(pdItem);
+			logger.info(StringUtil.toString(pdItem));
+
 			if(pdItem != null) {
 				Date createdAt = event.getCreatedAt();
 				profile.addShoppingItem(createdAt, pdItem, 1);

@@ -18,7 +18,7 @@ public class TestGraphProfile2Product {
 	}
 
 	static void getRecommendedProductsForUser(String profileId) {
-		List<TargetMediaUnit> rs = GraphProfile2Product.getRecommendedProductItemsForUser(profileId, 0, 10);
+		List<TargetMediaUnit> rs = GraphProfile2Product.getRecommendedProductItemsForProfile(profileId, 0, 10);
 		System.out.println("rs.size = " + rs.size());
 		for (TargetMediaUnit t : rs) {
 			System.out.println(t.getLandingPageUrl());

@@ -36,8 +36,7 @@ public class AssetProductItemDaoUtil extends AssetItemDao {
 
 	static final String AQL_GET_PRODUCT_ITEM_BY_ID = AqlTemplate.get("AQL_GET_PRODUCT_ITEM_BY_ID");
 	static final String AQL_GET_PRODUCT_ITEM_BY_FULL_URL = AqlTemplate.get("AQL_GET_PRODUCT_ITEM_BY_FULL_URL");
-	static final String AQL_GET_PRODUCT_ITEM_BY_PRODUCT_ID_AND_ID_TYPE = AqlTemplate
-			.get("AQL_GET_PRODUCT_ITEM_BY_PRODUCT_ID_AND_ID_TYPE");
+	static final String AQL_GET_PRODUCT_ITEM_BY_ID_AND_TYPE = AqlTemplate.get("AQL_GET_PRODUCT_ITEM_BY_ID_AND_TYPE");
 
 	static final String AQL_GET_PRODUCT_ITEMS = AqlTemplate.get("AQL_GET_PRODUCT_ITEMS");
 	static final String AQL_SEARCH_PRODUCT_ITEMS_BY_KEYWORDS = AqlTemplate.get("AQL_SEARCH_PRODUCT_ITEMS_BY_KEYWORDS");
@@ -133,7 +132,7 @@ public class AssetProductItemDaoUtil extends AssetItemDao {
 		Map<String, Object> bindVars = new HashMap<>(2);
 		bindVars.put("productId", productId);
 		bindVars.put("productIdType", productIdType);
-		ProductItem p = new ArangoDbCommand<ProductItem>(db, AQL_GET_PRODUCT_ITEM_BY_PRODUCT_ID_AND_ID_TYPE, bindVars,
+		ProductItem p = new ArangoDbCommand<ProductItem>(db, AQL_GET_PRODUCT_ITEM_BY_ID_AND_TYPE, bindVars,
 				ProductItem.class).getSingleResult();
 		return p;
 	}
