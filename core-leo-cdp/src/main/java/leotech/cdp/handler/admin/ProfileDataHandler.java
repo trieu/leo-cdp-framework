@@ -22,7 +22,6 @@ import leotech.cdp.job.reactive.JobMergeDuplicatedProfiles;
 import leotech.cdp.job.scheduled.MergeDuplicateProfilesJob;
 import leotech.cdp.model.analytics.FeedbackEvent;
 import leotech.cdp.model.analytics.TrackingEvent;
-import leotech.cdp.model.customer.BusinessCase;
 import leotech.cdp.model.customer.Profile;
 import leotech.cdp.model.customer.ProfileSingleView;
 import leotech.cdp.model.customer.ProfileType;
@@ -381,11 +380,7 @@ public final class ProfileDataHandler extends SecuredHttpDataHandler {
 					return JsonDataPayload.ok(uri, list, loginUser, Profile.class);
 				}
 				
-				case PROFILE_BUSINESS_CASES : {
-					//TODO
-					List<BusinessCase> list = new ArrayList<>(0);
-					return JsonDataPayload.ok(uri, list, loginUser, Profile.class);
-				}
+
 				
 				case PROFILE_SEARCH_SUGGESTION : {
 					//TODO

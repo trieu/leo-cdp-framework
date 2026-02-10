@@ -521,7 +521,7 @@ public final class SegmentDaoUtil extends AbstractCdpDatabaseUtil {
 
 			// delete all RefKey of profile
 			if (deleteSegmentRefKeyInProfile) {
-				TaskRunner.run(() -> {
+				TaskRunner.runInThreadPools(() -> {
 					Set<String> profileIdSet = ProfileDaoUtil.getAllProfileIdsBySegmentId(segmentId);
 					for (String profileId : profileIdSet) {
 						ProfileDaoUtil.removeSegmentRefKeyInProfile(profileId, Sets.newHashSet(segmentId));

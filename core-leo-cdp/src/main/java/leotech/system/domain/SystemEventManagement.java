@@ -71,7 +71,7 @@ public class SystemEventManagement {
 	 */
 	public static void log(SystemUser systemUser, Class<?> clazz, String uri, JsonObject paramJson) {
 		if(systemUser != null) {	
-			TaskRunner.run(()->{
+			TaskRunner.runInThreadPools(()->{
 				String ip = StringUtil.safeString(paramJson.remove(BaseWebRouter.P_USER_IP),"");
 				String ua = StringUtil.safeString(paramJson.remove(BaseWebRouter.P_USER_AGENT),"");
 				String data = paramJson.toString();
@@ -92,7 +92,7 @@ public class SystemEventManagement {
 	 */
 	public static void log(SystemUser systemUser, Class<?> clazz, String uri, MultiMap params) {
 		if(systemUser != null) {
-			TaskRunner.run(()->{
+			TaskRunner.runInThreadPools(()->{
 				String ip = StringUtil.safeString(params.get(BaseWebRouter.P_USER_IP),"");
 				String ua = StringUtil.safeString(params.get(BaseWebRouter.P_USER_AGENT),"");
 				params.remove(BaseWebRouter.P_USER_IP).remove(BaseWebRouter.P_USER_AGENT);
@@ -120,7 +120,7 @@ public class SystemEventManagement {
 		SystemEvent log = new SystemEvent(LEOCDP, objectName, objectId, uri, data, sourceIp, userAgent);
 		System.out.println("=> [dataJobLog] "+log);
 		
-		TaskRunner.run(()->{	
+		TaskRunner.runInThreadPools(()->{	
 			SystemEventManagement.save(log);
 		});	
 	}

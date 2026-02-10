@@ -19,7 +19,6 @@ import leotech.cdp.model.activation.Agent;
 import leotech.cdp.model.asset.AssetGroup;
 import leotech.cdp.model.asset.AssetItem;
 import leotech.cdp.model.customer.AbstractProfile;
-import leotech.cdp.model.customer.BusinessAccount;
 import leotech.cdp.model.customer.Profile;
 import leotech.cdp.model.customer.Segment;
 import leotech.cdp.model.journey.EventObserver;
@@ -487,17 +486,6 @@ public final class SystemUser implements PersistentArangoObject {
 		return check;
 	}
 	
-
-	/**
-	 * @param segment
-	 * @return
-	 */
-	public boolean checkToEditAccount(BusinessAccount account) {
-		if(account != null) {
-			return this.hasAdminRole() || account.getAuthorizedEditors().contains(this.userLogin);
-		}
-		return false;
-	}
 
 	public final void removeSensitiveData() {
 		this.setUserPass(null);

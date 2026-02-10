@@ -2222,11 +2222,10 @@ AQL_GET_RECOMMENDED_PRODUCTS_FOR_PROFILE =>
 	LET edgeList = (
 	    FOR v, e, p IN 1..1 OUTBOUND @fromProfileId GRAPH cdp_product_graph
 	        FILTER p.edges[0].eventMetricId == "recommend"
-	        SORT e.eventScore DESC, e.indexScore DESC
+	        SORT e.eventScore DESC, e.indexScore
 	        LIMIT @startIndex, @numberResult
 	        RETURN p.edges[0]
 	)
-	
 	FOR e IN edgeList
 	    LET productItem = DOCUMENT("cdp_productitem", PARSE_IDENTIFIER(e._to).key)
 	    LET targetMediaUnit = DOCUMENT("cdp_targetmediaunit", e.targetMediaUnitId)

@@ -20,7 +20,6 @@ import leotech.cdp.handler.admin.Analytics360Handler;
 import leotech.cdp.handler.admin.AssetCategoryHandler;
 import leotech.cdp.handler.admin.AssetGroupHandler;
 import leotech.cdp.handler.admin.AssetItemHandler;
-import leotech.cdp.handler.admin.BusinessAccountHandler;
 import leotech.cdp.handler.admin.CampaignHandler;
 import leotech.cdp.handler.admin.DataFunnelHandler;
 import leotech.cdp.handler.admin.EventDataHandler;
@@ -90,7 +89,6 @@ public final class AdminHttpRouter extends BaseWebRouter {
         ROUTE_REGISTRY.put(CDP_EVENT_PREFIX, EventDataHandler::new);
         ROUTE_REGISTRY.put(CDP_PROFILE_PREFIX, ProfileDataHandler::new);
         ROUTE_REGISTRY.put(CDP_SEGMENT_PREFIX, SegmentDataHandler::new);
-        ROUTE_REGISTRY.put(CDP_ACCOUNT_PREFIX, BusinessAccountHandler::new);
         ROUTE_REGISTRY.put(CDP_CAMPAIGN_PREFIX, CampaignHandler::new);
         ROUTE_REGISTRY.put(CDP_AI_AGENT_PREFIX, AgentHandler::new);
 

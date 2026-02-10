@@ -1,10 +1,11 @@
 package leotech.system.util.database;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -17,8 +18,8 @@ import leotech.cdp.dao.graph.GraphProfile2Conversion;
 import leotech.cdp.dao.graph.GraphProfile2Product;
 import leotech.cdp.dao.graph.GraphProfile2Profile;
 import leotech.cdp.dao.graph.GraphProfile2TouchpointHub;
-import leotech.cdp.domain.AssetCategoryManagement;
 import leotech.cdp.domain.AgentManagement;
+import leotech.cdp.domain.AssetCategoryManagement;
 import leotech.cdp.domain.DeviceManagement;
 import leotech.cdp.domain.JourneyMapManagement;
 import leotech.cdp.domain.SegmentDataManagement;
@@ -39,8 +40,6 @@ import leotech.cdp.model.asset.AssetTemplate;
 import leotech.cdp.model.asset.FileMetadata;
 import leotech.cdp.model.asset.ProductItem;
 import leotech.cdp.model.asset.SocialEvent;
-import leotech.cdp.model.customer.BusinessAccount;
-import leotech.cdp.model.customer.BusinessCase;
 import leotech.cdp.model.customer.Device;
 import leotech.cdp.model.customer.Profile;
 import leotech.cdp.model.customer.Segment;
@@ -61,307 +60,182 @@ import leotech.system.model.SystemUser;
 import rfx.core.util.StringUtil;
 
 /**
- * 
- * Tool to setup new default database with basic data for LeoCDP
+ * Core utility to initialize and synchronize the ArangoDB schema for LeoCDP.
+ * Handles collection creation, graph setup, directory environment, and data
+ * bootstrapping. 
  * 
  * @author tantrieuf31
  * @since 2019
- *
  */
 public class InitDatabaseSchema {
 
-	static final List<String> sysCollections = new ArrayList<>();
-	static final List<String> cdpCollections = new ArrayList<>();
-	
-	static final AtomicBoolean systemReady = new AtomicBoolean(false);
-	
-	static {
-		// 32 core CDP data models
-		
-		// A
-		cdpCollections.add(ActivationRule.COLLECTION_NAME); // 1
-		cdpCollections.add(AssetCategory.COLLECTION_NAME); // 2
-		cdpCollections.add(AssetContent.COLLECTION_NAME); // 3
-		cdpCollections.add(AssetGroup.COLLECTION_NAME); // 4
-		cdpCollections.add(AssetTemplate.COLLECTION_NAME); // 5
-		
-		// B
-		cdpCollections.add(BusinessAccount.COLLECTION_NAME); // 6
-		cdpCollections.add(BusinessCase.COLLECTION_NAME); // 7
-		
-		// C
-		cdpCollections.add(Campaign.COLLECTION_NAME); // 8
-		cdpCollections.add(ContextSession.COLLECTION_NAME); // 9 
-		
-		// D
-		cdpCollections.add(DailyReportUnit.COLLECTION_NAME); // 10
-		cdpCollections.add(Agent.COLLECTION_NAME); // 11
-		cdpCollections.add(DataFlowStage.COLLECTION_NAME); // 12
-		cdpCollections.add(Device.COLLECTION_NAME); // 13
-		
-		// E
-		cdpCollections.add(EventMetric.COLLECTION_NAME); // 14
-		cdpCollections.add(EventObserver.COLLECTION_NAME); // 15
-		
-		// F
-		cdpCollections.add(FeedbackData.COLLECTION_NAME); // 16
-		cdpCollections.add(FileMetadata.COLLECTION_NAME); // 17
-		cdpCollections.add(FinanceEvent.COLLECTION_NAME); // 18
-		
-		// J
-		cdpCollections.add(JourneyMap.COLLECTION_NAME); // 19
-		
-		// N
-		cdpCollections.add(Notebook.COLLECTION_NAME); // 20
-		
-		// P
-		cdpCollections.add(ProductItem.COLLECTION_NAME); // 21
-		cdpCollections.add(Profile.COLLECTION_NAME); // 22
-		
-		// S
-		cdpCollections.add(Segment.COLLECTION_NAME); // 23
-		cdpCollections.add(SocialEvent.COLLECTION_NAME); // 24
-		
-		// T
-		cdpCollections.add(TargetMediaUnit.COLLECTION_NAME); // 25
-		cdpCollections.add(Touchpoint.COLLECTION_NAME);  // 26
-		cdpCollections.add(TouchpointHub.COLLECTION_NAME); // 27
-		cdpCollections.add(TrackingEvent.COLLECTION_NAME); // 28
-		
-		// W
-		cdpCollections.add(WebhookDataEvent.COLLECTION_NAME);// 29
-		
-		// System 
-		sysCollections.add(SystemService.COLLECTION_NAME); // 30
-		sysCollections.add(SystemEvent.COLLECTION_NAME); // 31
-		sysCollections.add(SystemUser.COLLECTION_NAME); // 32
-	}
-	
-	
+	private static final List<String> REQUIRED_PATHS = List.of("./public/qrcode", "./public/exported-files",
+			"./public/uploaded-files");
+
+	private static final List<String> SYS_COLLECTIONS = List.of(SystemService.COLLECTION_NAME,
+			SystemEvent.COLLECTION_NAME, SystemUser.COLLECTION_NAME);
+
+	private static final List<String> CDP_COLLECTIONS = List.of(ActivationRule.COLLECTION_NAME,
+			AssetCategory.COLLECTION_NAME, AssetContent.COLLECTION_NAME, AssetGroup.COLLECTION_NAME,
+			AssetTemplate.COLLECTION_NAME, Campaign.COLLECTION_NAME, ContextSession.COLLECTION_NAME,
+			DailyReportUnit.COLLECTION_NAME, Agent.COLLECTION_NAME, DataFlowStage.COLLECTION_NAME,
+			Device.COLLECTION_NAME, EventMetric.COLLECTION_NAME, EventObserver.COLLECTION_NAME,
+			FeedbackData.COLLECTION_NAME, FileMetadata.COLLECTION_NAME, FinanceEvent.COLLECTION_NAME,
+			JourneyMap.COLLECTION_NAME, Notebook.COLLECTION_NAME, ProductItem.COLLECTION_NAME, Profile.COLLECTION_NAME,
+			Segment.COLLECTION_NAME, SocialEvent.COLLECTION_NAME, TargetMediaUnit.COLLECTION_NAME,
+			Touchpoint.COLLECTION_NAME, TouchpointHub.COLLECTION_NAME, TrackingEvent.COLLECTION_NAME,
+			WebhookDataEvent.COLLECTION_NAME);
+
+	private static final AtomicBoolean systemReady = new AtomicBoolean(false);
+
 	/**
-	 * @return
+	 * Verifies if the system database and local filesystem environment are ready.
+	 * Checks for the existence of the SystemUser collection and required public
+	 * folders. * @return true if both DB and Filesystem environments are
+	 * initialized.
 	 */
 	public static boolean isSystemDbReady() {
-		if(systemReady.get()) {
+		// Ensure required local directories exist before checking DB
+		ensureRequiredDirectoriesExist();
+
+		if (systemReady.get()) {
 			return true;
 		}
-		else {
-			ArangoDatabase dbInstance = ArangoDbUtil.getCdpDatabase();
-			boolean check = dbInstance.getCollections().stream().filter(col->{
-				return col.getName().equals(SystemUser.COLLECTION_NAME);
-			}).count() == 1 ;
-			systemReady.set(check);
-			return check;
-		}
+
+		ArangoDatabase dbInstance = ArangoDbUtil.getCdpDatabase();
+		boolean dbExists = dbInstance.getCollections().stream()
+				.anyMatch(col -> col.getName().equals(SystemUser.COLLECTION_NAME));
+
+		systemReady.set(dbExists);
+		return dbExists;
 	}
-	
 
 	/**
-	 * @param dbInstance
-	 * @param list
+	 * Synchronizes all DB collections and graphs, and imports data if necessary.
 	 */
-	public static void createNewCollections(ArangoDatabase dbInstance, List<String> list) {
-		CollectionCreateOptions options = new CollectionCreateOptions();
-		for (String colName : list) {
+	public static void checkAndCreateDbCollections(String leoPackage, String dbConfigKey, String adminEmail,
+			String adminPass) {
+		boolean isNewSetup = setupDefaultSystemConfigs(dbConfigKey);
+
+		setupCdpCollections(dbConfigKey);
+		setupCdpGraph(dbConfigKey);
+
+		if (isNewSetup && StringUtil.isNotEmpty(adminEmail) && StringUtil.isNotEmpty(adminPass)) {
 			try {
-				dbInstance.createCollection(colName, options);
-				System.out.println("=> Successfully createCollection " + colName);
-			} catch (ArangoDBException e) {
-				System.err.println("=> Failed to createCollection " + colName);
-				e.printStackTrace();
+				importingDefaultData(adminEmail, adminPass);
+			} catch (IOException e) {
+				System.err.println("[CRITICAL] Data import failed: " + e.getMessage());
 			}
 		}
 	}
-	
 
 	/**
-	 * 
-	 * keep this method for clustering
-	 * 
-	 * @param dbKey
+	 * Validates and creates required application directories on the local
+	 * filesystem.
+	 */
+	private static void ensureRequiredDirectoriesExist() {
+		for (String pathStr : REQUIRED_PATHS) {
+			try {
+				Path path = Paths.get(pathStr);
+				if (Files.notExists(path)) {
+					Files.createDirectories(path);
+					System.out.println("[INFO] Environment setup: Created directory " + path.toAbsolutePath());
+				}
+			} catch (IOException e) {
+				System.err.println("[ERROR] Failed to initialize directory: " + pathStr + " -> " + e.getMessage());
+			}
+		}
+	}
+
+	/**
+	 * Batch creates new collections with standard options.
+	 */
+	public static void createNewCollections(ArangoDatabase db, List<String> collectionNames) {
+		CollectionCreateOptions options = new CollectionCreateOptions();
+		for (String name : collectionNames) {
+			try {
+				db.createCollection(name, options);
+				System.out.println("[INFO] Database setup: Created collection " + name);
+			} catch (ArangoDBException e) {
+				System.err.println("[ERROR] ArangoDB Error: " + name + " -> " + e.getMessage());
+			}
+		}
+	}
+
+	/**
+	 * Initializes CDP collections and sets up indices for high-volume entities.
 	 */
 	static void setupCdpCollections(String dbKey) {
-		ArangoDatabase dbInstance = ArangoDbUtil.initActiveArangoDatabase(dbKey);
-		Collection<String> currentDbCollections = dbInstance.getCollections().stream().map(col -> {
-			return col.getName();
-		}).collect(Collectors.toList());
+		ArangoDatabase db = ArangoDbUtil.initActiveArangoDatabase(dbKey);
+		Set<String> existingNames = db.getCollections().stream().map(col -> col.getName()).collect(Collectors.toSet());
 
-		List<String> cols = new ArrayList<>(cdpCollections.size());
-		for (String colName : cdpCollections) {
-			boolean isExisted = currentDbCollections.contains(colName);
-			if (!isExisted) {
-				cols.add(colName);
-				System.out.println("=> [OK] to create collection: " + colName);
-			} else {
-				System.err.println("=> [SKIP] to create collection: " + colName);
-			}
+		List<String> toCreate = CDP_COLLECTIONS.stream().filter(name -> !existingNames.contains(name))
+				.collect(Collectors.toList());
+
+		if (!toCreate.isEmpty()) {
+			createNewCollections(db, toCreate);
 		}
-		
-		if(cols.size() > 0) {
-			createNewCollections(dbInstance, cols);
-		}
-		
-		// upgrade index
+
+		// Ensure performance indices exist
 		Profile.initCollectionAndIndex();
 		TrackingEvent.initCollectionAndIndex();
 	}
-	
-	
+
 	/**
-	 * @param dbKey
+	 * Initializes Graph schemas for entity relationships.
 	 */
 	static void setupCdpGraph(String dbKey) {
 		ArangoDatabase db = ArangoDbUtil.initActiveArangoDatabase(dbKey);
-		
-		// ############################## GRAPHS ##############################
-		
-		// init Graph Collection: Profile To Profile
 		GraphProfile2Profile.initGraph(db);
-		
-		// init Graph Collection: Profile To Product
 		GraphProfile2Product.initGraph(db);
-				
-		// init Graph Collection: Profile To Creative
 		GraphProfile2Content.initGraph(db);
-		
-		// init Graph Collection: Profile To Purchased Product
 		GraphProfile2Conversion.initGraph(db);
-		
-		// init Graph Collection: Profile To Touchpoint Hub
 		GraphProfile2TouchpointHub.initGraph(db);
-		
-		System.out.println(" =====> OK, DONE INIT GRAPHS ===== ");
-		// ############################## GRAPHS ##############################
+		System.out.println("[INFO] Database setup: Graphs initialized.");
 	}
-	
 
 	/**
-	 * @param dbKey
-	 * @return
+	 * Verifies system configuration status. * @return true if a fresh installation
+	 * is detected.
 	 */
 	public static boolean setupDefaultSystemConfigs(String dbKey) {
-		ArangoDatabase dbInstance = ArangoDbUtil.initActiveArangoDatabase(dbKey);
-		Collection<String> currentDbCollections = dbInstance.getCollections().stream().map(col -> {
-			String name = col.getName();
-			System.out.println(" dbKey " + dbKey + " has the collection " + name);
-			return name;
-		}).collect(Collectors.toList());
+		ArangoDatabase db = ArangoDbUtil.initActiveArangoDatabase(dbKey);
+		Set<String> existingNames = db.getCollections().stream().map(col -> col.getName()).collect(Collectors.toSet());
 
-		// just create collections when SystemUser collection is not existed in the database
-		List<String> cols = new ArrayList<>(sysCollections.size());
-		boolean importDefaultData = false;
-		for (String colName : sysCollections) {
-			boolean isExisted = currentDbCollections.contains(colName);
-			if (!isExisted) {
-				cols.add(colName);
-				// if collection "SystemUser" is not existed, we can make sure this is a new system setup
-				if (colName.equalsIgnoreCase(SystemUser.COLLECTION_NAME)) {
-					importDefaultData = true;
-				}
-			}
-			else {
-				System.err.println("=> [SKIP] to create collection: " + colName);
-			}
+		List<String> toCreate = SYS_COLLECTIONS.stream().filter(name -> !existingNames.contains(name))
+				.collect(Collectors.toList());
+
+		boolean isFreshInstall = toCreate.contains(SystemUser.COLLECTION_NAME);
+
+		if (!toCreate.isEmpty()) {
+			createNewCollections(db, toCreate);
 		}
-		System.out.println("importDefaultData " + importDefaultData);
-		
-		// setup core system collections
-		createNewCollections(dbInstance, cols);
 
-		return importDefaultData;
+		return isFreshInstall;
 	}
 
 	/**
-	 * @param superAdminEmail
-	 * @param superAdminPassword
-	 * @throws IOException
+	 * Populates a fresh database with default administrative and business data.
 	 */
-	static void importingDefaultData(String superAdminEmail, String superAdminPassword) throws IOException {
-		// default data importing
-		SystemUser superAdmin = SystemUserDaoUtil.getByUserLogin(SystemUser.SUPER_ADMIN_LOGIN);
+	static void importingDefaultData(String adminEmail, String adminPassword) throws IOException {
+		SystemUser admin = SystemUserDaoUtil.getByUserLogin(SystemUser.SUPER_ADMIN_LOGIN);
 
-		// make sure do not override existing data
-		boolean ok = true;
-		if (superAdmin == null) {
-			superAdmin = new SystemUser(SystemUser.SUPER_ADMIN_LOGIN, superAdminPassword, SystemUser.SUPER_ADMIN_NAME , superAdminEmail, AppMetadata.DEFAULT_ID);
-			SystemUserDaoUtil.createNewSystemUser(superAdmin);
-			ok = SystemUserDaoUtil.activateAsSuperAdmin(superAdmin.getUserLogin());
+		if (admin == null) {
+			admin = new SystemUser(SystemUser.SUPER_ADMIN_LOGIN, adminPassword, SystemUser.SUPER_ADMIN_NAME, adminEmail,
+					AppMetadata.DEFAULT_ID);
+			SystemUserDaoUtil.createNewSystemUser(admin);
+			SystemUserDaoUtil.activateAsSuperAdmin(admin.getUserLogin());
 		}
-		if (ok) {
-			// ############################## INIT DEFAULT SYSTEM DATA ##############################
-			SystemConfigsManagement.initDefaultSystemData(true);
-			
-			// Asset for Marketing and Communication
-			AssetCategoryManagement.initDefaultSystemData(superAdmin);
-			
-			// init default Data Journey Map
-			JourneyMapManagement.initDefaultSystemData();
-			
-			// Device
-			DeviceManagement.initDefaultSystemData();
-			
-			// Journey Data Flow
-			JourneyFlowSchema.initDefaultSystemData();
-			
-			// 4 default segments for customer data management
-			SegmentDataManagement.initDefaultSystemData();
-			
-			// all AI Agents services
-			AgentManagement.initDefaultData(true);
-		
-			System.out.println(" =====> OK, DONE INIT DEFAULT SYSTEM DATA ===== ");
-			
-			// check and create folder qrcode
-			File qrCodeHolder = new File("./public/qrcode");
-			if(!qrCodeHolder.isDirectory()) {
-				if(qrCodeHolder.mkdir()) {
-					System.out.println(" =====> created folder " + qrCodeHolder.getAbsolutePath());
-				}
-			}
-			
-			// check and create folder exported-files 
-			File exportedFileHolder = new File("./public/exported-files");
-			if(!exportedFileHolder.isDirectory()) {
-				if(exportedFileHolder.mkdir()) {
-					System.out.println(" =====> created folder " + exportedFileHolder.getAbsolutePath());
-				}
-			}
-			
-			// check and create folder uploaded-files
-			File uploadedFileHolder = new File("./public/uploaded-files");
-			if(!uploadedFileHolder.isDirectory()) {
-				if(uploadedFileHolder.mkdir()) {
-					System.out.println(" =====> created folder " + uploadedFileHolder.getAbsolutePath());
-				}
-			}
-		}
-	}
 
-	/**
-	 * @param leoPackage
-	 * @param dbConfigKey
-	 * @param superAdminEmail
-	 * @param superAdminPassword
-	 * @param industry
-	 */
-	public static void checkAndCreateDbCollections(String leoPackage, String dbConfigKey, String superAdminEmail, String superAdminPassword) {
-		
-		// 3 sys data collections
-		boolean importDefaultData = setupDefaultSystemConfigs(dbConfigKey);
-		
-		// 31 cdp data collections
-		setupCdpCollections(dbConfigKey); 
-		
-		// 3 edge collections
-		setupCdpGraph(dbConfigKey);
-		
-		// check to import data in new setup only
-		if (importDefaultData && StringUtil.isNotEmpty(superAdminEmail) && StringUtil.isNotEmpty(superAdminPassword) ) {
-			try {
-				importingDefaultData(superAdminEmail, superAdminPassword);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
+		// Initialize business domain defaults
+		SystemConfigsManagement.initDefaultSystemData(true);
+		AssetCategoryManagement.initDefaultSystemData(admin);
+		JourneyMapManagement.initDefaultSystemData();
+		DeviceManagement.initDefaultSystemData();
+		JourneyFlowSchema.initDefaultSystemData();
+		SegmentDataManagement.initDefaultSystemData();
+		AgentManagement.initDefaultData(true);
+
+		System.out.println("[SUCCESS] Initial data bootstrapping completed.");
 	}
 }

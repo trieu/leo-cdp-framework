@@ -733,7 +733,7 @@ public final class ProfileDaoUtil extends AbstractCdpDatabaseUtil {
 		bindVars.put("journeyMapId", journeyMapId);
 		bindVars.put("newAuthorizedViewers", authorizedViewers);
 		bindVars.put("newAuthorizedEditors", authorizedEditors);
-		TaskRunner.run(()->{
+		TaskRunner.runInThreadPools(()->{
 			if(updateAllProfilesInJourney) {
 				bindVars.put("removedViewers", removedViewers);
 				bindVars.put("removedEditors", removedEditors);

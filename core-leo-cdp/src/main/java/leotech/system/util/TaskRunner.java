@@ -21,7 +21,7 @@ public final class TaskRunner {
 	public static final int DEFAULT_DELAY = 4000;
 	public static final int DEFAULT_PERIOD = 6000;
 	
-	static ExecutorService runnerService = Executors.newFixedThreadPool(4);
+	static ExecutorService runnerService = Executors.newSingleThreadExecutor();
 	static ExecutorService executorService = Executors.newFixedThreadPool(SystemMetaData.NUMBER_CORE_CPU);
 	static Timer timer = new Timer(true);
 	

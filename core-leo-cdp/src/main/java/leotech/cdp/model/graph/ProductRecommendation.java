@@ -33,6 +33,9 @@ public class ProductRecommendation {
 
     @Expose
     private Date updatedAt;
+    
+    public ProductRecommendation() {
+	}
 
     // ===== getters / setters =====
 
