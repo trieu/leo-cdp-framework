@@ -93,24 +93,25 @@ public final class EventObserverUtil {
 	) {
 		final Date createdAt = new Date();
 		final String sourceIP = HttpWebParamUtil.getRemoteIP(req);
-		final MultiMap formData = req.formAttributes();
+		
 
-		final String deviceId = DeviceManagement.getDeviceId(formData, deviceInfo);
+		final String deviceId = DeviceManagement.getDeviceId(params, deviceInfo);
 		final String fingerprintId = StringUtil.safeString(params.get(HttpParamKey.FINGERPRINT_ID));
 		final String environment = StringUtil.safeString(
 				params.get(HttpParamKey.DATA_ENVIRONMENT),
 				HttpParamKey.PRO_ENV
 		);
 
-		final String srcObserverId = formData.get(HttpParamKey.OBSERVER_ID);
-		final String srcTouchpointName = HttpWebParamUtil.getString(formData, HttpParamKey.TOUCHPOINT_NAME);
-		final String srcTouchpointUrl = HttpWebParamUtil.getString(formData, HttpParamKey.TOUCHPOINT_URL);
-		final String refTouchpointUrl = HttpWebParamUtil.getString(formData, HttpParamKey.TOUCHPOINT_REFERRER_URL);
+
+		final String srcObserverId = params.get(HttpParamKey.OBSERVER_ID);
+		final String srcTouchpointName = HttpWebParamUtil.getString(params, HttpParamKey.TOUCHPOINT_NAME);
+		final String srcTouchpointUrl = HttpWebParamUtil.getString(params, HttpParamKey.TOUCHPOINT_URL);
+		final String refTouchpointUrl = HttpWebParamUtil.getString(params, HttpParamKey.TOUCHPOINT_REFERRER_URL);
 		final String touchpointRefDomain = UrlUtil.getHostName(refTouchpointUrl);
 
 		final Map<String, Object> eventData = HttpWebParamUtil.getEventData(params);
 
-		final OrderTransaction transaction = new OrderTransaction(createdAt, formData);
+		final OrderTransaction transaction = new OrderTransaction(createdAt, params);
 		final String transactionId = transaction.getTransactionId();
 		final double totalTransactionValue = transaction.getTotalTransactionValue();
 		final String currencyCode = transaction.getCurrencyCode();

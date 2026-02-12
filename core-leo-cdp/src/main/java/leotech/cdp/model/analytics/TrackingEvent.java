@@ -356,20 +356,52 @@ public final class TrackingEvent extends PersistentObject implements SingleViewA
 	}
 	
 	@Override
-	public String buildHashedId() throws IllegalArgumentException {
-		if(metricName != null && observerId != null && srcTouchpointId != null && createdAt != null) {
-			String keyHint = createdAt.toString() + transactionId + transactionStatus + deviceId + observerId + metricName + metricValue + srcTouchpointId + isConversion + this.eventData.toString() 
-				+ this.refJourneyId + this.refProfileId + this.refDataSource + this.refItemId + this.refTicketId + this.refTouchpointHubId + this.srcTouchpointUrl;
-			if(this.isActiveTracked) {
-				keyHint = RandomUtil.getRandom(1000000) + keyHint + System.currentTimeMillis();
-			}
-			this.id = createHashedId(keyHint);
-		}
-		else {
-			newIllegalArgumentException("observerId, metricName, srcTouchpointId is required");
-		}
-		return this.id; 
+	public String buildHashedId() {
+	    validateRequiredFields();
+
+	    StringBuilder keyHint = new StringBuilder()
+	            .append(createdAt)
+	            .append(transactionId)
+	            .append(transactionStatus)
+	            .append(deviceId)
+	            .append(observerId)
+	            .append(metricName)
+	            .append(metricValue)
+	            .append(srcTouchpointId)
+	            .append(isConversion)
+	            .append(eventData)
+	            .append(refJourneyId)
+	            .append(refProfileId)
+	            .append(refDataSource)
+	            .append(refItemId)
+	            .append(refTicketId)
+	            .append(refTouchpointHubId)
+	            .append(srcTouchpointUrl);
+
+	    if (Boolean.TRUE.equals(isActiveTracked)) {
+	        keyHint.insert(0, RandomUtil.getRandom(1_000_000))
+	               .append(System.currentTimeMillis());
+	    }
+
+	    this.id = createHashedId(keyHint.toString());
+	    return this.id;
 	}
+
+	private void validateRequiredFields() {
+	    if (observerId == null) {
+	        throw new IllegalArgumentException("observerId is required");
+	    }
+	    if (metricName == null) {
+	        throw new IllegalArgumentException("metricName is required");
+	    }
+	    if (srcTouchpointId == null) {
+	        throw new IllegalArgumentException("srcTouchpointId is required");
+	    }
+	    if (createdAt == null) {
+	        throw new IllegalArgumentException("createdAt is required");
+	    }
+	}
+
 
 	public TrackingEvent() {
 		// default constructor for single-view data report
