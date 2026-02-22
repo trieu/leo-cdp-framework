@@ -8,9 +8,11 @@ import com.google.common.collect.ImmutableMap;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.json.JsonObject;
+
 import leotech.cdp.domain.EventObserverManagement;
 import leotech.cdp.model.journey.EventObserver;
 import leotech.cdp.model.journey.TouchpointType;
+
 import leotech.system.common.BaseHttpRouter;
 import leotech.system.common.SecuredHttpDataHandler;
 import leotech.system.model.JsonDataPayload;
@@ -18,88 +20,159 @@ import leotech.system.model.SystemUser;
 import leotech.system.util.HttpWebParamUtil;
 
 /**
- * @author tantrieuf31
- * @since 2020
- *
+ * Event Observer Admin Handler
  */
 public final class EventObserverHandler extends SecuredHttpDataHandler {
-	
-	static final String FILTER_KEYWORDS = "filterKeywords";
 
-	static final String JOURNEY_MAP_ID = "journeyMapId";
+    /* ===========================
+     * Constants
+     * =========================== */
 
-	// for dataList view
-	static final String API_LIST = "/cdp/observers";
-	
-	// for dataList view
-	static final String API_CREATE_NEW = "/cdp/observer/new";
-	static final String API_UPDATE_MODEL = "/cdp/observer/update";
-	static final String API_GET_MODEL = "/cdp/observer/get";
-	static final String API_REMOVE = "/cdp/observer/remove";
+    static final String FILTER_KEYWORDS = "filterKeywords";
+    static final String JOURNEY_MAP_ID = "journeyMapId";
 
-	public EventObserverHandler(BaseHttpRouter baseHttpRouter) {
-		super(baseHttpRouter);
-	}
-	
-	@Override
-	public JsonDataPayload httpPostHandler(String userSession, String uri, JsonObject paramJson, Map<String, Cookie> cookieMap) throws Exception {
-		SystemUser loginUser = initSystemUser(userSession, uri, paramJson);
-		if (loginUser != null) {
-			if (isAuthorized(loginUser, EventObserver.class)) {
-				switch (uri) {
-					case API_UPDATE_MODEL : {
-						String key = null;
-						//TODO                                                                                                                                                                                                                                                                
-						return JsonDataPayload.ok(uri, key, loginUser, EventObserver.class);
-					}
-					case API_REMOVE : {
-						// the data is not deleted, we need to remove it from valid data view, set status of object = -4
-						//TODO
-						boolean rs = false;
-						return JsonDataPayload.ok(uri, rs, loginUser, EventObserver.class);
-					}
-					default : {
-						return JsonErrorPayload.NO_HANDLER_FOUND;
-					}
-				}
+    static final String API_LIST = "/cdp/observers";
+    static final String API_CREATE_NEW = "/cdp/observer/new";
+    static final String API_UPDATE_MODEL = "/cdp/observer/update";
+    static final String API_GET_MODEL = "/cdp/observer/get";
+    static final String API_REMOVE = "/cdp/observer/remove";
 
-			}
-			return JsonErrorPayload.NO_AUTHORIZATION;
+    public EventObserverHandler(BaseHttpRouter baseHttpRouter) {
+        super(baseHttpRouter);
+    }
 
-		} else {
-			return JsonErrorPayload.NO_AUTHENTICATION;
-		}
-	}
+    /* =========================================================
+     * POST HANDLER
+     * ========================================================= */
 
-	@Override
-	public JsonDataPayload httpGetHandler(String userSession, String uri, MultiMap params, Map<String, Cookie> cookieMap) throws Exception {
-		SystemUser loginUser = initSystemUser(userSession, uri, params);
-		if (loginUser != null) {
-			if (isAuthorized(loginUser, EventObserver.class)) {
-				switch (uri) {
-					case API_LIST : {
-						String journeyMapId = HttpWebParamUtil.getString(params, JOURNEY_MAP_ID, "");
-						String filterKeywords = HttpWebParamUtil.getString(params, FILTER_KEYWORDS, "");
-						List<EventObserver> list = EventObserverManagement.listAllByJourneyMap(journeyMapId, filterKeywords);
-						Map<String,Object> data = ImmutableMap.of("eventObservers", list, "touchpointHubTypes", TouchpointType.getMapValueToName());
-						return JsonDataPayload.ok(uri, data, loginUser, EventObserver.class);
-					}
-					case API_GET_MODEL : {
-						String id = HttpWebParamUtil.getString(params,"id", "");
-						if (!id.isEmpty()) {
-							EventObserver obj = EventObserverManagement.getById(id);
-							return JsonDataPayload.ok(uri, obj, loginUser, EventObserver.class);
-						}
-					}
+    @Override
+    public JsonDataPayload httpPostHandler(
+            String userSession,
+            String uri,
+            JsonObject paramJson,
+            Map<String, Cookie> cookieMap) throws Exception {
 
-					default :
-						return JsonErrorPayload.NO_HANDLER_FOUND;
-				}
-			} else {
-				return JsonErrorPayload.NO_AUTHORIZATION;
-			}
-		}
-		return JsonErrorPayload.NO_AUTHENTICATION;
-	}
+        SystemUser loginUser = initSystemUser(userSession, uri, paramJson);
+        if (loginUser == null) {
+            return JsonErrorPayload.NO_AUTHENTICATION;
+        }
 
+        if (!isAuthorized(loginUser, EventObserver.class)) {
+            return JsonErrorPayload.NO_AUTHORIZATION;
+        }
+
+        switch (uri) {
+
+            case API_UPDATE_MODEL:
+                return handleUpdate(uri, paramJson, loginUser);
+
+            case API_REMOVE:
+                return handleRemove(uri, paramJson, loginUser);
+
+            default:
+                return JsonErrorPayload.NO_HANDLER_FOUND;
+        }
+    }
+
+    /* =========================================================
+     * GET HANDLER
+     * ========================================================= */
+
+    @Override
+    public JsonDataPayload httpGetHandler(
+            String userSession,
+            String uri,
+            MultiMap params,
+            Map<String, Cookie> cookieMap) throws Exception {
+
+        SystemUser loginUser = initSystemUser(userSession, uri, params);
+        if (loginUser == null) {
+            return JsonErrorPayload.NO_AUTHENTICATION;
+        }
+
+        if (!isAuthorized(loginUser, EventObserver.class)) {
+            return JsonErrorPayload.NO_AUTHORIZATION;
+        }
+
+        switch (uri) {
+
+            case API_LIST:
+                return handleList(uri, params, loginUser);
+
+            case API_GET_MODEL:
+                return handleGetModel(uri, params, loginUser);
+
+            default:
+                return JsonErrorPayload.NO_HANDLER_FOUND;
+        }
+    }
+
+    /* =========================================================
+     * HANDLER IMPLEMENTATIONS
+     * ========================================================= */
+
+    private JsonDataPayload handleList(
+            String uri,
+            MultiMap params,
+            SystemUser loginUser) {
+
+        String journeyMapId =
+                HttpWebParamUtil.getString(params, JOURNEY_MAP_ID, "");
+
+        String filterKeywords =
+                HttpWebParamUtil.getString(params, FILTER_KEYWORDS, "");
+
+        List<EventObserver> observers =
+                EventObserverManagement.listAllByJourneyMap(
+                        journeyMapId,
+                        filterKeywords);
+
+        @SuppressWarnings("null")
+        Map<String, Object> data = ImmutableMap.of(
+                "eventObservers", (Object) observers,
+                "touchpointHubTypes", TouchpointType.getMapValueToName()
+        );
+
+        return JsonDataPayload.ok(uri, data, loginUser, EventObserver.class);
+    }
+
+    private JsonDataPayload handleGetModel(
+            String uri,
+            MultiMap params,
+            SystemUser loginUser) {
+
+        String id = HttpWebParamUtil.getString(params, "id", "");
+
+        if (id.isEmpty()) {
+            return JsonErrorPayload.NO_HANDLER_FOUND;
+        }
+
+        EventObserver observer =
+                EventObserverManagement.getById(id);
+
+        return JsonDataPayload.ok(uri, observer, loginUser, EventObserver.class);
+    }
+
+    private JsonDataPayload handleUpdate(
+            String uri,
+            JsonObject paramJson,
+            SystemUser loginUser) {
+
+        // TODO implement update logic
+        String key = null;
+
+        return JsonDataPayload.ok(uri, key, loginUser, EventObserver.class);
+    }
+
+    private JsonDataPayload handleRemove(
+            String uri,
+            JsonObject paramJson,
+            SystemUser loginUser) {
+
+        // Soft delete (status = -4)
+        // TODO implement remove logic
+        boolean result = false;
+
+        return JsonDataPayload.ok(uri, result, loginUser, EventObserver.class);
+    }
 }
