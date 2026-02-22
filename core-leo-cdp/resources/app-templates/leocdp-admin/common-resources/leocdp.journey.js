@@ -1160,59 +1160,95 @@ const initDataObserverJsGridPlugin = function() {
 	jsGrid.fields.LeoDataObserver = LeoDataObserver;
 }
 
-const loadObserverActionButtons = function(firstPartyData, tpHubType, jsonStr) {
-	var html = '<div class="btn-group" > <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown"> <i class="fa fa-code" style="font-size:1.1em" aria-hidden="true"></i> Get Code</button>';
-	html += '<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown"> <span class="caret"></span> </button>';
-	html += '<ul class="dropdown-menu" role="menu">';
-	
-	if(firstPartyData) {
-		html += '<li> <button type="button" class="btn btn-do-now btn-sm btn-get-code" onclick="getQrImageFormCode(this)" ';
-		html += (' data-json="' + jsonStr  + '" ' );
-		html += '><i class="fa fa-qrcode" style="font-size:1.1em" aria-hidden="true"></i>  QR Image Code </button> </li>';
-		
-		if(tpHubType > 0 && tpHubType < 12) {
-			// event tracking
-			html += '<li> <button type="button" class="btn btn-do-now  btn-sm btn-get-code" onclick="getTrackingJsCode(this)" ';
-			html += (' data-json="' + jsonStr  + '" ' );
-			html += '><i class="fa fa-code" style="font-size:1.1em" aria-hidden="true"></i> Event Tracking Code </button> </li>';
-			
-			// feedback / survey
-			html += '<li> <button type="button" class="btn btn-do-now btn-sm btn-get-code" onclick="getCxFeedbackJsCode(this)" ';
-			html += (' data-json="' + jsonStr  + '" ' );
-			html += '><i class="fa fa-code" style="font-size:1.1em" aria-hidden="true"></i> Survey Rating Forms </button> </li>';
-	    	
-			// content
-			html += '<li> <button type="button" class="btn btn-do-now  btn-sm btn-get-code" onclick="getPersonalizeContentCode(this)" ';
-			html += (' data-json="' + jsonStr  + '" ' );
-			html += '><i class="fa fa-code" style="font-size:1.1em" aria-hidden="true"></i> Content Personalization </button> </li>';
-			
-			// product
-			html += '<li> <button type="button" class="btn btn-do-now  btn-sm btn-get-code" onclick="getPersonalizeProductCode(this)" ';
-			html += (' data-json="' + jsonStr  + '" ' );
-			html += '><i class="fa fa-code" style="font-size:1.1em" aria-hidden="true"></i> Product Personalization  </button> </li>';
-			
-			// embedded chatbot
-			html += '<li> <button type="button" class="btn btn-do-now btn-sm btn-get-code" onclick="getEmbeddedChatbotJsCode(this)" ';
-			html += (' data-json="' + jsonStr  + '" ' );
-			html += '><i class="fa fa-code" style="font-size:1.1em" aria-hidden="true"></i> Embedded Chatbot </button> </li>';
-		} 
-		else {
-			html += '<li> <button type="button" class="btn btn-do-now btn-sm btn-get-code" onclick="getCxFeedbackJsCode(this)" ';
-			html += (' data-json="' + jsonStr  + '" ' );
-			html += '><i class="fa fa-code" style="font-size:1.1em" aria-hidden="true"></i> Survey Rating Forms </button> </li>';
-		}
-	} else {
-		html += '<li> <button type="button" class="btn btn-do-now btn-sm btn-get-code" onclick="getQrImageFormCode(this)"';
-		html += (' data-json="' + jsonStr  + '" ' );
-		html += '><i class="fa fa-qrcode" style="font-size:1.1em" aria-hidden="true"></i> QR Image Code </button> </li>';
-	}
-	
-	html += '<li> <button type="button" class="btn btn-sm btn-do-now btn-get-code" onclick="showObserverApiInfo(this)" ';
-	html += (' data-json="' + jsonStr  + '" ' );
-	html += '><i class="fa fa-info-circle" style="font-size:1.1em" aria-hidden="true"></i> API & Webhook </button> </li> ';
-	
-	html += '  </ul> </div>';
-	return html;
+// ======================================================
+// Observer Action Buttons (Bootstrap 3.4 compatible)
+// ======================================================
+
+const loadObserverActionButtons = function (firstPartyData, tpHubType, jsonStr) {
+
+    const jsonAttr = escapeHtmlAttr(jsonStr);
+
+    const items = [];
+
+    // ---------- helpers ----------
+    function addItem(icon, label, handler) {
+        items.push(
+            '<li>' +
+            buildButton(icon, label, handler, jsonAttr) +
+            '</li>'
+        );
+    }
+
+    // ---------- base actions ----------
+    addItem('fa-qrcode', 'QR Image Code', 'getQrImageFormCode');
+
+    if (firstPartyData) {
+
+        if (tpHubType > 0 && tpHubType < 12) {
+
+            addItem('fa-code', 'Track User Events', 'getTrackingJsCode');
+            addItem('fa-code', 'Collect Feedback', 'getCxFeedbackJsCode');
+            addItem('fa-code', 'Recommend Content', 'getPersonalizeContentCode');
+            addItem('fa-code', 'Recommend Products', 'getPersonalizeProductCode');
+            addItem('fa-code', 'Add Chat Assistant', 'getEmbeddedChatbotJsCode');
+
+        } else {
+            addItem('fa-code', 'Survey Rating Forms', 'getCxFeedbackJsCode');
+        }
+    }
+
+    // always show API info
+    addItem('fa-info-circle', 'Developer API', 'showObserverApiInfo');
+
+    // ---------- dropdown wrapper ----------
+    return (
+        '<div class="btn-group">' +
+            '<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">' +
+                '<i class="fa fa-code" aria-hidden="true"></i> Get Code' +
+            '</button>' +
+            '<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">' +
+                '<span class="caret"></span>' +
+            '</button>' +
+            '<ul class="dropdown-menu" role="menu">' +
+                items.join('') +
+            '</ul>' +
+        '</div>'
+    );
+};
+
+
+// ======================================================
+// Button Builder
+// ======================================================
+
+function buildButton(icon, label, handler, jsonAttr) {
+
+    return (
+        '<button type="button" ' +
+            'class="btn btn-do-now btn-sm btn-get-code" ' +
+            'onclick="' + handler + '(this)" ' +
+            'data-json="' + jsonAttr + '">' +
+            '<i class="fa ' + icon + '" aria-hidden="true"></i> ' +
+            label +
+        '</button>'
+    );
+}
+
+
+// ======================================================
+// Safe attribute encoder (VERY IMPORTANT)
+// prevents broken HTML / XSS from JSON
+// ======================================================
+
+function escapeHtmlAttr(str) {
+    if (!str) return '';
+
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
 }
 
 const showDataObserverTable = function(json){
