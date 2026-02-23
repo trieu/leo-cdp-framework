@@ -1791,8 +1791,6 @@ const loadBehavioralEventList = function(){
 		 
 		 renderFunnelChart("#profile_funnel",customerFunnelStages, profileFunnelOptions, getColorCodeProfileFunnel)
 		 
-		 // TODO
-		 var insertItemReady = false, insertedIndex = -1;
 		 var gridControls =  { 
 			type: "control", width: 70, editButton: true, deleteButton: true, itemTemplate: function(value, item) {
                 var $result = jsGrid.fields.control.prototype.itemTemplate.apply(this, arguments);
@@ -1848,91 +1846,126 @@ const loadBehavioralEventList = function(){
                	return rs;
              }
          };
-		 
+
+		 // Keep track of the current state
+		 let isPaginated = true;
+		
+		 $("#togglePaginationBtn").click(function() {
+		    // Toggle the boolean state
+		    isPaginated = !isPaginated;
+		    
+		    // Update the jsGrid paging option dynamically
+		    $("#event_metrics_table").jsGrid("option", "paging", isPaginated);
+		    
+		    // Update the button text/icon based on the new state
+		    if (isPaginated) {
+		        $(this).html('<i class="fa fa-list"></i> Show All Records');
+		        $(this).removeClass("btn-primary").addClass("btn-outline-primary");
+		    } else {
+		        $(this).html('<i class="fa fa-file-text"></i> Enable Pagination');
+		        $(this).removeClass("btn-outline-primary").addClass("btn-primary");
+		    }
+		 });
+				 
 		 $("#event_metrics_table").jsGrid({
-			    width: "100%",
-			    height: "auto",
-
-			    inserting: canInsertData,
-			    confirmDeleting : canDeleteData,
-			    editing: true,
-			    sorting: false,
-			    paging: false,
-			    data: behavioralMetricsData,
-	                	
-			    deleteConfirm: function(item) {
-			    	if(item.systemMetric) {
-			    		return "The event metric <b>[" + item.eventName + "]</b> is the <b>event metric of system</b>. You can not delete this metric.";
-				    }
-		            return "The event metric [" + item.eventName + "] will be removed. Are you sure ? ";
-		        },
-
-		        onItemInserting: function(args) {
-		        	$('tr > td.jsgrid-cell:nth-of-type(1)').each(function(){
-		        		var eventName = $(this).text().trim();
-		        		if(eventName === args.item.eventName) {
-		        			args.cancel = true;
-				            iziToast.info({
-			    	    	    title: 'Info',
-			    	    	    message: 'The event [' + eventName +  '] is already existed in the metric list!'
-			    	    	});
-		        		}
-		        	})
-	   		    	// default for new inserting item
-	   		    	args.item.systemMetric = false;
-	   		    	args.item.dataType = 1;
-	   		    	args.item.flowName = currentFlowName;
-	   		    },
-			   
-			    onItemInserted: function(args) {
-			    	var item = args.item;
-			    	if(item.eventName.trim() === "" || item.eventLabel.trim() === "") {
-			    		 args.cancel = true;
-			    	}
-			    	else {
-			    		saveEventMetricMetaData(args.item)
-			    	}
-			    }, 
-			    
-			    onItemEditing: function(args) {
-			    	if(args.item.systemMetric) {
-				    	iziToast.info({
-		    	    	    title: 'Information Box',
-		    	    	    message: 'The event <b>[' + args.item.eventName +  ']</b> is the event metric of system. Be careful when you edit this metric !',
-		    	    	    timeout: 5000
-		    	    	});
-			    	}
-			    },
-			    
-			    onItemUpdated: function(args) {
-			    	saveEventMetricMetaData(args.item)
-			    }, 
-			    
-			    onItemDeleting: function(args) {
-			        if(args.item.systemMetric) {
-			            args.cancel = true;
-			        }
-			    },
-			    
-			    onRefreshed: function (args) {
-			    	$('input.jsgrid-insert-mode-button').click(function(){
-			        	console.log($('tr.jsgrid-insert-row').find('input[type="number"]'))
-			           	$('tr.jsgrid-insert-row').find('input[type="number"]').val(0);
-			        })
-			    },
-
-			    fields: [
-			    	{ name: "eventName", title : "Event Name", align: 'center' , type: "text", validate: "required", validate: "required" },
-			        { name: "eventLabel", title : "Event Label", align: 'center' , type: "text", validate: "required" },
-			    	{ name: "score", title : "Event Score", type: "number", align: 'center', width: 40, validate: "required" },
-			        { name: "cumulativePoint", title : "Loyalty Point", type: "number", width: 44, align: 'center', validate: "required" },
-			        { name: "funnelStageId", title : "Default Funnel Stage", type: "select", items: customerFunnelStages, valueField: "id", textField: "name" },
-			        { name: "scoreModel", title : "Scoring Model", type: "select", items: scoringModels, width: 80, valueField: "id", textField: "name" },
-			    	{ name: "journeyStage", type: "select", title : "CX Journey Stage", items: journeyStages, align: 'center', width: 74, valueField: "id", textField: "name" },
-			        { name: "showInObserverJS", title : "Show in JS Code", type: "CustomCheckBox", width: 48, align: "center" },
-			        gridControls
-			    ]
-			});
+		    width: "100%",
+		    height: "auto", // Keeps height dynamic based on pageSize
+		
+		    inserting: canInsertData,
+		    confirmDeleting: canDeleteData,
+		    editing: true,
+		    
+		    // --- UX IMPROVEMENTS ---
+		    sorting: true,       // Allow clicking column headers to sort
+		    filtering: false,     // Add a search/filter row at the top
+		    paging: true,        // Break the long list into pages
+		    pageSize: 15,        // Number of rows per page
+		    pageButtonCount: 5,  // Number of pagination buttons to show at the bottom
+		    // -----------------------
+		
+		    data: behavioralMetricsData,
+		    
+		    deleteConfirm: function(item) {
+		        if(item.systemMetric) {
+		            return "The event metric <b>[" + item.eventName + "]</b> is the <b>event metric of system</b>. You can not delete this metric.";
+		        }
+		        return "The event metric [" + item.eventName + "] will be removed. Are you sure ?";
+		    },
+		
+		    onItemInserting: function(args) {
+		        // --- UX/PERFORMANCE TIP ---
+		        // Instead of searching the DOM elements (`$('tr > td.jsgrid-cell...')`),
+		        // check the underlying JavaScript array (`behavioralMetricsData`) for duplicates.
+		        // It's much faster, especially when using pagination, since the DOM
+		        // won't contain all elements at once!
+		        var isDuplicate = behavioralMetricsData.some(function(metric) {
+		            return metric.eventName === args.item.eventName.trim();
+		        });
+		
+		        if (isDuplicate) {
+		            args.cancel = true;
+		            iziToast.info({
+		                title: 'Info',
+		                message: 'The event [' + args.item.eventName +  '] already exists in the metric list!'
+		            });
+		            return;
+		        }
+		
+		        // default for new inserting item
+		        args.item.systemMetric = false;
+		        args.item.dataType = 1;
+		        args.item.flowName = currentFlowName;
+		    },
+		    
+		    onItemInserted: function(args) {
+		        var item = args.item;
+		        if(item.eventName.trim() === "" || item.eventLabel.trim() === "") {
+		             args.cancel = true;
+		        } else {
+		            saveEventMetricMetaData(args.item);
+		        }
+		    }, 
+		    
+		    onItemEditing: function(args) {
+		        if(args.item.systemMetric) {
+		            iziToast.info({
+		                title: 'Information Box',
+		                message: 'The event <b>[' + args.item.eventName +  ']</b> is an event metric of the system. Be careful when you edit this metric!',
+		                timeout: 5000
+		            });
+		        }
+		    },
+		    
+		    onItemUpdated: function(args) {
+		        saveEventMetricMetaData(args.item);
+		    }, 
+		    
+		    onItemDeleting: function(args) {
+		        if(args.item.systemMetric) {
+		            args.cancel = true;
+		        }
+		    },
+		    
+		    onRefreshed: function (args) {
+		        $('input.jsgrid-insert-mode-button').click(function(){
+		            $('tr.jsgrid-insert-row').find('input[type="number"]').val(0);
+		        });
+		    },
+		
+		    // Important: To make `filtering: true` work smoothly, ensure your fields have 
+		    // `filtering: true` or `false` based on whether they should be searchable.
+		    fields: [
+		        { name: "eventName", title : "Event Name", align: 'center', type: "text", validate: "required", filtering: true },
+		        { name: "eventLabel", title : "Event Label", align: 'center', type: "text", validate: "required", filtering: true },
+		        { name: "score", title : "Event Score", type: "number", align: 'center', width: 40, validate: "required", filtering: true },
+		        { name: "cumulativePoint", title : "Loyalty Point", type: "number", width: 44, align: 'center', validate: "required", filtering: true },
+		        { name: "funnelStageId", title : "Default Funnel Stage", type: "select", items: customerFunnelStages, valueField: "id", textField: "name", filtering: true },
+		        { name: "scoreModel", title : "Scoring Model", type: "select", items: scoringModels, width: 80, valueField: "id", textField: "name", filtering: true },
+		        { name: "journeyStage", type: "select", title : "CX Journey Stage", items: journeyStages, align: 'center', width: 74, valueField: "id", textField: "name", filtering: true },
+		        { name: "showInObserverJS", title : "Show in JS Code", type: "CustomCheckBox", width: 48, align: "center", filtering: false },
+		        gridControls // Make sure your `type: "control"` object is configured to handle the filter buttons if you use them.
+		    ]
+		});
 		 
 	});
 }
