@@ -51,7 +51,7 @@ public class CampaignDaoUtil extends AbstractCdpDatabaseUtil {
 	 */
 	public static Campaign loadFullCampaignData(Campaign cam) {
 		String campaignId = cam.getId();
-		List<ProductItem> items = AssetProductItemDaoUtil.getByCampaign(campaignId);
+	//	List<ProductItem> items = AssetProductItemDaoUtil.getByCampaign(campaignId);
 //		cam.setProductItems(items);
 //		
 //		cam.loadTemplateSelector();
