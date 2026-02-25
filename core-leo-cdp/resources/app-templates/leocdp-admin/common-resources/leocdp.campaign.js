@@ -185,7 +185,7 @@ function loadCampaignList() {
 
 function initCampaignMetadata(campaignMetaData){
 	var id = campaignMetaData.id;
-	var name = campaignMetaData.name;
+	var name = campaignMetaData.name || "New Campaign (Draft)";
 
 	document.title = 'Campaign Editor: ' + name;
 	$('#campaign_name_header').text('Campaign: ' + name);
@@ -247,6 +247,15 @@ function initCampaignMetadata(campaignMetaData){
         var id = $(this).val();
 		console.log(id)
 		$('#frequencyCappingType').text(id.toUpperCase())
+    }).trigger("chosen:updated");
+
+	// template
+	$('#campaign_template_id').chosen({
+         width: "100%",
+         no_results_text: "No data available!"
+    }).change(function(){
+        var id = $(this).val();
+		console.log(id)
     }).trigger("chosen:updated");
 
 	// set label of type

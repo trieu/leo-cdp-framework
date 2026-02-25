@@ -1093,11 +1093,13 @@ const loadProfileEventMatrix = function(profileId, journeyMapId){
 	queryFilter['profileId'] = profileId;
 	queryFilter['journeyMapId'] = journeyMapId;
 	    	
+	var containerId = 'profile_event_matrix'
 	var urlStr = baseLeoAdminUrl + '/cdp/analytics360/event-matrix';
+	
     LeoAdminApiUtil.getSecuredData(urlStr, queryFilter , function (json) {
         if (json.httpCode === 0 && json.errorMessage === '') {
         	var data = json.data;
-        	renderMatrixChart('Event Matrix Report', 'profile_event_matrix', data.xLabels, data.yLabels, data.dataList)
+        	renderMatrixChart('Event Matrix Report', containerId , data.xLabels, data.yLabels, data.dataList)
         } else {
             LeoAdminApiUtil.logErrorPayload(json);
         }

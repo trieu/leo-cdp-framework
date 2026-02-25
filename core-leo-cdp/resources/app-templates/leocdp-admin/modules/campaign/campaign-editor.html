@@ -1,4 +1,141 @@
 
+<style type="text/css">
+#campaignAutomatedFlow {
+	overflow-x: auto;
+	padding-bottom: 40px;
+	overflow: scroll;
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	top: 0;
+	text-align: center;
+}
+
+#campaignAutomatedFlow svg {
+	transform: scale(1)
+}
+
+#ma_flow_container {
+	height: calc(100% - 100px) !important;
+	min-height: 1400px !important;
+	position: relative;
+}
+
+#campaignAutomatedFlow img.targetedSegmentIcon {
+	width: 90px !important;
+	margin: 10px auto;
+}
+
+#campaignAutomatedFlow img.actionIcon {
+	width: 80px !important;
+	margin: 5px auto;
+}
+
+#campaignAutomatedFlow img.questionIcon {
+	width: 80px !important;
+	margin: 5px auto;
+}
+
+#campaignAutomatedFlow .nodeInfo {
+	margin-top: 8px;
+	color: red;
+}
+
+#campaignAutomatedFlow span.nodeLabel {
+	color: blue;
+}
+/* =====================================================
+   Campaign Condition SQL Editor
+   ===================================================== */
+
+/* Section spacing */
+#runWithConditionRules {
+	margin-bottom: 30px;
+}
+
+/* Wrapper container */
+.condition-rule-wrapper {
+	position: relative;
+	background: #ffffff;
+	border: 1px solid #dfe3e8;
+	border-radius: 8px;
+	padding: 14px;
+	transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Subtle top accent line (enterprise feel) */
+.condition-rule-wrapper:before {
+	content: "";
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 3px;
+	background: #337ab7;
+	border-top-left-radius: 8px;
+	border-top-right-radius: 8px;
+}
+
+/* Focus state */
+.condition-rule-wrapper.focused, .condition-rule-wrapper:focus-within {
+	border-color: #337ab7;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* SQL textarea styling */
+.condition-textarea {
+	width: 100%;
+	resize: vertical;
+	min-height: 180px;
+	font-family: "Consolas", "Monaco", monospace;
+	font-size: 13px;
+	line-height: 1.6;
+	background: #fcfcfd;
+	border: 1px solid #e6e9ef;
+	border-radius: 4px;
+	padding: 10px 12px;
+	transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+/* Textarea focus */
+.condition-textarea:focus {
+	background: #ffffff;
+	border-color: #337ab7;
+	box-shadow: 0 0 0 2px rgba(51, 122, 183, 0.15);
+	outline: none;
+}
+
+/* Placeholder tone */
+.condition-textarea::-webkit-input-placeholder {
+	color: #9aa5b1;
+}
+
+.condition-textarea:-ms-input-placeholder {
+	color: #9aa5b1;
+}
+
+.condition-textarea::placeholder {
+	color: #9aa5b1;
+}
+
+/* Helper text */
+.rule-hint {
+	margin-top: 8px;
+	font-size: 12px;
+	color: #6b7785;
+}
+
+/* Sub-label styling */
+.display-block {
+	display: block;
+	margin-top: 4px;
+	font-weight: normal;
+	font-size: 12px;
+	color: #7a869a;
+}
+</style>
+
 <div class="row" id="breadcrumb_header">
 	<div class="col-md-12">
 		<div class="col-lg-9">
@@ -23,193 +160,346 @@
 
 <div id="campaign_editor_loader" class="loader"></div>
 
-<div id="campaign_editor_div" style="display: none;" >
+<div id="campaign_editor_div" style="display: none;">
 
-	<h4 id="campaign_name_header" class="highlight_text" >  </h4>
-	<p> Enter campaign information and flow metadata to build the automated flow </p>
-	
+	<h4 id="campaign_name_header" class="highlight_text"></h4>
+	<p>Provide campaign details and AI agent automation settings to configure the flow.</p>
+
 	<div class="panel-group">
 
 		<!--  1 metadata  -->
 		<div class="panel panel-leoadmin">
-			<div class="panel-heading"> <b> <i class="fa fa-info-circle" aria-hidden="true"></i> Campaign Information </b>  </div>
+			<div class="panel-heading">
+				<b> <i class="fa fa-info-circle" aria-hidden="true"></i>
+					Campaign Details
+				</b>
+			</div>
 			<div class="panel-body">
 				<div class="col-lg-12">
-					<div id="error-on-save" class="alert alert-danger" style="display: none;"></div>
-					
+					<div id="error-on-save" class="alert alert-danger"
+						style="display: none;"></div>
+
 					<div class="form-group row">
-						<label class="control-label col-sm-3" for="campaign_name">Name</label>
+						<label class="control-label col-sm-3" for="campaign_name">Campaign
+							Name</label>
 						<div class="col-sm-9">
-							<input type="text" class="form-control" id="campaign_name" placeholder="Enter name" name="name">
+							<input type="text" class="form-control" id="campaign_name"
+								placeholder="e.g. Birthday Email – Loyal Segment" name="name">
+						</div>
+					</div>
+
+					<div class="form-group row">
+						<label class="control-label col-sm-3" for="campaign_description">Objective
+							/ Notes</label>
+						<div class="col-sm-9">
+							<textarea class="form-control" rows="2" id="campaign_description"
+								name="description"
+								placeholder="What is the goal of this campaign?"></textarea>
 						</div>
 					</div>
 					
 					<div class="form-group row">
-						<label class="control-label col-sm-3" for="campaign_description">Description</label>
-						<div class="col-sm-9">
-							<textarea class="form-control" rows="2" id="campaign_description" name="description"  placeholder="Enter description" ></textarea>
-						</div>
+					    <label class="control-label col-sm-3"
+					           for="campaign_targetedSegmentIds">
+					        Base Audience Segment
+					        <br>
+					        <small class="text-muted display-block">
+					            Start from a predefined customer segment
+					        </small>
+					    </label>
+					
+					    <div class="col-sm-9" style="padding-top: 10px">
+					        <select id="campaign_targetedSegmentIds"
+					                name="targetedSegmentIds"
+					                data-placeholder="Select a saved audience segment"
+					                class="select">
+					        </select>
+					    </div>
 					</div>
 				</div>
 			</div>
 
 			<!--  2 Automated Flow Metadata  -->
 			<div class="panel panel-leoadmin">
-				<div class="panel-heading"> <b> <i class="fa fa-info-circle" aria-hidden="true"></i> Automated Flow Metadata </b>  </div>
+				<div class="panel-heading">
+					<b> <i class="fa fa-info-circle" aria-hidden="true"></i>
+						AI Agent Automation Settings
+					</b>
+				</div>
 				<div class="panel-body">
 					<div class="col-lg-12">
-						
-						<div class="form-group row">
-							<label class="control-label col-sm-3" for="campaign_targetedSegmentIds">Targeted Segment</label>
-							<div class="col-sm-9" style="padding-top: 10px">
-								<select id="campaign_targetedSegmentIds" name="targetedSegmentIds" data-placeholder="Select a segment to target in this campaign" class="select"  >
-			                        
-			                    </select>
-							</div>
-						</div>
 
-						<div id="runWithConditionRules" class="form-group row" >
-			                <label class="control-label col-sm-3" for="eventForCampaignCondition"> Condition Rules </label>
-							
-							<div class="col-sm-9" style="padding-top: 10px" >
-								<textarea id="campaign_condition_rules" class="form-control" rows="3" placeholder="Enter condition rules"></textarea>
-							</div>
-			            </div> 
+						<!-- ========================= -->
+						<!-- DEFINE AUDIENCE SECTION  -->
+						<!-- ========================= -->
 						
-						<div class="form-group row">
-							<label class="control-label col-sm-3" for="campaign_condition">Condition</label>
-							<div class="col-sm-9" style="padding-top: 10px">
-								<select id="campaign_condition" name="condition" data-placeholder="Select a condition to run in this campaign" class="select"  >
-			                        <option value="runAtDateAndTime"> If ondition Rules is OK, then run at the date and time </option>
-			                        <option value="getEventAtUrl"> Get an event at a specific URL</option>		
-									<option value="getEventAtUrl"> Get an event at a specific URL</option>		                          
-			                    </select>
-							</div>
-						</div>
 						
-						<div id="runAtDateAndTimeForCondition" class="form-group row" >
-			                <label class="control-label col-sm-3" for="eventForCampaignCondition"> Run at the date and time </label>
-							
-							<div class="col-sm-4" style="padding-top: 10px" >
-								<div class='input-group date' id='runAtDateAndTime'>
-					               <input type='text' class="form-control" />
-					               <span class="input-group-addon">
-					               <span class="glyphicon glyphicon-calendar"></span>
-					               </span>
-					            </div>
-							</div>
-			            </div> 
 
-						
-			            
-						<div id="eventMetricWithUrlForCondition" class="form-group row" style="display: none;">
-			                <label class="control-label col-sm-3" for="eventForCampaignCondition"> Event Trigger at the URL </label>
-							<div class="col-sm-2" style="padding-top: 10px" >
-								<select id="eventForCampaignCondition"  data-placeholder="Event Trigger " class="select" >
-								  	
-								</select>
-							</div>
-							<div class="col-sm-7" style="padding-top: 10px" >
-								<input type="url" class="form-control" id="eventAtUrlForCampaignCondition" placeholder="Enter URL" >
-							</div>
-			            </div> 
-						
+
+						<div id="runWithConditionRules" class="form-group row">
+
+							<label class="control-label col-sm-3"> Refine Audience
+								with AI <br> <small class="text-muted display-block">
+									Describe additional conditions in natural language </small>
+							</label>
+
+							<div class="col-sm-9">
+								
+					        <!-- Natural language input -->
+					        <div class="well well-sm"
+					             style="margin-bottom:10px; background:#f9fafb;">
+					             
+					            <strong>Describe your audience criteria:</strong>
 					
+					            <div class="input-group" style="margin-top:8px;">
+					                <input type="text"
+					                       id="campaign_condition_prompt"
+					                       class="form-control"
+					                       placeholder="Example: Active VIP investors in Vietnam with cash above 100M and EMAIL channel enabled">
+					                <span class="input-group-btn">
+					                    <button class="btn btn-info"
+					                            type="button"
+					                            id="btnGenerateSQL">
+					                        Generate Filter
+					                    </button>
+					                </span>
+					            </div>
+					        </div>
+								
+					        <!-- Generated SQL -->
+					        <label style="margin-top:10px;">
+					            Generated Profile Filter (PostgreSQL)
+					        </label>
+					
+					        <textarea id="campaign_condition_rules"
+					                  name="campaign_condition_rules"
+					                  class="form-control condition-textarea"
+					                  rows="8"
+					                  spellcheck="false"
+					                  placeholder="AI-generated boolean condition will appear here."></textarea>
+					
+					        <p class="help-block" style="margin-top:6px;">
+					            Applied internally as:
+					            <code>
+					                SELECT * FROM cdp_profiles
+					                WHERE tenant_id = :tenant_id
+					                AND ( base_segment )
+					                AND ( generated_filter )
+					            </code>
+					        </p>
+								
+					        <div class="text-right" style="margin-top:6px;">
+					            <button type="button"
+					                    class="btn btn-default btn-sm"
+					                    id="btnValidateSQL">
+					                Validate
+					            </button>
+					
+					            <button type="button"
+					                    class="btn btn-info btn-sm"
+					                    id="btnPreviewCount">
+					                Preview Profiles
+					            </button>
+					        </div>
+					
+					    </div>
+						</div>
+
 						<div class="form-group row">
-							<label class="control-label col-sm-3" for="campaign_action_type">Action Type</label>
+							<label class="control-label col-sm-3" for="campaign_condition">
+								Trigger Type </label>
 							<div class="col-sm-9" style="padding-top: 10px">
-								<select id="campaign_action_type" name="action_type" data-placeholder="Select an action type when a customer profile is matched with condition" class="select"  >
-			                    	<option value="email"> Send Email </option>
-									<option value="webhook"> Send Webhook </option>
-			                        <option value="zalo_oa" style="display: none;"> Send Notification Message via Zalo OA</option>
-			                        <option value="zns" style="display: none;"> Send ZNS (Zalo Notification Service)</option>
-			                    </select>
+								<select id="campaign_condition" name="condition"
+									data-placeholder="Select how this campaign should be triggered"
+									class="select">
+
+									<option value="" disabled selected>-- Select trigger
+										type --</option>
+
+									<option value="scheduled_after_condition">Run at a
+										scheduled date/time (if conditions match)</option>
+
+									<option value="event_based_url">Trigger when an event
+										occurs at a specific URL</option>
+
+									<option value="immediate_after_condition">Run
+										immediately when conditions match</option>
+
+								</select>
+							</div>
+						</div>
+
+						<div id="runAtDateAndTimeForCondition" class="form-group row">
+							<label class="control-label col-sm-3"
+								for="eventForCampaignCondition"> Scheduled Execution
+								Time </label>
+
+							<div class="col-sm-4" style="padding-top: 10px">
+								<div class='input-group date' id='runAtDateAndTime'>
+									<input type='text' class="form-control" /> <span
+										class="input-group-addon"> <span
+										class="glyphicon glyphicon-calendar"></span>
+									</span>
+								</div>
+							</div>
+						</div>
+
+
+
+						<div id="eventMetricWithUrlForCondition" class="form-group row"
+							style="display: none;">
+							<label class="control-label col-sm-3"
+								for="eventForCampaignCondition"> Event Trigger at the
+								URL </label>
+							<div class="col-sm-2" style="padding-top: 10px">
+								<select id="eventForCampaignCondition"
+									data-placeholder="Event Trigger " class="select">
+
+								</select>
+							</div>
+							<div class="col-sm-7" style="padding-top: 10px">
+								<input type="url" class="form-control"
+									id="eventAtUrlForCampaignCondition" placeholder="Enter URL">
 							</div>
 						</div>
 						
-						<div  class="form-group row" >
-			                <label class="control-label col-sm-3" for="campaignFrequencyCappingTimeUnit"> Frequency Capping of <span id="frequencyCappingType" class="highlight_text"></span> </label>
-							<div class="col-sm-3" style="padding-top: 10px" >
-								<select id="frequencyCappingTimeUnit"  data-placeholder="Time Unit" class="select" >
-									<option value="seconds"> SECONDS </option>
-									<option value="minutes"> MINUTES </option>
-								  	<option value="hours"> HOURS </option>
-			                        <option value="days"> DAYS </option>
-			                        <option value="weeks"> WEEKS </option>
-			                        <option value="months"> MONTHS </option>
+						<div class="form-group row">
+							<label class="control-label col-sm-3" for="campaign_action_type">Primary Action
+								<br>
+						        <small class="text-muted display-block">
+						            Select how the message will be delivered
+						        </small>
+							</label>
+							<div class="col-sm-9" style="padding-top: 10px">
+								<select id="campaign_action_type" name="action_type"
+									data-placeholder="Select an action type when a customer profile is matched with condition"
+									class="select">
+									<option value="email">Send Email</option>
+									<option value="webhook">Send Webhook</option>
+									<option value="zalo_oa" style="display: none;">Send
+										Notification Message via Zalo OA</option>
+									<option value="zns" style="display: none;">Send ZNS
+										(Zalo Notification Service)</option>
 								</select>
 							</div>
-							<div class="col-sm-6" style="padding-top: 10px" >
-								<input type="number" class="form-control" id="frequencyCappingLimit" placeholder="Enter limit" min="0" max="60" value="1">
+						</div>
+						
+						<div class="form-group row">
+						    <label class="control-label col-sm-3"
+						           for="campaign_template_id">
+						        Primary Message Template
+						        <br>
+						        <small class="text-muted display-block">
+						            Select the content template used for this campaign
+						        </small>
+						    </label>
+						
+						    <div class="col-sm-9" style="padding-top:10px;">
+						        <select id="campaign_template_id"
+						                name="template_id"
+						                class="select"
+						                data-placeholder="Select a message template">
+						
+						            <option value="" disabled selected>
+						                -- Select Template --
+						            </option>
+						
+						            <!-- Email Templates -->
+						            <option value="email_vip_offer">
+						                Email – VIP Investment Offer
+						            </option>
+						
+						            <option value="email_portfolio_update">
+						                Email – Portfolio Performance Update
+						            </option>
+						
+						            <option value="email_market_alert">
+						                Email – Market Alert Notification
+						            </option>
+						
+						            <!-- Zalo Templates -->
+						            <option value="zalo_price_alert">
+						                Zalo – Stock Price Alert
+						            </option>
+						
+						            <option value="zns_transaction_notice">
+						                ZNS – Transaction Confirmation
+						            </option>
+						
+						            <!-- Webhook Template -->
+						            <option value="webhook_crm_sync">
+						                Webhook – CRM Sync Payload
+						            </option>
+						
+						        </select>
+						
+						        <p class="help-block" style="margin-top:6px;">
+						            The selected template will be rendered dynamically with profile data at execution time.
+						        </p>
+						
+						        <div class="text-right" style="margin-top:6px;">
+						            <button type="button"
+						                    class="btn btn-info btn-sm"
+						                    id="btnPreviewTemplate">
+						                Preview Template
+						            </button>
+						        </div>
+						
+						    </div>
+						</div>
+
+						<div class="form-group row">
+							<label class="control-label col-sm-3"
+								for="campaignFrequencyCappingTimeUnit"> Frequency Limit of 
+								<span id="frequencyCappingType" class="highlight_text"></span>
+							</label>
+							<div class="col-sm-3" style="padding-top: 10px">
+								<select id="frequencyCappingTimeUnit"
+									data-placeholder="Time Unit" class="select">
+									<option value="seconds">SECONDS</option>
+									<option value="minutes">MINUTES</option>
+									<option value="hours">HOURS</option>
+									<option value="days">DAYS</option>
+									<option value="weeks">WEEKS</option>
+									<option value="months">MONTHS</option>
+								</select>
 							</div>
-			            </div> 
+							<div class="col-sm-6" style="padding-top: 10px">
+								<input type="number" class="form-control"
+									id="frequencyCappingLimit" placeholder="Enter limit" min="0"
+									max="60" value="1">
+							</div>
+						</div>
+
+						
 					</div>
-	
+
 				</div>
 			</div>
-			
+
 			<div class="panel panel-leoadmin">
 				<div class="panel-heading">
-					<b> <i class="fa fa-cogs" aria-hidden="true"></i> Flow Visualization  </b> 
+					<b> <i class="fa fa-cogs" aria-hidden="true"></i> Final Campaign Flow
+					</b>
 				</div>
 				<div class="panel-body">
-					<textarea id="mermaidInput" cols="30" rows="10" style="display: none;">
+					<textarea id="mermaidInput" cols="30" rows="10"
+						style="display: none;">
 	 
 					</textarea>
 					<div id="ma_flow_container">
-						<div id="campaignAutomatedFlow" </div>
+						<div id="campaignAutomatedFlow"</div>
 					</div>
 
 				</div>
 			</div>
+		</div>
 	</div>
-</div>
 
-<style>
-	#campaignAutomatedFlow {
-		overflow-x: auto;
-		padding-bottom: 40px;
-		overflow: scroll;
-		position: absolute;
-		bottom: 0;
-		left: 0;
-		right: 0;
-		top: 0;
-		text-align: center;
-	}
-	#campaignAutomatedFlow svg {
-		transform: scale(1)
-	}
-	#ma_flow_container {
-		height: calc(100% - 100px) !important;
-		min-height: 1400px !important;
-		position: relative;
-	}
-	#campaignAutomatedFlow img.targetedSegmentIcon {
-		width: 90px !important;
-		margin: 10px auto;
-	}
-	#campaignAutomatedFlow img.actionIcon {
-		width: 80px !important;
-		margin: 5px auto;
-	}
-	#campaignAutomatedFlow img.questionIcon {
-		width: 80px !important;
-		margin: 5px auto;
-	}
-	#campaignAutomatedFlow .nodeInfo {
-		margin-top: 8px;
-    	color: red;
-	} 
-	
-	
-	#campaignAutomatedFlow span.nodeLabel {
-		color: blue;
-	}
-</style>
 
-<script>
-	var initCampaignEditor = function(id) {
-		loadCampaignEditor(id)
-	}
-</script>
+
+	<script>
+		var initCampaignEditor = function(id) {
+			loadCampaignEditor(id)
+		}
+	</script>

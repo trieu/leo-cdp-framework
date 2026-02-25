@@ -67,10 +67,10 @@ public final class Campaign extends PersistentObject implements Comparable<Campa
 	String id = null;
 
 	@Expose
-	String name;
+	String name = "";
 
 	@Expose
-	String description;
+	String description = "";
 
 	@Expose
 	List<String> keywords = new ArrayList<>();
@@ -80,20 +80,19 @@ public final class Campaign extends PersistentObject implements Comparable<Campa
 
 	@Expose
 	String automatedFlowJson = "";
-	
+
 	@Expose
 	FlowchartDefinition flowchartDefinition;
 
 	@Expose
 	int status = STATUS_DRAFT;
-	
-	
+
 	@Expose
 	String agentPersona = ""; // Agent Persona
-	
+
 	@Expose
 	List<Scenario> scenarios = new ArrayList<Scenario>();
-	
+
 	@Expose
 	String targetSegmentId = ""; // what is the targeted segment of campaign
 
@@ -105,7 +104,8 @@ public final class Campaign extends PersistentObject implements Comparable<Campa
 	String ownerUsername = SystemUser.SUPER_ADMIN_LOGIN; // the owner or creator of campaign
 
 	@Expose
-	List<String> reportedUsernames = Arrays.asList(SystemUser.SUPER_ADMIN_LOGIN);// whos can be received reports via email
+	List<String> reportedUsernames = Arrays.asList(SystemUser.SUPER_ADMIN_LOGIN);// whos can be received reports via
+																					// email
 
 	@Expose
 	double maxBudget = 0; // the estimated maximum budget to run marketing campaign
@@ -135,7 +135,7 @@ public final class Campaign extends PersistentObject implements Comparable<Campa
 
 	@Expose
 	Date endDate = null; // if == null, means run forever likes email marketing
-	
+
 	@Expose
 	String tagName;
 
@@ -255,7 +255,10 @@ public final class Campaign extends PersistentObject implements Comparable<Campa
 	}
 
 	public void setTagName(String tagName) {
-		this.tagName = tagName;
+		if (tagName != null) {
+			this.tagName = tagName;
+		}
+
 	}
 
 	public String getName() {
@@ -263,7 +266,10 @@ public final class Campaign extends PersistentObject implements Comparable<Campa
 	}
 
 	public void setName(String name) {
-		this.name = name;
+		if (name != null) {
+			this.name = name;
+		}
+
 	}
 
 	public int getType() {
@@ -287,7 +293,9 @@ public final class Campaign extends PersistentObject implements Comparable<Campa
 	}
 
 	public void setTargetSegmentId(String targetSegmentId) {
-		this.targetSegmentId = targetSegmentId;
+		if (StringUtil.isNotEmpty(targetSegmentId)) {
+			this.targetSegmentId = targetSegmentId;
+		}
 	}
 
 	public String getTargetSegmentName() {
@@ -295,7 +303,9 @@ public final class Campaign extends PersistentObject implements Comparable<Campa
 	}
 
 	public void setTargetSegmentName(String targetedSegmentName) {
-		this.targetSegmentName = targetedSegmentName;
+		if (StringUtil.isNotEmpty(targetedSegmentName)) {
+			this.targetSegmentName = targetedSegmentName;
+		}
 	}
 
 	@Override
@@ -336,7 +346,9 @@ public final class Campaign extends PersistentObject implements Comparable<Campa
 	}
 
 	public void setDescription(String description) {
-		this.description = description;
+		if (StringUtil.isNotEmpty(description)) {
+			this.description = description;
+		}
 	}
 
 	public List<String> getKeywords() {
@@ -344,7 +356,9 @@ public final class Campaign extends PersistentObject implements Comparable<Campa
 	}
 
 	public void setKeywords(List<String> keywords) {
-		this.keywords = keywords;
+		if (keywords != null) {
+			this.keywords.addAll(keywords);
+		}
 	}
 //
 
@@ -353,7 +367,9 @@ public final class Campaign extends PersistentObject implements Comparable<Campa
 	}
 
 	public void setOwnerUsername(String ownerUsername) {
-		this.ownerUsername = ownerUsername;
+		if (StringUtil.isNotEmpty(ownerUsername)) {
+			this.ownerUsername = ownerUsername;
+		}
 	}
 
 	public void setAutomatedFlowJson(String automatedFlowJson) {
@@ -384,8 +400,6 @@ public final class Campaign extends PersistentObject implements Comparable<Campa
 	public void setSpentBudget(double spentBudget) {
 		this.spentBudget = spentBudget;
 	}
-
-
 
 	public String getAgentPersona() {
 		return agentPersona;

@@ -1158,10 +1158,15 @@ const renderDirectedGraph = function(containerId, graphElements, rootNodeId) {
 }
 
 const renderMatrixChart = function(titleText, containerId, xDataLabels, yDataLabels, dataList) {
+	console.log(xDataLabels, yDataLabels, dataList)
+	
+  var h = ( yDataLabels.length * 36) + 150 ;
+  $('#' + containerId).css('height',h+'px');
+
   const container = $('#' + containerId);
   const xLabelSize = xDataLabels.length;
   const yLabelSize = yDataLabels.length;
-  let fontSize = 19;
+  let fontSize = 15;
 
   if (xLabelSize >= 24) fontSize = 15;
   else if (xLabelSize >= 18) fontSize = 17;

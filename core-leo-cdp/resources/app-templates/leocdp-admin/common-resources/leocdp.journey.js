@@ -44,14 +44,9 @@ const initJourneyMapAndTouchpointHubs = function(){
 		
 		var reportNodeId = 'journey_map_event_matrix'
 		
-
-    	var wh = $(window).height();
-   		var h = wh - (Math.floor(wh/3)+50);
-   		$('#' + reportNodeId).html('<div class="loader"></div>').css('height',h+'px');
-   		
 		setTimeout(function(){
     		loadJourneyMapEventMatrix(reportNodeId, currentJourneyMapId);
-    	}, 3000)
+    	}, 2000)
 		
 		// var maxSize = touchpointCount * 3;
 		// loadJourneyTouchpointHubReport(window.currentJourneyMapId, maxSize);
@@ -1104,8 +1099,9 @@ const initDataObserverJsGridPlugin = function() {
 	
 	    itemTemplate: function(observerModel) {
 	    	if(observerModel.data !== '') {
-	    		console.log("observerModel ", observerModel)
-	    		var jsonStr = observerModel.data;
+	    		//console.log("observerModel ", observerModel)
+	    		
+				var jsonStr = observerModel.data;
 	    		var tpHubType = observerModel.type;
 	    		var firstPartyData = observerModel.firstPartyData;
 	    		
@@ -1477,6 +1473,9 @@ const loadDataJourneyMapsByFilter = function(rowSelectHandlerName, containerDomS
 var loadJourneyMapEventMatrix = function(containerId, journeyMapId, beginFilterDate, endFilterDate, callback){
 	var queryFilter = {'journeyMapId' : journeyMapId || "", 'beginFilterDate': beginFilterDate || "", 'endFilterDate': endFilterDate || ""};	    	
 	var urlStr = baseLeoAdminUrl + '/cdp/analytics360/event-matrix';
+	
+	$('#' + containerId).html('<div class="loader"></div>');
+	
     LeoAdminApiUtil.getSecuredData(urlStr, queryFilter , function (json) {
     	var data = json.data;
         if (typeof data === "object") {
@@ -1547,160 +1546,43 @@ function setJourneyFlowGraphView(){
 
 
 // DEMO to load and test the report as a graph
-function loadJourneyFlowReportDemo(){
-	const MAX_ZOOM = 5;
-	const MIN_ZOOM = 0.5;
-	var avgPageview = 20;
-	var avgPurchase = 7;
-	var bfLayout = { name: 'breadthfirst', fit: true, directed: true,  padding: 30 , spacingFactor: 1.8};
-	var dgLayout =  { name: 'dagre', rankDir: "LR", fit: true, directed: true,  padding: 50, spacingFactor: 1.9, nodeSep: 60 , rankSep: 30 }
-	
-	var cy = cytoscape({
-	  container: document.getElementById('journeyFlowReport'),
-
-	  boxSelectionEnabled: false,
-	  autounselectify: true,
-	  minZoom: MIN_ZOOM,
-	  maxZoom: MAX_ZOOM,
-
-	  style: cytoscape.stylesheet()
-	    .selector('node')
-	      .css({
-	        'height': 80,
-	        'width': 80,
-	        'background-fit': 'cover',
-	        'border-color': '#000',
-	        'border-width': 3,
-	        'border-opacity': 0.5
-	      })
-	    .selector('edge')
-	      .css({
-	    	'curve-style': 'unbundled-bezier',
-			'width': 4,
-			'target-arrow-shape': 'triangle',
-			'line-color': '#ffaaaa',
-			'target-arrow-color': '#ffaaaa'
-	      })
-	    .selector('#youtube')
-	      .css({
-	        'background-image': 'https://cdn-icons-png.flaticon.com/128/3670/3670147.png'
-	      })
-	    .selector('#tiktok')
-	      .css({
-	        'background-image': 'https://cdn-icons-png.flaticon.com/128/3669/3669950.png'
-	      }) 
-	    .selector('#google')
-	      .css({
-	        'background-image': 'https://cdn-icons-png.flaticon.com/128/281/281764.png'
-	      })
-	    .selector('#website')
-	      .css({
-	        'background-image': 'https://cdn-icons-png.flaticon.com/128/1927/1927746.png'
-	      })
-	  .selector('#sen_spa')
-	      .css({
-	        'background-image': 'https://cdn-icons-png.flaticon.com/128/3649/3649531.png'
-	      })
-	  .selector('#customer_service')
-	      .css({
-	        'background-image': 'https://cdn-icons-png.flaticon.com/128/1028/1028011.png'
-	      })
-	  .selector('#facebook')
-	      .css({
-	        'background-image': 'https://cdn-icons-png.flaticon.com/128/5968/5968764.png'
-	      })
-	  .selector('#customer_lead')
-	      .css({
-	        'background-image': 'https://cdn-icons-png.flaticon.com/128/950/950237.png'
-	      })
-	  .selector('#engaged_customer')
-	      .css({
-	        'background-image': 'https://cdn-icons-png.flaticon.com/128/4149/4149882.png'
-	  })
-	  .selector('edge[weight>0]').style({
-		 	'label': 'data(weight)',
-	  	 	'background-color': '#61bffc',  
-			'font-size': 20,
-			'width': 5,
-			'line-color': '#9BB6FB',
-			'target-arrow-color': '#0048FF'
-	    })
-	  .selector('edge[weight >= '+avgPageview+']').style({
-			'line-color': '#618CF9',
-	    	'target-arrow-color': '#0048FF',
-	    	'width': 7
-	   	})
-	  .selector('edge[weight >= '+avgPurchase+']').style({
-	    	'line-color': '#F3A06D',
-	    	'target-arrow-color': '#F91805',
-	    	'width': 9
-	   	})
-	  .selector('edge[weight=0]').style({
-			'background-color': '#61bffc',  
-			'font-size': 20,
-			'line-color': '#9BB6FB',
-			'target-arrow-color': '#0048FF'
-	   	})
-	  .selector('node[type="cdp_profile"]').style({
-		 	'shape': 'round-rectangle', 'padding': '6px', 'line-color': '#F3A06D'
-	   	}),
-
-	  elements: {
+function loadJourneyGraph(){
+	const sampleGraphData = {
 	    nodes: [
-	      { data: { id: 'google', type: "" } },
-	      { data: { id: 'youtube' } },
-	      { data: { id: 'tiktok' } },
-	      { data: { id: 'website' } },
-	      { data: { id: 'sen_spa' } },
-	      { data: { id: 'customer_service' } },
-	      { data: { id: 'facebook' } },
-	      { data: { id: 'customer_lead' , type: "cdp_profile" } },
-	      { data: { id: 'engaged_customer' , type: "cdp_profile" } }
+	        { data: { id: 'google', label: 'Google', image: 'https://cdn-icons-png.flaticon.com/128/281/281764.png', type: "touchpoint_3rdparty" } },
+	        { data: { id: 'youtube', label: 'YouTube', image: 'https://cdn-icons-png.flaticon.com/128/3670/3670147.png', type: "touchpoint_3rdparty" } },
+	        { data: { id: 'tiktok', label: 'TikTok', image: 'https://cdn-icons-png.flaticon.com/128/3669/3669950.png', type: "touchpoint_3rdparty" } },
+	        { data: { id: 'website', label: 'Website', image: 'https://cdn-icons-png.flaticon.com/128/1927/1927746.png', type: "touchpoint_1stparty" } },
+	        { data: { id: 'customer_service', label: 'Customer Service', image: 'https://cdn-icons-png.flaticon.com/128/1028/1028011.png', type: "touchpoint_1stparty" } },
+	        { data: { id: 'facebook', label: 'Facebook', image: 'https://cdn-icons-png.flaticon.com/128/5968/5968764.png', type: "touchpoint_3rdparty" } },
+	        { data: { id: 'customer_lead', label: 'Customer Lead', image: 'https://cdn-icons-png.flaticon.com/128/950/950237.png', type: "cdp_profile" } },
+	        { data: { id: 'engaged_customer', label: 'Engaged Customer', image: 'https://cdn-icons-png.flaticon.com/128/4149/4149882.png', type: "cdp_profile" } }
 	    ],
 	    edges: [
-	      { data: { source: 'google', target: 'youtube', weight : 0  } },
-	      { data: { source: 'google', target: 'tiktok', weight : 0  } },
-	      { data: { source: 'google', target: 'website', weight : 31  } },
-	      { data: { source: 'tiktok', target: 'website', weight : 27 } },
-	      { data: { source: 'youtube', target: 'website', weight : 31 } },
-	      { data: { source: 'youtube', target: 'facebook', weight : 43 } },
-	      { data: { source: 'website', target: 'sen_spa', weight : 12 } },
-	      { data: { source: 'engaged_customer', target: 'customer_service', weight : 3 } },
-	      { data: { source: 'facebook', target: 'customer_lead', weight : 12 } },
-	      { data: { source: 'customer_lead', target: 'website', weight : 6 } },
-	      { data: { source: 'customer_lead', target: 'sen_spa', weight : 9 } },
-	      { data: { source: 'website', target: 'engaged_customer', weight : 21 } },
-	      { data: { source: 'sen_spa', target: 'engaged_customer', weight : 11 } }
-	    ]
-	  },
+	        { data: { source: 'google', target: 'youtube', weight: 0 } },
+	        { data: { source: 'google', target: 'tiktok', weight: 0 } },
+	        { data: { source: 'google', target: 'website', weight: 31 } },
+	        { data: { source: 'tiktok', target: 'website', weight: 27 } },
+	        { data: { source: 'youtube', target: 'website', weight: 31 } },
+	        { data: { source: 'youtube', target: 'facebook', weight: 43 } },
 
-	  // set layout of graph 
-	  layout: dgLayout 
-	}); // cy init
+	        { data: { source: 'engaged_customer', target: 'customer_service', weight: 3 } },
+	        { data: { source: 'facebook', target: 'customer_lead', weight: 12 } },
+	        { data: { source: 'customer_lead', target: 'website', weight: 6 } },
+
+	        { data: { source: 'website', target: 'engaged_customer', weight: 21 } },
+
+	    ]
+	};
+	// You can optionally override defaults here
+	const graphConfig = {
+	    avgPageview: 25,
+	    avgPurchase: 10
+	};
 	
-	initPanZoomController(MIN_ZOOM, MAX_ZOOM, cy)
-	
-	cy.nodeHtmlLabel([
-	  {
-	    query: 'node', // cytoscape query selector
-	    halign: 'center', // title vertical position. Can be 'left',''center, 'right'
-	    valign: 'top', // title vertical position. Can be 'top',''center, 'bottom'
-	    halignBox: 'center', // title vertical position. Can be 'left',''center, 'right'
-	    valignBox: 'top', // title relative box vertical position. Can be 'top',''center, 'bottom'
-	    cssClass: '', // any classes will be as attribute of <div> container for every title
-	    tpl(data) {
-	    	var name = data.id.toUpperCase();
-	    	if(data.type === "cdp_profile") {
-	    		return '<h4 class="cy_node_profile" > ' + name + '</h4>'; 
-	    	}
-	    	else {
-	    		return '<h4 class="cy_node_touchpoint" > ' + name + '</h4>'; 
-	    	}
-	    }
-	  }
-	]);
-	
-	cy.fit(50);
+	// Initialize and render
+	const journeyGraph = new JourneyFlowGraph('journeyFlowReport', graphConfig);
+	journeyGraph.render(sampleGraphData);
 }
 
 const loadBehavioralEventList = function(){
