@@ -1235,7 +1235,7 @@ const renderMatrixChart = function(titleText, containerId, xDataLabels, yDataLab
             title: () => '',
             label(context) {
               const obj = context.dataset.data[context.dataIndex];
-              return [`[${obj.y}: ${obj.v}] - ${obj.x}`];
+              return [`${obj.x} - ${obj.y}`, `Value: ${typeof obj.v === 'number' ? obj.v.toLocaleString() : obj.v}`];
             }
           }
         }
