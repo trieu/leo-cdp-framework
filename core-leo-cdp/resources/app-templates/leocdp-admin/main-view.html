@@ -325,7 +325,8 @@
         $("#leocdpHelpMenuItem").on("click", function (e) {
             e.preventDefault();
 
-            var helpLink = "https://leocdp.com/docs/?book-metadata=./data/leocdp-user-guide-vn.json#leocdp-user-guide-vn$" + LeoCdpAdmin.routerKey;
+            var k = LeoCdpAdmin.routerKey === 'defaultRouter' ? 'LEO-CDP-User-Guide' : LeoCdpAdmin.routerKey.replaceAll('_','-');
+            var helpLink = "https://leocdp.com/docs/?book-metadata=./data/leocdp-user-guide-vn.json#book$leo-cdp-guide-vn$" + k;
             window.open(helpLink, "_blank", "noopener,noreferrer");
         });
         

@@ -128,27 +128,7 @@ LeoCdpAdmin.navRouters = {
 		
 		////////////////////////// 3) CUSTOMER DATA MODULE //////////////////////////
 		
-		// 3.1 Account Management 
-		"Business_Account_Management" : {
-			"menuName" : "Business Account Management",
-			"functionName" : "loadBusinessAccountList",
-			"breadcrumb" : ["Customer Data Hub", "Business Account Management"],
-			"activeMenuItem" : "Account_Management"
-		},	
-		"Business_Account_Info" : {
-			"menuName" : "Business Account Information",
-			"functionName" : "loadBusinessAccountInfo",
-			"breadcrumb" : ["Customer Data Hub", "Business Account Management", "Business Account Information"],
-			"activeMenuItem" : "Account_Management"
-		},
-		"Business_Account_Editor" : {
-			"menuName" : "Business Account Editor",
-			"functionName" : "loadBusinessAccountEditor",
-			"breadcrumb" : ["Customer Data Hub", "Business Account Management", "Business Account Editor"],
-			"activeMenuItem" : "Account_Management"
-		},
-		
-		// 3.2 Profile Management
+		// 3.1 Profile Management
 		"Profile_Management" : {
 			"menuName" : "Profile Management",
 			"functionName" : "loadCustomerProfileList",
@@ -242,25 +222,6 @@ LeoCdpAdmin.navRouters = {
 		
 		////////////////////////// 4) DATA ACTIVATION HUB //////////////////////////
 		
-		// 4.1 Customer Touchpoint
-		"Data_Touchpoint_List" : {
-			"menuName" : "Data Touchpoint List",
-			"functionName" : "loadDataTouchpointList",
-			"breadcrumb" : ["Data Activation Hub", "Data Touchpoint List"],
-			"activeMenuItem" : "Data_Touchpoint_List"
-		},
-		"Data_Touchpoint_Report" : {
-			"menuName" : "Touchpoint Report",
-			"functionName" : "loadDataTouchpointReport",
-			"breadcrumb" : ["Data Activation Hub", "Data Touchpoint List" , "Touchpoint Report" ],
-			"activeMenuItem" : "Data_Touchpoint_List"
-		},
-		"Data_Touchpoint_Editor" : {
-			"menuName" : "Touchpoint Editor",
-			"functionName" : "loadDataTouchpointEditor",
-			"breadcrumb" : ["Data Activation Hub", "Data Touchpoint List" , "Touchpoint Editor" ],
-			"activeMenuItem" : "Data_Touchpoint_List"
-		},
 		
 		// 4.2 Digital Asset Management
 		"Digital_Asset_Management" : {
@@ -373,17 +334,7 @@ LeoCdpAdmin.navRouters = {
 			"breadcrumb" : ["Data Activation Hub", "Digital Asset Management", "Asset Groups", "Asset Group Details", "Asset Product Service Editor"],
 			"activeMenuItem" : "Digital_Asset_Management"
 		},
-		
-		// Service Item Editor
-		"Asset_Creative_Editor" : {
-			"menuName" : "Asset Product Service Editor",
-			"functionName" : "assetItemCreativeEditor",
-			"breadcrumb" : ["Data Activation Hub", "Digital Asset Management", "Asset Groups", "Asset Group Details", "Asset Product Service Editor"],
-			"activeMenuItem" : "Digital_Asset_Management"
-		},
-		
-		
-		
+
 		
 		// 4.4 Marketing Activation Campaigns
 		
