@@ -25,8 +25,6 @@ import rfx.core.util.StringUtil;
  */
 public class ActivationRule extends PersistentObject implements Comparable<ActivationRule>, Serializable {
 
-
-
 	private static final long serialVersionUID = 1825726230556120351L;
 
 	public static final String SCHEDULING_TASK = "scheduling_task";
