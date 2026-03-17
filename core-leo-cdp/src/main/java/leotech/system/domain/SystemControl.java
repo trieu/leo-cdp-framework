@@ -86,8 +86,7 @@ public final class SystemControl {
 			// AI Agent service
 			AgentManagement.initDefaultData(resetAllAgentsConfigs);
 			
-			
-			
+			// check anc create default system user as superadmin
 			SystemUser superAdmin = SystemUserDaoUtil.getByUserLogin(SystemUser.SUPER_ADMIN_LOGIN);
 			AssetCategoryManagement.initDefaultSystemData(superAdmin);
 			
