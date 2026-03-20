@@ -18,9 +18,11 @@ import io.vertx.core.json.JsonObject;
 /**
  * 
  * digital asset group is the container that can have sorted items {post, product, service, template, creative}
+ * ArangoDB collection: cdp_assetgroup
+ * 
  * 
  * @author tantrieuf31
- * @since 2018
+ * @since 2021
  *
  */
 public class AssetGroup extends AssetItem {

@@ -17,6 +17,7 @@ import rfx.core.util.StringUtil;
 
 /**
  * System Tracked Event, to monitor data scheduled jobs and admin system
+ * ArangoDB collection: system_event
  * 
  * @author tantrieuf31
  * @since 2019

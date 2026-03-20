@@ -12,7 +12,10 @@ import rfx.core.util.StringUtil;
  * data entity for ad-banner, web-form, video, web-game, slide
  * assetType == AssetType.AD_BANNER || assetType == AssetType.AD_VIDEO || assetType == AssetType.MULTIMEDIA_CATALOG || assetType == AssetType.GAMIFICATION_CONTENT
  * 
- * @author mac
+ * ArangoDB collection: cdp_assetcontent
+ * 
+ * @author tantrieuf31
+ * @since 2021
  *
  */
 public class AssetContent extends MeasurableItem {

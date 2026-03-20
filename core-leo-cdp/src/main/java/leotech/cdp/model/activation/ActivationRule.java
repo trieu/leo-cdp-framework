@@ -20,6 +20,7 @@ import rfx.core.util.StringUtil;
 
 /**
  * ActivationRule
+ * ArangoDB collection: cdp_activationrule
  *
  * Pure domain model. No scheduler, no Quartz, no side effects.
  */
@@ -84,8 +85,7 @@ public class ActivationRule extends PersistentObject implements Comparable<Activ
 	String agentName = "";
 
 	/**
-	 * schedulingTime: < 0 : manual / one-time = 0 : polling loop > 0 : fixed-rate
-	 * schedule
+	 * schedulingTime: < 0 : manual / one-time = 0 : polling loop > 0 : fixed-rate schedule
 	 */
 	@Expose
 	private int schedulingTime = 0;

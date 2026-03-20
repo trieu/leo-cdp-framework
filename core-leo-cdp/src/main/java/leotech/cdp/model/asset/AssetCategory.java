@@ -6,7 +6,13 @@ import com.google.gson.annotations.Expose;
 import leotech.system.model.AppMetadata;
 
 /**
+ * Digital asset category, used to categorize digital assets in the system. 
+ * Each category is associated with an asset type, such as content item, campaign, etc.
+ * 
+ * ArangoDB collection: cdp_assetcategory
+ * 
  * @author tantrieuf31
+ * @since 2021
  *
  */
 public class AssetCategory extends TaxonomyNode {

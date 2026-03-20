@@ -11,10 +11,13 @@ import leotech.system.util.QrCodeUtil;
 import leotech.system.version.SystemMetaData;
 
 /**
- *  template is used for building landing page and feedback form
+ *  template is used for building landing page and feedback form, email marketing content, product recommendation content, etc. 
+ * It is a piece of HTML code with some metadata to help selector to select the right template for the right customer at the right time.
+ * 
+ * ArangoDB collection: cdp_assettemplate
  * 
  * @author tantrieuf31
- * @since 2020
+ * @since 2021
  *
  */
 public final class AssetTemplate extends AssetItem {

@@ -35,6 +35,7 @@ import rfx.core.util.StringUtil;
 
 /**
  * the data entity to store system user model for system administration
+ * ArangoDB collection: system_user
  * 
  * @author tantrieuf31
  * @since 2019
