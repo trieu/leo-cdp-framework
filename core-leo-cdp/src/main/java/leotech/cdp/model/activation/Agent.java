@@ -23,17 +23,20 @@ import leotech.system.util.database.PersistentObject;
 import rfx.core.util.StringUtil;
 
 /**
- * Data service to enrich and activate profile, segment and touchpoint
+ * Agent is the computational object to represent the external service, which can be used for data synchronization, data enrichment, and personalization in marketing campaigns <br><br>
+ * 
+ * An agent can be a data connector to connect to external data source, and synchronize data to CDP <br>
+ * An agent can be a data service to provide data enrichment for customer profiles, products, and contents in CDP <br>
+ * An agent can be a personalization service to provide real-time recommendation for customer profiles in CDP <br><br>
+ * 
+ * ArangoDB Collection: cdp_agent <br>
  * 
  * @author tantrieuf31
- * @since 2021
+ * @since 2026
  *
  */
 public final class Agent extends SystemService implements Serializable {
 	
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = -8291232649419081101L;
 	
 	//action types

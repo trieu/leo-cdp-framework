@@ -41,7 +41,17 @@ import rfx.core.util.StringUtil;
 
 /**
  * 
- * Customer profile data entity to store human information
+ * Customer profile data entity to store human information <br>
+ * A profile can be a web visitor, a customer, a user, a lead, a contact, a subscriber, or any other type of profile that can be used for marketing campaigns <br>
+ * A profile can be associated with one or more segments, and a segment can have one or more profiles <br>
+ * A profile can be associated with one or more touchpoints, and a touchpoint can have one or more profiles <br>
+ * A profile can be associated with one or more products, and a product can have one or more profiles <br>
+ * A profile can be associated with one or more contents, and a content can have one or more profiles <br>
+ * A profile can be associated with one or more behavioral events, and a behavioral event can have one or more profiles <br>
+ * A profile can be associated with one or more tracking events, and a tracking event can have one or more profiles <br><br>
+ * 
+ * ArangoDB Collection: cdp_profile <br>
+ * 
  * 
  * @author Trieu Nguyen (Thomas)
  * @since 2020

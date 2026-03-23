@@ -17,7 +17,11 @@ import io.vertx.core.json.JsonObject;
 import rfx.core.util.StringUtil;
 
 /**
- * Social Event to get more information about customer profile
+ * Social Event to get more information about customer profile <br>
+ * A social event can be a product launch, a promotion, a campaign, a sale, a webinar, a conference, a trade show, a festival, a concert, a sports event, a movie release, a book release, a game release, a software release, ...
+ * A social event can be associated with one or more brands, products, services, and campaigns <br><br>
+ * 
+ * ArangoDB Collection: cdp_socialevent <br>
  * 
  * @author tantrieuf31
  * @since 2020

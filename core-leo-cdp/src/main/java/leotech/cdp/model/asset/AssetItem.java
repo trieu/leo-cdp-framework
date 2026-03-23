@@ -29,7 +29,9 @@ import rfx.core.util.DateTimeUtil;
 import rfx.core.util.StringUtil;
 
 /**
- * core abstract class for asset item data persistence
+ * core abstract class for asset item data persistence <br>
+ * 
+ * AssetItem is the basic unit for all asset data, it can be a content item, a product item, a presentation item, a template item, or any other type of asset that can be stored. <br>
  * 
  * @author tantrieuf31
  * @since 2018 

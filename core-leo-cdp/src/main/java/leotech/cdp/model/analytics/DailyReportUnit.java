@@ -21,7 +21,10 @@ import rfx.core.util.DateTimeUtil;
 import rfx.core.util.StringUtil;
 
 /**
- * Daily Report Unit for time series analytics
+ * Daily Report Unit for time series analytics <br>
+ * DailyReportUnit is the basic unit for daily report data, it is used for storing aggregated count of events for a specific object (e.g: profile, product, content, etc) on a specific day. <br>
+ * 
+ * ArangoDB collection: cdp_dailyreportunit
  * 
  * @author tantrieu31
  * @since 2020

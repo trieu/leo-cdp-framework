@@ -35,7 +35,10 @@ import rfx.core.util.StringUtil;
 
 /**
  *  tracking data event, is collected by Leo Observer, the Truth of Universe <br>
- *  Record, Analysis, Update state
+ * 
+ *  TrackingEvent is the basic unit for all tracking data, it can be a behavioral event, a conversion event, an experience event, or any other type of event that can be tracked. <br>
+ * 
+ * ArangoDB collection: cdp_trackingevent  
  * 
  * @author Trieu Nguyen
  * @since 2020

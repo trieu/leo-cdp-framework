@@ -22,7 +22,11 @@ import leotech.system.util.database.PersistentObject;
 import rfx.core.util.StringUtil;
 
 /**
- * Context Session for Web Visitor
+ * Context Session for Web Visitor <br>
+ * 
+ * Context Session is created when a visitor first comes to the website, and it will be updated with new touchpoint and event data until the session expires. <br>
+ * 
+ * ArangoDB collection: cdp_contextsession
  * 
  * @author Trieu Nguyen
  * @since 2020

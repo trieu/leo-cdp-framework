@@ -15,10 +15,14 @@ import leotech.system.util.database.PersistentObject;
 import rfx.core.util.StringUtil;
 
 /**
- * data flow stage is metadata of Data Journey Funnel
+ * data flow stage is metadata of Data Journey Funnel <br>
+ * Data Journey Funnel is the process of data collection, data processing, data analysis, data activation, etc that customer data goes through in the customer journey, it is used to track the customer journey.
+ * Data Flow Stage is the stage of the data journey funnel, it is used to track the customer journey, it is used to analyze the customer journey, it is used to optimize the customer journey, etc <br><br>
+ * 
+ * ArangoDB collection: cdp_dataflowstage
  * 
  * @author tantrieuf31
- * @since
+ * @since 2020
  *
  */
 public class DataFlowStage extends PersistentObject {

@@ -15,6 +15,11 @@ import rfx.core.util.StringUtil;
 
 /**
  * payment data event, the Truth of Universe with money <br>
+ * 
+ * WebhookDataEvent is the basic unit for all webhook data, it can be a payment event, a subscription event, a cancellation event, or any other type of event that can be tracked. <br>
+ * 
+ * ArangoDB collection: cdp_webhookdataevent
+ * 
  * https://docs.google.com/spreadsheets/d/1fi1kgzn7l0n8Jyk3LTWygrKdtrZrOkaz/edit?usp=sharing&ouid=108357463841498827395&rtpof=true&sd=true
  * 
  * @author Trieu Nguyen

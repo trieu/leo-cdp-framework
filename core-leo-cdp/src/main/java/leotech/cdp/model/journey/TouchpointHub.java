@@ -20,7 +20,10 @@ import leotech.system.version.SystemMetaData;
 import rfx.core.util.StringUtil;
 
 /**
- * Touchpoint Hub is the root of touchpoints that have same domain URL or location-code or a person
+ * Touchpoint Hub is the root of touchpoints that have same domain URL or location-code or a person <br>
+ * TouchpointHub is used to group touchpoints that have same domain URL or location-code or a person, it is used to build the customer journey map, it is used to track the customer journey, it is used to analyze the customer journey, it is used to optimize the customer journey, etc <br><br>
+ * 
+ * ArangoDB collection: cdp_touchpointhub
  * 
  * @author tantrieuf31
  * @since 2020

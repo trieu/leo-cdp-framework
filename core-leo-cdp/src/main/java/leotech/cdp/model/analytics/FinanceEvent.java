@@ -18,6 +18,11 @@ import leotech.system.util.database.PersistentObject;
 
 /**
  *  payment data event, the Truth of Universe with money <br>
+ *  FinanceEvent is the basic unit for all finance data, it can be a payment event, a subscription event, a cancellation event, or any other type of event that can be tracked. <br>
+ * 
+ * ArangoDB collection: cdp_financeevent <br>
+ * 
+ *  sample data: <br>
  *  https://docs.google.com/spreadsheets/d/1fi1kgzn7l0n8Jyk3LTWygrKdtrZrOkaz/edit?usp=sharing&ouid=108357463841498827395&rtpof=true&sd=true
  * 
  * @author Trieu Nguyen

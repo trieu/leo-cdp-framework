@@ -21,7 +21,10 @@ import rfx.core.util.StringUtil;
 
 /**
  * 
- * Jupyter Notebook Model for doing analytics, data science tasks and building machine learning models
+ * Jupyter Notebook Model for doing analytics, data science tasks and building machine learning models <br>
+ * Notebook is used for storing metadata of Jupyter Notebook, such as name, description, notebook file uri, output file uri, html file uri, python file uri, parameters, data sources, etc. <br>
+ * 
+ * ArangoDB collection: cdp_notebook
  * 
  * @author tantrieuf31
  * @since 2020/08/30

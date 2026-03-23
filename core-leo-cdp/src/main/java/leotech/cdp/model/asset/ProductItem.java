@@ -23,7 +23,20 @@ import leotech.system.util.UrlUtil;
 import rfx.core.util.StringUtil;
 
 /**
+ * 
+ * Product Item for product catalog, it is used for storing product data for product catalog, such as product id, product code, category name, category id, product type, price, currency, site name, site domain, item condition, availability, brand, seller name, etc. <br>
+ * ProductItem is a subclass of AssetItem, it has all the fields of AssetItem plus some additional fields for product data. <br>
+ * ProductItem can be used for product catalog, product recommendation, content recommendation, etc. <br>
+ * ProductItem can be created from different sources, such as product feed, product API, web scraping, etc. <br>
+ * ProductItem can be updated with new data from different sources, such as price update, availability update, etc. <br>
+ * ProductItem can be linked to different touchpoints, such as product page, category page, search page, etc. <br>
+ * ProductItem can be linked to different campaigns, such as promotion campaign, retargeting campaign, etc. <br>
+ * ProductItem can be linked to different journey maps, such as awareness journey map, consideration journey map, decision journey map, etc. <br>
+ * 
+ * ArangoDB collection: cdp_productitem
+ * 
  * @author tantrieuf31
+ * @since 2021
  *
  */
 public final class ProductItem extends MeasurableItem {

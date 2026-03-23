@@ -18,7 +18,13 @@ import leotech.system.util.database.PersistentObject;
 import rfx.core.util.StringUtil;
 
 /**
+ * 
+ * File Metadata for uploaded file, it is used for storing metadata of uploaded file, such as path, name, uploaded time, revision, reference object class and key, owner login, privacy status, viewer ids, etc. <br>
+ * 
+ * ArangoDB collection: cdp_filemetadata
+ * 
  * @author TrieuNT
+ * @since 2020
  *
  */
 public class FileMetadata extends PersistentObject {

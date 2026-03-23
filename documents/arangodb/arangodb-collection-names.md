@@ -8,7 +8,7 @@
 6.  ## cdp_assetcontent : 
 7.  ## cdp_assetgroup : 
 8.  ## cdp_assettemplate :
-9.  ## cdp_campaign
+9.  ## cdp_campaign: 
 10. ## cdp_contextsession
 11. ## cdp_dailyreportunit
 12. ## cdp_agent

@@ -27,7 +27,13 @@ import leotech.system.util.database.PersistentObject;
 import rfx.core.util.StringUtil;
 
 /**
- * A segment is the group of profiles, built using query builder (AQL)
+ * A segment is the group of profiles, built using query builder (AQL) <br>
+ * A segment can be used for reporting, analytics, and activation in marketing campaigns <br>
+ * A segment can be built on top of another segment (parentId) <br>	
+ * A segment can be activated by one or more media campaigns, and a campaign can activate one or more segments <br>	
+ * A segment can be used for deep analytics, predictive analytics, personalization, email marketing, real-time marketing, retargeting, lookalike targeting, synchronization to 3rd party platform <br><br>
+ * 
+ * ArangoDB Collection: cdp_segment <br>
  * 
  * @author tantrieu31
  * @since 2020-08-27

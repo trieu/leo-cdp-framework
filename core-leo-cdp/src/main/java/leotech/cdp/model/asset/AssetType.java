@@ -1,7 +1,10 @@
 package leotech.cdp.model.asset;
 
 /**
- * Digital Asset Type for Marketing Data Hub
+ * Digital Asset Type for Marketing Data Hub <br>
+ * 
+ * AssetType is used for classifying different types of digital assets, it can be used for content item, product item, presentation item, template item, or any other type of asset that can be stored in the system. <br>
+ * 
  * 
  * @author tantrieuf31
  * @since Sep 19, 2020

@@ -1077,3 +1077,149 @@ modificationTime (long)
   "updatedAt": "2025-10-22T06:47:13.078Z"
 }
 ```
+---
+## cdp_campaign
+
+Marketing campaign entity orchestrating automated customer journeys, targeting segments, executing actions (email, notification, personalization), and tracking ROI metrics.
+
+### 📦 Campaign Attributes
+
+id (String)
+
+* Primary key (_key in ArangoDB), generated from campaign configuration
+
+name (String)
+
+* Campaign name
+
+description (String)
+
+* Campaign description
+
+keywords (List<String>)
+
+* Tags for classification and search
+
+type (int)
+
+* Campaign type (e.g., user-defined, system-driven)
+
+automatedFlowJson (String)
+
+* JSON definition of workflow/flowchart (nodes, conditions, actions)
+
+flowchartDefinition (Object)
+
+* Parsed structure of `automatedFlowJson` (runtime object, not always stored)
+
+status (int)
+
+* Campaign lifecycle status:
+
+  * 0 = draft
+  * 1 = planned
+  * 2 = in progress
+  * 3 = completed
+  * 4 = canceled
+  * -1 = removed
+
+agentPersona (String)
+
+* AI agent persona used for personalization or messaging tone
+
+scenarios (List<Scenario>)
+
+* List of campaign execution scenarios
+
+targetSegmentId (String)
+
+* Target customer segment ID
+
+targetSegmentName (String)
+
+* Target segment name (resolved dynamically via join, not persisted)
+
+ownerUsername (String)
+
+* Campaign owner (default: superadmin)
+
+reportedUsernames (List<String>)
+
+* Users who receive campaign reports
+
+maxBudget (double)
+
+* Estimated budget
+
+spentBudget (double)
+
+* Actual spending
+
+communicationFrequency (int)
+
+* Frequency of communication (e.g., daily = 1)
+
+timeUnit (int)
+
+* Time unit for frequency:
+
+  * 0 = seconds
+  * 1 = minutes
+  * 2 = hours
+  * 3 = days
+
+createdAt (Date)
+
+* Creation timestamp
+
+updatedAt (Date)
+
+* Last update timestamp
+
+startDate (Date)
+
+* Campaign start time (null = immediate execution)
+
+lastRunAt (Date)
+
+* Last execution timestamp
+
+endDate (Date)
+
+* Campaign end time (null = run indefinitely)
+
+tagName (String)
+
+* Slugified unique identifier for campaign (used for indexing/search)
+
+### Sample data:
+
+```json id="camp92x"
+{
+  "id": "auto_generated_campaign_id",
+  "name": "demo_test_ index 9",
+  "description": "ruleJsonUri ./data/marketing-automation-test/rules-for-unit-test.json",
+  "keywords": [],
+  "type": 0,
+  "automatedFlowJson": "{ \"type\": \"flowchart\", \"nodes\": { ... }, \"rules\": [ ... ] }",
+  "status": 0,
+  "agentPersona": "",
+  "scenarios": [],
+  "targetSegmentId": "3og1APugf5q4dqxuFh9yLI",
+  "ownerUsername": "superadmin",
+  "reportedUsernames": [
+    "superadmin"
+  ],
+  "maxBudget": 0,
+  "spentBudget": 0,
+  "communicationFrequency": 1,
+  "timeUnit": 2,
+  "createdAt": "2024-07-03T11:03:21.500Z",
+  "updatedAt": "2024-07-03T11:03:21.500Z",
+  "startDate": null,
+  "lastRunAt": null,
+  "endDate": null,
+  "tagName": "demo_test__index_9"
+}
+```
+---

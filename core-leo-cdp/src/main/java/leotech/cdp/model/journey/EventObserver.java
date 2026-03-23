@@ -24,7 +24,10 @@ import leotech.system.util.database.PersistentObject;
 import rfx.core.util.StringUtil;
 
 /**
- * Event Observer is the object to collect and track all event data stream of Touchpoint Hub
+ * Event Observer is the object to collect and track all event data stream of Touchpoint Hub <br>
+ * An Event Observer can be associated with a specific Touchpoint Hub, and can be used to collect event data from the touchpoint hub, and send the event data to the CDP for processing and analytics <br><br>
+ * 
+ * ArangoDB Collection: cdp_eventobserver <br>
  * 
  * @author Trieu Nguyen
  * @since 2020

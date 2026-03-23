@@ -18,11 +18,18 @@ import leotech.system.util.UrlUtil;
 import rfx.core.util.StringUtil;
 
 /**
- * @author tantrieuf31
- * @since 2020
+
  * 
  * A touchpoint can be defined as any way a consumer can interact with a business, whether it be person-to-person, through a website, an app or any form of communication
- *
+ * Touchpoint is a node in the customer journey map, it can be online or offline, owned media or third-party media, it can be a physical location or a digital location, it can be a
+ * product or service that customer can interact with, it can be a person that customer can interact with, it can be a creative content that customer can interact with, etc <br>
+ * Touchpoint is the most important element in the customer journey map, it is the point of interaction between the customer and the business, it is the point of experience for the customer,
+ *  it is the point of conversion for the business, it is the point of data collection for the business. <br><br>
+ * 
+ * ArangoDB collection: cdp_touchpoint
+ * 
+ * @author tantrieuf31
+ * @since 2020
  */
 public final class Touchpoint extends TouchpointHub implements Comparable<Touchpoint> {
 

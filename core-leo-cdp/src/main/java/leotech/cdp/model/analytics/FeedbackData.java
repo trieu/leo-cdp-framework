@@ -18,8 +18,11 @@ import leotech.system.util.database.PersistentObject;
 import rfx.core.util.StringUtil;
 
 /**
- * FeedbackData is the object, from ETL process that transform Tracking Event
- * (comment or rating)
+ * FeedbackData is the object, from ETL process that transform Tracking Event <br>
+ * A FeedbackData can be a survey response, a customer review, a customer rating, a customer comment, a customer satisfaction score, a net promoter score, a customer effort score, or any other type of feedback data that can be used for analytics and reporting <br>
+ * A FeedbackData can be associated with a specific touch-point, a specific campaign, a specific product, a specific content, a specific profile, or any combination of these reference metadata <br><br>
+ * 
+ * ArangoDB Collection: cdp_feedbackdata <br>
  * 
  * @author Trieu Nguyen
  * @since 2021

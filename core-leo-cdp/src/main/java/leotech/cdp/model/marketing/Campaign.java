@@ -43,8 +43,11 @@ import rfx.core.util.StringUtil;
  * 
  * <b> Final Goal: Increasing the average customer lifetime value </b> <br>
  * 
+ * ArangoDB collection: cdp_campaign
+ * 
  * @author tantrieuf31
  * @since 2020
+ * 
  *
  */
 public final class Campaign extends PersistentObject implements Comparable<Campaign> {
@@ -360,7 +363,7 @@ public final class Campaign extends PersistentObject implements Comparable<Campa
 			this.keywords.addAll(keywords);
 		}
 	}
-//
+	//
 
 	public String getOwnerUsername() {
 		return ownerUsername;

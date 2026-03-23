@@ -21,7 +21,13 @@ import leotech.system.util.database.PersistentObject;
 import rfx.core.util.StringUtil;
 
 /**
- * the data object, contains all metadata of Profile2Product and Profile2Content
+ * the data object, contains all metadata of Profile2Product and Profile2Content <br>
+ * 
+ * A TargetMediaUnit is created for each targeted media (product or content) for a specific profile, and used for tracking the performance of the targeted media unit in marketing campaigns <br><br>
+ * 
+ * A TargetMediaUnit can be created for a specific campaign, or created for general targeting without campaign (for example: a targeted media unit for QR code in store, or a targeted media unit for short link in email marketing) <br><br>
+ * 
+ * ArangoDB Collection: cdp_targetmediaunit <br>
  * 
  * @author tantrieuf31
  * @since 2021

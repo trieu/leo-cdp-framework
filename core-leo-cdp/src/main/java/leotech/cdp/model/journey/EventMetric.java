@@ -16,10 +16,14 @@ import leotech.system.util.database.PersistentObject;
 import rfx.core.util.StringUtil;
 
 /**
- * @author Trieu Nguyen (Thomas)
  * 
- *  Event metric is meta-data for modeling event data stream as single atomic object
- *
+ * Event metric is meta-data for modeling event data stream as single atomic object <br>
+ * Event metric is used to define the event data stream, it is used to track the event data stream. <br><br>
+ * 
+ * ArangoDB collection: cdp_eventmetric
+ * 
+ * @author Trieu Nguyen (Thomas)
+ * @since 2020
  */
 public final class EventMetric extends PersistentObject {
 	
