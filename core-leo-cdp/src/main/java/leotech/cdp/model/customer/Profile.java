@@ -1859,11 +1859,13 @@ public class Profile extends AbstractProfile implements Comparable<Profile> {
 	}
 	
 	@Override
-	public boolean equals(Object obj) {
-		if(obj != null) {
-			return this.hashCode() == obj.hashCode();	
-		}
-		return false;
+	public boolean equals(Object o) {
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
+		Profile that = (Profile) o;
+		return Objects.equals(id, that.id);
 	}
 	
 	@Override

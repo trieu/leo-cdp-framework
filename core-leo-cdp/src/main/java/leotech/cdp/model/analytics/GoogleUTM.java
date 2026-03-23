@@ -1,6 +1,7 @@
 package leotech.cdp.model.analytics;
 
 import java.util.Map;
+import java.util.Objects;
 
 import rfx.core.util.StringUtil;
 
@@ -105,8 +106,13 @@ public class GoogleUTM {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		return this.hashCode() == obj.hashCode();
+	public boolean equals(Object o) {
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
+		GoogleUTM that = (GoogleUTM) o;
+		return Objects.equals(utmId, that.utmId);
 	}
 	
 	

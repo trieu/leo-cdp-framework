@@ -18,263 +18,244 @@ import leotech.system.version.SystemMetaData;
 import rfx.core.util.StringUtil;
 
 /**
- * Configuration for core system services
- * ArrangoDB collection: system_service
- *
- * @author Trieu Nguyen
- * @since 2024
+ * Configuration for core system services <br>
+ * ArangoDB collection: system_service
+ * @author tantrieuf31
+ * 
+ * @since 2021
  */
 public class SystemService implements PersistentArangoObject {
 
-    // =========================
-    // Constants
-    // =========================
-    public static final String SERVICE_PROVIDER = "service_provider";
-    public static final String SERVICE_API_URL = "service_api_url";
-    public static final String SERVICE_API_KEY = "service_api_key";
-    public static final String SERVICE_API_TOKEN = "service_api_token";
+	public static final String COLLECTION_NAME = "system_service";
 
-    public static final String COLLECTION_NAME = "system_service";
+	// Status Constants
+	public static final int STATUS_ENABLED = 0;
+	public static final int STATUS_READY = 1;
+	public static final int STATUS_DISABLED = -1;
 
-    // =========================
-    // Static Fields
-    // =========================
-    private static volatile ArangoCollection instance;
+	// Config Keys
+	public static final String SERVICE_PROVIDER = "service_provider";
+	public static final String SERVICE_API_URL = "service_api_url";
+	public static final String SERVICE_API_KEY = "service_api_key";
+	public static final String SERVICE_API_TOKEN = "service_api_token";
 
-    // =========================
-    // Fields (Persisted)
-    // =========================
-    @Key
-    @Expose
-    protected String id;
+	private static volatile ArangoCollection collectionInstance;
 
-    @Expose
-    protected String name;
+	@Key
+	@Expose
+	protected String id = "";
 
-    @Expose
-    protected String description;
+	@Expose
+	protected String name = "";
 
-    @Expose
-    protected String dagId = "";
+	@Expose
+	protected String description = "";
 
-    @Expose
-    protected int index = 0;
+	@Expose
+	protected String dagId = ""; // DAG (Directed Acyclic Graph) ID in Airflow
 
-    @Expose
-    protected Date createdAt = new Date();
+	@Expose
+	protected int index = 0;
 
-    @Expose
-    protected Date updatedAt = new Date();
+	@Expose
+	protected Date createdAt = new Date();
 
-    // Mutable / runtime fields
-    @Expose
-    protected int status = 0; // 0 = enabled, 1 = ready, -1 = disabled
+	@Expose
+	protected Date updatedAt = new Date();
 
-    @Expose
-    protected Map<String, Object> configs = new HashMap<>();
+	@Expose
+	protected int status = STATUS_ENABLED;
 
-    @Expose
-    protected Map<String, AttributeMetaData> coreFieldConfigs = new HashMap<>();
+	@Expose
+	protected Map<String, Object> configs = new HashMap<>();
 
-    @Expose
-    protected Map<String, AttributeMetaData> extFieldConfigs = new HashMap<>();
+	@Expose
+	protected Map<String, AttributeMetaData> coreFieldConfigs = new HashMap<>();
 
-    // =========================
-    // Constructors
-    // =========================
-    public SystemService() {
-        this("", "", new HashMap<>());
-    }
+	@Expose
+	protected Map<String, AttributeMetaData> extFieldConfigs = new HashMap<>();
 
-    public SystemService(String id, String name, Map<String, Object> configs) {
-        this.id = StringUtil.safeString(id);
-        this.name = StringUtil.safeString(name);
-        setConfigs(configs);
-        validate();
-    }
+	// --- Constructors ---
 
-    public SystemService(String id,
-                         String name,
-                         Map<String, AttributeMetaData> coreFieldConfigs,
-                         Map<String, AttributeMetaData> extFieldConfigs) {
+	public SystemService() {
+	}
 
-        this.id = StringUtil.safeString(id);
-        this.name = StringUtil.safeString(name);
+	public SystemService(String id, String name, Map<String, Object> configs) {
+		this.id = id;
+		this.name = name;
+		if (configs == null) {
+			throw new IllegalArgumentException("configs must not be null");
+		}
+		this.configs = configs;
+	}
 
-        setCoreFieldConfigs(coreFieldConfigs);
-        setExtFieldConfigs(extFieldConfigs);
+	public SystemService(String id, String name, Map<String, AttributeMetaData> coreFieldConfigs,
+			Map<String, AttributeMetaData> extFieldConfigs) {
+		this.id = id;
+		this.name = name;
+		setCoreFieldConfigs(coreFieldConfigs);
+		setExtFieldConfigs(extFieldConfigs);
+	}
 
-        validate();
-    }
+	// --- Persistence Logic ---
 
-    // =========================
-    // Persistence
-    // =========================
-    @Override
-    public ArangoCollection getDbCollection() {
-        if (instance == null) {
-            synchronized (SystemService.class) {
-                if (instance == null) {
-                    ArangoDatabase db = ArangoDbUtil.getCdpDatabase();
-                    instance = db.collection(COLLECTION_NAME);
-                }
-            }
-        }
-        return instance;
-    }
+	@Override
+	public ArangoCollection getDbCollection() {
+		if (collectionInstance == null) {
+			synchronized (SystemService.class) {
+				if (collectionInstance == null) {
+					ArangoDatabase arangoDatabase = ArangoDbUtil.getCdpDatabase();
+					collectionInstance = arangoDatabase.collection(COLLECTION_NAME);
+				}
+			}
+		}
+		return collectionInstance;
+	}
 
-    @Override
-    public boolean dataValidation() {
-        return StringUtil.isNotEmpty(id)
-                && StringUtil.isNotEmpty(name)
-                && configs != null;
-    }
+	@Override
+	public boolean dataValidation() {
+		return StringUtil.isNotEmpty(id) && StringUtil.isNotEmpty(name) && configs != null;
+	}
 
-    private void validate() {
-        if (!dataValidation()) {
-            throw new IllegalArgumentException("Invalid SystemService: id, name, configs must be provided");
-        }
-    }
+	// --- Business Logic ---
 
-    // =========================
-    // Business Logic
-    // =========================
-    public Map<String, Object> buildConfParamsAirflowDagForSegment(
-            String segmentId,
-            Map<String, String> accessTokens) {
+	/**
+	 * Build parameters for Airflow DAG based on segment and access tokens
+	 */
+	public Map<String, Object> buildConfParamsAirflowDagForSegment(String segmentId, Map<String, String> accessTokens) {
+		Map<String, Object> params = new HashMap<>(this.configs);
+		params.put("segmentid", segmentId);
+		params.put("tokenkey", EventObserver.DEFAULT_ACCESS_KEY);
+		params.put("tokenvalue",
+				accessTokens != null ? accessTokens.getOrDefault(EventObserver.DEFAULT_ACCESS_KEY, "") : "");
+		params.put("service_id", this.id);
+		params.put("cdp_hostname", SystemMetaData.DOMAIN_CDP_ADMIN);
+		return params;
+	}
 
-        Map<String, Object> params = new HashMap<>(this.configs);
+	public boolean isReadyToRun() {
+		return this.configs != null && !this.configs.isEmpty();
+	}
 
-        params.put("segmentid", segmentId);
-        params.put("tokenkey", EventObserver.DEFAULT_ACCESS_KEY);
-        params.put("tokenvalue",
-                accessTokens != null
-                        ? accessTokens.getOrDefault(EventObserver.DEFAULT_ACCESS_KEY, "")
-                        : "");
+	// --- Getters and Setters ---
 
-        params.put("service_id", this.id);
-        params.put("cdp_hostname", SystemMetaData.DOMAIN_CDP_ADMIN);
+	public String getId() {
+		return id;
+	}
 
-        return params;
-    }
+	public void setId(String id) {
+		this.id = id;
+	}
 
-    public boolean isReadyToRun() {
-        return configs != null && !configs.isEmpty();
-    }
+	public String getName() {
+		return name;
+	}
 
-    // =========================
-    // Getters / Setters
-    // =========================
-    public String getId() {
-        return id;
-    }
+	public void setName(String name) {
+		this.name = name;
+	}
 
-    public void setId(String id) {
-        this.id = StringUtil.safeString(id);
-    }
+	public String getDescription() {
+		return description;
+	}
 
-    public String getName() {
-        return name;
-    }
+	public void setDescription(String description) {
+		this.description = description;
+	}
 
-    public void setName(String name) {
-        this.name = StringUtil.safeString(name);
-    }
+	public Map<String, Object> getConfigs() {
+		return configs;
+	}
 
-    public String getDescription() {
-        return description;
-    }
+	public void setConfigs(Map<String, Object> configs) {
+		if (configs != null) {
+			this.configs = configs;
+		}
+	}
 
-    public void setDescription(String description) {
-        this.description = StringUtil.safeString(description);
-    }
+	public Date getCreatedAt() {
+		return createdAt;
+	}
 
-    public String getDagId() {
-        return StringUtil.safeString(dagId);
-    }
+	public void setCreatedAt(Date createdAt) {
+		this.createdAt = createdAt;
+	}
 
-    public void setDagId(String dagId) {
-        this.dagId = StringUtil.safeString(dagId);
-    }
+	public Date getUpdatedAt() {
+		return updatedAt;
+	}
 
-    public int getIndex() {
-        return index;
-    }
+	public void setUpdatedAt(Date updatedAt) {
+		this.updatedAt = updatedAt;
+	}
 
-    public void setIndex(int index) {
-        this.index = index;
-    }
+	public int getStatus() {
+		return status;
+	}
 
-    public Date getCreatedAt() {
-        return new Date(createdAt.getTime());
-    }
+	public void setStatus(int status) {
+		this.status = status;
+	}
 
-    public void setCreatedAt(Date createdAt) {
-        this.createdAt = createdAt != null ? new Date(createdAt.getTime()) : new Date();
-    }
+	public Map<String, AttributeMetaData> getCoreFieldConfigs() {
+		return coreFieldConfigs;
+	}
 
-    public Date getUpdatedAt() {
-        return new Date(updatedAt.getTime());
-    }
+	public void setCoreFieldConfigs(Map<String, AttributeMetaData> coreFieldConfigs) {
+		if (coreFieldConfigs != null) {
+			this.coreFieldConfigs.clear();
+			this.coreFieldConfigs.putAll(coreFieldConfigs);
+		}
+	}
 
-    public void setUpdatedAt(Date updatedAt) {
-        this.updatedAt = updatedAt != null ? new Date(updatedAt.getTime()) : new Date();
-    }
+	public Map<String, AttributeMetaData> getExtFieldConfigs() {
+		return extFieldConfigs;
+	}
 
-    public int getStatus() {
-        return status;
-    }
+	public void setExtFieldConfigs(Map<String, AttributeMetaData> extFieldConfigs) {
+		if (extFieldConfigs != null) {
+			this.extFieldConfigs.clear();
+			this.extFieldConfigs.putAll(extFieldConfigs);
+		}
+	}
 
-    public void setStatus(int status) {
-        this.status = status;
-    }
+	public String getDagId() {
+		return StringUtil.safeString(dagId);
+	}
 
-    public Map<String, Object> getConfigs() {
-        return new HashMap<>(configs);
-    }
+	public void setDagId(String dagId) {
+		this.dagId = dagId;
+	}
 
-    public void setConfigs(Map<String, Object> configs) {
-        this.configs = (configs != null) ? new HashMap<>(configs) : new HashMap<>();
-    }
+	public int getIndex() {
+		return index;
+	}
 
-    public Map<String, AttributeMetaData> getCoreFieldConfigs() {
-        return new HashMap<>(coreFieldConfigs);
-    }
+	public void setIndex(int index) {
+		this.index = index;
+	}
 
-    public void setCoreFieldConfigs(Map<String, AttributeMetaData> coreFieldConfigs) {
-        if (coreFieldConfigs != null) {
-            this.coreFieldConfigs = new HashMap<>(coreFieldConfigs);
-        }
-    }
+	// --- Overrides ---
 
-    public Map<String, AttributeMetaData> getExtFieldConfigs() {
-        return new HashMap<>(extFieldConfigs);
-    }
+	@Override
+	public boolean equals(Object o) {
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
+		SystemService that = (SystemService) o;
+		return Objects.equals(id, that.id);
+	}
 
-    public void setExtFieldConfigs(Map<String, AttributeMetaData> extFieldConfigs) {
-        if (extFieldConfigs != null) {
-            this.extFieldConfigs = new HashMap<>(extFieldConfigs);
-        }
-    }
+	@Override
+	public int hashCode() {
+		return Objects.hash(id);
+	}
 
-    // =========================
-    // Object Overrides
-    // =========================
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (!(obj instanceof SystemService)) return false;
-        SystemService other = (SystemService) obj;
-        return Objects.equals(this.id, other.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id);
-    }
-
-    @Override
-    public String toString() {
-        return new Gson().toJson(this);
-    }
+	@Override
+	public String toString() {
+		// Using a fresh Gson instance for debugging; in production, consider a static
+		// constant for performance
+		return new Gson().toJson(this);
+	}
 }

@@ -4,6 +4,8 @@ import java.util.Objects;
 
 import com.google.gson.annotations.Expose;
 
+import leotech.system.util.IdGenerator;
+
 /**
  * 
  * Data entity to store contact addresses
@@ -13,6 +15,8 @@ import com.google.gson.annotations.Expose;
  *
  */
 public class ContactAddress {
+	
+	private String id = "";
 	
 	@Expose
 	protected String locationCode = "";
@@ -35,7 +39,8 @@ public class ContactAddress {
 		this.locationCode = locationCode;
 		this.livingLocation = livingLocation;
 		this.livingCountry = livingCountry;
-		this.livingCity = livingCity;				
+		this.livingCity = livingCity;	
+		this.id = IdGenerator.createHashedId(locationCode + livingLocation + livingCity + livingCountry);
 	}
 
 	public String getLocationCode() {
@@ -71,8 +76,13 @@ public class ContactAddress {
 	}
 
 	@Override
-	public boolean equals(Object obj) {	
-		return this.hashCode() == obj.hashCode();
+	public boolean equals(Object o) {
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
+		ContactAddress that = (ContactAddress) o;
+		return Objects.equals(id, that.id);
 	}
 	
 	@Override

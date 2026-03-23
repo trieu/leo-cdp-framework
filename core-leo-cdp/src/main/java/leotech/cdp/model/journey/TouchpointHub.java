@@ -3,6 +3,7 @@ package leotech.cdp.model.journey;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 import com.arangodb.ArangoCollection;
@@ -473,8 +474,13 @@ public class TouchpointHub extends PersistentObject {
 	}
 	
 	@Override
-	public boolean equals(Object obj) {
-		return this.hashCode() == obj.hashCode();
+	public boolean equals(Object o) {
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
+		TouchpointHub that = (TouchpointHub) o;
+		return Objects.equals(id, that.id);
 	}
 	
 	public long getTotalProfile() {

@@ -1,6 +1,7 @@
 package leotech.cdp.model.analytics;
 
 import java.util.Date;
+import java.util.Objects;
 
 import com.google.gson.Gson;
 import com.google.gson.annotations.Expose;
@@ -115,8 +116,13 @@ public final class StatisticCollector implements Comparable<StatisticCollector> 
 	}
 	
 	@Override
-	public boolean equals(Object obj) {
-		return this.hashCode() == obj.hashCode();
+	public boolean equals(Object o) {
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
+		StatisticCollector that = (StatisticCollector) o;
+		return Objects.equals(collectorKey, that.collectorKey);
 	}
 	
 	@Override

@@ -227,8 +227,13 @@ public class LearningCourse {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		return this.hashCode() == obj.hashCode();
+	public boolean equals(Object o) {
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
+		LearningCourse that = (LearningCourse) o;
+		return Objects.equals(id, that.id);
 	}
 
 	@Override

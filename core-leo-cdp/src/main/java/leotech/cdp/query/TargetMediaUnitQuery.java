@@ -35,8 +35,15 @@ public class TargetMediaUnitQuery {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		return this.hashCode() == obj.hashCode();
+	public boolean equals(Object o) {
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
+		TargetMediaUnitQuery that = (TargetMediaUnitQuery) o;
+		String myKey = visitorId + startIndex;
+		String oKey = that.visitorId + that.startIndex;
+		return Objects.equals(myKey, oKey);
 	}
 
 	@Override

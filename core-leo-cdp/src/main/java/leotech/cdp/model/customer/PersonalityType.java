@@ -1,6 +1,7 @@
 package leotech.cdp.model.customer;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 import com.google.gson.annotations.Expose;
@@ -98,7 +99,12 @@ public class PersonalityType {
 	}
 	
 	@Override
-	public boolean equals(Object obj) {
-		return this.hashCode() == obj.hashCode();
+	public boolean equals(Object o) {
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
+		PersonalityType that = (PersonalityType) o;
+		return Objects.equals(type, that.type);
 	}
 }

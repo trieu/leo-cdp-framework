@@ -131,8 +131,13 @@ public class RefKey implements Comparable<RefKey> {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		return this.hashCode() == obj.hashCode();
+	public boolean equals(Object o) {
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
+		RefKey that = (RefKey) o;
+		return Objects.equals(id, that.id);
 	}
 
 	@Override
