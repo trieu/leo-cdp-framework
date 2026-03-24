@@ -11,7 +11,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpServerRequest;
 import leotech.cdp.dao.DeviceDaoUtil;
 import leotech.cdp.handler.HttpParamKey;
-import leotech.cdp.model.customer.Device;
+import leotech.cdp.model.analytics.Device;
 import leotech.system.model.DeviceInfo;
 import leotech.system.util.DeviceInfoUtil;
 import rfx.core.util.StringUtil;

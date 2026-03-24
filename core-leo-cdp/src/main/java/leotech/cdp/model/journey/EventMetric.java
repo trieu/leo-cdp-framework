@@ -16,9 +16,11 @@ import leotech.system.util.database.PersistentObject;
 import rfx.core.util.StringUtil;
 
 /**
- * 
- * Event metric is meta-data for modeling event data stream as single atomic object <br>
- * Event metric is used to define the event data stream, it is used to track the event data stream. <br><br>
+ * Event metric is meta-data for modeling event data stream as a single atomic
+ * object. <br>
+ * Event metric is used to define the event data stream and track the customer
+ * journey. <br>
+ * <br>
  * 
  * ArangoDB collection: cdp_eventmetric
  * 
@@ -26,215 +28,217 @@ import rfx.core.util.StringUtil;
  * @since 2020
  */
 public final class EventMetric extends PersistentObject {
-	
+
 	private static final String ADVOCACY = "ADVOCACY";
 	private static final String ACTION = "ACTION";
 	private static final String ASK = "ASK";
 	private static final String ATTRACTION = "ATTRACTION";
 	private static final String AWARENESS = "AWARENESS";
-	
+
 	static final String CUSTOMER_ADVOCATE = "customer-advocate";
 	static final String ENGAGED_CUSTOMER = "engaged-customer";
 	static final String NEW_CUSTOMER = "new-customer";
 	static final String PROSPECT = "prospect";
-	
+
 	public static final String COLLECTION_NAME = getCdpCollectionName(EventMetric.class);
-	private static ArangoCollection dbCollection;
+
+	// Volatile for thread-safe lazy initialization
+	private static volatile ArangoCollection dbCollection;
+
+	// Cached Slugify to prevent object thrashing and heavy regex recompilation
+	private static final Slugify SLUGIFY = new Slugify();
 
 	private static final int MAX_LEN_EVENT_NAME = 50;
-	
+
 	public static final int NO_SCORING = 0;
-	
-	// core metrics
+
+	// Core metrics
 	public static final int SCORING_LEAD_METRIC = 1;
 	public static final int SCORING_PROSPECT_METRIC = 2;
 	public static final int SCORING_ENGAGEMENT_METRIC = 3;
 	public static final int SCORING_DATA_QUALITY_METRIC = 4;
 	public static final int SCORING_ACQUISITION_METRIC = 5;
 	public static final int SCORING_LIFETIME_VALUE_METRIC = 6;
-	
+
 	// CX metrics
 	public static final int SCORING_EFFORT_METRIC = 7;
 	public static final int SCORING_SATISFACTION_METRIC = 8;
 	public static final int SCORING_FEEDBACK_METRIC = 9;
 	public static final int SCORING_PROMOTER_METRIC = 10;
-	
-	// business metrics
+
+	// Business metrics
 	public static final int SCORING_CREDIT_METRIC = 11;
 	public static final int SCORING_LOYALTY_METRIC = 12;
-	
+
 	// Evil metric
 	public static final int SCORING_DETRACTOR_METRIC = 13;
-	
-	// data types
+
+	// Data types
 	public static final int FIRST_PARTY_DATA = 1;
 	public static final int SECOND_PARTY_DATA = 2;
 	public static final int THIRD_PARTY_DATA = 3;
-	
-	// metric types for 5A Customer Journey Map
-	// Dr. Philip Kotler, the five stages (Awareness, Attraction, Ask, Action and Advocacy)
+
+	// Metric types for 5A Customer Journey Map
 	public static final int JOURNEY_STAGE_AWARENESS = 1;
 	public static final int JOURNEY_STAGE_ATTRACTION = 2;
 	public static final int JOURNEY_STAGE_ASK = 3;
 	public static final int JOURNEY_STAGE_ACTION = 4;
-	public static final int JOURNEY_STAGE_ADVOCACY = 5;	
-	
+	public static final int JOURNEY_STAGE_ADVOCACY = 5;
+
 	@Key
 	@Expose
-	protected String id;
+	private String id;
 
 	@Expose
-	protected String eventName;
+	private String eventName;
 
 	@Expose
-	protected String eventLabel;
+	private String eventLabel;
 
 	@Expose
-	protected Date createdAt;
+	private Date createdAt;
 
 	@Expose
-	protected Date updatedAt;
+	private Date updatedAt;
 
 	@Expose
-	protected int score = 0;
-	
-	@Expose
-	protected int cumulativePoint = 0;
+	private int score = 0;
 
 	@Expose
-	protected int scoreModel = NO_SCORING;
-	
-	@Expose
-	protected int journeyStage = JOURNEY_STAGE_AWARENESS;
+	private int cumulativePoint = 0;
 
 	@Expose
-	protected int dataType = 0;
-	
+	private int scoreModel = NO_SCORING;
+
 	@Expose
-	protected boolean showInObserverJS = false;
-	
+	private int journeyStage = JOURNEY_STAGE_AWARENESS;
+
 	@Expose
-	protected String funnelStageId;
-	
+	private int dataType = 0;
+
 	@Expose
-	protected String flowName;
-	
+	private boolean showInObserverJS = false;
+
 	@Expose
-	protected boolean systemMetric = false;
-	
+	private String funnelStageId;
+
 	@Expose
-	protected String journeyMapId = "";
-	
+	private String flowName;
+
+	@Expose
+	private boolean systemMetric = false;
+
+	@Expose
+	private String journeyMapId = "";
+
+	public EventMetric() {
+		// Default for Gson
+	}
+
+	// -----------------------------------------------------------------------------------
+	// FIX: Constructor Chaining to heavily reduce code duplication (DRY principle)
+	// -----------------------------------------------------------------------------------
+
+	public EventMetric(String flowName, String eventName, String eventLabel, int score, int scoreModel, int dataType,
+			String funnelStageId, int journeyStage) {
+		this(flowName, eventName, eventLabel, score, scoreModel, dataType, funnelStageId, 0, journeyStage, false);
+	}
+
+	public EventMetric(String flowName, String eventName, String eventLabel, int score, int scoreModel, int dataType,
+			String funnelStageId, int journeyStage, boolean systemMetric) {
+		this(flowName, eventName, eventLabel, score, scoreModel, dataType, funnelStageId, 0, journeyStage,
+				systemMetric);
+	}
+
+	public EventMetric(String flowName, String eventName, String eventLabel, int score, int scoreModel, int dataType,
+			String funnelStageId, int cumulativePoint, int journeyStage) {
+		this(flowName, eventName, eventLabel, score, scoreModel, dataType, funnelStageId, cumulativePoint, journeyStage,
+				true);
+	}
+
+	// Master Constructor
+	public EventMetric(String flowName, String eventName, String eventLabel, int score, int scoreModel, int dataType,
+			String funnelStageId, int cumulativePoint, int journeyStage, boolean systemMetric) {
+		initBaseData(eventName);
+
+		this.flowName = flowName;
+		this.eventLabel = eventLabel;
+		this.score = score;
+		this.scoreModel = scoreModel;
+		this.funnelStageId = funnelStageId;
+		this.cumulativePoint = cumulativePoint;
+		this.systemMetric = systemMetric;
+
+		setDataType(dataType);
+		setJourneyStage(journeyStage);
+
+		Date now = new Date();
+		this.createdAt = now;
+		this.updatedAt = now;
+
+		this.buildHashedId();
+	}
+
 	@Override
 	public ArangoCollection getDbCollection() {
 		if (dbCollection == null) {
-			ArangoDatabase arangoDatabase = getArangoDatabase();
+			// FIX: Double-checked locking to prevent index race conditions
+			synchronized (EventMetric.class) {
+				if (dbCollection == null) {
+					ArangoDatabase arangoDatabase = getArangoDatabase();
+					ArangoCollection col = arangoDatabase.collection(COLLECTION_NAME);
 
-			dbCollection = arangoDatabase.collection(COLLECTION_NAME);
+					PersistentIndexOptions uniqueOpts = new PersistentIndexOptions().unique(true);
+					PersistentIndexOptions pIdxOpts = new PersistentIndexOptions().unique(false);
 
-			// ensure indexing key fields for fast lookup
-			dbCollection.ensurePersistentIndex(Arrays.asList("eventName"),new PersistentIndexOptions().unique(true));
-			dbCollection.ensurePersistentIndex(Arrays.asList("dataType"),new PersistentIndexOptions().unique(false));
-			dbCollection.ensurePersistentIndex(Arrays.asList("flowName"),new PersistentIndexOptions().unique(false));
+					// Fast exact lookup
+					col.ensurePersistentIndex(Arrays.asList("eventName"), uniqueOpts);
 
+					// Core UI querying index.
+					// Covers ["flowName"], ["flowName", "systemMetric"], and ["flowName",
+					// "systemMetric", "dataType"]
+					col.ensurePersistentIndex(Arrays.asList("flowName", "systemMetric", "dataType"), pIdxOpts);
+
+					// Used for mapping journey stages
+					col.ensurePersistentIndex(Arrays.asList("journeyMapId", "funnelStageId"), pIdxOpts);
+
+					dbCollection = col;
+				}
+			}
 		}
 		return dbCollection;
 	}
 
-	@Override
-	public boolean dataValidation() {
-		return StringUtil.isNotEmpty(eventName);
-	}
-
-	public EventMetric() {
-		// json
-	}
-
-	
-	public EventMetric(String flowName, String eventName, String eventLabel, int score, int scoreModel, int dataType, String funnelStageId, int journeyStage) {
-		super();
-		initBaseData(eventName);
-		
-		this.flowName = flowName;
-		this.score = score;
-		this.scoreModel = scoreModel;
-		this.eventLabel = eventLabel;
-		this.funnelStageId = funnelStageId;
-
-		setDataType(dataType);
-		setJourneyStage(journeyStage);
-	}
-	
-	public EventMetric(String flowName, String eventName, String eventLabel, int score, int scoreModel, int dataType, String funnelStageId, int journeyStage, boolean systemMetric) {
-		super();
-		initBaseData(eventName);
-		
-		this.flowName = flowName;
-		this.score = score;
-		this.scoreModel = scoreModel;
-		this.eventLabel = eventLabel;
-		this.funnelStageId = funnelStageId;
-		this.systemMetric = systemMetric;
-
-		setDataType(dataType);
-		setJourneyStage(journeyStage);
-	}
-	
-	public EventMetric(String flowName, String eventName, String eventLabel, int score, int scoreModel, int dataType,  String funnelStageId, int cumulativePoint, int journeyStage) {
-		super();
-		initBaseData(eventName);
-		
-		this.flowName = flowName;
-		this.score = score;
-		this.cumulativePoint = cumulativePoint;
-		this.scoreModel = scoreModel;
-		this.eventLabel = eventLabel;
-		this.funnelStageId = funnelStageId;
-		this.systemMetric = true;
-		
-		setDataType(dataType);
-		setJourneyStage(journeyStage);
-	}
-	
-	public EventMetric(String flowName, String eventName, String eventLabel, int score, int scoreModel, int dataType,  String funnelStageId, int cumulativePoint, int journeyStage, boolean systemMetric) {
-		super();
-		initBaseData(eventName);
-		
-		this.flowName = flowName;
-		this.score = score;
-		this.cumulativePoint = cumulativePoint;
-		this.scoreModel = scoreModel;
-		this.eventLabel = eventLabel;
-		this.funnelStageId = funnelStageId;
-		this.systemMetric = systemMetric;
-		
-		setDataType(dataType);
-		setJourneyStage(journeyStage);
-	}
-
-
-
 	private void initBaseData(String eventName) {
-		if (eventName.length() <= MAX_LEN_EVENT_NAME) {
+		if (eventName != null && eventName.length() <= MAX_LEN_EVENT_NAME) {
 			this.eventName = eventName.toLowerCase().replaceAll("[^a-z0-9]", "-");
 			this.dataType = FIRST_PARTY_DATA;
-			this.buildHashedId();
 		} else {
-			throw new IllegalArgumentException(eventName + " must have the length less than 50 characters ");
+			throw new IllegalArgumentException("Event name must not be null and must have a length less than "
+					+ MAX_LEN_EVENT_NAME + " characters");
 		}
 	}
 
 	@Override
 	public String buildHashedId() throws IllegalArgumentException {
-		if(StringUtil.isNotEmpty(this.eventName)) {
-			this.createdAt = new Date();
-			this.id = new Slugify().slugify(this.eventName);
+		if (StringUtil.isNotEmpty(this.eventName)) {
+			// FIX: Utilizing cached Slugify instance. Removed side-effect of setting
+			// createdAt here!
+			this.id = SLUGIFY.slugify(this.eventName);
+			return this.id;
+		} else {
+			throw new IllegalArgumentException("eventName is required to save EventMetric");
 		}
-		else {
-			newIllegalArgumentException("eventName is required to save EventMetric");
-		}
-		return this.id;
 	}
+
+	@Override
+	public boolean dataValidation() {
+		return StringUtil.isNotEmpty(eventName) && StringUtil.isNotEmpty(id);
+	}
+
+	// ----------------------------------------------------------------------
+	// GETTERS & SETTERS
+	// ----------------------------------------------------------------------
 
 	public String getId() {
 		return id;
@@ -284,7 +288,7 @@ public final class EventMetric extends PersistentObject {
 	public long getMinutesSinceLastUpdate() {
 		return getDifferenceInMinutes(this.updatedAt);
 	}
-	
+
 	public int getScore() {
 		return score;
 	}
@@ -314,54 +318,59 @@ public final class EventMetric extends PersistentObject {
 	public int getJourneyStage() {
 		return journeyStage;
 	}
-	
+
 	public String getJourneyStageName() {
-		if(journeyStage == JOURNEY_STAGE_AWARENESS) {
+		// Java 11 switch statement for cleaner, faster execution
+		switch (this.journeyStage) {
+		case JOURNEY_STAGE_AWARENESS:
 			return AWARENESS;
-		}
-		else if(journeyStage == JOURNEY_STAGE_ATTRACTION) {
+		case JOURNEY_STAGE_ATTRACTION:
 			return ATTRACTION;
-		}
-		else if(journeyStage == JOURNEY_STAGE_ASK) {
+		case JOURNEY_STAGE_ASK:
 			return ASK;
-		}
-		else if(journeyStage == JOURNEY_STAGE_ACTION) {
+		case JOURNEY_STAGE_ACTION:
 			return ACTION;
-		}
-		else if(journeyStage == JOURNEY_STAGE_ADVOCACY) {
+		case JOURNEY_STAGE_ADVOCACY:
 			return ADVOCACY;
+		default:
+			return "";
 		}
-		return "";
 	}
 
 	public void setJourneyStage(int journeyStage) {
-		if(journeyStage>=1 && journeyStage<=5) {
+		if (journeyStage >= 1 && journeyStage <= 5) {
 			this.journeyStage = journeyStage;
 		}
 	}
 
-	
 	public boolean isScoringForCLV() {
 		return this.scoreModel == EventMetric.SCORING_LIFETIME_VALUE_METRIC;
 	}
-	
+
 	public boolean isScoreModelForCX() {
-		return this.scoreModel == EventMetric.SCORING_SATISFACTION_METRIC || this.scoreModel == EventMetric.SCORING_FEEDBACK_METRIC 
-				|| this.scoreModel == EventMetric.SCORING_EFFORT_METRIC || this.scoreModel == EventMetric.SCORING_PROMOTER_METRIC ;
+		return this.scoreModel == EventMetric.SCORING_SATISFACTION_METRIC
+				|| this.scoreModel == EventMetric.SCORING_FEEDBACK_METRIC
+				|| this.scoreModel == EventMetric.SCORING_EFFORT_METRIC
+				|| this.scoreModel == EventMetric.SCORING_PROMOTER_METRIC;
 	}
-	
+
 	public boolean isLeadMetric() {
 		return this.scoreModel == SCORING_LEAD_METRIC || this.scoreModel == SCORING_ACQUISITION_METRIC;
 	}
-	
+
 	public boolean isProspectiveMetric() {
 		return this.scoreModel == SCORING_PROSPECT_METRIC || this.scoreModel == SCORING_ACQUISITION_METRIC;
 	}
-	
+
 	public boolean isConversion() {
-		return isScoringForCLV() && this.getFunnelStage().isCustomerMetric();
+		DataFlowStage funnelStage = getFunnelStage();
+		return isScoringForCLV() && funnelStage != null && funnelStage.isCustomerMetric();
 	}
-	
+
+	public final boolean isPurchasingEvent() {
+		return isConversion(); // Identical logic as isConversion(), simplified
+	}
+
 	public int getScoreModel() {
 		return scoreModel;
 	}
@@ -369,25 +378,25 @@ public final class EventMetric extends PersistentObject {
 	public void setScoreModel(int scoreModel) {
 		this.scoreModel = scoreModel;
 	}
-	
+
 	public String getFlowName() {
 		return flowName;
 	}
-	
+
 	public void setFlowName(String flowName) {
 		this.flowName = flowName;
 	}
-	
+
 	public String getFunnelStageId() {
 		return funnelStageId;
-	}
-	
-	public DataFlowStage getFunnelStage() {
-		return DataFlowManagement.getFunnelStageById(funnelStageId);
 	}
 
 	public void setFunnelStageId(String funnelStageId) {
 		this.funnelStageId = funnelStageId;
+	}
+
+	public DataFlowStage getFunnelStage() {
+		return DataFlowManagement.getFunnelStageById(funnelStageId);
 	}
 
 	public String getJourneyMapId() {
@@ -418,15 +427,9 @@ public final class EventMetric extends PersistentObject {
 	public String getDocumentUUID() {
 		return COLLECTION_NAME + "/" + id;
 	}
-	
+
 	@Override
 	public String toString() {
 		return new Gson().toJson(this);
 	}
-
-	public final boolean isPurchasingEvent() {
-		return isScoringForCLV() && getFunnelStage().isCustomerMetric();
-	}
-
-
 }

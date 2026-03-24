@@ -20,7 +20,7 @@ import leotech.cdp.dao.ProfileDaoUtil;
 import leotech.cdp.domain.EventObserverManagement;
 import leotech.cdp.domain.TouchpointManagement;
 import leotech.cdp.model.analytics.ContextSession;
-import leotech.cdp.model.customer.Device;
+import leotech.cdp.model.analytics.Device;
 import leotech.cdp.model.customer.ProfileSingleView;
 import leotech.cdp.model.journey.Touchpoint;
 import leotech.cdp.model.journey.TouchpointType;

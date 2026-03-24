@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import com.arangodb.ArangoCollection;
 import com.arangodb.ArangoDatabase;
 
-import leotech.cdp.model.customer.Device;
+import leotech.cdp.model.analytics.Device;
 import leotech.system.config.AqlTemplate;
 import leotech.system.util.database.ArangoDbCommand;
 import leotech.system.util.database.ArangoDbUtil;

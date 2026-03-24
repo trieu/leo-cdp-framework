@@ -7,10 +7,10 @@ import org.slf4j.LoggerFactory;
 
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import leotech.cdp.model.analytics.Device;
 import leotech.cdp.model.analytics.FeedbackData;
 import leotech.cdp.model.analytics.FinanceEvent;
 import leotech.cdp.model.analytics.TrackingEvent;
-import leotech.cdp.model.customer.Device;
 import leotech.cdp.model.customer.Profile;
 import leotech.cdp.model.journey.EventObserver;
 import leotech.cdp.model.journey.Touchpoint;

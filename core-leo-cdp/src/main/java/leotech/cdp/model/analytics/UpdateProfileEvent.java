@@ -2,7 +2,6 @@ package leotech.cdp.model.analytics;
 
 import com.google.gson.Gson;
 
-import leotech.cdp.model.customer.Device;
 import rfx.core.util.StringUtil;
 
 /**

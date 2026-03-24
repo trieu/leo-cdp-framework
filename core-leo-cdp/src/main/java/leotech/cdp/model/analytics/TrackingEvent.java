@@ -16,7 +16,6 @@ import leotech.cdp.dao.EventObserverDaoUtil;
 import leotech.cdp.domain.TouchpointManagement;
 import leotech.cdp.domain.schema.BehavioralEvent;
 import leotech.cdp.model.SingleViewAnalyticalObject;
-import leotech.cdp.model.customer.Device;
 import leotech.cdp.model.customer.Profile;
 import leotech.cdp.model.journey.EventObserver;
 import leotech.cdp.model.journey.JourneyMap;

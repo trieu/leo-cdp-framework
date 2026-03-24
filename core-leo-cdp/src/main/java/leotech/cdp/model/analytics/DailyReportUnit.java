@@ -1,10 +1,10 @@
 package leotech.cdp.model.analytics;
 
-import java.text.SimpleDateFormat;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -22,42 +22,56 @@ import rfx.core.util.StringUtil;
 
 /**
  * Daily Report Unit for time series analytics <br>
- * DailyReportUnit is the basic unit for daily report data, it is used for storing aggregated count of events for a specific object (e.g: profile, product, content, etc) on a specific day. <br>
+ * DailyReportUnit is the basic unit for daily report data, it is used for
+ * storing aggregated count of events for a specific object (e.g: profile,
+ * product, content, etc) on a specific day. <br>
  * 
  * ArangoDB collection: cdp_dailyreportunit
  * 
  * @author tantrieu31
  * @since 2020
- *
  */
 public final class DailyReportUnit extends PersistentObject implements Comparable<DailyReportUnit> {
-	
-	static final String YYYY_MM_DD_HH_00_00 = "yyyy-MM-dd HH:00:00";
-	
-	public final static String buildMapKey(Date reportedDate, String eventName, String journeyMapId) {
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(DateTimeUtil.DATE_FORMAT_PATTERN);
-		return simpleDateFormat.format(reportedDate) + "#" + eventName + "#" + journeyMapId;
-	}
+
+	private static final String YYYY_MM_DD_HH_00_00 = "yyyy-MM-dd HH:00:00";
+
+	// Thread-safe formatters for JDK 11
+	private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter
+			.ofPattern(DateTimeUtil.DATE_FORMAT_PATTERN).withZone(ZoneId.systemDefault());
+	private static final DateTimeFormatter HOUR_FORMATTER = DateTimeFormatter.ofPattern(YYYY_MM_DD_HH_00_00)
+			.withZone(ZoneId.systemDefault());
 
 	public static final String COLLECTION_NAME = getCdpCollectionName(DailyReportUnit.class);
-	static ArangoCollection instance;
-	
+
+	// for thread-safe lazy initialization
+	private static volatile ArangoCollection instance;
+
 	public static ArangoCollection getCollectionInstance() {
 		if (instance == null) {
-			ArangoDatabase arangoDatabase = getArangoDatabase();
+			synchronized (DailyReportUnit.class) {
+				if (instance == null) {
+					ArangoDatabase arangoDatabase = getArangoDatabase();
+					ArangoCollection col = arangoDatabase.collection(COLLECTION_NAME);
+					PersistentIndexOptions pIdxOpts = new PersistentIndexOptions().unique(false);
 
-			instance = arangoDatabase.collection(COLLECTION_NAME);
 
-			instance.ensurePersistentIndex(Arrays.asList("objectName","objectId"), new PersistentIndexOptions().unique(false));
-			instance.ensurePersistentIndex(Arrays.asList("objectName","objectId","journeyMapId"), new PersistentIndexOptions().unique(false));
-			instance.ensurePersistentIndex(Arrays.asList("dateKey","eventName"), new PersistentIndexOptions().unique(false));
-			instance.ensurePersistentIndex(Arrays.asList("year","month","day","hour","eventName","journeyMapId"), new PersistentIndexOptions().unique(false));
-			instance.ensurePersistentIndex(Arrays.asList("year","month","day","hour","objectName","objectId","eventName"), new PersistentIndexOptions().unique(false));
-			
-			instance.ensurePersistentIndex(Arrays.asList("createdAt","objectName","objectId"), new PersistentIndexOptions().unique(false));
-			instance.ensurePersistentIndex(Arrays.asList("createdAt","objectName"), new PersistentIndexOptions().unique(false));
-			instance.ensurePersistentIndex(Arrays.asList("createdAt","objectName","journeyMapId"), new PersistentIndexOptions().unique(false));
-			instance.ensurePersistentIndex(Arrays.asList("createdAt","objectName","objectId", "journeyMapId"), new PersistentIndexOptions().unique(false));
+					// Covers: [objectName], [objectName, objectId], [objectName, objectId, journeyMapId], etc.
+					col.ensurePersistentIndex(Arrays.asList("objectName", "objectId", "journeyMapId", "eventName"),pIdxOpts);
+
+					// Fast lookup for daily timeseries charts
+					col.ensurePersistentIndex(Arrays.asList("dateKey", "eventName"), pIdxOpts);
+
+					// Master Time-based index. Covers granular querying by Date components.
+					col.ensurePersistentIndex(Arrays.asList("year", "month", "day", "hour", "eventName", "objectName", "objectId"),pIdxOpts);
+
+					// Master CreatedAt index.
+					// Replaces 4 previous redundant indices: [createdAt], [createdAt, objectName],
+					// etc.
+					col.ensurePersistentIndex(Arrays.asList("createdAt", "objectName", "objectId", "journeyMapId", "eventName"),pIdxOpts);
+
+					instance = col;
+				}
+			}
 		}
 		return instance;
 	}
@@ -67,106 +81,69 @@ public final class DailyReportUnit extends PersistentObject implements Comparabl
 		return getCollectionInstance();
 	}
 
+	public static String buildMapKey(Date reportedDate, String eventName, String journeyMapId) {
+		return DATE_FORMATTER.format(reportedDate.toInstant()) + "#" + eventName + "#" + journeyMapId;
+	}
+
 	@Key
 	@Expose
-	String id;
+	private String id;
 
 	@Expose
-	String dateKey;
-	
-	@Expose
-	int year;
-	
-	@Expose
-	int month;
-	
-	@Expose
-	int day;
-	
-	@Expose
-	int hour;
-	
-	@Expose
-	String journeyMapId = "";
-	
-	@Expose
-	String objectId = "";
-	
-	@Expose
-	String objectName = "";
-	
-	@Expose
-	String eventName = "";
+	private String dateKey;
 
 	@Expose
-	volatile long dailyCount = 0;
+	private int year;
+
+	@Expose
+	private int month;
+
+	@Expose
+	private int day;
+
+	@Expose
+	private int hour;
+
+	@Expose
+	private String journeyMapId = "";
+
+	@Expose
+	private String objectId = "";
+
+	@Expose
+	private String objectName = "";
+
+	@Expose
+	private String eventName = "";
+
+	@Expose
+	private volatile long dailyCount = 0;
 
 	// hourly view of statistics from Profile Analytics Jobs
-	// E.g: { "2020-05-05T02:00:00.000Z" : {"submit-contact" : 1 } }
+	// E.g: { "2020-05-05 02:00:00" : {"submit-contact" : 1 } }
 	@Expose
-	Map<String, Map<String, Long>> hourlyEventStatistics = new HashMap<>();
-
-	@Expose
-	Date createdAt;
+	private Map<String, Map<String, Long>> hourlyEventStatistics = new ConcurrentHashMap<>();
 
 	@Expose
-	Date updatedAt;
+	private Date createdAt;
 
 	@Expose
-	int partitionId;
+	private Date updatedAt;
 
-	@Override
-	public boolean dataValidation() {
-		return StringUtil.isNotEmpty(this.journeyMapId) && StringUtil.isNotEmpty(this.objectName) && StringUtil.isNotEmpty(this.eventName) && this.createdAt != null;
-	}
-
-	@Override
-	public String buildHashedId() throws IllegalArgumentException {
-		if (dataValidation()) {
-			String keyHint =  this.objectName + this.objectId + this.eventName + this.dateKey + this.journeyMapId;
-			this.id = createId(this.id, keyHint);
-			return this.id;
-		} else {
-			newIllegalArgumentException("objectName, objectId, eventName and createdAt are required ");
-		}
-		return null;
-	}
+	@Expose
+	private int partitionId;
 
 	public DailyReportUnit() {
 		// for Gson
 	}
 
-	/**
-	 * init with existing dailyCount for DailyReportUnit
-	 * 
-	 * @param journeyMapId
-	 * @param objectName
-	 * @param objectId
-	 * @param eventName
-	 * @param dailyCount
-	 * @param reportedDate
-	 */
-	public DailyReportUnit(String journeyMapId, String objectName, String objectId, String eventName, long dailyCount, Date reportedDate) {
-		super();
-		this.init(journeyMapId, objectName, objectId, eventName, dailyCount, reportedDate);
+	public DailyReportUnit(String journeyMapId, String objectName, String objectId, String eventName,
+			Date reportedDate) {
+		this(journeyMapId, objectName, objectId, eventName, 0L, reportedDate);
 	}
-	
-	
-	/**
-	 * init for new DailyReportUnit
-	 * 
-	 * @param journeyMapId
-	 * @param objectName
-	 * @param objectId
-	 * @param eventName
-	 * @param reportedDate
-	 */
-	public DailyReportUnit(String journeyMapId, String objectName, String objectId, String eventName, Date reportedDate) {
-		super();
-		this.init(journeyMapId, objectName, objectId, eventName, 0L, reportedDate);
-	}
-	
-	private final void init(String journeyMapId, String objectName, String objectId, String eventName, long dailyCount, Date reportedDate) {
+
+	public DailyReportUnit(String journeyMapId, String objectName, String objectId, String eventName, long dailyCount,
+			Date reportedDate) {
 		this.journeyMapId = journeyMapId;
 		this.objectName = objectName;
 		this.objectId = objectId;
@@ -174,28 +151,69 @@ public final class DailyReportUnit extends PersistentObject implements Comparabl
 		this.dailyCount = dailyCount;
 		this.createdAt = reportedDate;
 		this.updatedAt = reportedDate;
-		
-		Calendar calendar = Calendar.getInstance();
-		calendar.setTime(reportedDate);
-		this.year = calendar.get(Calendar.YEAR);
-		this.month = calendar.get(Calendar.MONTH) + 1;
-		this.day = calendar.get(Calendar.DAY_OF_MONTH);
-		this.hour = calendar.get(Calendar.HOUR_OF_DAY);
-		this.dateKey = new SimpleDateFormat(DateTimeUtil.DATE_FORMAT_PATTERN).format(reportedDate);
+
+		// FIX: Use modern JDK 11 Time API instead of legacy java.util.Calendar
+		ZonedDateTime zdt = reportedDate.toInstant().atZone(ZoneId.systemDefault());
+		this.year = zdt.getYear();
+		this.month = zdt.getMonthValue();
+		this.day = zdt.getDayOfMonth();
+		this.hour = zdt.getHour();
+		this.dateKey = DATE_FORMATTER.format(zdt);
+
 		this.buildHashedId();
 	}
-	
-	public final void updateReportData(DailyReportUnit dailyReportUnit) {
+
+	@Override
+	public boolean dataValidation() {
+		return StringUtil.isNotEmpty(this.journeyMapId) && StringUtil.isNotEmpty(this.objectName)
+				&& StringUtil.isNotEmpty(this.eventName) && this.createdAt != null;
+	}
+
+	@Override
+	public String buildHashedId() throws IllegalArgumentException {
+		if (dataValidation()) {
+			String keyHint = this.objectName + this.objectId + this.eventName + this.dateKey + this.journeyMapId;
+			this.id = createId(this.id, keyHint);
+			return this.id;
+		} else {
+			throw new IllegalArgumentException(
+					"objectName, objectId, eventName and createdAt are required to create DailyReportUnit");
+		}
+	}
+
+	/**
+	 * Merges another DailyReportUnit's statistics into this one. Thread-safe.
+	 */
+	public synchronized void updateReportData(DailyReportUnit dailyReportUnit) {
 		this.dailyCount += dailyReportUnit.getDailyCount();
 		Map<String, Map<String, Long>> newHourlyEventStatistics = dailyReportUnit.getHourlyEventStatistics();
-		newHourlyEventStatistics.forEach((String newHourKey, Map<String, Long> newEventMap)->{
-			Map<String, Long> cMap = this.hourlyEventStatistics.getOrDefault(newHourKey, new HashMap<String, Long>(24));
-			newEventMap.forEach( (newEventKey, newCount) -> {
-				long count = cMap.getOrDefault(newEventKey, 0L) + newCount;
-				cMap.put(newEventKey, count);
+		newHourlyEventStatistics.forEach((newHourKey, newEventMap) -> {
+			Map<String, Long> myEventMap = this.hourlyEventStatistics.computeIfAbsent(newHourKey,k -> new ConcurrentHashMap<>(24));
+			newEventMap.forEach((newEventKey, newCount) -> {
+				myEventMap.merge(newEventKey, newCount, Long::sum);
 			});
 		});
 	}
+
+	public synchronized void updateCountValue() {
+		this.dailyCount++;
+		updateHourlyEventCount();
+	}
+
+	private void updateHourlyEventCount() {
+		String hourtimeStr = HOUR_FORMATTER.format(this.createdAt.toInstant());
+		Map<String, Long> stats = this.hourlyEventStatistics.computeIfAbsent(hourtimeStr,
+				k -> new ConcurrentHashMap<>(24));
+		stats.merge(this.eventName, 1L, Long::sum);
+	}
+
+	public void resetHourlyEventCount() {
+		this.hourlyEventStatistics.clear();
+	}
+
+	// ----------------------------------------------------------------------
+	// GETTERS & SETTERS
+	// ----------------------------------------------------------------------
 
 	@Override
 	public Date getCreatedAt() {
@@ -216,7 +234,7 @@ public final class DailyReportUnit extends PersistentObject implements Comparabl
 	public void setUpdatedAt(Date updatedAt) {
 		this.updatedAt = updatedAt;
 	}
-	
+
 	@Override
 	public long getMinutesSinceLastUpdate() {
 		return getDifferenceInMinutes(this.updatedAt);
@@ -279,7 +297,7 @@ public final class DailyReportUnit extends PersistentObject implements Comparabl
 	}
 
 	public String getJourneyMapId() {
-		if(StringUtil.isEmpty(this.journeyMapId)) {
+		if (StringUtil.isEmpty(this.journeyMapId)) {
 			this.journeyMapId = JourneyMap.DEFAULT_JOURNEY_MAP_ID;
 		}
 		return this.journeyMapId;
@@ -312,15 +330,6 @@ public final class DailyReportUnit extends PersistentObject implements Comparabl
 	public void setDailyCount(long dailyCount) {
 		this.dailyCount = dailyCount;
 	}
-	
-	
-	public final synchronized void updateCountValue() {
-		this.dailyCount++;
-		updateHourlyEventCount();
-		
-//		System.out.println("DailyReportUnit.dailyCount = " + dailyCount);
-//		System.out.println("DailyReportUnit.hourlyEventStatistics \n " + hourlyEventStatistics);
-	}
 
 	public Map<String, Map<String, Long>> getHourlyEventStatistics() {
 		if (hourlyEventStatistics == null) {
@@ -333,20 +342,8 @@ public final class DailyReportUnit extends PersistentObject implements Comparabl
 		this.hourlyEventStatistics = hourlyEventStatistics;
 	}
 
-	private final void updateHourlyEventCount() {
-		String hourtimeStr = new SimpleDateFormat(YYYY_MM_DD_HH_00_00).format(this.createdAt);
-		Map<String, Long> stats = hourlyEventStatistics.getOrDefault(hourtimeStr, new ConcurrentHashMap<String, Long>(24));
-		long c = stats.getOrDefault(this.eventName, 0L) + 1L;
-		stats.put(this.eventName, c);
-		hourlyEventStatistics.put(hourtimeStr, stats);
-	}
-
-	public void resetHourlyEventCount() {
-		this.hourlyEventStatistics.clear();
-	}
-
 	@Override
-	public int compareTo(DailyReportUnit o) {	
+	public int compareTo(DailyReportUnit o) {
 		return this.createdAt.compareTo(o.getCreatedAt());
 	}
 
@@ -354,17 +351,14 @@ public final class DailyReportUnit extends PersistentObject implements Comparabl
 	public String getDocumentUUID() {
 		return COLLECTION_NAME + "/" + id;
 	}
-	
+
 	@Override
 	public int hashCode() {
-		return Objects.hash(dateKey);
+		return Objects.hash(dateKey, objectId, eventName);
 	}
 
 	@Override
 	public String toString() {
-		StringBuilder s = new StringBuilder();
-		s.append(this.dateKey).append(" ").append(this.eventName).append(" ").append(this.dailyCount);
-		s.append("\n\n").append(this.hourlyEventStatistics).append("\n");
-		return s.toString();
+		return this.dateKey + " " + this.eventName + " " + this.dailyCount + "\n\n" + this.hourlyEventStatistics + "\n";
 	}
 }

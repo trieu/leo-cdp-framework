@@ -35,6 +35,7 @@ import leotech.cdp.domain.schema.CustomerFunnel;
 import leotech.cdp.domain.schema.FunnelMetaData;
 import leotech.cdp.model.SingleViewAnalyticalObject;
 import leotech.cdp.model.analytics.DailyReportUnit;
+import leotech.cdp.model.analytics.Device;
 import leotech.cdp.model.analytics.TouchpointReport;
 import leotech.cdp.model.journey.EventMetric;
 import leotech.cdp.model.journey.EventObserver;

@@ -15,162 +15,138 @@ import leotech.system.util.database.PersistentObject;
 import rfx.core.util.StringUtil;
 
 /**
- * data flow stage is metadata of Data Journey Funnel <br>
- * Data Journey Funnel is the process of data collection, data processing, data analysis, data activation, etc that customer data goes through in the customer journey, it is used to track the customer journey.
- * Data Flow Stage is the stage of the data journey funnel, it is used to track the customer journey, it is used to analyze the customer journey, it is used to optimize the customer journey, etc <br><br>
+ * Data Flow Stage is metadata of Data Journey Funnel. <br>
+ * Data Journey Funnel is the process of data collection, data processing, data analysis, 
+ * data activation, etc. that customer data goes through in the customer journey. <br>
+ * Data Flow Stage is used to track, analyze, and optimize the customer journey funnel. <br><br>
  * 
  * ArangoDB collection: cdp_dataflowstage
  * 
  * @author tantrieuf31
  * @since 2020
- *
  */
 public class DataFlowStage extends PersistentObject {
 
 	public static final String COLLECTION_NAME = getCdpCollectionName(DataFlowStage.class);
-	static ArangoCollection dbCollection;
+	
+	// Volatile for thread-safe lazy initialization
+	private static volatile ArangoCollection dbCollection;
+	
+	// Cache Slugify instance to prevent object thrashing and regex recompilation on every save
+	private static final Slugify SLUGIFY = new Slugify();
 
 	@Key
 	@Expose
 	protected String id;
 
 	@Expose
-	int orderIndex;
+	private int orderIndex;
 
 	@Expose
-	String name;
+	private String name;
 
 	@Expose
-	String type;
+	private String type;
 	
 	@Expose
-	String flowName;
+	private String flowName;
 	
 	@Expose
-	Date createdAt;
+	private Date createdAt;
 
 	@Expose
-	Date updatedAt;
+	private Date updatedAt;
 	
 	@Expose
-	int flowType = FlowType.SYSTEM_METRIC; // 0 for system, 1 for marketing, 2 for sales, 3 for customer service
+	private int flowType = FlowType.SYSTEM_METRIC; // 0 for system, 1 for marketing, 2 for sales, 3 for customer service
 
 	public DataFlowStage() {
-		// for gson
+		// Default constructor for Gson serialization
 	}
 
 	public DataFlowStage(int orderIndex, String name, String type, String flowName, int flowType) {
-		super();
 		this.orderIndex = orderIndex;
 		this.name = name;
 		this.type = type;
 		this.flowName = flowName;
-		this.createdAt = new Date();
-		this.updatedAt = new Date();
 		this.flowType = flowType;
-		// hashed ID
+		
+		Date now = new Date();
+		this.createdAt = now;
+		this.updatedAt = now;
+		
 		this.buildHashedId();
 	}
 	
 	@Override
+	public ArangoCollection getDbCollection() {
+		if (dbCollection == null) {
+			// Double-checked locking to prevent race conditions during DB initialization
+			synchronized (DataFlowStage.class) {
+				if (dbCollection == null) {
+					ArangoDatabase arangoDatabase = getArangoDatabase();
+					ArangoCollection col = arangoDatabase.collection(COLLECTION_NAME);
+					PersistentIndexOptions pIdxOpts = new PersistentIndexOptions().unique(false);
+					
+					col.ensurePersistentIndex(Arrays.asList("type", "orderIndex"), pIdxOpts);
+					col.ensurePersistentIndex(Arrays.asList("flowType", "orderIndex"), pIdxOpts);
+					col.ensurePersistentIndex(Arrays.asList("flowName", "orderIndex"), pIdxOpts);
+					col.ensurePersistentIndex(Arrays.asList("name"), pIdxOpts);
+					
+					dbCollection = col;
+				}
+			}
+		}
+		return dbCollection;
+	}
+	
+	@Override
 	public String buildHashedId() throws IllegalArgumentException {
-		if(StringUtil.isNotEmpty(this.name) ) {
-			this.id = new Slugify().slugify(this.name);
+		if (StringUtil.isNotEmpty(this.name)) {
+			this.id = SLUGIFY.slugify(this.name);
 		}
 		return this.id;
 	}
 
 	@Override
 	public boolean dataValidation() {
-		return StringUtil.isNotEmpty(this.id) && StringUtil.isNotEmpty(this.name) && StringUtil.isNotEmpty(this.flowName)  && StringUtil.isNotEmpty(this.type);
+		return StringUtil.isNotEmpty(this.id) 
+				&& StringUtil.isNotEmpty(this.name) 
+				&& StringUtil.isNotEmpty(this.flowName)  
+				&& StringUtil.isNotEmpty(this.type);
 	}
 
-	public int getOrderIndex() {
-		return orderIndex;
-	}
-	public void setOrderIndex(int orderIndex) {
-		this.orderIndex = orderIndex;
-	}
-	public String getName() {
-		return name;
-	}
-	public void setName(String name) {
-		this.name = name;
-	}
+	// ----------------------------------------------------------------------
+	// GETTERS & SETTERS
+	// ----------------------------------------------------------------------
 
-	public String getType() {
-		return type;
-	}
+	public String getId() { return id; }
+	public void setId(String id) { this.id = id; }
 
-	public void setType(String type) {
-		this.type = type;
-	}
+	public int getOrderIndex() { return orderIndex; }
+	public void setOrderIndex(int orderIndex) { this.orderIndex = orderIndex; }
 
-	public String getId() {
-		return id;
-	}
+	public String getName() { return name; }
+	public void setName(String name) { this.name = name; }
 
-	public void setId(String id) {
-		this.id = id;
-	}
+	public String getType() { return type; }
+	public void setType(String type) { this.type = type; }
 	
-	public String getFlowName() {
-		return flowName;
-	}
-
-	public void setFlowName(String flowName) {
-		this.flowName = flowName;
-	}
+	public String getFlowName() { return flowName; }
+	public void setFlowName(String flowName) { this.flowName = flowName; }
 	
-	public int getFlowType() {
-		return flowType;
-	}
-
-	public void setFlowType(int flowType) {
-		this.flowType = flowType;
-	}
+	public int getFlowType() { return flowType; }
+	public void setFlowType(int flowType) { this.flowType = flowType; }
 
 	@Override
-	public int hashCode() {
-		if(StringUtil.isNotEmpty(id)) {
-			return this.id.hashCode();
-		}
-		return 0;
-	}
+	public Date getCreatedAt() { return createdAt; }
+	@Override
+	public void setCreatedAt(Date createdAt) { this.createdAt = createdAt; }
 
 	@Override
-	public ArangoCollection getDbCollection() {
-		if (dbCollection == null) {
-			ArangoDatabase arangoDatabase = getArangoDatabase();
-			dbCollection = arangoDatabase.collection(COLLECTION_NAME);
-			// ensure indexing key fields for fast lookup
-			dbCollection.ensurePersistentIndex(Arrays.asList("type"), new PersistentIndexOptions().unique(false));
-			dbCollection.ensurePersistentIndex(Arrays.asList("name"), new PersistentIndexOptions().unique(false));
-			dbCollection.ensurePersistentIndex(Arrays.asList("type","orderIndex"), new PersistentIndexOptions().unique(false));
-		}
-		return dbCollection;
-	}
-
-
+	public Date getUpdatedAt() { return updatedAt; }
 	@Override
-	public Date getCreatedAt() {
-		return createdAt;
-	}
-
-	@Override
-	public void setCreatedAt(Date createdAt) {
-		this.createdAt = createdAt;
-	}
-
-	@Override
-	public Date getUpdatedAt() {
-		return updatedAt;
-	}
-
-	@Override
-	public void setUpdatedAt(Date updatedAt) {
-		this.updatedAt = updatedAt;
-	}
+	public void setUpdatedAt(Date updatedAt) { this.updatedAt = updatedAt; }
 	
 	@Override
 	public long getMinutesSinceLastUpdate() {
@@ -185,10 +161,14 @@ public class DataFlowStage extends PersistentObject {
 	public String getDocumentUUID() {
 		return COLLECTION_NAME + "/" + id;
 	}
-	
+
+	@Override
+	public int hashCode() {
+		return StringUtil.isNotEmpty(id) ? this.id.hashCode() : 0;
+	}
+
 	@Override
 	public String toString() {
 		return new Gson().toJson(this);
 	}
-
 }

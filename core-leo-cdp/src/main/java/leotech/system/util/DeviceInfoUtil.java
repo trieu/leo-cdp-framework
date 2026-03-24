@@ -4,7 +4,7 @@ package leotech.system.util;
 
 import java.util.Date;
 
-import leotech.cdp.model.customer.Device;
+import leotech.cdp.model.analytics.Device;
 import leotech.system.model.DeviceInfo;
 import rfx.core.util.StringUtil;
 

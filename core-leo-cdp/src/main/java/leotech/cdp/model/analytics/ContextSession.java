@@ -1,13 +1,13 @@
 package leotech.cdp.model.analytics;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.GregorianCalendar;
 
 import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 
 import com.arangodb.ArangoCollection;
 import com.arangodb.ArangoDatabase;
@@ -24,120 +24,70 @@ import rfx.core.util.StringUtil;
 /**
  * Context Session for Web Visitor <br>
  * 
- * Context Session is created when a visitor first comes to the website, and it will be updated with new touchpoint and event data until the session expires. <br>
+ * Context Session is created when a visitor first comes to the website, and it
+ * will be updated with new touchpoint and event data until the session expires. <br>
  * 
  * ArangoDB collection: cdp_contextsession
  * 
  * @author Trieu Nguyen
  * @since 2020
- *
  */
 public final class ContextSession extends PersistentObject {
 
 	public static final String DATE_HOUR_FORMAT_PATTERN = "yyyy-MM-dd-HH";
-	static final DateFormat DATEHOUR_FORMAT = new SimpleDateFormat(DATE_HOUR_FORMAT_PATTERN);
+	
+	// Joda-Time's thread-safe DateTimeFormatter
+	private static final DateTimeFormatter DATEHOUR_FORMAT = DateTimeFormat.forPattern(DATE_HOUR_FORMAT_PATTERN);
+	
 	private static final int HOURS_OF_A_WEEK = 168;
 
 	public static final String COLLECTION_NAME = getCdpCollectionName(ContextSession.class);
-	static ArangoCollection instance;
-
-	@Override
-	public ArangoCollection getDbCollection() {
-		if (instance == null) {
-			ArangoDatabase arangoDatabase = getArangoDatabase();
-
-			instance = arangoDatabase.collection(COLLECTION_NAME);
-
-			// ensure indexing key fields for fast lookup
-
-			instance.ensurePersistentIndex(Arrays.asList("userDeviceId"),
-					new PersistentIndexOptions().unique(false));
-			instance.ensurePersistentIndex(Arrays.asList("locationCode"),
-					new PersistentIndexOptions().unique(false));
-			instance.ensurePersistentIndex(Arrays.asList("appId"), new PersistentIndexOptions().unique(false));
-			instance.ensurePersistentIndex(Arrays.asList("host"), new PersistentIndexOptions().unique(false));
-			instance.ensurePersistentIndex(Arrays.asList("refTouchpointId"),
-					new PersistentIndexOptions().unique(false));
-			instance.ensurePersistentIndex(Arrays.asList("visitorId"), new PersistentIndexOptions().unique(false));
-			instance.ensurePersistentIndex(Arrays.asList("profileId"), new PersistentIndexOptions().unique(false));
-			instance.ensureTtlIndex(Arrays.asList("autoDeleteAt"), new TtlIndexOptions().expireAfter(0));
-
-		}
-		return instance;
-	}
-
-	@Override
-	public boolean dataValidation() {
-		return StringUtil.isNotEmpty(ip) && StringUtil.isNotEmpty(sessionKey)
-				&& StringUtil.isNotEmpty(refTouchpointId);
-	}
-
-	/**
-	 * @param Date
-	 * @return date string in format "yyyy-MM-dd-HH"
-	 */
-	public static String getSessionDateTimeKey(DateTime dt) {
-		String tk = DATEHOUR_FORMAT.format(dt.toDate());
-		int m = dt.getMinuteOfHour();
-		if (m < 30) {
-			tk += "-00";
-		} else {
-			tk += "-30";
-		}
-		return tk;
-	}
+	
+	// ensure proper double-checked locking behavior
+	private static volatile ArangoCollection instance;
 
 	@Key
-	String sessionKey;
+	private String sessionKey;
+	
+	private String dateTimeKey;
+	private String userDeviceId = "";
+	private String ip = "";
+	private String locationCode = "";
+	private String refMediaHost = "";
+	private String appId = "";
+	private String refTouchpointId = "";
+	private String srcTouchpointId = "";
+	private String observerId = "";
+	private String profileId = "";
+	private String visitorId = "";
+	private String fingerprintId = "";
+	private int profileType = ProfileType.ANONYMOUS_VISITOR;
+	
+	private Date createdAt;
+	private Date updatedAt;
+	private Date autoDeleteAt;
+	private String environment;
 
-	String dateTimeKey;
-	String userDeviceId = "";
-	String ip = "";
-	String locationCode = "";
-	String refMediaHost = "";
-	String appId = "";
-	String refTouchpointId = "";
-	String srcTouchpointId = "";
-	String observerId = "";
-	String profileId = "";
-	String visitorId = "";
-	String fingerprintId = "";
-	int profileType = ProfileType.ANONYMOUS_VISITOR;
-	
-	Date createdAt;
-	Date updatedAt;
-	
-	Date autoDeleteAt;
-	String environment;
-	
 	public ContextSession() {
-		// 
+		// Default constructor for serialization
 	}
 
 	public ContextSession(String observerId, DateTime dateTime, String dateTimeKey, String locationCode,
 			String userDeviceId, String ip, String refMediaHost, String appId, String refTouchpointId,
-			String srcTouchpointId, String profileId, int profileType, String visitorId, String fingerprintId, int hoursToDelete,
+			String srcTouchpointId, String profileId, int profileType, String visitorId, String fingerprintId, 
 			String environment) {
-		super();
-		this.init(observerId, dateTime, dateTimeKey, locationCode, userDeviceId, ip, refMediaHost, appId, refTouchpointId,
-				srcTouchpointId, profileId, profileType, visitorId,fingerprintId, hoursToDelete, environment);
+		
+		// Refactored to use constructor chaining
+		this(observerId, dateTime, dateTimeKey, locationCode, userDeviceId, ip, refMediaHost, appId, refTouchpointId,
+				srcTouchpointId, profileId, profileType, visitorId, fingerprintId, 0, environment);
 	}
 
 	public ContextSession(String observerId, DateTime dateTime, String dateTimeKey, String locationCode,
-			String userDeviceId, String ip, String refMediaHost,  String appId, String refTouchpointId,
-			String srcTouchpointId, String profileId, int profileType, String visitorId, String fingerprintId, String environment) {
-		super();
-		int hoursToDelete = 0; // to 
-		this.init(observerId, dateTime, dateTimeKey, locationCode, userDeviceId, ip, refMediaHost, appId, refTouchpointId,
-				srcTouchpointId, profileId, profileType, visitorId, fingerprintId,  hoursToDelete, environment);
-	}
-
-	private void init(String observerId, DateTime dateTime, String dateTimeKey, String locationCode,
 			String userDeviceId, String ip, String refMediaHost, String appId, String refTouchpointId,
-			String srcTouchpointId, String profileId, int profileType, String visitorId, String fingerprintId, int hoursToDelete, String environment) {
+			String srcTouchpointId, String profileId, int profileType, String visitorId, String fingerprintId, 
+			int hoursToDelete, String environment) {
 		
 		this.environment = environment;
-		
 		this.observerId = observerId;
 		this.locationCode = locationCode;
 		this.userDeviceId = userDeviceId;
@@ -147,9 +97,8 @@ public final class ContextSession extends PersistentObject {
 		this.refTouchpointId = refTouchpointId;
 		this.srcTouchpointId = srcTouchpointId;
 		
-		// profile keys
 		this.profileId = profileId;
-		this.profileType =  profileType;
+		this.profileType = profileType;
 		this.visitorId = visitorId;
 		this.fingerprintId = fingerprintId;
 		
@@ -158,25 +107,69 @@ public final class ContextSession extends PersistentObject {
 
 		this.buildHashedId();
 
-		if (hoursToDelete > HOURS_OF_A_WEEK) {
-			this.autoDeleteAt = dateTime.plusHours(hoursToDelete).toDate();
-		} else {
-			this.autoDeleteAt = dateTime.plusHours(HOURS_OF_A_WEEK).toDate();
-		}
+		int actualHoursToDelete = (hoursToDelete > HOURS_OF_A_WEEK) ? hoursToDelete : HOURS_OF_A_WEEK;
+		this.autoDeleteAt = dateTime.plusHours(actualHoursToDelete).toDate();
 	}
-	
+
+	@Override
+	public ArangoCollection getDbCollection() {
+		if (instance == null) {
+			// Double-checked locking to prevent race conditions during concurrent index creation
+			synchronized (ContextSession.class) {
+				if (instance == null) {
+					ArangoDatabase arangoDatabase = getArangoDatabase();
+					ArangoCollection col = arangoDatabase.collection(COLLECTION_NAME);
+
+					PersistentIndexOptions pIdxOpts = new PersistentIndexOptions().unique(false);
+					
+					// ensure indexing key fields for fast lookup
+					col.ensurePersistentIndex(Arrays.asList("userDeviceId"), pIdxOpts);
+					col.ensurePersistentIndex(Arrays.asList("locationCode"), pIdxOpts);
+					col.ensurePersistentIndex(Arrays.asList("appId"), pIdxOpts);
+					col.ensurePersistentIndex(Arrays.asList("host"), pIdxOpts);
+					col.ensurePersistentIndex(Arrays.asList("refTouchpointId"), pIdxOpts);
+					col.ensurePersistentIndex(Arrays.asList("visitorId"), pIdxOpts);
+					col.ensurePersistentIndex(Arrays.asList("profileId"), pIdxOpts);
+					
+					col.ensureTtlIndex(Arrays.asList("autoDeleteAt"), new TtlIndexOptions().expireAfter(0));
+					
+					instance = col;
+				}
+			}
+		}
+		return instance;
+	}
+
+	@Override
+	public boolean dataValidation() {
+		return StringUtil.isNotEmpty(ip) 
+				&& StringUtil.isNotEmpty(sessionKey)
+				&& StringUtil.isNotEmpty(refTouchpointId);
+	}
+
+	/**
+	 * @param dt org.joda.time.DateTime
+	 * @return date string in format "yyyy-MM-dd-HH-[00|30]"
+	 */
+	public static String getSessionDateTimeKey(DateTime dt) {
+		// Simplified and safe from threading issues
+		String tk = DATEHOUR_FORMAT.print(dt);
+		return tk + (dt.getMinuteOfHour() < 30 ? "-00" : "-30");
+	}
+
 	@Override
 	public String buildHashedId() throws IllegalArgumentException {
-		if(StringUtil.isNotEmpty(profileId) && StringUtil.isNotEmpty(userDeviceId) && StringUtil.isNotEmpty(fingerprintId)) {
-			Calendar calendar = GregorianCalendar.getInstance(); 
-			calendar.setTime(this.createdAt);  
-			String mns = calendar.get(Calendar.MINUTE) < 30 ? "0" : "1";
-			String keyHint =  environment + locationCode + userDeviceId + ip + appId + profileId + fingerprintId + mns;
+		if (StringUtil.isNotEmpty(profileId) && StringUtil.isNotEmpty(userDeviceId) && StringUtil.isNotEmpty(fingerprintId)) {
+			// Refactored to use JDK 11 java.time API instead of legacy GregorianCalendar
+			LocalDateTime ldt = LocalDateTime.ofInstant(this.createdAt.toInstant(), ZoneId.systemDefault());
+			
+			String mns = ldt.getMinute() < 30 ? "0" : "1";
+			String keyHint = environment + locationCode + userDeviceId + ip + appId + profileId + fingerprintId + mns;
+			
 			this.sessionKey = createHashedId(keyHint);
 			return this.sessionKey;
-		}
-		else {
-			throw new IllegalArgumentException("profileId and userDeviceId must not be NULL to create ContextSession");
+		} else {
+			throw new IllegalArgumentException("profileId, userDeviceId, and fingerprintId must not be NULL to create ContextSession");
 		}
 	}
 	
@@ -188,151 +181,70 @@ public final class ContextSession extends PersistentObject {
 		this.buildHashedId();
 	}
 
-	public String getUserDeviceId() {
-		return userDeviceId;
-	}
+	// ----------------------------------------------------------------------
+	// GETTERS & SETTERS
+	// ----------------------------------------------------------------------
 
-	public void setUserDeviceId(String userDeviceId) {
-		this.userDeviceId = userDeviceId;
-	}
+	public String getUserDeviceId() { return userDeviceId; }
+	public void setUserDeviceId(String userDeviceId) { this.userDeviceId = userDeviceId; }
 
-	public String getIp() {
-		return ip;
-	}
+	public String getIp() { return ip; }
+	public void setIp(String ip) { this.ip = ip; }
 
-	public void setIp(String ip) {
-		this.ip = ip;
-	}
+	public String getMediaHost() { return refMediaHost; }
+	public void setMediaHost(String mediaHost) { this.refMediaHost = mediaHost; }
 
-	public String getMediaHost() {
-		return refMediaHost;
-	}
+	public String getAppId() { return appId; }
+	public void setAppId(String appId) { this.appId = appId; }
 
-	public void setMediaHost(String mediaHost) {
-		this.refMediaHost = mediaHost;
-	}
+	public String getRefTouchpointId() { return refTouchpointId; }
+	public void setRefTouchpointId(String refTouchpointId) { this.refTouchpointId = refTouchpointId; }
 
-	public String getAppId() {
-		return appId;
-	}
-
-	public void setAppId(String appId) {
-		this.appId = appId;
-	}
-
-	public String getRefTouchpointId() {
-		return refTouchpointId;
-	}
-
-	public void setRefTouchpointId(String refTouchpointId) {
-		this.refTouchpointId = refTouchpointId;
-	}
-
-	public String getSrcTouchpointId() {
-		return srcTouchpointId;
-	}
-
-	public void setSrcTouchpointId(String srcTouchpointId) {
-		this.srcTouchpointId = srcTouchpointId;
-	}
+	public String getSrcTouchpointId() { return srcTouchpointId; }
+	public void setSrcTouchpointId(String srcTouchpointId) { this.srcTouchpointId = srcTouchpointId; }
 	
-	public String getProfileId() {
-		return profileId;
-	}
+	public String getProfileId() { return profileId; }
+	public void setProfileId(String profileId) { this.profileId = profileId; }
 
-	public void setProfileId(String profileId) {
-		this.profileId = profileId;
-	}
+	public String getVisitorId() { return visitorId; }
+	public void setVisitorId(String visitorId) { this.visitorId = visitorId; }
 
-	
-	public String getVisitorId() {
-		return visitorId;
-	}
-
-	public void setVisitorId(String visitorId) {
-		this.visitorId = visitorId;
-	}
-
-	public int getProfileType() {
-		return profileType;
-	}
-
-	public void setProfileType(int profileType) {
-		this.profileType = profileType;
-	}
+	public int getProfileType() { return profileType; }
+	public void setProfileType(int profileType) { this.profileType = profileType; }
 
 	@Override
-	public Date getCreatedAt() {
-		return createdAt;
-	}
+	public Date getCreatedAt() { return createdAt; }
+	@Override
+	public void setCreatedAt(Date createdAt) { this.createdAt = createdAt; }
 
 	@Override
-	public void setCreatedAt(Date createdAt) {
-		this.createdAt = createdAt;
-	}
-
+	public Date getUpdatedAt() { return updatedAt; }
 	@Override
-	public Date getUpdatedAt() {
-		return updatedAt;
-	}
-
-	@Override
-	public void setUpdatedAt(Date updatedAt) {
-		this.updatedAt = updatedAt;
-	}
+	public void setUpdatedAt(Date updatedAt) { this.updatedAt = updatedAt; }
 	
 	@Override
 	public long getMinutesSinceLastUpdate() {
 		return getDifferenceInMinutes(this.updatedAt);
 	}
 
-	public String getEnvironment() {
-		return environment;
-	}
+	public String getEnvironment() { return environment; }
+	public void setEnvironment(String environment) { this.environment = environment; }
 
-	public void setEnvironment(String environment) {
-		this.environment = environment;
-	}
+	public Date getAutoDeleteAt() { return autoDeleteAt; }
+	public void setAutoDeleteAt(Date autoDeleteAt) { this.autoDeleteAt = autoDeleteAt; }
 
-	public Date getAutoDeleteAt() {
-		return autoDeleteAt;
-	}
+	public String getSessionKey() { return sessionKey; }
 
-	public void setAutoDeleteAt(Date autoDeleteAt) {
-		this.autoDeleteAt = autoDeleteAt;
-	}
+	public String getDateTimeKey() { return dateTimeKey; }
 
-	public String getSessionKey() {
-		return sessionKey;
-	}
+	public String getLocationCode() { return locationCode; }
+	public void setLocationCode(String locationCode) { this.locationCode = locationCode; }
 
-	public String getDateTimeKey() {
-		return dateTimeKey;
-	}
+	public String getObserverId() { return observerId; }
+	public void setObserverId(String observerId) { this.observerId = observerId; }
 
-	public String getLocationCode() {
-		return locationCode;
-	}
-	
-	public void setLocationCode(String locationCode) {
-		this.locationCode = locationCode;
-	}
-
-	public String getObserverId() {
-		return observerId;
-	}
-
-	public void setObserverId(String observerId) {
-		this.observerId = observerId;
-	}
-
-	public String getFingerprintId() {
-		return fingerprintId;
-	}
-
-	public void setFingerprintId(String fingerprintId) {
-		this.fingerprintId = fingerprintId;
-	}
+	public String getFingerprintId() { return fingerprintId; }
+	public void setFingerprintId(String fingerprintId) { this.fingerprintId = fingerprintId; }
 
 	@Override
 	public String getDocumentUUID() {
@@ -343,5 +255,4 @@ public final class ContextSession extends PersistentObject {
 	public String toString() {
 		return new Gson().toJson(this);
 	}
-
 }

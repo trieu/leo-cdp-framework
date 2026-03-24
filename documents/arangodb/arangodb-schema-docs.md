@@ -1223,3 +1223,517 @@ tagName (String)
 }
 ```
 ---
+## cdp_contextsession
+
+Context session representing a visitor session on web/app, capturing device, behavior context, touchpoints, and identity linkage for real-time tracking and analytics. 
+
+### 📦 ContextSession Attributes
+
+sessionKey (String)
+
+* Primary key (_key in ArangoDB), hashed from session context (device + profile + fingerprint + environment)
+
+dateTimeKey (String)
+
+* Time bucket key (format: yyyy-MM-dd-HH-[00|30]) for aggregation
+
+userDeviceId (String)
+
+* Unique device identifier
+
+ip (String)
+
+* IP address of the visitor
+
+locationCode (String)
+
+* Encoded geo-location (e.g., Plus Code)
+
+refMediaHost (String)
+
+* Referrer host/domain (e.g., zdn.vn)
+
+appId (String)
+
+* Application identifier
+
+refTouchpointId (String)
+
+* Referrer touchpoint ID
+
+srcTouchpointId (String)
+
+* Source touchpoint ID
+
+observerId (String)
+
+* Observer/collector ID tracking the session
+
+profileId (String)
+
+* Linked customer profile ID
+
+visitorId (String)
+
+* Anonymous visitor ID
+
+fingerprintId (String)
+
+* Device/browser fingerprint ID
+
+profileType (int)
+
+* Profile type:
+
+  * 0 = anonymous visitor
+  * other values = known customer types
+
+environment (String)
+
+* Runtime environment (e.g., dev, staging, prod)
+
+createdAt (Date)
+
+* Session start timestamp
+
+updatedAt (Date)
+
+* Last update timestamp
+
+autoDeleteAt (Date)
+
+* TTL expiration timestamp (auto cleanup via ArangoDB TTL index)
+
+### Sample data:
+
+```json id="ctx92a"
+{
+  "sessionKey": "auto_generated_session_key",
+  "dateTimeKey": "2026-03-24-09-30",
+  "userDeviceId": "5nklq9lPquSNLNtuUPghsv",
+  "ip": "116.98.1.89",
+  "locationCode": "7P3CWCVV+QJ",
+  "refMediaHost": "zdn.vn",
+  "appId": "",
+  "refTouchpointId": "7NwctWrq0ea54eb6WbFSwg",
+  "srcTouchpointId": "7BoGWS1z0PfPjxsvi8Kqy6",
+  "observerId": "2lO3BwqvOnKfoOimSd8mqz",
+  "profileId": "4ZjITqXaZM0qaYlCSssubk",
+  "visitorId": "f479ef5b33c54de3a910b7e90661b3cc",
+  "fingerprintId": "0fe6d592eb0f99c14b6bfe197c1dc94a",
+  "profileType": 0,
+  "environment": "dev",
+  "createdAt": "2026-03-24T09:48:09.657Z",
+  "updatedAt": null,
+  "autoDeleteAt": "2026-03-31T09:48:09.657Z"
+}
+```
+---
+## cdp_dailyreportunit
+
+Time-series analytics entity storing aggregated event counts per object (profile, product, content, etc.) on a daily basis with hourly breakdown for reporting and dashboards. 
+
+### 📦 DailyReportUnit Attributes
+
+id (String)
+
+* Primary key (_key in ArangoDB), generated from object + event + date + journey
+
+dateKey (String)
+
+* Date key in format `yyyy-MM-dd` for daily aggregation
+
+year (int)
+
+* Year extracted from createdAt
+
+month (int)
+
+* Month extracted from createdAt
+
+day (int)
+
+* Day extracted from createdAt
+
+hour (int)
+
+* Hour extracted from createdAt
+
+journeyMapId (String)
+
+* Journey map identifier (default: id_default_journey)
+
+objectId (String)
+
+* Target object ID (e.g., profileId, productId, contentId)
+
+objectName (String)
+
+* Target object type (e.g., cdp_profile, product, content)
+
+eventName (String)
+
+* Event type (e.g., page-view, click, purchase)
+
+dailyCount (long)
+
+* Total count of events for the day
+
+hourlyEventStatistics (Map<String, Map<String, Long>>)
+
+* Hourly breakdown of event counts
+* Format: `{ "yyyy-MM-dd HH:00:00": { "eventName": count } }`
+
+createdAt (Date)
+
+* Timestamp when the record is created
+
+updatedAt (Date)
+
+* Last update timestamp
+
+partitionId (int)
+
+* Partition identifier for scaling and sharding
+
+### Sample data:
+
+```json id="drp92x"
+{
+  "id": "auto_generated_id",
+  "dateKey": "2022-05-25",
+  "year": 2022,
+  "month": 5,
+  "day": 25,
+  "hour": 13,
+  "journeyMapId": "id_default_journey",
+  "objectId": "6eioUN0BcVVTbDFJ9s6lT8",
+  "objectName": "cdp_profile",
+  "eventName": "page-view",
+  "dailyCount": 1,
+  "hourlyEventStatistics": {
+    "2022-05-25 13:00:00": {
+      "page-view": 1
+    }
+  },
+  "createdAt": "2022-05-25T13:58:51.050Z",
+  "updatedAt": "2022-05-25T13:58:51.050Z",
+  "partitionId": 0
+}
+```
+---
+## cdp_agent
+
+Agent represents an executable service in CDP used for personalization, data enrichment, and data synchronization. It extends `SystemService` and acts as a bridge between CDP and internal/external services. 
+
+### 📦 Agent Attributes
+
+id (String)
+
+* Primary key (_key in ArangoDB), generated from service name (slugified)
+
+name (String)
+
+* Agent/service name
+
+description (String)
+
+* Description of the agent
+
+serviceUri (String)
+
+* Execution endpoint or handler:
+
+  * `javaclass:...` → internal Java job
+  * `ExternalAgentService` → external API
+
+dagId (String)
+
+* DAG ID for orchestration (Airflow or internal scheduler)
+
+status (int)
+
+* Agent state:
+
+  * 0 = enabled
+  * 1 = ready
+  * -1 = disabled
+
+index (int)
+
+* Priority or ordering index
+
+configs (Map<String, Object>)
+
+* Configuration parameters (API keys, endpoints, SMTP config, etc.)
+
+coreFieldConfigs (Map<String, Object>)
+
+* Standard CDP field definitions
+
+extFieldConfigs (Map<String, Object>)
+
+* Extended/custom fields
+
+forPersonalization (boolean)
+
+* Whether agent is used for personalization use-cases
+
+forDataEnrichment (boolean)
+
+* Whether agent enriches data (profiles, products, etc.)
+
+forSynchronization (boolean)
+
+* Whether agent synchronizes data with external systems
+
+startedAt (Date)
+
+* Timestamp when agent started execution
+
+createdAt (Date)
+
+* Creation timestamp
+
+updatedAt (Date)
+
+* Last update timestamp
+
+### Sample data:
+
+```json id="agent92x"
+{
+  "id": "leo_email_marketing",
+  "name": "LEO Email Marketing",
+  "description": "The default email marketing engine of CDP",
+  "serviceUri": "javaclass:leotech.cdp.data.service.InternalAgentActivation",
+  "dagId": "leo_email_marketing",
+  "status": 0,
+  "index": 0,
+  "configs": {
+    "smtp_enabled": false,
+    "smtp_username": "",
+    "smtp_password": "",
+    "smtp_host": "",
+    "smtp_port": 587
+  },
+  "coreFieldConfigs": {},
+  "extFieldConfigs": {},
+  "forPersonalization": true,
+  "forDataEnrichment": false,
+  "forSynchronization": false,
+  "createdAt": "2025-11-05T11:45:14.131Z",
+  "updatedAt": "2025-11-05T11:45:15.146Z",
+  "startedAt": null
+}
+```
+---
+## cdp_dataflowstage
+
+Data flow stage represents a step in the customer data journey funnel (e.g., acquisition → engagement → conversion), used for tracking, analytics, and optimization of customer lifecycle.
+
+### 📦 DataFlowStage Attributes
+
+id (String)
+
+* Primary key (_key in ArangoDB), slugified from `name`
+
+name (String)
+
+* Stage name (e.g., Engaged Customer, New Visitor)
+
+type (String)
+
+* Funnel type/category (e.g., general_data_funnel, marketing_funnel)
+
+flowName (String)
+
+* Name of the journey flow (e.g., standard_customer_flow)
+
+flowType (int)
+
+* Flow classification:
+
+  * 0 = system metric
+  * 1 = marketing
+  * 2 = sales
+  * 3 = customer service
+
+orderIndex (int)
+
+* Position of the stage in the funnel (used for ordering)
+
+createdAt (Date)
+
+* Creation timestamp
+
+updatedAt (Date)
+
+* Last update timestamp
+
+### Sample data:
+
+```json id="dfs92x"
+{
+  "id": "engaged_customer",
+  "name": "Engaged Customer",
+  "type": "general_data_funnel",
+  "flowName": "standard_customer_flow",
+  "flowType": 2,
+  "orderIndex": 6,
+  "createdAt": "2025-09-30T08:21:02.685Z",
+  "updatedAt": "2025-09-30T08:21:02.685Z"
+}
+```
+---
+## cdp_device
+
+Device entity representing a physical or logical device used by a visitor/profile for analytics, segmentation, and reporting. 
+
+### 📦 Device Attributes
+
+id (String)
+
+* Primary key (_key in ArangoDB), generated from device fingerprint (name + type + OS + browser)
+
+name (String)
+
+* Device name (e.g., iPhone, Chrome Desktop)
+
+type (String)
+
+* Device type (e.g., General_Mobile, Desktop, Tablet, Backend_System)
+
+osName (String)
+
+* Operating system name (e.g., iOS, Android, Windows)
+
+osVersion (String)
+
+* Operating system version
+
+browserName (String)
+
+* Browser or device identifier (often same as device name)
+
+createdAt (Date)
+
+* Creation timestamp
+
+updatedAt (Date)
+
+* Last update timestamp
+
+### Sample data:
+
+```json id="dev92x"
+{
+  "id": "auto_generated_device_id",
+  "name": "iPhone",
+  "type": "General_Mobile",
+  "osName": "iOS",
+  "osVersion": "18.6.2",
+  "browserName": "iPhone",
+  "createdAt": "2026-03-24T10:22:27.556Z",
+  "updatedAt": null
+}
+```
+---
+## cdp_eventmetric
+
+Event metric defines a standardized event in CDP for tracking user behavior, scoring, and mapping to customer journey stages and funnels. 
+
+### 📦 EventMetric Attributes
+
+id (String)
+
+* Primary key (_key in ArangoDB), slugified from `eventName`
+
+eventName (String)
+
+* Unique event identifier (normalized, lowercase, kebab-case)
+
+eventLabel (String)
+
+* Human-readable label for UI display
+
+flowName (String)
+
+* Flow/category name (e.g., general_business_event, marketing_flow)
+
+funnelStageId (String)
+
+* Reference to DataFlowStage ID (e.g., new-visitor, engaged-customer)
+
+journeyMapId (String)
+
+* Journey map identifier (optional, can be empty)
+
+journeyStage (int)
+
+* Customer journey stage (5A model):
+
+  * 1 = Awareness
+  * 2 = Attraction
+  * 3 = Ask
+  * 4 = Action
+  * 5 = Advocacy
+
+dataType (int)
+
+* Data source type:
+
+  * 1 = first-party
+  * 2 = second-party
+  * 3 = third-party
+
+score (int)
+
+* Score value assigned to this event
+
+cumulativePoint (int)
+
+* Accumulated score over time
+
+scoreModel (int)
+
+* Scoring model type (e.g., lead scoring, engagement scoring, CLV scoring)
+
+systemMetric (boolean)
+
+* Flag indicating if this is a system-defined metric
+
+showInObserverJS (boolean)
+
+* Whether event is exposed to frontend tracking (observer JS)
+
+createdAt (Date)
+
+* Creation timestamp
+
+updatedAt (Date)
+
+* Last update timestamp
+
+### Sample data:
+
+```json id="evt92x"
+{
+  "id": "click-to-download",
+  "eventName": "click-to-download",
+  "eventLabel": "Click To Download",
+  "flowName": "general_business_event",
+  "funnelStageId": "new-visitor",
+  "journeyMapId": "",
+  "journeyStage": 2,
+  "dataType": 1,
+  "score": 5,
+  "cumulativePoint": 0,
+  "scoreModel": 1,
+  "systemMetric": false,
+  "showInObserverJS": false,
+  "createdAt": "2026-01-23T08:08:30.995Z",
+  "updatedAt": null
+}
+```
+
