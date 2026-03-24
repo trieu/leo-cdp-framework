@@ -14,12 +14,12 @@
 12. ## cdp_agent: 
 13. ## cdp_dataflowstage :
 14. ## cdp_device :
-15. ## cdp_eventmetric
-16. ## cdp_eventobserver
-17. ## cdp_feedbackdata
-18. ## cdp_filemetadata
-19. ## cdp_financeevent
-20. ## cdp_journeymap
+15. ## cdp_eventmetric :
+16. ## cdp_eventobserver :
+17. ## cdp_feedbackdata :
+18. ## cdp_filemetadata :
+19. ## cdp_financeevent :
+20. ## cdp_journeymap : 
 21. ## cdp_notebook
 22. ## cdp_productitem
 23. ## cdp_profile

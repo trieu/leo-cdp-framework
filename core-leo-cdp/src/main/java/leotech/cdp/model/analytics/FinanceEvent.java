@@ -10,273 +10,258 @@ import com.arangodb.ArangoCollection;
 import com.arangodb.ArangoDatabase;
 import com.arangodb.entity.Key;
 import com.arangodb.model.PersistentIndexOptions;
+import com.google.gson.Gson;
 import com.google.gson.annotations.Expose;
 
 import leotech.cdp.model.SingleViewAnalyticalObject;
-import leotech.system.util.IdGenerator;
 import leotech.system.util.database.PersistentObject;
+import rfx.core.util.StringUtil;
 
 /**
- *  payment data event, the Truth of Universe with money <br>
- *  FinanceEvent is the basic unit for all finance data, it can be a payment event, a subscription event, a cancellation event, or any other type of event that can be tracked. <br>
+ * Payment data event, the Truth of Universe with money. <br>
+ * FinanceEvent is the basic unit for all finance data; it can be a payment event, a subscription event, 
+ * a cancellation event, or any other type of financial event that can be tracked. <br>
  * 
  * ArangoDB collection: cdp_financeevent <br>
  * 
- *  sample data: <br>
- *  https://docs.google.com/spreadsheets/d/1fi1kgzn7l0n8Jyk3LTWygrKdtrZrOkaz/edit?usp=sharing&ouid=108357463841498827395&rtpof=true&sd=true
+ * Sample data: <br>
+ * https://docs.google.com/spreadsheets/d/1fi1kgzn7l0n8Jyk3LTWygrKdtrZrOkaz/edit?usp=sharing&ouid=108357463841498827395&rtpof=true&sd=true
  * 
  * @author Trieu Nguyen
  * @since 2022
- *
  */
 public final class FinanceEvent extends PersistentObject implements SingleViewAnalyticalObject {
 	
 	public static final String COLLECTION_NAME = getCdpCollectionName(FinanceEvent.class);
-	static ArangoCollection dbCollection;
+	
+	// FIX: Volatile for thread-safe lazy initialization
+	private static volatile ArangoCollection dbCollection;
 	
 	@Expose
 	@Key
-	protected String id;
+	private String id;
 	
 	@Expose
-	protected Date createdAt, updatedAt;
+	private Date createdAt;
 	
 	@Expose
-	protected String refProfileId = "";
+	private Date updatedAt;
 	
 	@Expose
-	protected String paymentType = ""; // what type
+	private String refProfileId = "";
 	
 	@Expose
-	protected String observerId = ""; // who see
+	private String paymentType = ""; // what type
 	
 	@Expose
-	protected String refTouchpointHubId = ""; // at where (data hub)
+	private String observerId = ""; // who see
+	
+	@Expose
+	private String refTouchpointHubId = ""; // at where (data hub)
 
 	@Expose
-	protected String srcTouchpointId= ""; // at where (data source ID)
+	private String srcTouchpointId = ""; // at where (data source ID)
 	
 	@Expose
-	protected String srcTouchpointName = ""; // at where (data source name) 
+	private String srcTouchpointName = ""; // at where (data source name) 
 
 	@Expose
-	protected String srcTouchpointUrl = ""; // at where (data source URL)
+	private String srcTouchpointUrl = ""; // at where (data source URL)
 
 	@Expose
-	protected String refTouchpointId= ""; // from where (data source ID)
+	private String refTouchpointId = ""; // from where (data source ID)
 	
 	@Expose
-	protected String refTouchpointName = ""; // from where (data source name) 
+	private String refTouchpointName = ""; // from where (data source name) 
 
 	@Expose
-	protected String refTouchpointUrl = "";  // from where (data source URL)
+	private String refTouchpointUrl = "";  // from where (data source URL)
 	
 	@Expose
-	protected String refApplicationId = ""; // the Application Record ID
+	private String refApplicationId = ""; // the Application Record ID
 	
 	@Expose
-	protected int period = 0;
+	private int period = 0;
 	
 	@Expose
-	protected String periodType = "month";
+	private String periodType = "month";
 	
 	@Expose
-	protected Date dueDate;
+	private Date dueDate;
 	
 	@Expose
-	protected long dueAmountValue = 0;
+	private long dueAmountValue = 0;
 
 	@Expose
-	protected long principalValue = 0;
+	private long principalValue = 0;
 	
 	@Expose
-	protected long interestValue = 0;
+	private long interestValue = 0;
 	
 	@Expose
-	protected boolean paid = false;
+	private boolean paid = false;
 	
 	@Expose
-	protected Map<String, String> extData = new HashMap<>();
+	private Map<String, String> extData = new HashMap<>();
+
+	public FinanceEvent() {
+		// Default constructor for Gson
+	}
+
+	public FinanceEvent(String refProfileId, String paymentType, String refApplicationId) {
+		this.refProfileId = refProfileId;
+		this.paymentType = paymentType;
+		this.refApplicationId = refApplicationId;
+		
+		Date now = new Date();
+		this.createdAt = now;
+		this.updatedAt = now;
+		
+		this.buildHashedId();
+	}
 
 	@Override
 	public ArangoCollection getDbCollection() {
 		if (dbCollection == null) {
-			ArangoDatabase arangoDatabase = getArangoDatabase();
+			// FIX: Double-checked locking to prevent index race conditions
+			synchronized (FinanceEvent.class) {
+				if (dbCollection == null) {
+					ArangoDatabase arangoDatabase = getArangoDatabase();
+					ArangoCollection col = arangoDatabase.collection(COLLECTION_NAME);
+					PersistentIndexOptions pIdxOpts = new PersistentIndexOptions().unique(false);
 
-			dbCollection = arangoDatabase.collection(COLLECTION_NAME);
-			
-			// ensure indexing key fields for fast lookup
-			
-			dbCollection.ensurePersistentIndex(Arrays.asList("refProfileId"), new PersistentIndexOptions().unique(false));
-			dbCollection.ensurePersistentIndex(Arrays.asList("paymentType"), new PersistentIndexOptions().unique(false));
-			dbCollection.ensurePersistentIndex(Arrays.asList("refApplicationId"), new PersistentIndexOptions().unique(false));
-			dbCollection.ensurePersistentIndex(Arrays.asList("refTouchpointHubId"), new PersistentIndexOptions().unique(false));
-			dbCollection.ensurePersistentIndex(Arrays.asList("refTouchpointId"), new PersistentIndexOptions().unique(false));
-			dbCollection.ensurePersistentIndex(Arrays.asList("observerId"), new PersistentIndexOptions().unique(false));
-			dbCollection.ensurePersistentIndex(Arrays.asList("paid"), new PersistentIndexOptions().unique(false));
+					// --------------------------------------------------------------------------------
+					// ARANGODB 3.11 INDEX OPTIMIZATION (RocksDB Engine)
+					// Removed 7 separate, redundant single-field indices. 
+					// Using RocksDB's Left-to-Right prefixing, we grouped them into highly efficient 
+					// composite indices that match how a CDP queries financial data.
+					// --------------------------------------------------------------------------------
+					
+					// Core Profile Lookup: Find all payments for a user, filterable by type and paid status
+					col.ensurePersistentIndex(Arrays.asList("refProfileId", "paymentType", "paid"), pIdxOpts);
+					
+					// Application Billing Tracking: Find transactions related to a specific app/subscription
+					col.ensurePersistentIndex(Arrays.asList("refApplicationId", "paid"), pIdxOpts);
+					
+					// Touchpoint Revenue Analytics: Calculate revenue/payments generated by specific sources
+					col.ensurePersistentIndex(Arrays.asList("refTouchpointHubId", "refTouchpointId", "paymentType"), pIdxOpts);
+					
+					// Accounts Receivable/Due Date Reporting
+					col.ensurePersistentIndex(Arrays.asList("dueDate", "paid"), pIdxOpts);
+
+					dbCollection = col;
+				}
+			}
 		}
-		return null;
+		// FIX: Was previously returning null! Now correctly returns the collection.
+		return dbCollection;
 	}
-	
-	
 
 	@Override
 	public boolean dataValidation() {
-		// TODO Auto-generated method stub
-		return false;
+		// FIX: Implemented actual validation instead of returning false
+		return StringUtil.isNotEmpty(id) 
+				&& StringUtil.isNotEmpty(refProfileId) 
+				&& StringUtil.isNotEmpty(paymentType);
 	}
 
 	@Override
 	public void unifyData() {
-		// TODO Auto-generated method stub
-		
+		// Placeholder for SingleViewAnalyticalObject interface. 
+		// Implement data normalization (e.g., currency conversion, string trimming) here if necessary.
 	}
-
 
 	@Override
 	public String buildHashedId() throws IllegalArgumentException {
-		String keyHint = refApplicationId + refProfileId + paymentType + srcTouchpointUrl + observerId + createdAt;
-		this.id = IdGenerator.createHashedId(keyHint);
-		return null;
+		// FIX: Added validation checks and correctly returning the generated ID instead of null
+		if (StringUtil.isNotEmpty(refProfileId) && StringUtil.isNotEmpty(paymentType) && createdAt != null) {
+			String keyHint = refApplicationId + refProfileId + paymentType + srcTouchpointUrl + observerId + createdAt.getTime();
+			this.id = createId(this.id, keyHint);
+			return this.id;
+		} else {
+			throw new IllegalArgumentException("refProfileId, paymentType, and createdAt are required to build FinanceEvent ID");
+		}
 	}
 
 	@Override
 	public String getDocumentUUID() {
-		// TODO Auto-generated method stub
-		return null;
+		// FIX: Returns standard ArangoDB Document UUID format instead of null
+		return COLLECTION_NAME + "/" + this.id;
 	}
+
+	// ----------------------------------------------------------------------
+	// GETTERS & SETTERS
+	// ----------------------------------------------------------------------
+
+	public String getId() { return id; }
+	public void setId(String id) { this.id = id; }
 
 	@Override
-	public Date getCreatedAt() {
-		return createdAt;
-	}
+	public Date getCreatedAt() { return createdAt; }
+	@Override
+	public void setCreatedAt(Date createdAt) { this.createdAt = createdAt; }
 
 	@Override
-	public void setCreatedAt(Date createdAt) {
-		this.createdAt = createdAt;
-	}
-
+	public Date getUpdatedAt() { return updatedAt; }
 	@Override
-	public Date getUpdatedAt() {
-		return updatedAt;
-	}
+	public void setUpdatedAt(Date updatedAt) { this.updatedAt = updatedAt; }
 
-	@Override
-	public void setUpdatedAt(Date updatedAt) {
-		this.updatedAt = updatedAt;
-	}
+	public String getPaymentType() { return paymentType; }
+	public void setPaymentType(String paymentType) { this.paymentType = paymentType; }
 
-	public String getPaymentType() {
-		return paymentType;
-	}
+	public String getObserverId() { return observerId; }
+	public void setObserverId(String observerId) { this.observerId = observerId; }
 
-	public void setPaymentType(String paymentType) {
-		this.paymentType = paymentType;
-	}
+	public String getRefTouchpointHubId() { return refTouchpointHubId; }
+	public void setRefTouchpointHubId(String refTouchpointHubId) { this.refTouchpointHubId = refTouchpointHubId; }
 
-	public String getObserverId() {
-		return observerId;
-	}
+	public String getSrcTouchpointId() { return srcTouchpointId; }
+	public void setSrcTouchpointId(String srcTouchpointId) { this.srcTouchpointId = srcTouchpointId; }
 
-	public void setObserverId(String observerId) {
-		this.observerId = observerId;
-	}
+	public String getSrcTouchpointName() { return srcTouchpointName; }
+	public void setSrcTouchpointName(String srcTouchpointName) { this.srcTouchpointName = srcTouchpointName; }
 
-	public String getRefTouchpointHubId() {
-		return refTouchpointHubId;
-	}
+	public String getSrcTouchpointUrl() { return srcTouchpointUrl; }
+	public void setSrcTouchpointUrl(String srcTouchpointUrl) { this.srcTouchpointUrl = srcTouchpointUrl; }
 
-	public void setRefTouchpointHubId(String refTouchpointHubId) {
-		this.refTouchpointHubId = refTouchpointHubId;
-	}
+	public String getRefTouchpointId() { return refTouchpointId; }
+	public void setRefTouchpointId(String refTouchpointId) { this.refTouchpointId = refTouchpointId; }
 
-	public String getRefTouchpointId() {
-		return refTouchpointId;
-	}
+	public String getRefTouchpointName() { return refTouchpointName; }
+	public void setRefTouchpointName(String refTouchpointName) { this.refTouchpointName = refTouchpointName; }
 
-	public void setRefTouchpointId(String refTouchpointId) {
-		this.refTouchpointId = refTouchpointId;
-	}
+	public String getRefTouchpointUrl() { return refTouchpointUrl; }
+	public void setRefTouchpointUrl(String refTouchpointUrl) { this.refTouchpointUrl = refTouchpointUrl; }
 
-	public String getRefApplicationId() {
-		return refApplicationId;
-	}
+	public String getRefApplicationId() { return refApplicationId; }
+	public void setRefApplicationId(String refApplicationId) { this.refApplicationId = refApplicationId; }
 
-	public void setRefApplicationId(String refApplicationId) {
-		this.refApplicationId = refApplicationId;
-	}
+	public int getPeriod() { return period; }
+	public void setPeriod(int period) { this.period = period; }
 
-	public int getPeriod() {
-		return period;
-	}
+	public String getPeriodType() { return periodType; }
+	public void setPeriodType(String periodType) { this.periodType = periodType; }
 
-	public void setPeriod(int period) {
-		this.period = period;
-	}
+	public Date getDueDate() { return dueDate; }
+	public void setDueDate(Date dueDate) { this.dueDate = dueDate; }
 
-	public String getPeriodType() {
-		return periodType;
-	}
+	public long getDueAmountValue() { return dueAmountValue; }
+	public void setDueAmountValue(long dueAmountValue) { this.dueAmountValue = dueAmountValue; }
 
-	public void setPeriodType(String periodType) {
-		this.periodType = periodType;
-	}
+	public long getPrincipalValue() { return principalValue; }
+	public void setPrincipalValue(long principalValue) { this.principalValue = principalValue; }
 
-	public Date getDueDate() {
-		return dueDate;
-	}
+	public long getInterestValue() { return interestValue; }
+	public void setInterestValue(long interestValue) { this.interestValue = interestValue; }
 
-	public void setDueDate(Date dueDate) {
-		this.dueDate = dueDate;
-	}
+	public boolean isPaid() { return paid; }
+	public void setPaid(boolean paid) { this.paid = paid; }
 
-	public long getDueAmountValue() {
-		return dueAmountValue;
-	}
+	public Map<String, String> getExtData() { return extData; }
+	public void setExtData(Map<String, String> extData) { this.extData = extData; }
 
-	public void setDueAmountValue(long dueAmountValue) {
-		this.dueAmountValue = dueAmountValue;
-	}
-
-	public long getPrincipalValue() {
-		return principalValue;
-	}
-
-	public void setPrincipalValue(long principalValue) {
-		this.principalValue = principalValue;
-	}
-
-	public long getInterestValue() {
-		return interestValue;
-	}
-
-	public void setInterestValue(long interestValue) {
-		this.interestValue = interestValue;
-	}
-
-	public boolean isPaid() {
-		return paid;
-	}
-
-	public void setPaid(boolean paid) {
-		this.paid = paid;
-	}
-
-	public Map<String, String> getExtData() {
-		return extData;
-	}
-
-	public void setExtData(Map<String, String> extData) {
-		this.extData = extData;
-	}
-
-	public String getRefProfileId() {
-		return refProfileId;
-	}
-
-	public void setRefProfileId(String refProfileId) {
-		this.refProfileId = refProfileId;
-	}
+	public String getRefProfileId() { return refProfileId; }
+	public void setRefProfileId(String refProfileId) { this.refProfileId = refProfileId; }
 	
 	@Override
 	public long getMinutesSinceLastUpdate() {
@@ -285,20 +270,19 @@ public final class FinanceEvent extends PersistentObject implements SingleViewAn
 	
 	@Override
 	public int hashCode() {
-		if(this.id != null) {
-			return this.id.hashCode();
-		}
-		return 0;
+		return (this.id != null) ? this.id.hashCode() : 0;
 	}
 	
 	@Override
 	public boolean equals(Object o) {
-		if (this == o)
-			return true;
-		if (o == null || getClass() != o.getClass())
-			return false;
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
 		FinanceEvent that = (FinanceEvent) o;
 		return Objects.equals(id, that.id);
 	}
 
+	@Override
+	public String toString() {
+		return new Gson().toJson(this);
+	}
 }

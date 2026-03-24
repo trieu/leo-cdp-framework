@@ -28,6 +28,8 @@ import rfx.core.util.StringUtil;
  * The journey map is a data entity that contains profile, touchpoints, products, contents and services
  * In free version 1.x, we give them only 1 journey map in database
  * 
+ * ArangoDB collection: cdp_journeymap
+ * 
  * @author tantrieuf31 
  * @since 2020
  */

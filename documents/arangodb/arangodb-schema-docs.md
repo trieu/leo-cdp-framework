@@ -1643,6 +1643,10 @@ updatedAt (Date)
 
 Event metric defines a standardized event in CDP for tracking user behavior, scoring, and mapping to customer journey stages and funnels. 
 
+### Java code path 
+
+core-leo-cdp/src/main/java/leotech/cdp/model/journey/EventMetric.java
+
 ### 📦 EventMetric Attributes
 
 id (String)
@@ -1737,3 +1741,808 @@ updatedAt (Date)
 }
 ```
 
+---
+
+## touchpoint_type (enum / constant mapping)
+
+TouchpointType defines standardized interaction channels across omni-channel CDP (digital, physical, messaging, ads, B2B, AI, etc.), used to classify EventObserver, TouchpointHub, and journey tracking.
+
+### Java code path 
+
+core-leo-cdp/src/main/java/leotech/cdp/model/journey/TouchpointType.java
+
+### 📦 TouchpointType Attributes
+
+type (int)
+
+* Integer identifier stored in DB (used in EventObserver, TouchpointHub, etc.)
+
+name (String)
+
+* Constant name mapped from integer (via reflection)
+
+category (String)
+
+* Logical grouping of touchpoints
+
+---
+
+### 🔑 Core Touchpoint Types
+
+CDP_API (0)
+
+* Internal CDP ingestion API
+
+---
+
+### 🌐 Digital & Owned Media
+
+SEARCH_ENGINE (1)
+WEB_APP (2)
+WEBSITE (3)
+MOBILE_APP (4)
+AR_VR_APP (5)
+IOT_APP (6)
+CHATBOT (7)
+VIDEO_CHANNEL (8)
+SOCIAL_MEDIA (9)
+WEB_PORTAL (10)
+KNOWLEDGE_HUB (11)
+DIGITAL_DOCUMENT (33)
+COMMUNITY_FORUM (60)
+LOYALTY_PORTAL (61)
+
+---
+
+### 🏬 Physical & Real-world
+
+RETAIL_STORE (12)
+SHOPPING_TV (13)
+SHOPPING_MALL (14)
+COFFEE_SHOP (15)
+CONFERENCE_HALL (16)
+URBAN_PARK (17)
+OFFICE_BUILDING (18)
+EXPERIENCE_SPACE (19)
+PR_EVENT_SPACE (20)
+BILLBOARD_OUTDOOR (21)
+BILLBOARD_INDOOR (22)
+COMMUTER_STORE (23)
+SPORTING_EVENT (24)
+COMMUNITY_SPACE (25)
+SCHOOL_SPACE (26)
+TRANSIT_STATION (55)
+
+---
+
+### 📩 Messaging & Communication
+
+EMAIL_CAMPAIGN (35)
+SMS_MESSAGE (36)
+PUSH_NOTIFICATION (37)
+OTT_MESSAGING_APP (38)
+VOICE_CALL_TELEMARKETING (39)
+
+---
+
+### 📢 Advertising & Paid Media
+
+DISPLAY_AD (40)
+SEARCH_AD (41)
+SOCIAL_AD (42)
+CTV_OTT_AD (43)
+AUDIO_PODCAST_AD (44)
+
+---
+
+### 🛒 Commerce & Finance
+
+ONLINE_MARKETPLACE (45)
+AFFILIATE_NETWORK (46)
+POS_TERMINAL (47)
+SELF_SERVICE_KIOSK (48)
+PAYMENT_GATEWAY (49)
+ATM_MACHINE (56)
+
+---
+
+### 🏢 B2B & Enterprise
+
+WEBINAR (50)
+DIRECT_MAIL (51)
+PARTNER_PORTAL (52)
+
+---
+
+### ❤️ Healthcare & Devices
+
+WEARABLE_DEVICE (57)
+TELEHEALTH_APP (58)
+IN_VEHICLE_SYSTEM (59)
+
+---
+
+### 🤖 AI & Next-gen
+
+VOICE_ASSISTANT (62)
+GEN_AI_INTERFACE (63)
+METAVERSE_SPACE (64)
+
+---
+
+### 👥 Customer Experience
+
+KEY_INFLUENCER (27)
+CUSTOMER_SERVICE (28)
+FEEDBACK_SURVEY (29)
+
+---
+
+### ⚙️ System & Data Sources
+
+DATA_OBSERVER (30)
+REDIS_DATA_SOURCE (31)
+KAFKA_DATA_SOURCE (32)
+CRM_DATABASE (34)
+
+### Sample data:
+
+```json id="tp92x"
+{
+  "type": 33,
+  "name": "DIGITAL_DOCUMENT",
+  "category": "Digital & Owned Media"
+}
+```
+
+
+---
+## cdp_eventobserver
+
+Event Observer is the data collection endpoint for tracking user behavior from touchpoints (website, mobile app, QR, digital document, etc.) into CDP for analytics and activation. 
+
+### Java Code Path
+
+core-leo-cdp/src/main/java/leotech/cdp/model/journey/EventObserver.java
+
+### 📦 EventObserver Attributes
+
+id (String)
+
+* Primary key (_key in ArangoDB), generated from name + type + touchpointHubId
+
+name (String)
+
+* Name of the observer (e.g., LEO LIVE BOOK)
+
+slug (String)
+
+* URL-friendly identifier generated from name
+
+type (int)
+
+* Current touchpoint type in version 1.0 (enum from TouchpointType):
+
+  * 0 = CDP_API
+  * 1 = SEARCH_ENGINE
+  * 2 = WEB_APP
+  * 3 = WEBSITE
+  * 4 = MOBILE_APP
+  * 5 = AR_VR_APP
+  * 6 = IOT_APP
+  * 7 = CHATBOT
+  * 8 = VIDEO_CHANNEL
+  * 9 = SOCIAL_MEDIA
+  * 10 = WEB_PORTAL
+  * 11 = KNOWLEDGE_HUB
+  * 12–26 = Physical locations (store, mall, event, etc.)
+  * 27 = KEY_INFLUENCER
+  * 28 = CUSTOMER_SERVICE
+  * 29 = FEEDBACK_SURVEY
+  * 30 = DATA_OBSERVER
+  * 31 = REDIS_DATA_SOURCE
+  * 32 = KAFKA_DATA_SOURCE
+  * 33 = DIGITAL_DOCUMENT
+  * 34 = CRM_DATABASE
+
+status (int)
+
+* Observer status: 1 = active, 0 = inactive
+
+collectDirectly (boolean)
+
+* Whether data is collected directly from client-side (JS, SDK)
+
+firstPartyData (boolean)
+
+* Indicates if data source is first-party
+
+dataSourceUrl (String)
+
+* Source URL of the data (landing page, app, document)
+
+dataSourceHosts (Set<String>)
+
+* Allowed host domains for tracking
+
+thumbnailUrl (String)
+
+* Thumbnail image for UI display
+
+qrCodeData (Object)
+
+* QR code metadata:
+
+  * trackingUrl (String)
+  * shortUrl (String)
+  * landingPageUrl (String)
+  * qrCodeImage (String)
+
+accessTokens (Map<String,String>)
+
+* Access tokens for secure data ingestion (key-value pairs)
+
+securityCode (String)
+
+* Security token for validating incoming events
+
+touchpointHubId (String)
+
+* Reference to parent touchpoint hub
+
+journeyMapId (String)
+
+* Associated journey map ID
+
+journeyLevel (int)
+
+* Level in customer journey hierarchy
+
+estimatedTotalEvent (long)
+
+* Estimated number of collected events
+
+javascriptTags (List<String>)
+
+* JS tracking tags injected into client
+
+webApiHooks (List<String>)
+
+* API endpoints for server-side tracking
+
+mobileAppId (String)
+
+* Mobile app identifier (if applicable)
+
+deviceId (String)
+
+* Associated device ID
+
+securityAccessIp (String)
+
+* Allowed IP for secure ingestion
+
+observerUri (String)
+
+* Internal observer endpoint URI
+
+createdAt (Date)
+
+* Creation timestamp
+
+updatedAt (Date)
+
+* Last update timestamp
+
+### Sample data:
+
+```json
+{
+  "id": "auto_generated_id",
+  "name": "LEO LIVE BOOK",
+  "slug": "leo-live-book",
+  "type": 33,
+  "status": 1,
+  "collectDirectly": true,
+  "firstPartyData": true,
+  "dataSourceUrl": "https://leocdp.com/docs/index.html",
+  "dataSourceHosts": [],
+  "thumbnailUrl": "",
+  "qrCodeData": {
+    "trackingUrl": "https://datahub4uspa.leocdp.net/qrct/5evGdFREK1Q4Mq9uewhpRv",
+    "shortUrl": "https://datahub4uspa.leocdp.net/ct/5evGdFREK1Q4Mq9uewhpRv",
+    "landingPageUrl": "https://leocdp.com/docs/index.html",
+    "qrCodeImage": "./public/qrcode/leo-live-book-4U63ZeCEgbIYyRZ0d5UJAu.png"
+  },
+  "accessTokens": {
+    "1hgb91dmV1BhyoW9YMEKnb": "1148041_5NciIhnNztV82ClLaXNdeA"
+  },
+  "securityCode": "1131949_13oDADiOdDKhLngl6Op0s",
+  "touchpointHubId": "OAQ61HuMFnENPBQ3WVJci",
+  "journeyMapId": "id_default_journey",
+  "journeyLevel": 3,
+  "estimatedTotalEvent": 0,
+  "javascriptTags": [],
+  "createdAt": "2026-02-11T09:31:53.498Z",
+  "updatedAt": null
+}
+```
+
+---
+
+## cdp_feedbackdata
+
+Feedback data object transformed from tracking events, representing surveys, ratings, reviews, and customer experience signals across touchpoints in the CDP system.
+
+### Java Code Path
+
+`leotech.cdp.model.analytics.FeedbackData` 
+
+---
+
+### 📦 FeedbackData Attributes
+
+id (String)
+
+* Primary key (_key in ArangoDB), unique feedback identifier
+
+feedbackDataType (String)
+
+* Type of feedback data from ETL (e.g., survey, review, rating source classification)
+
+refTemplateId (String)
+
+* Reference to survey/template definition
+
+refProductItemId (String)
+
+* Associated product item ID
+
+refContentItemId (String)
+
+* Associated content item ID
+
+refTouchpointHubId (String)
+
+* Touchpoint hub identifier (high-level channel grouping)
+
+refTouchpointId (String)
+
+* Specific touchpoint identifier (form, page, event source)
+
+refCampaignId (String)
+
+* Marketing campaign reference
+
+refDataFlowStageId (String)
+
+* Data pipeline stage identifier
+
+feedbackType (String)
+
+* Logical classification (e.g., SURVEY, REVIEW, NPS, CES)
+
+scoreCX (ScoreCX)
+
+* Customer experience scoring object (sentiment, positive/negative/neutral metrics)
+
+header (String)
+
+* Survey or feedback title/header
+
+group (String)
+
+* Taxonomy or category (e.g., brand, topic, domain)
+
+evaluatedObject (String)
+
+* Abstract evaluated entity (product, service, course, etc.)
+
+evaluatedItem (String)
+
+* Specific evaluated item (URL, video, location, touchpoint)
+
+evaluatedPerson (String)
+
+* Evaluated person (e.g., staff, agent, instructor)
+
+surveyChoicesId (String)
+
+* Deterministic hash ID for survey choices set
+
+surveyChoices (List<SurveyChoice>)
+
+* List of survey options with associated scoring weights
+
+timePeriod (String)
+
+* Aggregation key (e.g., YYYYMMDD for analytics partitioning)
+
+createdAt (Date)
+
+* Creation timestamp (also used as updatedAt internally)
+
+---
+
+### Sample JSON data
+
+```json
+{
+  "comment": "",
+  "createdAt": "2024-06-30T04:38:27.543Z",
+  "dateKey": "2024-06-30",
+  "decisionMakers": [],
+  "deviceId": "YKZ2rE4uyy7Rzj0wf37wX",
+  "evaluatedItem": "",
+  "evaluatedObject": "",
+  "evaluatedPerson": "",
+  "eventName": "submit-feedback-form",
+  "extraTextQuestionsAnswer": {},
+  "feedbackDataType": "",
+  "feedbackScore": 0,
+  "feedbackType": "SURVEY",
+  "geoLatitude": -1,
+  "geoLongitude": -1,
+  "group": "",
+  "header": "DECODING EQ - THRIVING IN A DYNAMIC WORLD",
+  "language": "en",
+  "mediaSources": [],
+  "multipleChoiceQuestionAnswer": {},
+  "onSharedDevices": false,
+  "originalSources": [],
+  "profileAge": -1,
+  "profileAgeGroup": -1,
+  "profileDateOfBirth": "",
+  "profileEmail": "test@gmail.com",
+  "profileExtAttributes": {
+    "workingHistory": " My company ",
+    "firstName": "Marry",
+    "primaryPhone": "84-9031111",
+    "jobTitles": "Bussiness development Director",
+    "primaryEmail":  "test@gmail.com",
+  },
+  "profileExtId": {},
+  "profileFirstName": "Marry",
+  "profileGender": -1,
+  "profileLastName": "",
+  "profileLivingLocation": "",
+  "profileNationality": "",
+  "profilePhone": "0908797937",
+  "ratingQuestionAnswer": {},
+  "refCampaignId": "",
+  "refContentItemId": "",
+  "refDataFlowStageId": "",
+  "refProductItemId": "",
+  "refProfileId": "58fDYzHjsiBrQZMIwilHjW",
+  "refTemplateId": "7RV0frnHxzYjavCTlORVMw",
+  "refTouchpointHubId": "39FVRm9JXxzwLqWhWF3wlw",
+  "refTouchpointId": "",
+  "refVisitorId": "1aeedf578c874d3fa35297d3c19f872c",
+  "scoreCX": {
+    "happy": false,
+    "negative": 0,
+    "negativePercentage": 0,
+    "neutral": 100,
+    "neutralPercentage": 100,
+    "positive": 0,
+    "positivePercentage": 0,
+    "sentimentScore": 71,
+    "sentimentType": 0
+  },
+  "singleChoiceQuestionAnswer": {},
+  "status": 1,
+  "timePeriod": "20240709",
+  "touchpointId": "2Zy2DISv80hEVieo4S0voO",
+  "touchpointName": "DECODING EQ - THRIVING IN A DYNAMIC WORLD",
+  "touchpointUrl": "https://datahub4uspa.leocdp.net/webform"
+}
+```
+
+---
+
+## cdp_filemetadata
+
+File metadata storage for uploaded assets in CDP, supporting file management, ownership, access control, and polymorphic relationships to other domain objects.
+
+### Java Code Path
+
+`leotech.cdp.model.asset.FileMetadata` 
+
+---
+
+### 📦 FileMetadata Attributes
+
+id (String)
+
+* Primary key (_key in ArangoDB), generated from file path (hashed ID)
+
+path (String)
+
+* Physical or logical file path (unique)
+
+name (String)
+
+* File name
+
+uploadedTime (long)
+
+* Upload timestamp (epoch milliseconds)
+
+createdAt (Date)
+
+* Creation timestamp
+
+revision (int)
+
+* File version number (default = 1)
+
+refObjectClass (String)
+
+* Polymorphic reference to object class (e.g., Campaign, Profile, Content)
+
+refObjectKey (String)
+
+* Polymorphic reference to object key (ID of the related object)
+
+downloadable (boolean)
+
+* Flag indicating if file can be downloaded
+
+ownerLogin (String)
+
+* Owner identifier (userId or botId)
+
+privacyStatus (int)
+
+* Access control: 0=public, 1=protected, -1=private
+
+viewerIds (List<Long>)
+
+* List of user IDs allowed to view the file
+
+networkId (long)
+
+* Tenant / network identifier (multi-tenant support)
+
+---
+
+### Sample JSON data
+
+```json
+{
+  "id": "f9a8c3b2d1e4",
+  "path": "/uploads/campaigns/banner_2026.png",
+  "name": "banner_2026.png",
+  "uploadedTime": 1709280000000,
+  "createdAt": "2025-03-01T10:00:00.000Z",
+  "revision": 1,
+  "refObjectClass": "Campaign",
+  "refObjectKey": "cmp_123456",
+  "downloadable": true,
+  "ownerLogin": "admin_user",
+  "privacyStatus": 0,
+  "viewerIds": [1001, 1002, 1003],
+  "networkId": 1
+}
+```
+
+---
+
+## cdp_financeevent
+
+Finance event storage for all monetary-related interactions (payments, subscriptions, billing cycles, debts). Acts as the **source of truth for revenue, cashflow, and financial lifecycle per customer/profile**. 
+
+### Java Code Path
+
+`leotech.cdp.model.analytics.FinanceEvent` 
+
+### 📦 FinanceEvent Attributes
+
+id (String)
+
+* Primary key (_key in ArangoDB), generated via hash from profile, payment type, timestamp, and context data
+
+createdAt (Date)
+
+* Event creation timestamp (when the financial event is recorded)
+
+updatedAt (Date)
+
+* Last update timestamp (used for sync, refresh, and incremental pipelines)
+
+refProfileId (String)
+
+* Reference to customer/profile ID (core identity in CDP)
+
+paymentType (String)
+
+* Type of financial event (e.g., payment, subscription, refund, installment, cancellation)
+
+observerId (String)
+
+* System/user/service that recorded or observed the event (tracking audit source)
+
+refTouchpointHubId (String)
+
+* High-level data hub where the event occurred (e.g., CRM, POS, Web platform)
+
+srcTouchpointId (String)
+
+* Source system ID where the event originated (e.g., Facebook, Shopify, App backend)
+
+srcTouchpointName (String)
+
+* Human-readable name of the source system
+
+srcTouchpointUrl (String)
+
+* URL of the source system (for traceability/debugging)
+
+refTouchpointId (String)
+
+* Reference touchpoint ID (normalized system-level identifier)
+
+refTouchpointName (String)
+
+* Normalized touchpoint name
+
+refTouchpointUrl (String)
+
+* Normalized touchpoint URL
+
+refApplicationId (String)
+
+* Application or product/service ID related to this financial event (e.g., subscription plan, loan, SaaS app)
+
+period (int)
+
+* Billing or payment cycle index (e.g., month number, installment sequence)
+
+periodType (String)
+
+* Type of period (default: "month", can be day/week/year depending on business logic)
+
+dueDate (Date)
+
+* Deadline for payment (used for receivables tracking)
+
+dueAmountValue (long)
+
+* Total amount due (monetary value, typically stored in smallest unit like cents)
+
+principalValue (long)
+
+* Principal amount (excluding interest/fees)
+
+interestValue (long)
+
+* Interest or additional charges applied to the principal
+
+paid (boolean)
+
+* Payment status: true = paid, false = unpaid (critical for receivable analytics)
+
+extData (Map<String, String>)
+
+* Flexible metadata for custom attributes (e.g., currency, transaction_id, payment_method, notes)
+
+### Sample JSON data
+
+```json
+{
+  "id": "fin_8f3a92c1",
+  "createdAt": "2025-03-01T10:15:30.000Z",
+  "updatedAt": "2025-03-01T10:15:30.000Z",
+  "refProfileId": "profile_12345",
+  "paymentType": "subscription_payment",
+  "observerId": "system_billing_service",
+  "refTouchpointHubId": "hub_crm",
+  "srcTouchpointId": "stripe",
+  "srcTouchpointName": "Stripe Payment Gateway",
+  "srcTouchpointUrl": "https://dashboard.stripe.com",
+  "refTouchpointId": "payment_gateway",
+  "refTouchpointName": "Payment Gateway",
+  "refTouchpointUrl": "https://payment.company.com",
+  "refApplicationId": "app_saas_001",
+  "period": 3,
+  "periodType": "month",
+  "dueDate": "2025-03-05T00:00:00.000Z",
+  "dueAmountValue": 100000,
+  "principalValue": 90000,
+  "interestValue": 10000,
+  "paid": true,
+  "extData": {
+    "currency": "VND",
+    "transaction_id": "txn_abc123",
+    "payment_method": "credit_card"
+  }
+}
+```
+---
+## cdp_journeymap
+
+Journey Map defines the **end-to-end customer journey model**, connecting touchpoints, stages, and transitions into a structured graph used for analytics, attribution, and personalization in CDP. Only **persisted fields are stored in ArangoDB**, while visualization/runtime fields are computed dynamically. 
+
+### Java Code Path
+
+`leotech.cdp.model.journey.JourneyMap` 
+
+### 📦 JourneyMap Attributes
+
+#### ✅ Persisted in ArangoDB
+
+id (String)
+
+* Primary key (_key in ArangoDB), generated from journey map name (or fixed default ID)
+
+name (String)
+
+* Name of the journey map (business-defined journey context)
+
+status (int)
+
+* Lifecycle status (1=active, 0=inactive, -1=deleted depending on system convention)
+
+createdAt (Date)
+
+* Creation timestamp
+
+updatedAt (Date)
+
+* Last updated timestamp (used for sync, cache invalidation)
+
+defaultMetricName (String)
+
+* Default metric for analytics (e.g., "page-view", "conversion")
+
+authorizedViewers (Set<String>)
+
+* List of user IDs allowed to view the journey map
+
+authorizedEditors (Set<String>)
+
+* List of user IDs allowed to edit/update the journey map
+
+#### ❌ NOT persisted (runtime / computed only)
+
+journeyStages (List<String>)
+
+* Ordered stage names derived from touchpoint hubs (used for UI rendering only)
+
+journeyNodes (List<JourneyNode>)
+
+* Visualization nodes (graph structure for frontend rendering)
+
+journeyLinks (List<JourneyNodeLink>)
+
+* Connections between nodes representing journey transitions and metrics
+
+touchpointHubMap (Map<String, TouchpointHub>)
+
+* In-memory mapping of stage → touchpoint hub (core logic layer, not stored directly)
+
+touchpointHubIndex (Map<String, Integer>)
+
+* Index mapping for fast lookup and graph computation
+
+sortedTouchpointHubs (List<TouchpointHub>)
+
+* Ordered touchpoint hubs by journey level (used to construct journey flow dynamically)
+
+### Sample JSON data
+
+```json id="journeymap_real"
+{
+  "authorizedEditors": [
+    "test"
+  ],
+  "authorizedViewers": [
+    "test"
+  ],
+  "createdAt": "2025-08-12T08:53:40.181Z",
+  "defaultMetricName": "page-view",
+  "name": "My journey map",
+  "status": 1,
+  "updatedAt": "2025-10-10T04:15:58.892Z"
+}
+```
