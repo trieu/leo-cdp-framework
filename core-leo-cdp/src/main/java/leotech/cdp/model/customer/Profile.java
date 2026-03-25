@@ -1705,8 +1705,7 @@ public class Profile extends AbstractProfile implements Comparable<Profile> {
 			setJobType(jobType.intValue());
 		}
 	}
-	
-	
+
 
 	public Map<String, Double> getIncomeHistory() {
 		return incomeHistory;
@@ -1880,9 +1879,12 @@ public class Profile extends AbstractProfile implements Comparable<Profile> {
 	
 	@Override
 	public String toString() {
-		return "id:"+this.id + " firstName:" + this.firstName + " lastName:" + this.lastName + " primaryEmail:" + this.primaryEmail + " primaryPhone:" + this.primaryPhone;
+		return String.format(
+			"id:%s firstName:%s lastName:%s primaryEmail:%s primaryPhone:%s",
+			id, firstName, lastName, primaryEmail, primaryPhone
+		);
 	}
-	
+		
 	public ProfileIdentity toProfileIdentity() {
 		return new ProfileIdentity(this);
 	}

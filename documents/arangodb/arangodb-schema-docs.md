@@ -2546,3 +2546,1016 @@ sortedTouchpointHubs (List<TouchpointHub>)
   "updatedAt": "2025-10-10T04:15:58.892Z"
 }
 ```
+
+---
+
+## cdp_notebook
+
+Notebook metadata storage for **Data Science, Analytics, and Machine Learning workflows** inside CDP. Acts as a **job definition + orchestration layer** for running Jupyter/Python pipelines, tracking execution status, and managing ML outputs. 
+
+### Java Code Path
+
+`leotech.cdp.model.analytics.Notebook` 
+
+### 📦 Notebook Attributes
+
+id (String)
+
+* Primary key (_key in ArangoDB), generated from `type + name` (hashed ID)
+
+type (String)
+
+* Notebook category/type (e.g., "ml-model", "etl", "analytics", "recommendation")
+
+status (int)
+
+* Lifecycle status:
+
+  * 1 = active (ready to run)
+  * 0 = draft (not ready)
+  * -1 = archived (disabled)
+
+name (String)
+
+* Notebook name (must be >10 characters, used for slug + file naming)
+
+description (String)
+
+* Human-readable description of notebook purpose
+
+tags (List<String>)
+
+* Labels for classification/filtering (e.g., "churn", "clv", "segmentation")
+
+authorizedViewers (Set<String>)
+
+* Users allowed to view this notebook and its outputs
+
+authorizedEditors (Set<String>)
+
+* Users allowed to modify notebook configuration and execution
+
+notebookFileUri (String)
+
+* Path/URI to the source Jupyter notebook (.ipynb)
+
+notebookOutputFileUri (String)
+
+* Path/URI to executed notebook output (.ipynb with results)
+
+htmlFileUri (String)
+
+* Path/URI to rendered HTML output (for reporting/dashboard view)
+
+pythonFileUri (String)
+
+* Path/URI to extracted Python script version (used for execution engine)
+
+dataSources (List<String>)
+
+* List of data sources used by the notebook (e.g., tables, APIs, streams)
+
+parameters (Map<String, Object>)
+
+* Dynamic parameters injected into notebook at runtime (for ML tuning, filtering, etc.)
+
+createdAt (Date)
+
+* Creation timestamp
+
+updatedAt (Date)
+
+* Last update timestamp
+
+autoRunAfterMinute (int)
+
+* Scheduling interval (in minutes):
+
+  * 0 = manual execution
+  * > 0 = auto-run periodically (cron-like behavior)
+
+lastRunAt (Date)
+
+* Timestamp of last execution
+
+lastRunStatus (int)
+
+* Execution status:
+
+  * 0 = pending
+  * 1 = success
+  * -1 = failed
+  * 2 = running
+
+lastErrorMessage (String)
+
+* Error message / stack trace if last execution failed
+
+accessToken (String)
+
+* Security token for accessing notebook execution or resources (API/auth integration)
+
+### Sample JSON data
+
+```json id="notebook_sample"
+{
+  "id": "nb_ml_churn_001",
+  "type": "ml-model",
+  "status": 1,
+  "name": "Customer Churn Prediction Model",
+  "description": "Predict churn probability using historical behavioral data",
+  "tags": ["churn", "ml", "retention"],
+  "authorizedViewers": ["admin", "data_scientist"],
+  "authorizedEditors": ["admin"],
+  "notebookFileUri": "customer-churn-prediction-model.ipynb",
+  "notebookOutputFileUri": "customer-churn-prediction-model-output.ipynb",
+  "htmlFileUri": "customer-churn-prediction-model-output.html",
+  "pythonFileUri": "customer-churn-prediction-model.py",
+  "dataSources": ["segment:1234aabb", "profile:aba13"],
+  "parameters": {
+    "train_ratio": 0.8,
+    "model_type": "xgboost"
+  },
+  "createdAt": "2025-03-01T08:00:00.000Z",
+  "updatedAt": "2025-03-01T08:00:00.000Z",
+  "autoRunAfterMinute": 60,
+  "lastRunAt": "2025-03-01T09:00:00.000Z",
+  "lastRunStatus": 1,
+  "lastErrorMessage": "",
+  "accessToken": "secure_token_123"
+}
+```
+
+---
+
+## cdp_productitem
+
+Product catalog entity used for **product data management, recommendation systems, campaign targeting, and e-commerce integrations**. Acts as the **core SKU-level object** in CDP for personalization, analytics, and merchandising. 
+
+### Java Code Path
+
+`leotech.cdp.model.asset.ProductItem` 
+
+### 📦 ProductItem Attributes
+
+#### ✅ Persisted in ArangoDB
+
+id (String)
+
+* Primary key (_key in ArangoDB), generated from productId/productCode + category + URL
+
+productId (String)
+
+* External product identifier (SKU, item ID from source system)
+
+productCode (String)
+
+* Internal product code (used for ERP / inventory mapping)
+
+categoryName (String)
+
+* Human-readable category name
+
+categoryId (String)
+
+* Category identifier for taxonomy mapping
+
+productIdType (String)
+
+* Type of product ID (default: "item_ID", can support SKU, GTIN, etc.)
+
+productType (String)
+
+* Product classification (default: "general_product", can be extended for domain-specific types)
+
+inCampaigns (Set<String>)
+
+* List of campaign IDs where this product is used (marketing activation context)
+
+inJourneyMaps (Set<String>)
+
+* List of journey map IDs where this product appears (customer journey context)
+
+originalPrice (double)
+
+* Original/base price of product
+
+salePrice (double)
+
+* Discounted or current selling price
+
+quantity (int)
+
+* Available inventory quantity
+
+priceCurrency (String)
+
+* Currency code (default: USD, but supports multi-currency systems)
+
+siteName (String)
+
+* Name of the website/platform selling the product
+
+siteDomain (String)
+
+* Domain of the product source (auto-extracted from URL)
+
+itemCondition (String)
+
+* Product condition (e.g., new, used, refurbished)
+
+availability (String)
+
+* Availability status (e.g., in_stock, out_of_stock, preorder)
+
+brand (String)
+
+* Brand/manufacturer of the product
+
+sellerName (String)
+
+* Seller or merchant name
+
+storeIds (Set<String>)
+
+* Store identifiers where product is available
+
+salesAgentIds (Set<String>)
+
+* Internal sales agents responsible for this product
+
+warehouseIds (Set<String>)
+
+* Warehouse locations storing this product
+
+touchpointIds (Set<String>)
+
+* Related touchpoints (channels where product is promoted or interacted with)
+
+promoCodes (Map<String, Voucher>)
+
+* Map of voucherId → Voucher object (discount/promotion configuration)
+
+#### ⚠️ Inherited (from MeasurableItem / Content system – persisted but not defined here)
+
+slug (String)
+
+* SEO-friendly unique identifier (generated from title + id)
+
+title (String)
+
+* Product name/title
+
+description (String)
+
+* Product description/content
+
+fullUrl (String)
+
+* Product page URL
+
+headlineImageUrl (String)
+
+* Main product image
+
+headlineVideoUrl (String)
+
+* Product video
+
+groupIds (Set<String>)
+
+* Group/category segmentation IDs
+
+keywords (Set<String>)
+
+* Search keywords/tags
+
+topicIds, categoryIds, targetGeoLocations, targetSegmentIds (Set<String>)
+
+* Targeting and classification metadata
+
+createdAt (Date)
+
+* Creation timestamp
+
+updatedAt (Date)
+
+* Last update timestamp
+
+### Sample JSON data
+
+```json id="product_item_sample"
+{
+  "id": "prod_abc123",
+  "productId": "SKU-001",
+  "productCode": "P-001",
+  "categoryName": "Electronics",
+  "categoryId": "cat_electronics",
+  "productIdType": "SKU",
+  "productType": "general_product",
+  "inCampaigns": ["camp_01"],
+  "inJourneyMaps": ["journey_01"],
+  "originalPrice": 15000000,
+  "salePrice": 12990000,
+  "quantity": 50,
+  "priceCurrency": "VND",
+  "siteName": "My E-commerce",
+  "siteDomain": "shop.example.com",
+  "itemCondition": "new",
+  "availability": "in_stock",
+  "brand": "Apple",
+  "sellerName": "Official Store",
+  "storeIds": ["store_01"],
+  "salesAgentIds": ["agent_01"],
+  "warehouseIds": ["wh_01"],
+  "touchpointIds": ["web", "facebook_ads"],
+  "promoCodes": {
+    "voucher_01": {
+      "code": "SALE10",
+      "discount": 10
+    }
+  },
+  "title": "iPhone 15 Pro Max",
+  "description": "Latest Apple flagship smartphone",
+  "fullUrl": "https://shop.example.com/iphone-15-pro-max",
+  "headlineImageUrl": "https://cdn.example.com/img1.jpg",
+  "headlineVideoUrl": "",
+  "groupIds": ["group_electronics"],
+  "keywords": ["iphone", "apple", "smartphone"],
+  "createdAt": "2025-03-01T08:00:00.000Z",
+  "updatedAt": "2025-03-01T08:00:00.000Z",
+  "slug": "iphone-15-pro-max-prod_abc123"
+}
+```
+
+---
+
+## cdp_profile
+
+Customer Profile is the **central identity entity in CDP**, representing a human (visitor, lead, customer, user). It aggregates **identity resolution, personal data, behavioral signals, and business attributes** for personalization, segmentation, and activation. 
+
+### Java Code Path
+
+`leotech.cdp.model.customer.Profile` 
+
+### 📦 Profile Attributes
+
+#### ✅ Persisted in ArangoDB
+
+##### 🔑 Identity & Device
+
+id (String)
+
+* Primary key (_key in ArangoDB), generated from identity set
+
+visitorId (String)
+
+* Unique web visitor ID (primary tracking identity)
+
+visitorIds (Set<String>)
+
+* All historical visitor IDs (merged identities across sessions/devices)
+
+fingerprintId (String)
+
+* Browser/device fingerprint ID
+
+applicationIDs (Set<String>)
+
+* IDs from applications (mobile apps, SaaS systems)
+
+loyaltyIDs (Set<String>)
+
+* Loyalty program identifiers
+
+fintechSystemIDs (Set<String>)
+
+* IDs from banking/fintech integrations
+
+governmentIssuedIDs (Set<String>)
+
+* Official IDs (citizen ID, passport, etc.)
+
+lastUsedDeviceId (String)
+
+* Most recent device used
+
+usedDeviceIds (Set<String>)
+
+* All devices used by this profile
+
+webCookies (String)
+
+* Cookie-based identifier (web tracking layer)
+
+##### 👤 Personal Information
+
+primaryUsername (String)
+
+* Main username (login identity)
+
+firstName (String)
+
+* First name
+
+middleName (String)
+
+* Middle name
+
+lastName (String)
+
+* Last name
+
+gender (int)
+
+* Gender code (0–7, standardized enum)
+
+maritalStatus (int)
+
+* Marital status code
+
+genderProbability (int)
+
+* Confidence score for gender prediction (0–100)
+
+age (int)
+
+* Age
+
+ageGroup (int)
+
+* Age segmentation group
+
+personalityTypes (Set<PersonalityType>)
+
+* Personality classification (for personalization/segmentation)
+
+dateOfBirth (Date)
+
+* Date of birth
+
+primaryAvatar (String)
+
+* Main avatar image URL
+
+personalAvatars (Set<String>)
+
+* Additional avatar/image URLs
+
+primaryNationality (String)
+
+* Nationality
+
+housingType (String)
+
+* Housing classification (owned, rented, etc.)
+
+##### 📍 Location Data
+
+locationCode (String)
+
+* Standardized location code
+
+livingLocationType (String)
+
+* Type of residence (current/permanent)
+
+permanentLocation (String)
+
+* Permanent/home address
+
+livingLocation (String)
+
+* Current living address
+
+livingCountry (String)
+
+* Country
+
+livingState (String)
+
+* State
+
+livingProvince (String)
+
+* Province
+
+livingCity (String)
+
+* City
+
+livingDistrict (String)
+
+* District
+
+livingWard (String)
+
+* Ward
+
+livingCounty (String)
+
+* County
+
+currentZipCode (String)
+
+* ZIP/postal code
+
+contactAddresses (Set<ContactAddress>)
+
+* Historical addresses
+
+##### 📞 Contacts & Interests
+
+personalContacts (Map<String,String>)
+
+* Personal contact channels (email, phone, social, etc.)
+
+businessContacts (Map<String,String>)
+
+* Business/work-related contacts
+
+personalInterests (Set<String>)
+
+* Interests/tags (used for segmentation & recommendation)
+
+##### 💼 Education & Career
+
+learningCourses (Set<LearningCourse>)
+
+* Courses enrolled/learned
+
+softSkills (Set<String>)
+
+* Skill tags
+
+learningHistory (Set<String>)
+
+* Education history
+
+studyCertificates (Set<String>)
+
+* Certifications
+
+jobTitles (Set<String>)
+
+* Job roles
+
+workingHistory (Set<String>)
+
+* Employment history
+
+jobType (int)
+
+* Job classification (0–3 skill level)
+
+##### 💰 Financial & Behavior Signals
+
+incomeHistory (Map<String, Double>)
+
+* Income timeline (e.g., year → income)
+
+weeklyMobileUsage (Map<String, Integer>)
+
+* Mobile usage stats (day → usage count)
+
+##### 📊 Tracking & Events
+
+lastTrackingEvent (TrackingEvent)
+
+* Most recent behavioral event
+
+lastItemViewEvent (TrackingEvent)
+
+* Last product/content view event
+
+lastPurchaseEvent (TrackingEvent)
+
+* Last purchase event
+
+##### ⚙️ Session & Context
+
+contextSessionKeys (Map<String, Date>)
+
+* Session/context keys for tracking active sessions
+
+#### ❌ NOT persisted (skip via @Expose deserialize=false, serialize=false)
+
+genderAsText (String)
+
+* Human-readable gender (derived from gender code)
+
+maritalStatusAsText (String)
+
+* Human-readable marital status (derived field)
+
+#### ⚠️ Inherited (from AbstractProfile – persisted)
+
+type (int)
+
+* Profile type (anonymous visitor, lead, customer, etc.)
+
+status (int)
+
+* Profile lifecycle status
+
+identities (Set<String>)
+
+* Unified identity keys for identity resolution
+
+primaryEmail (String)
+
+* Main email
+
+primaryPhone (String)
+
+* Main phone number
+
+secondaryEmails / secondaryPhones (Set<String>)
+
+* Additional contact channels
+
+crmRefId (String)
+
+* External CRM reference ID
+
+lastObserverId (String)
+
+* Last system/user that updated profile
+
+lastTouchpointId (String)
+
+* Last interaction touchpoint
+
+topEngagedTouchpointIds (Set<String>)
+
+* Most engaged channels
+
+createdAt (Date)
+
+* Creation timestamp
+
+updatedAt (Date)
+
+* Last update timestamp
+
+dataQualityScore (int)
+
+* Profile data completeness/quality score
+
+### Sample JSON data
+
+```json
+{
+  "id": "profile_abc123",
+  "visitorId": "visitor_xyz",
+  "visitorIds": ["visitor_xyz", "visitor_old"],
+  "fingerprintId": "fp_123456",
+  "applicationIDs": ["app_01"],
+  "loyaltyIDs": ["loyalty_01"],
+  "fintechSystemIDs": ["bank_01"],
+  "governmentIssuedIDs": ["citizen_123"],
+  "lastUsedDeviceId": "device_01",
+  "usedDeviceIds": ["device_01", "device_02"],
+  "webCookies": "cookie_abc",
+
+  "primaryUsername": "john_doe",
+  "firstName": "John",
+  "middleName": "A",
+  "lastName": "Doe",
+  "gender": 1,
+  "maritalStatus": 1,
+  "genderProbability": 100,
+  "age": 30,
+  "ageGroup": 3,
+  "dateOfBirth": "1995-01-01T00:00:00.000Z",
+  "primaryAvatar": "https://cdn/avatar.jpg",
+  "primaryNationality": "VN",
+
+  "livingCountry": "Vietnam",
+  "livingCity": "Ho Chi Minh",
+  "livingDistrict": "District 1",
+  "livingWard": "Ben Nghe",
+  "currentZipCode": "700000",
+
+  "personalInterests": ["tech", "finance"],
+  "personalContacts": {
+    "email": "john@example.com",
+    "phone": "+84901234567"
+  },
+
+  "jobTitles": ["Software Engineer"],
+  "workingHistory": ["Company A", "Company B"],
+  "jobType": 2,
+
+  "incomeHistory": {
+    "2024": 20000
+  },
+
+  "lastTrackingEvent": {
+    "metricName": "page-view"
+  },
+
+  "primaryEmail": "john@example.com",
+  "primaryPhone": "+84901234567",
+
+  "createdAt": "2025-01-01T00:00:00.000Z",
+  "updatedAt": "2025-03-01T00:00:00.000Z"
+}
+```
+
+---
+
+## cdp_segment
+
+Segment is a **logical grouping of Profiles**, powered by query rules (AQL / JSON rules), used for **targeting, analytics, personalization, and activation campaigns**. Supports real-time, AI-driven, and batch segmentation strategies. 
+
+### Java Code Path
+
+`leotech.cdp.model.customer.Segment` 
+
+### 📦 Segment Attributes
+
+#### ✅ Persisted in ArangoDB
+
+##### 🧩 Core Identification
+
+id (String)
+
+* Primary key (_key in ArangoDB), generated from name + query + type + owner
+
+parentId (String)
+
+* Parent segment ID (for nested/hierarchical segmentation)
+
+name (String)
+
+* Segment name (used in UI & campaign targeting)
+
+description (String)
+
+* Description of segment purpose
+
+imageAvatarUri (String)
+
+* Visual avatar/icon for UI representation
+
+##### ⚙️ Segment Configuration
+
+type (int)
+
+* Segment type (AD_HOC_QUERY, DYNAMIC, STATIC, HYBRID, AI/ML types, etc.) 
+
+status (int)
+
+* Segment lifecycle:
+
+  * -4 = deleted
+  * 0 = inactive (reporting only)
+  * 1 = active query
+  * 2 = activated (used in campaigns)
+
+realtimeQuery (boolean)
+
+* Execute query in real-time (vs cached batch processing)
+
+autoUpdateProfiles (boolean)
+
+* Automatically refresh segment members periodically
+
+jsonQueryRules (String)
+
+* Query builder rules (JSON logic for filtering profiles)
+
+customQueryFilter (String)
+
+* Additional AQL/custom filter logic
+
+queryHashedId (String)
+
+* Hash ID representing query structure (used for caching/query reuse)
+
+selectedFields (List<String>)
+
+* Fields selected when querying profiles (projection optimization)
+
+##### 📊 Metrics & Aggregated Scores
+
+totalCount (long)
+
+* Total number of profiles in segment
+
+totalDataQualityScore (int)
+
+* Aggregated data quality score
+
+totalLeadScore (long)
+
+* Total lead score across profiles
+
+totalProspectScore (long)
+
+* Total prospect score
+
+totalEngagementScore (long)
+
+* Total engagement score
+
+totalTransactionValue (double)
+
+* Total revenue/value generated
+
+totalCreditScore (long)
+
+* Aggregated credit score
+
+totalCAC (double)
+
+* Customer Acquisition Cost
+
+totalCLV (double)
+
+* Customer Lifetime Value
+
+avgCFS (float)
+
+* Average Customer Feedback Score
+
+totalCES (float)
+
+* Customer Effort Score
+
+avgCSAT (float)
+
+* Customer Satisfaction Score
+
+avgNPS (float)
+
+* Net Promoter Score
+
+performanceReports (List<PerformanceReport>)
+
+* Historical performance metrics
+
+conversionReport (ConversionReport)
+
+* Conversion analytics summary
+
+##### 🏷️ Metadata & Targeting Flags
+
+keywords (Set<String>)
+
+* Tags for search and classification
+
+campaignIds (List<String>)
+
+* Campaigns using this segment
+
+extData (Map<String,String>)
+
+* Custom extensible metadata
+
+managedBySystem (boolean)
+
+* System-generated segment (vs user-created)
+
+forDeepAnalytics (boolean)
+
+* Used for BI/analytics
+
+forPredictiveAnalytics (boolean)
+
+* Used for ML models
+
+forPersonalization (boolean)
+
+* Used for personalization engines
+
+forEmailMarketing (boolean)
+
+* Used in email campaigns
+
+forRealtimeMarketing (boolean)
+
+* Used in real-time triggers
+
+forReTargeting (boolean)
+
+* Used for retargeting ads
+
+forLookalikeTargeting (boolean)
+
+* Used for lookalike audience generation
+
+for3rdSynchronization (boolean)
+
+* Sync to external platforms (ads, CRM, etc.)
+
+##### 👥 Ownership & Access Control
+
+ownerUsername (String)
+
+* Owner of the segment
+
+authorizedEditors (Set<String>)
+
+* Users allowed to edit
+
+authorizedViewers (Set<String>)
+
+* Users allowed to view
+
+##### 📈 Indexing & Optimization
+
+indexScore (int)
+
+* Priority score for indexing/query optimization
+
+updateIndex (boolean)
+
+* Flag to trigger re-indexing
+
+##### 📅 Timestamps
+
+createdAt (Date)
+
+* Creation timestamp
+
+updatedAt (Date)
+
+* Last update timestamp
+
+##### 📤 Export Data
+
+exportedFileUrlCsvForAds (String)
+
+* CSV export path for Ads platforms
+
+exportedDateForAds (Date)
+
+* Last export timestamp for Ads
+
+exportedFileUrlCsvForExcel (String)
+
+* CSV export path for Excel
+
+exportedDateForExcel (Date)
+
+* Last export timestamp for Excel
+
+#### ❌ NOT persisted
+
+activationRules (List<ActivationRule>)
+
+* Runtime activation rules (not stored in ArangoDB)
+
+### Sample JSON data
+
+```json
+{
+  "id": "57JbtxdNxnmunvXtdy95wo",
+  "name": "test 1111113424242",
+  "description": "",
+  "type": 9,
+  "status": 1,
+  "realtimeQuery": true,
+  "autoUpdateProfiles": true,
+
+  "jsonQueryRules": "{\"condition\":\"AND\",\"rules\":[{\"id\":\"type\",\"field\":\"type\",\"operator\":\"equal\",\"value\":2},{\"id\":\"updatedAt\",\"field\":\"updatedAt\",\"operator\":\"greater\",\"value\":\"2025-12-19\"}]}",
+  "customQueryFilter": "",
+  "queryHashedId": "",
+
+  "selectedFields": ["_key", "visitorId", "firstName", "lastName"],
+
+  "totalCount": 10,
+  "totalLeadScore": 0,
+  "totalEngagementScore": 0,
+  "totalTransactionValue": 0,
+
+  "avgCSAT": 0,
+  "avgNPS": 0,
+
+  "keywords": [],
+  "campaignIds": [],
+  "extData": {},
+
+  "forEmailMarketing": true,
+  "forPersonalization": true,
+  "forPredictiveAnalytics": true,
+  "forDeepAnalytics": true,
+
+  "ownerUsername": "superadmin",
+  "authorizedEditors": [],
+  "authorizedViewers": [],
+
+  "indexScore": 34,
+
+  "exportedFileUrlCsvForAds": "./public/exported-files/segment_ads.csv",
+  "exportedFileUrlCsvForExcel": "./public/exported-files/segment_excel.csv",
+
+  "createdAt": "2026-03-25T05:57:26.000Z",
+  "updatedAt": "2026-03-25T05:59:23.694Z"
+}
+```
+
+---
+

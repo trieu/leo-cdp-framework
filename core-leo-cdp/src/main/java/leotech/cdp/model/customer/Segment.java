@@ -27,11 +27,11 @@ import leotech.system.util.database.PersistentObject;
 import rfx.core.util.StringUtil;
 
 /**
- * A segment is the group of profiles, built using query builder (AQL) <br>
- * A segment can be used for reporting, analytics, and activation in marketing campaigns <br>
- * A segment can be built on top of another segment (parentId) <br>	
- * A segment can be activated by one or more media campaigns, and a campaign can activate one or more segments <br>	
- * A segment can be used for deep analytics, predictive analytics, personalization, email marketing, real-time marketing, retargeting, lookalike targeting, synchronization to 3rd party platform <br><br>
+ * A segment is the group of profiles, built using query builder (AQL) or AI-assisted Prompts. <br>
+ * A segment can be used for reporting, analytics, and activation in marketing campaigns. <br>
+ * A segment can be built on top of another segment (parentId) to create nested targeting. <br>	
+ * A segment can be activated by one or more media campaigns, and a campaign can activate one or more segments. <br>	
+ * A segment is highly utilized for deep analytics, predictive ML models, personalization, email marketing, real-time streaming triggers, retargeting, lookalike targeting, and synchronization to 3rd party platforms. <br><br>
  * 
  * ArangoDB Collection: cdp_segment <br>
  * 
@@ -69,13 +69,22 @@ public final class Segment extends PersistentObject implements Comparable<Segmen
 			ArangoDatabase arangoDatabase = getArangoDatabase();
 			dbCol = arangoDatabase.collection(COLLECTION_NAME);
 			
-			// ensure indexing key fields for fast lookup
-			dbCol.ensurePersistentIndex(Arrays.asList("indexScore"), new PersistentIndexOptions().unique(false));
-			dbCol.ensurePersistentIndex(Arrays.asList("name"), new PersistentIndexOptions().unique(false) );
-			dbCol.ensurePersistentIndex(Arrays.asList("type"), new PersistentIndexOptions().unique(false));
-			dbCol.ensurePersistentIndex(Arrays.asList("ownerUsername"), new PersistentIndexOptions().unique(false));
-			dbCol.ensurePersistentIndex(Arrays.asList("maintainerUsername"), new PersistentIndexOptions().unique(false));
-			dbCol.ensurePersistentIndex(Arrays.asList("keywords[*]"), new PersistentIndexOptions().unique(false));
+
+			PersistentIndexOptions pIdxOpts = new PersistentIndexOptions().unique(false);
+			PersistentIndexOptions bgIdxOpts = new PersistentIndexOptions().inBackground(true).unique(false);
+
+			// Core UI & Orchestration lookups
+			dbCol.ensurePersistentIndex(Arrays.asList("status", "type"), pIdxOpts);
+			dbCol.ensurePersistentIndex(Arrays.asList("status", "indexScore"), pIdxOpts);
+			dbCol.ensurePersistentIndex(Arrays.asList("ownerUsername", "status"), pIdxOpts);
+			
+			// Exact name matches
+			dbCol.ensurePersistentIndex(Arrays.asList("name"), pIdxOpts);
+			
+			// Array Multi-Indexes for tags and Role-Based Access Control (RBAC) permissions
+			dbCol.ensurePersistentIndex(Arrays.asList("keywords[*]"), pIdxOpts);
+			dbCol.ensurePersistentIndex(Arrays.asList("authorizedEditors[*]"), bgIdxOpts);
+			dbCol.ensurePersistentIndex(Arrays.asList("authorizedViewers[*]"), bgIdxOpts);
 		}
 		if(dbCol != null) {
 			return dbCol;

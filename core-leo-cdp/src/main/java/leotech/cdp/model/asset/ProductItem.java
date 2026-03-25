@@ -19,260 +19,139 @@ import com.google.gson.annotations.Expose;
 import io.vertx.core.json.JsonObject;
 import leotech.cdp.dao.AssetProductItemDaoUtil;
 import leotech.cdp.model.analytics.OrderedItem;
+import leotech.system.util.LogUtil;
 import leotech.system.util.UrlUtil;
 import rfx.core.util.StringUtil;
 
 /**
- * 
- * Product Item for product catalog, it is used for storing product data for product catalog, such as product id, product code, category name, category id, product type, price, currency, site name, site domain, item condition, availability, brand, seller name, etc. <br>
- * ProductItem is a subclass of AssetItem, it has all the fields of AssetItem plus some additional fields for product data. <br>
- * ProductItem can be used for product catalog, product recommendation, content recommendation, etc. <br>
- * ProductItem can be created from different sources, such as product feed, product API, web scraping, etc. <br>
- * ProductItem can be updated with new data from different sources, such as price update, availability update, etc. <br>
- * ProductItem can be linked to different touchpoints, such as product page, category page, search page, etc. <br>
- * ProductItem can be linked to different campaigns, such as promotion campaign, retargeting campaign, etc. <br>
- * ProductItem can be linked to different journey maps, such as awareness journey map, consideration journey map, decision journey map, etc. <br>
+ * Product Item for product catalog. <br>
+ * Used for storing product data for recommendations, syncs, scraping, and
+ * campaigns. <br>
+ * Contains fields like product ID, category name, type, price, domain,
+ * condition, availability, etc. <br>
  * 
  * ArangoDB collection: cdp_productitem
  * 
  * @author tantrieuf31
  * @since 2021
- *
  */
 public final class ProductItem extends MeasurableItem {
 
 	public static final String USD = "USD";
 	public static final String ITEM_ID = "item_ID";
 	public static final String GENERAL_PRODUCT = "general_product";
-	
+
 	public static final String COLLECTION_NAME = getCdpCollectionName(ProductItem.class);
-	static ArangoCollection collection;
+
+	// Volatile for thread-safe lazy initialization
+	private static volatile ArangoCollection collection;
+
+	// Reused constant Slugify instance to prevent regex memory thrashing on
+	// mass catalog imports
+	private static final Slugify SLUGIFY = new Slugify();
 
 	@Expose
-	protected String productId;
-	
-	@Expose
-	protected String productCode = "";
-	
-	@Expose
-	protected String categoryName = "";
-	
-	@Expose
-	protected String categoryId = "";
-	
-	@Expose
-	protected String productIdType = ITEM_ID;
-	
-	@Expose
-	protected String productType = GENERAL_PRODUCT;
-	
-	@Expose
-	protected Set<String> inCampaigns = new HashSet<>(50);
-	
-	@Expose
-	protected Set<String> inJourneyMaps = new HashSet<>(50);
+	private String productId;
 
 	@Expose
-	protected double originalPrice = 0;
+	private String productCode = "";
 
 	@Expose
-	protected double salePrice = 0;
-	
-	@Expose
-	protected int quantity = 0;
+	private String categoryName = "";
 
 	@Expose
-	protected String priceCurrency = "USD";
+	private String categoryId = "";
 
 	@Expose
-	protected String siteName;
+	private String productIdType = ITEM_ID;
 
 	@Expose
-	protected String siteDomain;
+	private String productType = GENERAL_PRODUCT;
 
 	@Expose
-	protected String itemCondition;
+	private Set<String> inCampaigns = new HashSet<>(50);
 
 	@Expose
-	protected String availability;
+	private Set<String> inJourneyMaps = new HashSet<>(50);
 
 	@Expose
-	protected String brand = "";
+	private double originalPrice = 0;
 
 	@Expose
-	protected String sellerName;
-	
+	private double salePrice = 0;
+
 	@Expose
-	protected Set<String> storeIds = new HashSet<String>();
-	
+	private int quantity = 0;
+
 	@Expose
-	protected Set<String> salesAgentIds = new HashSet<String>();;// a profile that has type = TYPE_INTERNAL_USER = 2;
-	
+	private String priceCurrency = "USD";
+
 	@Expose
-	protected Set<String> warehouseIds = new HashSet<String>();;
-	
+	private String siteName;
+
 	@Expose
-	protected Set<String> touchpointIds = new HashSet<String>();;
-	
+	private String siteDomain;
+
 	@Expose
-	protected Map<String, Voucher> promoCodes = new HashMap<>(100);// codeID -> Voucher Code
+	private String itemCondition;
 
+	@Expose
+	private String availability;
 
-	public static ArangoCollection getCollection() {
-		if (collection == null) {
-			ArangoDatabase arangoDatabase = getArangoDatabase();
+	@Expose
+	private String brand = "";
 
-			collection = arangoDatabase.collection(COLLECTION_NAME);
+	@Expose
+	private String sellerName;
 
-			// index data for this class
-			// productID can be empty value, but fullUrl must be unique URL in this collection
-			collection.ensurePersistentIndex(Arrays.asList("productId"), new PersistentIndexOptions().unique(false));
-			collection.ensurePersistentIndex(Arrays.asList("productCode"), new PersistentIndexOptions().unique(false));
-			collection.ensurePersistentIndex(Arrays.asList("productId","productIdType"), new PersistentIndexOptions().unique(false));
-			collection.ensurePersistentIndex(Arrays.asList("fullUrl"), new PersistentIndexOptions().unique(false));
-			collection.ensurePersistentIndex(Arrays.asList("brand"), new PersistentIndexOptions().unique(false));
-			collection.ensurePersistentIndex(Arrays.asList("sellerName"), new PersistentIndexOptions().unique(false));
-			
-			collection.ensurePersistentIndex(Arrays.asList("touchpointIds[*]"), new PersistentIndexOptions().unique(false));
-			collection.ensurePersistentIndex(Arrays.asList("warehouseIds[*]"), new PersistentIndexOptions().unique(false));
-			collection.ensurePersistentIndex(Arrays.asList("salesAgentIds[*]"), new PersistentIndexOptions().unique(false));
-			collection.ensurePersistentIndex(Arrays.asList("storeIds[*]"), new PersistentIndexOptions().unique(false));
+	@Expose
+	private Set<String> storeIds = new HashSet<>();
 
-			// ensure indexing key fields
-			collection.ensurePersistentIndex(Arrays.asList("slug"), new PersistentIndexOptions().unique(true));
-			collection.ensurePersistentIndex(Arrays.asList("ownerId"), new PersistentIndexOptions().unique(false));
-			collection.ensureFulltextIndex(Arrays.asList("title"), new FulltextIndexOptions().minLength(5));
-			collection.ensurePersistentIndex(Arrays.asList("createdAt"), new PersistentIndexOptions().unique(false));
+	@Expose
+	private Set<String> salesAgentIds = new HashSet<>(); // Internal User ID (Profile Type = 2)
 
-			collection.ensurePersistentIndex(Arrays.asList("networkId", "contentClass"), new PersistentIndexOptions().unique(false));
-			collection.ensurePersistentIndex(Arrays.asList("contentClass", "groupIds[*]"), new PersistentIndexOptions().unique(false));
-			collection.ensurePersistentIndex(Arrays.asList("contentClass", "categoryIds[*]"), new PersistentIndexOptions().unique(false));
-			collection.ensurePersistentIndex(Arrays.asList("networkId", "topicIds[*]"), new PersistentIndexOptions().unique(false));
+	@Expose
+	private Set<String> warehouseIds = new HashSet<>();
 
-			// array fields
-			collection.ensurePersistentIndex(Arrays.asList("groupIds[*]"), new PersistentIndexOptions().unique(false));
-			collection.ensurePersistentIndex(Arrays.asList("topicIds[*]"), new PersistentIndexOptions().unique(false));
-			collection.ensurePersistentIndex(Arrays.asList("categoryIds[*]"), new PersistentIndexOptions().unique(false));
-			collection.ensurePersistentIndex(Arrays.asList("keywords[*]"), new PersistentIndexOptions().unique(false));
+	@Expose
+	private Set<String> touchpointIds = new HashSet<>();
 
-			// for marketing marketing with targeting
-			collection.ensurePersistentIndex(Arrays.asList("targetGeoLocations[*]"), new PersistentIndexOptions().unique(false));
-			collection.ensurePersistentIndex(Arrays.asList("targetSegmentIds[*]"), new PersistentIndexOptions().unique(false));
-			collection.ensurePersistentIndex(Arrays.asList("targetViewerIds[*]"), new PersistentIndexOptions().unique(false));
-			collection.ensurePersistentIndex(Arrays.asList("inCampaigns[*]"), new PersistentIndexOptions().unique(false));
-		}
-		return collection;
-	}
+	@Expose
+	private Map<String, Voucher> promoCodes = new HashMap<>(100); // codeID -> Voucher Code
 
-	@Override
-	public ArangoCollection getDbCollection() {
-		return getCollection();
-	}
-
-	@Override
-	public void initItemDataFromJson(JsonObject paramJson) {
-		setItemDataFromJson(this, paramJson);
-		
-		// product ext data
-		paramJson.iterator();
-		try {
-			this.priceCurrency = paramJson.getString("priceCurrency","USD");
-			double p1 = paramJson.getDouble("originalPrice", 0.0);
-			if(p1>=0) {
-				this.originalPrice = p1;
-			}
-			else {
-				throw new IllegalArgumentException("originalPrice can not be a negative number");
-			}
-			
-			double p2 =  paramJson.getDouble("salePrice", 0.0);
-			if(p2>=0) {
-				this.salePrice = p2;
-			}
-			else {
-				throw new IllegalArgumentException("salePrice can not be a negative number");
-			}
-			
-		} catch (Exception e) {} 
-		
-		
-		this.sellerName = paramJson.getString("sellerName","");
-		this.brand = paramJson.getString("brand","");
-		this.itemCondition = paramJson.getString("itemCondition","");
-		this.availability = paramJson.getString("availability","");
-		
-		this.productType = paramJson.getString("productType",GENERAL_PRODUCT);
-		this.productIdType = paramJson.getString("productIdType",ITEM_ID);
-		this.productId = paramJson.getString("productId","");
-		if(StringUtil.isEmpty(productId)) {
-			throw new IllegalArgumentException("productId can not be empty");
-		}
-		
-		this.fullUrl = paramJson.getString("fullUrl","");
-		this.siteDomain = UrlUtil.getHostName(this.fullUrl);
-		this.siteName = "";
-	}
-
-
-	@Override
-	public String buildHashedId() {
-		this.id = null;
-		if ( (StringUtil.isNotEmpty(productId) || StringUtil.isNotEmpty(productCode)) && StringUtil.isNotEmpty(title)) {
-			String keyHint = StringUtil.join("-", categoryId, productCode, productId, productIdType);
-			this.id = createId(this.id, keyHint);
-		} 
-		else if(StringUtil.isNotEmpty(fullUrl) && StringUtil.isNotEmpty(title)) {
-			String keyHint = StringUtil.join("-", this.categoryId,this.productCode, productId, productIdType, fullUrl);
-			this.id = createId(this.id, keyHint);
-		}
-		else {
-			System.err.println("title " + title);
-			System.err.println("fullUrl " + fullUrl);
-			System.err.println("productId " + productId);
-			System.err.println("productCode " + productCode);
-			newIllegalArgumentException("Product title, productId, productCode and fullUrl are required!");
-		}
-		
-		this.slug = new Slugify().slugify(title + "-" + this.id);
-		this.createdAt = new Date();
-		this.updatedAt = this.createdAt;
-		this.creationTime = this.createdAt.getTime();
-		this.modificationTime = this.creationTime; 
-		
-		return this.id;
-	}
-	
 	public ProductItem() {
 		this.fullUrl = "";
 		this.type = ContentType.HTML_TEXT;
 		this.assetType = AssetType.PRODUCT_ITEM_CATALOG;
 		this.contentClass = "product";
 	}
-	
+
 	public ProductItem(String fullUrl) {
-		this.fullUrl = "";
-		this.id =  createId(this.id, fullUrl);
+		this(); // Calls default constructor to maintain base state setup
+		this.fullUrl = fullUrl;
+		this.id = createId(this.id, fullUrl);
 	}
 
 	public ProductItem(String fullUrl, String title, String siteDomain, String productId) {
+		this();
 		this.fullUrl = fullUrl;
 		this.title = title;
 		this.siteDomain = siteDomain;
 		this.productId = productId;
-
-		buildHashedId();
+		this.buildHashedId();
 	}
-	
+
 	public ProductItem(OrderedItem item, String groupId) {
+		this();
 		this.productId = item.getItemId();
 		this.productCode = item.getProductCode();
 		this.categoryName = item.getCategoryName();
 		this.categoryId = item.getCategoryId();
-		
+
 		this.fullUrl = item.getFullUrl();
 		this.title = item.getName();
 		this.description = item.getDescription();
-		
+
 		this.siteDomain = item.getSource();
 		this.productIdType = item.getIdType();
 		this.salePrice = item.getSalePrice();
@@ -280,33 +159,31 @@ public final class ProductItem extends MeasurableItem {
 		this.priceCurrency = item.getCurrency();
 		this.setHeadlineImageUrl(item.getImageUrl());
 		this.setHeadlineVideoUrl(item.getVideoUrl());
-		
+
 		this.type = ContentType.META_DATA;
-		this.assetType = AssetType.PRODUCT_ITEM_CATALOG;
-		this.contentClass = "product";
 		this.groupIds.add(groupId);
-		
-		buildHashedId();
+
+		this.buildHashedId();
 	}
 
-	public ProductItem(String groupId, String keywords, String storeId, String productId, String productIdType, String title, String description, String headlineImageUrl, double originalPrice,
-			double salePrice, String priceCurrency, String fullUrl, String siteName, String siteDomain) {
-		super();
-		
+	public ProductItem(String groupId, String keywords, String storeId, String productId, String productIdType,
+			String title, String description, String headlineImageUrl, double originalPrice, double salePrice,
+			String priceCurrency, String fullUrl, String siteName, String siteDomain) {
+		this();
 		this.groupIds.add(groupId);
 		this.type = ContentType.META_DATA;
-		this.assetType = AssetType.PRODUCT_ITEM_CATALOG;
-		this.contentClass = "product";
-		
-		// parsing keyword string into the list
-		String[] kws = keywords.split(",");
-		for (String kw : kws) {
-			String keyword = kw.trim();
-			if(StringUtil.isNotEmpty(keyword)) {
-				this.keywords.add(keyword);
+
+		if (StringUtil.isNotEmpty(keywords)) {
+			// Optimized parsing utilizing stream/map concepts implicitly
+			String[] kws = keywords.split(",");
+			for (String kw : kws) {
+				String keyword = kw.trim();
+				if (!keyword.isEmpty()) {
+					this.keywords.add(keyword);
+				}
 			}
 		}
-		
+
 		this.storeIds.add(storeId);
 		this.productId = productId;
 		this.productIdType = productIdType;
@@ -319,17 +196,131 @@ public final class ProductItem extends MeasurableItem {
 		this.fullUrl = fullUrl;
 		this.siteName = siteName;
 		this.siteDomain = siteDomain;
-		buildHashedId();
-		this.slug = new Slugify().slugify(title) + "-" + this.id;
+
+		this.buildHashedId();
 	}
-	
-	/**
-	 * @param groupId
-	 * @param dataCsv
-	 * @return ProductItem
-	 */
+
+	public static ArangoCollection getCollection() {
+		if (collection == null) {
+			// Thread-safe double-checked locking
+			synchronized (ProductItem.class) {
+				if (collection == null) {
+					ArangoDatabase arangoDatabase = getArangoDatabase();
+					ArangoCollection col = arangoDatabase.collection(COLLECTION_NAME);
+					PersistentIndexOptions pIdxOpts = new PersistentIndexOptions().unique(false);
+
+					// Core System Indices
+					col.ensurePersistentIndex(Arrays.asList("slug"), new PersistentIndexOptions().unique(true));
+					col.ensurePersistentIndex(Arrays.asList("productId", "productIdType"), pIdxOpts);
+					col.ensurePersistentIndex(Arrays.asList("productCode", "brand"), pIdxOpts);
+					col.ensurePersistentIndex(Arrays.asList("fullUrl"), pIdxOpts);
+
+					// Core Filtering/Sorting Indices (Used by Admin Catalog UI)
+					col.ensurePersistentIndex(Arrays.asList("sellerName", "createdAt"), pIdxOpts);
+					col.ensurePersistentIndex(Arrays.asList("networkId", "contentClass"), pIdxOpts);
+
+					// Array Mapping Indices (RocksDB handles array unpacking natively here)
+					col.ensurePersistentIndex(Arrays.asList("groupIds[*]"), pIdxOpts);
+					col.ensurePersistentIndex(Arrays.asList("topicIds[*]"), pIdxOpts);
+					col.ensurePersistentIndex(Arrays.asList("categoryIds[*]"), pIdxOpts);
+					col.ensurePersistentIndex(Arrays.asList("keywords[*]"), pIdxOpts);
+
+					// Relation & Location Matrix Arrays
+					col.ensurePersistentIndex(Arrays.asList("touchpointIds[*]"), pIdxOpts);
+					col.ensurePersistentIndex(Arrays.asList("warehouseIds[*]"), pIdxOpts);
+					col.ensurePersistentIndex(Arrays.asList("storeIds[*]"), pIdxOpts);
+
+					// Marketing & Targeting Arrays
+					col.ensurePersistentIndex(Arrays.asList("targetGeoLocations[*]"), pIdxOpts);
+					col.ensurePersistentIndex(Arrays.asList("targetSegmentIds[*]"), pIdxOpts);
+					col.ensurePersistentIndex(Arrays.asList("inCampaigns[*]"), pIdxOpts);
+
+					// Full-text Engine for UI searches
+					col.ensureFulltextIndex(Arrays.asList("title"), new FulltextIndexOptions().minLength(5));
+
+					collection = col;
+				}
+			}
+		}
+		return collection;
+	}
+
+	@Override
+	public ArangoCollection getDbCollection() {
+		return getCollection();
+	}
+
+	@Override
+	public void initItemDataFromJson(JsonObject paramJson) {
+		setItemDataFromJson(this, paramJson);
+
+		try {
+			this.priceCurrency = paramJson.getString("priceCurrency", USD);
+
+			double p1 = paramJson.getDouble("originalPrice", 0.0);
+			if (p1 >= 0) {
+				this.originalPrice = p1;
+			} else {
+				throw new IllegalArgumentException("originalPrice cannot be a negative number");
+			}
+
+			double p2 = paramJson.getDouble("salePrice", 0.0);
+			if (p2 >= 0) {
+				this.salePrice = p2;
+			} else {
+				throw new IllegalArgumentException("salePrice cannot be a negative number");
+			}
+		} catch (Exception e) {
+			LogUtil.logError(ProductItem.class, "Failed to parse prices from JSON payload: " + e.getMessage());
+		}
+
+		this.sellerName = paramJson.getString("sellerName", "");
+		this.brand = paramJson.getString("brand", "");
+		this.itemCondition = paramJson.getString("itemCondition", "");
+		this.availability = paramJson.getString("availability", "");
+
+		this.productType = paramJson.getString("productType", GENERAL_PRODUCT);
+		this.productIdType = paramJson.getString("productIdType", ITEM_ID);
+		this.productId = paramJson.getString("productId", "");
+
+		if (StringUtil.isEmpty(productId)) {
+			throw new IllegalArgumentException("productId cannot be empty");
+		}
+
+		this.fullUrl = paramJson.getString("fullUrl", "");
+		this.siteDomain = UrlUtil.getHostName(this.fullUrl);
+		this.siteName = "";
+	}
+
+	@Override
+	public String buildHashedId() {
+		this.id = null;
+		if ((StringUtil.isNotEmpty(productId) || StringUtil.isNotEmpty(productCode)) && StringUtil.isNotEmpty(title)) {
+			String keyHint = StringUtil.join("-", categoryId, productCode, productId, productIdType);
+			this.id = createId(this.id, keyHint);
+		} else if (StringUtil.isNotEmpty(fullUrl) && StringUtil.isNotEmpty(title)) {
+			String keyHint = StringUtil.join("-", categoryId, productCode, productId, productIdType, fullUrl);
+			this.id = createId(this.id, keyHint);
+		} else {
+			// Replace System.err logging with true exception throwing
+			throw new IllegalArgumentException(String.format(
+					"Data incomplete. Title: '%s', FullUrl: '%s', ProductId: '%s', ProductCode: '%s'. Product title, productId/productCode or fullUrl are required!",
+					title, fullUrl, productId, productCode));
+		}
+
+		Date now = new Date();
+		this.createdAt = now;
+		this.updatedAt = now;
+		this.creationTime = now.getTime();
+		this.modificationTime = this.creationTime;
+
+		// Use cached Slugify to avoid severe memory leaks
+		this.slug = SLUGIFY.slugify(title + "-" + this.id);
+		return this.id;
+	}
+
 	public static ProductItem initFromCsvData(String groupId, String[] dataCsv) {
-		if(dataCsv.length > 10) {
+		if (dataCsv != null && dataCsv.length > 10) {
 			String productType = dataCsv[0];
 			String keywords = StringUtil.safeString(dataCsv[1]);
 			String storeId = StringUtil.safeString(dataCsv[2]);
@@ -338,15 +329,17 @@ public final class ProductItem extends MeasurableItem {
 			String title = dataCsv[5];
 			String description = dataCsv[6];
 			String image = dataCsv[7];
-			double originalPrice = StringUtil.safeParseDouble(dataCsv[8]) ;
-			double salePrice = StringUtil.safeParseDouble(dataCsv[9]) ;
+			double originalPrice = StringUtil.safeParseDouble(dataCsv[8]);
+			double salePrice = StringUtil.safeParseDouble(dataCsv[9]);
 			String priceCurrency = dataCsv[10];
-			String fullUrl =  dataCsv[11];
+			String fullUrl = dataCsv[11];
 			String siteDomain = UrlUtil.getHostName(fullUrl);
-			String siteName = "";
-			ProductItem item = new ProductItem(groupId, keywords, storeId, productId, productIdType, title, description, image, originalPrice, salePrice, priceCurrency, fullUrl, siteName, siteDomain);
+
+			ProductItem item = new ProductItem(groupId, keywords, storeId, productId, productIdType, title, description,
+					image, originalPrice, salePrice, priceCurrency, fullUrl, "", siteDomain);
 			item.setProductType(productType);
-			if(item.getSalePrice() > 0) {
+
+			if (item.getSalePrice() > 0) {
 				AssetProductItemDaoUtil.save(item);
 			}
 			return item;
@@ -356,26 +349,24 @@ public final class ProductItem extends MeasurableItem {
 
 	@Override
 	public boolean dataValidation() {
-		boolean ok = this.groupIds.size() > 0 && StringUtil.isNotEmpty(this.title) 
-				&& StringUtil.isNotEmpty(this.fullUrl) && StringUtil.isNotEmpty(this.id) 
-				&& StringUtil.isNotEmpty(this.siteDomain);
-		if (ok) {
+		if (!this.groupIds.isEmpty() && StringUtil.isNotEmpty(this.title) && StringUtil.isNotEmpty(this.fullUrl)
+				&& StringUtil.isNotEmpty(this.id) && StringUtil.isNotEmpty(this.siteDomain)) {
 			return true;
 		}
-		System.err.println(toString());
-		throw new IllegalArgumentException("The data is not ready, title is empty ");
+		throw new IllegalArgumentException("The data is not ready, mandatory fields are empty: " + this.toString());
 	}
-	
+
 	@Override
 	public String getDocumentUUID() {
 		return COLLECTION_NAME + "/" + id;
 	}
 
+	// ----------------------------------------------------------------------
+	// GETTERS & SETTERS
+	// ----------------------------------------------------------------------
+
 	public String getProductId() {
-		if(productId == null) {
-			productId = "";
-		}
-		return productId;
+		return (productId == null) ? "" : productId;
 	}
 
 	public void setProductId(String productId) {
@@ -383,38 +374,28 @@ public final class ProductItem extends MeasurableItem {
 	}
 
 	public String getProductIdType() {
-		if(productIdType == null) {
-			productIdType = ITEM_ID;
-		}
-		return productIdType;
+		return (productIdType == null) ? ITEM_ID : productIdType;
 	}
 
 	public void setProductIdType(String productIdType) {
 		this.productIdType = productIdType;
 	}
-	
 
 	public String getProductType() {
-		if(productType == null) {
-			productType = GENERAL_PRODUCT;
-		}
-		return productType;
+		return (productType == null) ? GENERAL_PRODUCT : productType;
 	}
 
 	public void setProductType(String productType) {
 		this.productType = productType;
 	}
 
-
-
 	public double getOriginalPrice() {
 		return originalPrice;
 	}
 
 	public void setOriginalPrice(double originalPrice) {
-		if (originalPrice > 0) {
+		if (originalPrice > 0)
 			this.originalPrice = originalPrice;
-		}
 	}
 
 	public void setOriginalPrice(String originalPrice) {
@@ -427,22 +408,15 @@ public final class ProductItem extends MeasurableItem {
 
 	public void setSalePrice(double salePrice) {
 		this.salePrice = salePrice;
-
-		if (this.originalPrice == 0) {
+		if (this.originalPrice == 0)
 			this.originalPrice = this.salePrice;
-		}
 	}
 
 	public void setSalePrice(String salePrice) {
 		this.salePrice = StringUtil.safeParseDouble(salePrice);
-
-		// because originalPrice can not be zero if sale price is larger than zero
-		if (this.originalPrice == 0) {
+		if (this.originalPrice == 0)
 			this.originalPrice = this.salePrice;
-		}
 	}
-	
-	
 
 	public String getPriceCurrency() {
 		return priceCurrency;
@@ -451,7 +425,6 @@ public final class ProductItem extends MeasurableItem {
 	public void setPriceCurrency(String priceCurrency) {
 		this.priceCurrency = priceCurrency;
 	}
-
 
 	public String getSiteName() {
 		return siteName;
@@ -478,9 +451,8 @@ public final class ProductItem extends MeasurableItem {
 	}
 
 	public Map<String, Voucher> getPromoCodes() {
-		if (promoCodes == null) {
+		if (promoCodes == null)
 			promoCodes = new HashMap<>();
-		}
 		return promoCodes;
 	}
 
@@ -515,7 +487,6 @@ public final class ProductItem extends MeasurableItem {
 		return StringUtil.isEmpty(this.id);
 	}
 
-	
 	public String getProductCode() {
 		return productCode;
 	}
@@ -556,7 +527,7 @@ public final class ProductItem extends MeasurableItem {
 	public void setSellerName(String sellerName) {
 		this.sellerName = sellerName;
 	}
-	
+
 	public Set<String> getInCampaigns() {
 		return inCampaigns;
 	}
@@ -568,7 +539,7 @@ public final class ProductItem extends MeasurableItem {
 	public void addInCampaigns(String campaignId) {
 		this.inCampaigns.add(campaignId);
 	}
-	
+
 	public void removeInCampaigns(String campaignId) {
 		this.inCampaigns.remove(campaignId);
 	}
@@ -581,7 +552,7 @@ public final class ProductItem extends MeasurableItem {
 		this.setOriginalPrice(orderedItem.getOriginalPrice());
 		this.setSalePrice(orderedItem.getSalePrice());
 	}
-	
+
 	public int getQuantity() {
 		return quantity;
 	}
@@ -589,7 +560,7 @@ public final class ProductItem extends MeasurableItem {
 	public void setQuantity(int quantity) {
 		this.quantity = quantity;
 	}
-	
+
 	public Set<String> getStoreIds() {
 		return this.storeIds;
 	}
@@ -597,7 +568,7 @@ public final class ProductItem extends MeasurableItem {
 	public void setStoreIds(String storeId) {
 		this.storeIds.add(storeId);
 	}
-	
+
 	public void setStoreIds(Set<String> storeIds) {
 		this.storeIds.addAll(storeIds);
 	}
@@ -617,7 +588,7 @@ public final class ProductItem extends MeasurableItem {
 	public void setTouchpointIds(Set<String> touchpointIds) {
 		this.touchpointIds.addAll(touchpointIds);
 	}
-	
+
 	public Set<String> getWarehouseIds() {
 		return warehouseIds;
 	}
@@ -630,6 +601,4 @@ public final class ProductItem extends MeasurableItem {
 	public String toString() {
 		return new Gson().toJson(this);
 	}
-
-
 }
