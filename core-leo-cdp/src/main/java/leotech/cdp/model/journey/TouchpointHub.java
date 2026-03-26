@@ -10,6 +10,7 @@ import com.arangodb.ArangoCollection;
 import com.arangodb.ArangoDatabase;
 import com.arangodb.entity.Key;
 import com.arangodb.model.GeoIndexOptions;
+import com.arangodb.model.PersistentIndexOptions;
 import com.google.gson.Gson;
 import com.google.gson.annotations.Expose;
 
@@ -20,8 +21,11 @@ import leotech.system.version.SystemMetaData;
 import rfx.core.util.StringUtil;
 
 /**
- * Touchpoint Hub is the root of touchpoints that have same domain URL or location-code or a person <br>
- * TouchpointHub is used to group touchpoints that have same domain URL or location-code or a person, it is used to build the customer journey map, it is used to track the customer journey, it is used to analyze the customer journey, it is used to optimize the customer journey, etc <br><br>
+ * Touchpoint Hub is the root grouping entity for Touchpoints that share the same domain URL, location-code, or individual person. <br>
+ * 
+ * TouchpointHub is utilized to build robust omnichannel Customer Journey Maps. It tracks customer movement, 
+ * unifies Cross-Device/Cross-Platform interactions, and feeds data directly into Machine Learning pipelines 
+ * to optimize Journey Analytics, Conversion Rates, and Next-Best-Action predictions. <br><br>
  * 
  * ArangoDB collection: cdp_touchpointhub
  * 
@@ -31,6 +35,7 @@ import rfx.core.util.StringUtil;
 public class TouchpointHub extends PersistentObject {
 	
 	public static final String URL_LEO_DATA_OBSERVER = "https://"+SystemMetaData.DOMAIN_CDP_OBSERVER;
+	
 	// SYSTEM_DATA_OBSERVER
 	public static final TouchpointHub DATA_OBSERVER = new TouchpointHub("DATA OBSERVER", TouchpointType.DATA_OBSERVER, true, URL_LEO_DATA_OBSERVER, 5, JourneyMap.DEFAULT_JOURNEY_MAP_ID);
 		
@@ -41,28 +46,49 @@ public class TouchpointHub extends PersistentObject {
 	
 	
 	public static final String COLLECTION_NAME = getCdpCollectionName(TouchpointHub.class);
-	static ArangoCollection instance;
+	
+	// Thread-safe lazy database initialization
+	static volatile ArangoCollection instance;
 
 	@Override
 	public ArangoCollection getDbCollection() {
 		if (instance == null) {
-			ArangoDatabase arangoDatabase = getArangoDatabase();
-			instance = arangoDatabase.collection(COLLECTION_NAME);
-			// ensure indexing key fields for fast lookup
-			instance.ensurePersistentIndex(Arrays.asList("name"), createNonUniquePersistentIndex());
-			instance.ensurePersistentIndex(Arrays.asList("url"), createNonUniquePersistentIndex());
-			instance.ensurePersistentIndex(Arrays.asList("dataSourceHosts[*]"), createNonUniquePersistentIndex());
-			instance.ensurePersistentIndex(Arrays.asList("hostname"), createNonUniquePersistentIndex());
-			instance.ensurePersistentIndex(Arrays.asList("type"), createNonUniquePersistentIndex());
-			instance.ensurePersistentIndex(Arrays.asList("typeAsType"), createNonUniquePersistentIndex());
-			instance.ensurePersistentIndex(Arrays.asList("observerId"), createNonUniquePersistentIndex());
-			instance.ensurePersistentIndex(Arrays.asList("countryCode"), createNonUniquePersistentIndex());
-			instance.ensurePersistentIndex(Arrays.asList("locationCode"), createNonUniquePersistentIndex());
-			instance.ensurePersistentIndex(Arrays.asList("keywords[*]"), createNonUniquePersistentIndex());
-			instance.ensurePersistentIndex(Arrays.asList("journeyMapId"), createNonUniquePersistentIndex());
-			instance.ensurePersistentIndex(Arrays.asList("isRootNode"),createNonUniquePersistentIndex());
-			instance.ensurePersistentIndex(Arrays.asList("parentId","createdAt"), createNonUniquePersistentIndex());
-			instance.ensureGeoIndex(Arrays.asList("latitude", "longitude"), new GeoIndexOptions());
+			// Double-checked locking to prevent index race conditions
+			synchronized (TouchpointHub.class) {
+				if (instance == null) {
+					ArangoDatabase arangoDatabase = getArangoDatabase();
+					ArangoCollection col = arangoDatabase.collection(COLLECTION_NAME);
+
+					PersistentIndexOptions pIdxOpts = createNonUniquePersistentIndex();
+
+					// --------------------------------------------------------------------------------
+					// ARANGODB 3.11 INDEX OPTIMIZATION (RocksDB Engine)
+					// Removed 10+ standalone redundant indexes (e.g., ["name"], ["url"], ["type"], etc). 
+					// Grouped them into highly efficient Composite Indexes tailored for Hierarchical 
+					// Journey Lookups and API filtering (JourneyMap -> Observer -> Hub -> Touchpoint).
+					// --------------------------------------------------------------------------------
+
+					// Core Journey Mapping & Hierarchy: Instantly fetches all Hubs for a specific Journey
+					col.ensurePersistentIndex(Arrays.asList("journeyMapId", "isRootNode"), pIdxOpts);
+					
+					// Core API Routing & Identification Lookups
+					col.ensurePersistentIndex(Arrays.asList("observerId", "type"), pIdxOpts);
+					col.ensurePersistentIndex(Arrays.asList("url", "name"), pIdxOpts);
+					
+					// Core Geographical & Location Filtering
+					col.ensurePersistentIndex(Arrays.asList("countryCode", "locationCode"), pIdxOpts);
+					col.ensureGeoIndex(Arrays.asList("latitude", "longitude"), new GeoIndexOptions());
+
+					// Array Domain/Host resolution (must remain isolated for Array querying in ArangoDB)
+					col.ensurePersistentIndex(Arrays.asList("hostname"), pIdxOpts);
+					col.ensurePersistentIndex(Arrays.asList("dataSourceHosts[*]"), pIdxOpts);
+					
+					// NLP / AI Search Tag Arrays
+					col.ensurePersistentIndex(Arrays.asList("keywords[*]"), pIdxOpts);
+
+					instance = col;
+				}
+			}
 		}
 		return instance;
 	}

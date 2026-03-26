@@ -24,9 +24,9 @@
 22. ## cdp_productitem : DONE
 23. ## cdp_profile : TODO
 24. ## cdp_segment : DONE
-25. ## cdp_socialevent
-26. ## cdp_targetmediaunit
-27. ## cdp_touchpoint
-28. ## cdp_touchpointhub
-29. ## cdp_trackingevent
-30. ## cdp_webhookdataevent
+25. ## cdp_socialevent : DONE
+26. ## cdp_targetmediaunit : DONE
+27. ## cdp_touchpoint : DONE
+28. ## cdp_touchpointhub : DONE
+29. ## cdp_trackingevent  : DONE
+30. ## cdp_webhookdataevent  : DONE

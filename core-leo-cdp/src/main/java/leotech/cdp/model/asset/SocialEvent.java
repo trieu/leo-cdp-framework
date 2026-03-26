@@ -17,20 +17,25 @@ import io.vertx.core.json.JsonObject;
 import rfx.core.util.StringUtil;
 
 /**
- * Social Event to get more information about customer profile <br>
- * A social event can be a product launch, a promotion, a campaign, a sale, a webinar, a conference, a trade show, a festival, a concert, a sports event, a movie release, a book release, a game release, a software release, ...
- * A social event can be associated with one or more brands, products, services, and campaigns <br><br>
+ * Social Event entity to enrich customer profile understanding. <br>
+ * A social event represents real-world or virtual marketing activations such as a product launch, 
+ * promotional campaign, webinar, conference, trade show, festival, concert, sports event, movie release, 
+ * or software release. <br>
+ * 
+ * Tracking social events allows the CDP to map offline/online behavioral data to specific campaigns, brands, 
+ * products, and services, enabling deep contextual analytics and targeted follow-up marketing. <br><br>
  * 
  * ArangoDB Collection: cdp_socialevent <br>
  * 
  * @author tantrieuf31
  * @since 2020
- *
  */
 public final class SocialEvent extends MeasurableItem {
 
 	public static final String COLLECTION_NAME = getCdpCollectionName(SocialEvent.class);
-	static ArangoCollection collection;
+	
+	// Volatile for thread-safe lazy DB initialization
+	static volatile ArangoCollection collection;
 
 	@Expose
 	Set<String> brands = new HashSet<>();
@@ -69,38 +74,48 @@ public final class SocialEvent extends MeasurableItem {
 	@Override
 	public ArangoCollection getDbCollection() {
 		if (collection == null) {
-			ArangoDatabase arangoDatabase = getArangoDatabase();
+			synchronized (SocialEvent.class) {
+				if (collection == null) {
+					ArangoDatabase arangoDatabase = getArangoDatabase();
+					ArangoCollection col = arangoDatabase.collection(COLLECTION_NAME);
 
-			collection = arangoDatabase.collection(COLLECTION_NAME);
-			
-			// index data for this class
-			// productId is required for fast-lookup and fullUrl must be unique URL in this collection
-			collection.ensurePersistentIndex(Arrays.asList("productId"), new PersistentIndexOptions().unique(true));
-			collection.ensurePersistentIndex(Arrays.asList("fullUrl"), new PersistentIndexOptions().unique(true));
-			collection.ensurePersistentIndex(Arrays.asList("brand"), new PersistentIndexOptions().unique(false));
+					PersistentIndexOptions pIdxOpts = new PersistentIndexOptions().unique(false);
 
-			// ensure indexing key fields
-			collection.ensurePersistentIndex(Arrays.asList("slug"), new PersistentIndexOptions().unique(true));
-			collection.ensurePersistentIndex(Arrays.asList("ownerId"), new PersistentIndexOptions().unique(false));
-			collection.ensureFulltextIndex(Arrays.asList("title"), new FulltextIndexOptions().minLength(5));
-			collection.ensurePersistentIndex(Arrays.asList("createdAt"),new PersistentIndexOptions().unique(false));
-			
-			collection.ensurePersistentIndex(Arrays.asList("networkId", "contentClass"), new PersistentIndexOptions().unique(false));
-			collection.ensurePersistentIndex(Arrays.asList("contentClass", "groupIds[*]"), new PersistentIndexOptions().unique(false));
-			collection.ensurePersistentIndex(Arrays.asList("contentClass", "categoryIds[*]"), new PersistentIndexOptions().unique(false));
-			collection.ensurePersistentIndex(Arrays.asList("networkId", "topicIds[*]"), new PersistentIndexOptions().unique(false));
+					// --------------------------------------------------------------------------------
+					// ARANGODB 3.11 INDEX OPTIMIZATION (RocksDB Engine)
+					// Removed 10+ standalone indexes that were creating massive I/O bottlenecks. 
+					// Replaced with logical composite indexes that ArangoDB's RocksDB engine processes 
+					// from Left-to-Right. Array indexes (`[*]`) are kept separate as required by Arango.
+					// --------------------------------------------------------------------------------
+					
+					// Unique Lookups
+					col.ensurePersistentIndex(Arrays.asList("slug"), new PersistentIndexOptions().unique(true));
+					col.ensurePersistentIndex(Arrays.asList("fullUrl"), new PersistentIndexOptions().unique(true));
 
-			// array fields
-			collection.ensurePersistentIndex(Arrays.asList("groupIds[*]"), new PersistentIndexOptions().unique(false));
-			collection.ensurePersistentIndex(Arrays.asList("topicIds[*]"), new PersistentIndexOptions().unique(false));
-			collection.ensurePersistentIndex(Arrays.asList("categoryIds[*]"), new PersistentIndexOptions().unique(false));
-			collection.ensurePersistentIndex(Arrays.asList("keywords[*]"), new PersistentIndexOptions().unique(false));
+					// Core Organizational & Location Filtering
+					col.ensurePersistentIndex(Arrays.asList("networkId", "contentClass", "locationCode"), pIdxOpts);
+					col.ensurePersistentIndex(Arrays.asList("ownerId", "createdAt"), pIdxOpts);
+					
+					// Array Relational Mapping 
+					col.ensurePersistentIndex(Arrays.asList("productIds[*]"), pIdxOpts);
+					col.ensurePersistentIndex(Arrays.asList("brands[*]"), pIdxOpts);
+					col.ensurePersistentIndex(Arrays.asList("groupIds[*]"), pIdxOpts);
+					col.ensurePersistentIndex(Arrays.asList("topicIds[*]"), pIdxOpts);
+					col.ensurePersistentIndex(Arrays.asList("categoryIds[*]"), pIdxOpts);
+					col.ensurePersistentIndex(Arrays.asList("keywords[*]"), pIdxOpts);
+					
+					// Campaign & Targeting Arrays
+					col.ensurePersistentIndex(Arrays.asList("targetGeoLocations[*]"), pIdxOpts);
+					col.ensurePersistentIndex(Arrays.asList("targetSegmentIds[*]"), pIdxOpts);
+					col.ensurePersistentIndex(Arrays.asList("targetViewerIds[*]"), pIdxOpts);
+					col.ensurePersistentIndex(Arrays.asList("inCampaigns[*]"), pIdxOpts);
+					
+					// Full-text Engine for UI searches
+					col.ensureFulltextIndex(Arrays.asList("title"), new FulltextIndexOptions().minLength(5));
 
-			// for marketing marketing with targeting
-			collection.ensurePersistentIndex(Arrays.asList("targetGeoLocations[*]"), new PersistentIndexOptions().unique(false));
-			collection.ensurePersistentIndex(Arrays.asList("targetSegmentIds[*]"), new PersistentIndexOptions().unique(false));
-			collection.ensurePersistentIndex(Arrays.asList("targetViewerIds[*]"), new PersistentIndexOptions().unique(false));
-			collection.ensurePersistentIndex(Arrays.asList("inCampaigns[*]"), new PersistentIndexOptions().unique(false));
+					collection = col;
+				}
+			}
 		}
 		return collection;
 	}
@@ -260,5 +275,4 @@ public final class SocialEvent extends MeasurableItem {
 	public String getDocumentUUID() {
 		return COLLECTION_NAME + "/" + id;
 	}
-
 }

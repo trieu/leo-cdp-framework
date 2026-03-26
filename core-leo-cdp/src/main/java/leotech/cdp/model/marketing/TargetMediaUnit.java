@@ -21,11 +21,13 @@ import leotech.system.util.database.PersistentObject;
 import rfx.core.util.StringUtil;
 
 /**
- * the data object, contains all metadata of Profile2Product and Profile2Content <br>
+ * The data object containing all metadata for Profile-to-Product and Profile-to-Content mappings. <br>
  * 
- * A TargetMediaUnit is created for each targeted media (product or content) for a specific profile, and used for tracking the performance of the targeted media unit in marketing campaigns <br><br>
+ * A TargetMediaUnit is created for each targeted media (product or content) directed at a specific profile. 
+ * It is heavily utilized for tracking the performance, engagement, and conversion of targeted media units in omnichannel marketing campaigns. <br><br>
  * 
- * A TargetMediaUnit can be created for a specific campaign, or created for general targeting without campaign (for example: a targeted media unit for QR code in store, or a targeted media unit for short link in email marketing) <br><br>
+ * A TargetMediaUnit can be generated dynamically for a specific campaign, or generated for general real-time targeting 
+ * (e.g., dynamic QR codes in physical stores, personalized short-links in email/SMS marketing, or AI-driven Next-Best-Action recommendations). <br><br>
  * 
  * ArangoDB Collection: cdp_targetmediaunit <br>
  * 
@@ -148,11 +150,26 @@ public class TargetMediaUnit extends PersistentObject implements Comparable<Targ
 			ArangoDatabase arangoDatabase = getArangoDatabase();
 
 			dbCollection = arangoDatabase.collection(COLLECTION_NAME);
-			dbCollection.ensurePersistentIndex(Arrays.asList("refProfileId"), new PersistentIndexOptions().unique(false));
-			dbCollection.ensurePersistentIndex(Arrays.asList("refProductItemId"), new PersistentIndexOptions().unique(false));
-			dbCollection.ensurePersistentIndex(Arrays.asList("refCampaignId"), new PersistentIndexOptions().unique(false));
-			dbCollection.ensurePersistentIndex(Arrays.asList("landingPageUrl"), new PersistentIndexOptions().unique(false));
-			dbCollection.ensurePersistentIndex(Arrays.asList("eventMetaDataId"), new PersistentIndexOptions().unique(false));
+			PersistentIndexOptions pIdxOpts = new PersistentIndexOptions().unique(false);
+
+			// --------------------------------------------------------------------------------
+			// ARANGODB 3.11 INDEX OPTIMIZATION (RocksDB Engine)
+			// Grouped disconnected single-field indexes into highly efficient composite indexes 
+			// based on Left-to-Right query evaluation used by marketing automation and trackers.
+			// --------------------------------------------------------------------------------
+			
+			// Core tracking lookup: Find media items for a specific profile inside a specific campaign
+			dbCollection.ensurePersistentIndex(Arrays.asList("refCampaignId", "refProfileId"), pIdxOpts);
+			
+			// Campaign content performance: Fetch campaign targets mapped to a product or content piece
+			dbCollection.ensurePersistentIndex(Arrays.asList("refCampaignId", "refProductItemId"), pIdxOpts);
+			dbCollection.ensurePersistentIndex(Arrays.asList("refCampaignId", "refContentItemId"), pIdxOpts);
+			
+			// Event Link Mapping: Track interactions tied to specific landing pages
+			dbCollection.ensurePersistentIndex(Arrays.asList("eventMetaDataId", "landingPageUrl"), pIdxOpts);
+			
+			// Fast global lookup by profile
+			dbCollection.ensurePersistentIndex(Arrays.asList("refProfileId"), pIdxOpts);
 		}
 		return dbCollection;
 	}

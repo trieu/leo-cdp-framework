@@ -1,4 +1,6 @@
 
+# Core database schema of LEO CDP (ArangoDB version 3.11+)
+
 ## system_service
 
 Configuration for core system services, orchestration via Airflow DAG, and integration layer for external/internal APIs in CDP.
@@ -3558,4 +3560,1158 @@ activationRules (List<ActivationRule>)
 ```
 
 ---
+
+## cdp_socialevent
+
+Social Event represents **real-world or digital marketing activities** (campaigns, webinars, product launches, concerts, etc.) used to enrich customer behavior context and enable **event-driven analytics, attribution, and follow-up marketing**. 
+
+### Java Code Path
+
+`leotech.cdp.model.asset.SocialEvent` 
+
+### 📦 SocialEvent Attributes
+
+#### ✅ Persisted in ArangoDB
+
+id (String)
+
+* Primary key (_key in ArangoDB), generated from `fullUrl + title`
+
+brands (Set<String>)
+
+* Brands associated with the event (used for brand-level attribution)
+
+productIds (Set<String>)
+
+* Related product IDs (linking event → product catalog)
+
+serviceIds (Set<String>)
+
+* Related service IDs (for service-based campaigns)
+
+inCampaigns (Set<String>)
+
+* Campaign IDs where this event is used/activated
+
+fullUrl (String)
+
+* Canonical URL of the event (unique identifier, indexed)
+
+videoUrl (String)
+
+* Video/media URL (event recording, promo video, livestream)
+
+beginDate (Date)
+
+* Event start time
+
+endDate (Date)
+
+* Event end time
+
+locationName (String)
+
+* Human-readable location name (venue, platform, etc.)
+
+locationCode (String)
+
+* Standardized location code (used for geo analytics)
+
+locationAddress (String)
+
+* Full address of event location
+
+#### ⚠️ Inherited (from MeasurableItem – persisted)
+
+slug (String)
+
+* SEO-friendly identifier generated from title
+
+title (String)
+
+* Event name/title
+
+description (String)
+
+* Event description/content
+
+keywords (Set<String>)
+
+* Search and classification tags
+
+groupIds (Set<String>)
+
+* Group/category segmentation
+
+topicIds / categoryIds (Set<String>)
+
+* Classification metadata
+
+targetGeoLocations (Set<String>)
+
+* Target geographic segments
+
+targetSegmentIds (Set<String>)
+
+* Target customer segments
+
+targetViewerIds (Set<String>)
+
+* Target specific users
+
+createdAt (Date)
+
+* Creation timestamp
+
+updatedAt (Date)
+
+* Last update timestamp
+
+networkId (String)
+
+* Network/system identifier
+
+contentClass (String)
+
+* Content classification (event, campaign, etc.)
+
+### Sample JSON data
+
+```json id="social_event_sample"
+{
+  "id": "event_abc123",
+  "title": "Tech Product Launch 2026",
+  "description": "Launch event for new AI-powered product",
+  "slug": "tech-product-launch-2026",
+
+  "brands": ["brand_ai"],
+  "productIds": ["prod_001"],
+  "serviceIds": ["service_ai"],
+
+  "inCampaigns": ["campaign_01"],
+
+  "fullUrl": "https://event.example.com/launch-2026",
+  "videoUrl": "https://youtube.com/event-video",
+
+  "beginDate": "2026-04-01T09:00:00.000Z",
+  "endDate": "2026-04-01T12:00:00.000Z",
+
+  "locationName": "Saigon Convention Center",
+  "locationCode": "VN-SG-D1",
+  "locationAddress": "District 1, Ho Chi Minh City, Vietnam",
+
+  "keywords": ["ai", "launch", "event"],
+  "groupIds": ["group_events"],
+
+  "createdAt": "2026-03-01T08:00:00.000Z",
+  "updatedAt": "2026-03-01T08:00:00.000Z"
+}
+```
+
+---
+
+## cdp_targetmediaunit
+
+TargetMediaUnit represents a **personalized media targeting instance**, linking a **Profile ↔ Product/Content ↔ Campaign ↔ Touchpoint**. It is the **core tracking object for omnichannel marketing**, enabling measurement of impressions, clicks, conversions, and engagement per user. 
+
+### Java Code Path
+
+`leotech.cdp.model.marketing.TargetMediaUnit` 
+
+### 📦 TargetMediaUnit Attributes
+
+#### ✅ Persisted in ArangoDB
+
+id (String)
+
+* Primary key (_key in ArangoDB), generated from campaign + profile + landingPage + event metadata
+
+createdAt (Date)
+
+* Creation timestamp (when targeting unit is generated)
+
+updatedAt (Date)
+
+* Last update timestamp
+
+expiredAt (Date)
+
+* Expiration time (for time-limited campaigns or offers)
+
+name (String)
+
+* Name/label of the media unit
+
+status (int)
+
+* Engagement status:
+
+  * 0 = not interacted
+  * 1 = clicked
+  * 2 = read/viewed
+  * 3 = feedback received
+
+##### 🔗 Reference Mapping (Core CDP Graph)
+
+refCampaignId (String)
+
+* Campaign ID associated with this targeting unit
+
+refProductItemId (String)
+
+* Product ID being promoted
+
+refContentItemId (String)
+
+* Content ID (article, video, etc.)
+
+refProfileId (String)
+
+* Target profile ID
+
+refSegmentId (String)
+
+* Segment ID used for targeting
+
+refVisitorId (String)
+
+* Anonymous visitor ID (pre-login tracking)
+
+refSocialEventId (String)
+
+* Related social event (campaign/event context)
+
+refTouchpointId (String)
+
+* Specific touchpoint/channel ID
+
+refTouchpointHubId (String)
+
+* Touchpoint hub (channel group: web, ads, POS, etc.)
+
+refObserverId (String)
+
+* Observer system/user tracking the event
+
+refAffiliateId (String)
+
+* Affiliate/partner ID
+
+##### 🌐 Media & Landing
+
+landingPageName (String)
+
+* Name/title of landing page
+
+landingPageUrl (String)
+
+* Destination URL (required for ID generation)
+
+imageUrl (String)
+
+* Image used in media unit
+
+videoUrl (String)
+
+* Video used in media unit
+
+trackingLinkUrl (String)
+
+* Generated tracking URL (short link or QR tracking endpoint)
+
+eventMetaDataId (String)
+
+* Event type identifier:
+
+  * SHORT_LINK_CLICK
+  * QR_CODE_SCAN
+  * Custom event types
+
+##### 📊 Feedback & Customization
+
+ratingScore (double)
+
+* Ranking/priority score (used for recommendation sorting)
+
+customData (Map<String,String>)
+
+* Custom metadata (A/B test params, campaign tags, etc.)
+
+#### ❌ NOT persisted
+
+productItem (ProductItem)
+
+* Resolved product object (runtime only, not stored)
+
+contentItem (AssetContent)
+
+* Resolved content object (runtime only, not stored)
+
+### Sample JSON data
+
+```json id="target_media_sample"
+{
+  "id": "tm_abc123",
+  "createdAt": "2026-03-01T08:00:00.000Z",
+  "updatedAt": "2026-03-01T08:00:00.000Z",
+  "expiredAt": "2026-04-01T08:00:00.000Z",
+
+  "name": "Promo iPhone Campaign",
+  "status": 1,
+
+  "refCampaignId": "campaign_01",
+  "refProductItemId": "prod_001",
+  "refContentItemId": "",
+  "refProfileId": "profile_123",
+  "refSegmentId": "segment_01",
+  "refVisitorId": "visitor_abc",
+  "refSocialEventId": "event_01",
+  "refTouchpointId": "web_homepage",
+  "refTouchpointHubId": "web",
+  "refObserverId": "system_tracking",
+  "refAffiliateId": "affiliate_01",
+
+  "landingPageName": "iPhone 15 Promo Landing",
+  "landingPageUrl": "https://shop.example.com/iphone15",
+  "imageUrl": "https://cdn.example.com/banner.jpg",
+  "videoUrl": "https://youtube.com/video",
+
+  "trackingLinkUrl": "https://leo.ai/t/abc123",
+  "eventMetaDataId": "SHORT_LINK_CLICK",
+
+  "ratingScore": 0.95,
+  "customData": {
+    "ab_test_group": "A",
+    "utm_source": "facebook_ads"
+  }
+}
+```
+
+---
+
+## cdp_touchpoint
+
+Touchpoint represents a **point of interaction between customer and business**, including digital (website, app, ads) and physical (store, event, agent). It is the **core node in the customer journey graph**, capturing interaction data, cost, and experience metrics. 
+
+### Java Code Path
+
+`leotech.cdp.model.journey.Touchpoint` 
+
+### 📦 Touchpoint Attributes
+
+#### ✅ Persisted in ArangoDB
+
+##### 🔑 Core Identification
+
+id (String)
+
+* Primary key (_key in ArangoDB), generated from parentId + type + location + name + url
+
+name (String)
+
+* Touchpoint name (e.g., Website Homepage, Store A, Sales Agent B)
+
+type (int)
+
+* Touchpoint type (enum: website, app, store, agent, etc.)
+
+typeAsType (String)
+
+* Human-readable type (derived from type enum)
+
+url (String)
+
+* URL of touchpoint (web/app endpoint or generated URL for offline)
+
+hostname (String)
+
+* Domain extracted from URL
+
+collectionId (String)
+
+* Classification ID (taxonomy, IAB category, or grouping ID)
+
+parentId (String)
+
+* Parent entity (e.g., store in mall, agent in company, page in site hierarchy)
+
+##### 🌍 Location & Geo
+
+locationCode (String)
+
+* Open Location Code (Plus Code) for geo positioning
+
+address (String)
+
+* Physical address
+
+latitude (double)
+
+* Latitude (derived from locationCode or GPS)
+
+longitude (double)
+
+* Longitude
+
+radius (double)
+
+* Coverage radius for geofencing
+
+reachableArea (String)
+
+* Description of reachable/coverage area
+
+##### 🧩 Journey & Ownership
+
+journeyMapId (String)
+
+* Associated journey map
+
+observerId (String)
+
+* Tracking system or observer ID
+
+isRootNode (boolean)
+
+* Indicates root node in journey graph
+
+firstPartyData (boolean)
+
+* Whether data is first-party or third-party
+
+##### 🎯 Content & Asset Mapping
+
+assetContentId (String)
+
+* Linked content asset (banner, article, video)
+
+assetType (int)
+
+* Asset classification (product, content, service, etc.)
+
+collectionId (String)
+
+* Group/category classification
+
+##### 💰 Cost & Business
+
+unitCost (double)
+
+* Cost of maintaining or operating this touchpoint (ads cost, store rent, etc.)
+
+partitionId (int)
+
+* Partition/shard ID for scaling large datasets
+
+##### 📊 Analytics & Experience
+
+eventCounter (EventCounter)
+
+* Aggregated interaction metrics:
+
+  * pageView
+  * itemView
+  * surveyView
+  * clickDetails
+  * madePayment
+  * qrCodeScan
+
+scoreCX (ScoreCX)
+
+* Customer experience scoring:
+
+  * positive
+  * neutral
+  * negative
+
+##### 🏷️ Classification & Targeting
+
+keywords (Set<String>)
+
+* Tags for classification/search
+
+groupIds / topicIds / categoryIds (Set<String>)
+
+* Taxonomy classification
+
+targetGeoLocations (Set<String>)
+
+* Target geographic segments
+
+targetSegmentIds (Set<String>)
+
+* Target customer segments
+
+targetViewerIds (Set<String>)
+
+* Target specific users
+
+##### 📅 Timestamps
+
+createdAt (Date)
+
+* Creation timestamp
+
+updatedAt (Date)
+
+* Last update timestamp
+
+### Sample JSON data
+
+```json id="touchpoint_sample"
+{
+  "id": "tp_abc123",
+  "name": "Website Homepage",
+  "type": 1,
+  "typeAsType": "WEBSITE",
+  "url": "https://example.com",
+  "hostname": "example.com",
+
+  "collectionId": "IAB-17",
+  "parentId": "",
+
+  "locationCode": "7P28QPG4+P5",
+  "address": "District 1, Ho Chi Minh City",
+  "latitude": 10.7769,
+  "longitude": 106.7009,
+  "radius": 1000,
+
+  "journeyMapId": "journey_01",
+  "observerId": "web_tracker",
+  "isRootNode": true,
+  "firstPartyData": true,
+
+  "assetContentId": "content_01",
+  "assetType": 1,
+
+  "unitCost": 0.05,
+  "partitionId": 1,
+
+  "eventCounter": {
+    "pageView": 10000,
+    "itemView": 2500,
+    "clickDetails": 1200,
+    "madePayment": 300
+  },
+
+  "scoreCX": {
+    "positive": 80,
+    "neutral": 15,
+    "negative": 5
+  },
+
+  "keywords": ["homepage", "web"],
+  "createdAt": "2026-03-01T08:00:00.000Z",
+  "updatedAt": "2026-03-01T08:00:00.000Z"
+}
+```
+
+--- 
+
+## cdp_touchpointhub
+
+TouchpointHub is the **root aggregation layer of touchpoints**, grouping multiple touchpoints by **domain, location, or entity (person/system)**. It is the **foundation for building Journey Maps**, enabling structured tracking, attribution, and optimization across channels. 
+
+### Java Code Path
+
+`leotech.cdp.model.journey.TouchpointHub` 
+
+### 📦 TouchpointHub Attributes
+
+#### ✅ Persisted in ArangoDB
+
+##### 🔑 Core Identification
+
+id (String)
+
+* Primary key (_key in ArangoDB), generated from name + journeyMapId (or fixed for system hubs)
+
+name (String)
+
+* Name of the touchpoint hub (e.g., Website, Store Network, Data Observer)
+
+type (int)
+
+* Touchpoint type (enum: website, app, store, observer, etc.)
+
+typeAsType (String)
+
+* Human-readable type derived from enum
+
+status (int)
+
+* Lifecycle status (1=active, 0=inactive)
+
+firstPartyData (boolean)
+
+* Indicates if data is first-party (owned) or third-party
+
+isRootNode (boolean)
+
+* Marks this as root node in journey graph
+
+##### 🌐 URL & Source
+
+url (String)
+
+* Canonical URL of hub (domain-level or system endpoint)
+
+hostname (String)
+
+* Extracted domain from URL
+
+dataSourceHosts (Set<String>)
+
+* List of hostnames contributing data to this hub
+
+thumbnailUrl (String)
+
+* Thumbnail/icon for UI display
+
+##### 🌍 Location & Geo
+
+countryCode (String)
+
+* Country code
+
+locationCode (String)
+
+* Geo code (Plus Code or internal standard)
+
+address (String)
+
+* Physical address
+
+latitude (double)
+
+* Latitude
+
+longitude (double)
+
+* Longitude
+
+radius (double)
+
+* Coverage radius
+
+reachableArea (double)
+
+* Reachable geographic area
+
+##### 🧩 Journey Mapping
+
+journeyMapId (String)
+
+* Associated journey map ID
+
+journeyLevel (int)
+
+* Position/order in journey (1 = entry point, higher = deeper stages)
+
+##### 📊 Metrics & Tracking
+
+eventMetrics (Set<String>)
+
+* List of tracked event types (e.g., page-view, click, purchase)
+
+totalProfile (long)
+
+* Total number of profiles interacting with this hub
+
+keywords (Set<String>)
+
+* Tags for classification/search
+
+##### 👁️ Observer & Ownership
+
+observerId (String)
+
+* Observer system tracking this hub
+
+##### 📅 Timestamps
+
+createdAt (Date)
+
+* Creation timestamp
+
+updatedAt (Date)
+
+* Last update timestamp
+
+#### ❌ NOT persisted
+
+report (TouchpointHubReport)
+
+* Aggregated analytics report (runtime only, excluded via @Expose serialize=false)
+
+### Sample JSON data
+
+```json id="touchpoint_hub_sample"
+{
+  "id": "tph_website",
+  "name": "Website",
+  "type": 1,
+  "typeAsType": "WEBSITE",
+  "status": 1,
+  "firstPartyData": true,
+  "isRootNode": true,
+
+  "url": "https://example.com",
+  "hostname": "example.com",
+  "dataSourceHosts": ["example.com"],
+  "thumbnailUrl": "https://cdn.example.com/logo.png",
+
+  "countryCode": "VN",
+  "locationCode": "7P28QPG4+P5",
+  "address": "Ho Chi Minh City",
+  "latitude": 10.7769,
+  "longitude": 106.7009,
+  "radius": 1000,
+  "reachableArea": 5000,
+
+  "journeyMapId": "journey_01",
+  "journeyLevel": 1,
+
+  "eventMetrics": ["page-view", "click", "purchase"],
+  "totalProfile": 100000,
+
+  "keywords": ["web", "main-site"],
+  "observerId": "system_tracker",
+
+  "createdAt": "2026-03-01T08:00:00.000Z",
+  "updatedAt": "2026-03-01T08:00:00.000Z"
+}
+```
+
+---
+
+## cdp_trackingevent
+
+TrackingEvent is the **atomic unit of behavioral data in CDP**, capturing every interaction (page view, click, transaction, feedback, etc.). It is the **foundation for analytics, attribution, personalization, and AI models**. 
+
+### Java Code Path
+
+`leotech.cdp.model.analytics.TrackingEvent` 
+
+### 📦 TrackingEvent Attributes
+
+#### ✅ Persisted in ArangoDB
+
+##### 🔑 Core Identification
+
+id (String)
+
+* Primary key (_key in ArangoDB), generated from event fingerprint (observer + metric + touchpoint + timestamp + context)
+
+createdAt (Date)
+
+* Event creation timestamp
+
+updatedAt (Date)
+
+* Last update timestamp
+
+timestamp (int)
+
+* Unix timestamp (seconds precision, optimized for indexing)
+
+sessionKey (String)
+
+* Session identifier (group events within same user session)
+
+##### ⚙️ Event Classification
+
+metricName (String)
+
+* Event type (e.g., page-view, click, purchase, login)
+
+metricValue (long)
+
+* Numeric value of event (e.g., count, score, duration)
+
+message (String)
+
+* Optional message or note attached to event
+
+isActiveTracked (boolean)
+
+* True = real-time tracked event, False = batch/imported event
+
+isConversion (boolean)
+
+* Indicates conversion event (purchase, signup, etc.)
+
+isExperience (boolean)
+
+* Indicates experience/feedback event
+
+state (int)
+
+* Processing state (raw → processed → enriched)
+
+environment (String)
+
+* Environment tag (e.g., "pro", "dev")
+
+##### 🔗 Identity & Journey Mapping
+
+refProfileId (String)
+
+* Profile ID (core identity)
+
+refVisitorId (String)
+
+* Anonymous visitor ID
+
+refJourneyId (String)
+
+* Journey map ID
+
+journeyStage (int)
+
+* Stage index in journey
+
+observerId (String)
+
+* Observer system capturing event
+
+##### 🌐 Touchpoint Mapping
+
+srcTouchpointId (String)
+
+* Source touchpoint ID (where event originated)
+
+srcTouchpointHubId (String)
+
+* Source touchpoint hub
+
+srcTouchpointName (String)
+
+* Source touchpoint name
+
+srcTouchpointUrl (String)
+
+* Source URL
+
+srcTouchpointHost (String)
+
+* Source domain
+
+refTouchpointId (String)
+
+* Reference touchpoint (normalized)
+
+refTouchpointHubId (String)
+
+* Reference hub
+
+refTouchpointName (String)
+
+* Reference touchpoint name
+
+refTouchpointUrl (String)
+
+* Reference URL
+
+refTouchpointHost (String)
+
+* Reference domain
+
+##### 📦 Reference Entities
+
+refCampaignId (String)
+
+* Campaign ID
+
+refContentId (String)
+
+* Content ID
+
+refItemId (String)
+
+* Product/item ID
+
+refTicketId (String)
+
+* Support ticket ID
+
+refDataSource (String)
+
+* Source system identifier
+
+refFeedbackEventId (String)
+
+* Feedback event reference
+
+##### 🖥️ Device & Context
+
+browserName (String)
+
+* Browser
+
+fingerprintId (String)
+
+* Device fingerprint
+
+deviceId (String)
+
+* Device ID
+
+deviceOS (String)
+
+* Operating system
+
+deviceType (String)
+
+* Device type (mobile, desktop, etc.)
+
+deviceName (String)
+
+* Device name
+
+sourceIP (String)
+
+* IP address
+
+##### 🌍 Location
+
+locationCode (String)
+
+* Geo location code
+
+locationName (String)
+
+* Human-readable location
+
+locationAddress (String)
+
+* Address (shipping/home)
+
+##### ⏱️ Behavior Metrics
+
+timeSpent (int)
+
+* Time spent (seconds or unit depending on event)
+
+srcEventKey (String)
+
+* Source event identifier
+
+##### 💰 Transaction Data
+
+transactionId (String)
+
+* Transaction ID
+
+transactionValue (double)
+
+* Total value
+
+transactionShippingValue (double)
+
+* Shipping cost
+
+transactionStatus (String)
+
+* Status (paid, pending, failed)
+
+transactionCode (int)
+
+* Internal transaction code
+
+transactionDiscount (double)
+
+* Discount applied
+
+transactionCurrency (String)
+
+* Currency code
+
+transactionPayment (String)
+
+* Payment method
+
+transactionTax (double)
+
+* Tax value
+
+transactionShippingInfo (Map<String,Object>)
+
+* Shipping metadata
+
+orderedItems (Set<OrderedItem>)
+
+* Purchased product items
+
+serviceItems (Set<ServiceItem>)
+
+* Purchased services
+
+tradingItems (Set<TradingItem>)
+
+* Other trading items
+
+##### 📊 Media & Extra Data
+
+imageUrls (Set<String>)
+
+* Related images
+
+videoUrls (Set<String>)
+
+* Related videos
+
+eventData (Map<String,Object>)
+
+* Dynamic event metadata (key-value pairs)
+
+rawJsonData (String)
+
+* Raw event payload (for debugging/reprocessing)
+
+partitionId (int)
+
+* Partition/shard ID
+
+fraudScore (int)
+
+* Fraud detection score
+
+##### ⚙️ Processing
+
+computableFields (Set<ComputableField>)
+
+* Fields to be computed/enriched by data pipelines
+
+#### ❌ NOT persisted
+
+observer (EventObserver)
+
+* Runtime observer object
+
+refTouchpoint (Touchpoint)
+
+* Resolved reference touchpoint
+
+srcTouchpoint (Touchpoint)
+
+* Resolved source touchpoint
+
+### Sample JSON data
+
+```json id="tracking_event_sample"
+{
+  "id": "evt_abc123",
+  "createdAt": "2026-03-01T08:00:00.000Z",
+  "updatedAt": "2026-03-01T08:00:00.000Z",
+  "timestamp": 1710000000,
+  "sessionKey": "sess_123",
+
+  "metricName": "purchase",
+  "metricValue": 1,
+  "isConversion": true,
+
+  "refProfileId": "profile_123",
+  "refVisitorId": "visitor_abc",
+  "refJourneyId": "journey_01",
+  "journeyStage": 3,
+
+  "observerId": "web_tracker",
+
+  "srcTouchpointId": "tp_web",
+  "srcTouchpointName": "Website",
+  "srcTouchpointUrl": "https://shop.example.com",
+
+  "refTouchpointId": "tp_checkout",
+  "refTouchpointName": "Checkout Page",
+
+  "transactionId": "txn_001",
+  "transactionValue": 1500000,
+  "transactionCurrency": "VND",
+  "transactionPayment": "credit_card",
+
+  "orderedItems": [
+    {
+      "itemId": "prod_001",
+      "name": "Product A",
+      "quantity": 1,
+      "price": 1500000
+    }
+  ],
+
+  "deviceType": "mobile",
+  "browserName": "Chrome",
+  "sourceIP": "113.161.xxx.xxx",
+
+  "locationName": "Ho Chi Minh City",
+
+  "eventData": {
+    "utm_source": "facebook_ads"
+  }
+}
+```
+
+---
+
+## cdp_webhookdataevent
+
+WebhookDataEvent stores **raw webhook payloads from external systems** (payment gateways, subscription services, third-party platforms). It acts as the **ingestion layer for financial and system events**, before normalization into TrackingEvent / FinanceEvent.
+
+### Java Code Path
+
+`leotech.cdp.model.analytics.WebhookDataEvent`
+
+### 📦 WebhookDataEvent Attributes
+
+#### ✅ Persisted in ArangoDB
+
+id (String)
+
+* Primary key (_key in ArangoDB), generated as hash of `source + observerId + payload` (ensures deduplication of webhook events)
+
+createdAt (Date)
+
+* Timestamp when webhook event is received
+
+updatedAt (Date)
+
+* Last update timestamp (used for processing lifecycle tracking)
+
+observerId (String)
+
+* Observer system that received the webhook (e.g., payment listener, webhook service)
+
+refTouchpointHubId (String)
+
+* Data hub where event belongs (e.g., payment gateway, CRM, external system)
+
+processed (boolean)
+
+* Processing status:
+
+  * false = raw/unprocessed
+  * true = already parsed and transformed into internal events
+
+payload (String)
+
+* Raw webhook payload (JSON string from external system)
+
+source (String)
+
+* Source system name (e.g., stripe, paypal, shopify, zalo, webhook-api)
+
+### Sample JSON data
+
+```json
+{
+  "id": "wh_abc123",
+  "createdAt": "2026-03-01T08:00:00.000Z",
+  "updatedAt": "2026-03-01T08:00:00.000Z",
+  "observerId": "payment_webhook_service",
+  "refTouchpointHubId": "stripe_gateway",
+  "processed": false,
+  "source": "stripe",
+  "payload": "{\"event\":\"payment_intent.succeeded\",\"amount\":100000,\"currency\":\"VND\",\"customer_id\":\"cus_123\"}"
+}
+```
 
