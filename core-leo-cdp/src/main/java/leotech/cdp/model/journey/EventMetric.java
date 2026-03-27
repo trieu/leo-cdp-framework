@@ -367,6 +367,13 @@ public final class EventMetric extends PersistentObject {
 		return isScoringForCLV() && funnelStage != null && funnelStage.isCustomerMetric();
 	}
 
+	public boolean isFeedback() {
+		return this.scoreModel == EventMetric.SCORING_FEEDBACK_METRIC 
+			|| this.scoreModel == EventMetric.SCORING_SATISFACTION_METRIC 
+			|| this.scoreModel == EventMetric.SCORING_EFFORT_METRIC 
+			|| this.scoreModel == EventMetric.SCORING_PROMOTER_METRIC;
+	}
+
 	public final boolean isPurchasingEvent() {
 		return isConversion(); // Identical logic as isConversion(), simplified
 	}

@@ -396,9 +396,8 @@ public final class HttpWebParamUtil {
 	 * @param String            eventName
 	 * @return
 	 */
-	public final static FeedbackEvent getFeedbackEventFromHttpPost(HttpServerRequest req, String eventName) {
-		MultiMap formData = req.formAttributes();
-		String jsonStr = StringUtil.decodeUrlUTF8(formData.get(HttpParamKey.EVENT_DATA));
+	public final static FeedbackEvent getFeedbackEvent(MultiMap eventParams, String eventName) {
+		String jsonStr = StringUtil.decodeUrlUTF8(eventParams.get(HttpParamKey.EVENT_DATA));
 		if (StringUtil.isNotEmpty(jsonStr)) {
 			Gson gson = new Gson();
 			FeedbackEvent fbe = gson.fromJson(jsonStr, FeedbackEvent.class);

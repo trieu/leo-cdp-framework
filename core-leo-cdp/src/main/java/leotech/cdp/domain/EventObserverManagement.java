@@ -443,6 +443,10 @@ public class EventObserverManagement {
 	public static String recordFeedbackEvent(Date createdAt, ContextSession ctxSession, String environment, String fingerprintId, String deviceId, 
 			String lastSeenIp, DeviceInfo device, String srcObserverId, String touchpointName, String touchpointUrl, FeedbackEvent feedbackEvent) {
 		
+		if(feedbackEvent == null || StringUtil.isEmpty(srcObserverId) || StringUtil.isEmpty(touchpointUrl)) {
+			return null;
+		}
+		
 		Touchpoint srcTouchpoint = TouchpointManagement.getOrCreateNew(touchpointName, TouchpointType.FEEDBACK_SURVEY, touchpointUrl);
 		BasicContactData contactInfo = feedbackEvent.getBasicContactData();
 		

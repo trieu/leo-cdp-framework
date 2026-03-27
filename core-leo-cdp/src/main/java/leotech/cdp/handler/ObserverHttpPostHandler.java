@@ -30,6 +30,7 @@ import leotech.system.common.BaseHttpHandler;
 import leotech.system.common.BaseHttpRouter;
 import leotech.system.model.DeviceInfo;
 import leotech.system.util.HttpWebParamUtil;
+import leotech.system.util.LogUtil;
 import leotech.system.util.TaskRunner;
 import rfx.core.util.StringPool;
 import rfx.core.util.StringUtil;
@@ -116,7 +117,6 @@ public final class ObserverHttpPostHandler {
 		int successCount = events.size();
 		ObserverResponse.done(resp, 200, visitorId, ctxSessionKey, successCount);
 		
-		
 		TaskRunner.runInThreadPools(()->{
 			// Resolve IP once for the batch
 			String ip = HttpWebParamUtil.getRemoteIP(req);
@@ -166,11 +166,18 @@ public final class ObserverHttpPostHandler {
 	
 	private static void saveEvent(HttpServerRequest req, DeviceInfo device, ContextSession ctxSession, MultiMap eventParams, String metricName) {
 		if (ctxSession != null) {
+			
 			EventMetric metric = EventMetricManagement.getEventMetricByName(metricName);
 			if(metric.isConversion()) {
 				EventObserverUtil.recordConversionEvent(req, eventParams, device, ctxSession, metricName);
 			}
-			else {				
+			else if(metric.isFeedback()) {
+				LogUtil.println("Recording Feedback Event for metric: " + metricName);
+				LogUtil.println(eventParams.entries());
+				FeedbackEvent feedbackEvent = HttpWebParamUtil.getFeedbackEvent(eventParams, metricName);
+				EventObserverUtil.recordFeedbackEvent(req, device, ctxSession, feedbackEvent);
+			}
+			else {		
 				EventObserverUtil.recordBehavioralEvent(req, eventParams, device, ctxSession, metricName);
 			}
 		}
@@ -272,7 +279,7 @@ public final class ObserverHttpPostHandler {
 			DeviceInfo device, String ctxSessionKey, String ip) {
 
 		String eventName = StringUtil.safeString(params.get(HttpParamKey.EVENT_METRIC_NAME)).toLowerCase();
-		FeedbackEvent feedbackEvent = HttpWebParamUtil.getFeedbackEventFromHttpPost(req, eventName);
+		FeedbackEvent feedbackEvent = HttpWebParamUtil.getFeedbackEvent(params, eventName);
 		ContextSession ctxSession = ContextSessionManagement.get(ctxSessionKey, ip, params, device);
 
 		int status = 500;
