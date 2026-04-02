@@ -15,6 +15,7 @@ import leotech.cdp.model.analytics.FeedbackEvent;
 import leotech.cdp.model.analytics.OrderTransaction;
 import leotech.cdp.model.analytics.OrderedItem;
 import leotech.system.model.DeviceInfo;
+import leotech.system.util.DeviceInfoUtil;
 import leotech.system.util.HttpWebParamUtil;
 import leotech.system.util.UrlUtil;
 import rfx.core.util.StringUtil;
@@ -146,22 +147,19 @@ public final class EventObserverUtil {
 			HttpServerRequest req,
 			DeviceInfo device,
 			ContextSession ctxSession,
-			FeedbackEvent feedbackEvent
+			FeedbackEvent fbe
 	) {
 		final Date createdAt = new Date();
 		final String sourceIP = HttpWebParamUtil.getRemoteIP(req);
-		final MultiMap formData = req.formAttributes();
 
-		final String srcObserverId = StringUtil.safeString(formData.get(HttpParamKey.OBSERVER_ID));
-		String touchpointName = HttpWebParamUtil.getString(formData, HttpParamKey.TOUCHPOINT_NAME);
-		String touchpointUrl = HttpWebParamUtil.getString(formData, HttpParamKey.TOUCHPOINT_URL);
+		String srcObserverId = StringUtil.safeString(ctxSession.getObserverId());
+		String touchpointName = StringUtil.safeString(fbe.getHeader());
+		String touchpointUrl = StringUtil.safeString(fbe.getTouchpointUrl());
 
-		final String fingerprintId = StringUtil.safeString(formData.get(HttpParamKey.FINGERPRINT_ID));
-		final String deviceId = DeviceManagement.getDeviceId(formData, device);
-		final String environment = StringUtil.safeString(
-				formData.get(HttpParamKey.DATA_ENVIRONMENT),
-				HttpParamKey.PRO_ENV
-		);
+		final String fingerprintId = StringUtil.safeString(fbe.getFingerprintId());
+		final String deviceId = DeviceInfoUtil.getUserDevice(device).getId();
+		String environment = touchpointUrl.contains("example.com") ? "DEV" : "PRO";
+		
 
 		touchpointName = StringEscapeUtils.unescapeHtml4(touchpointName);
 		touchpointUrl = StringEscapeUtils.unescapeHtml4(touchpointUrl);
@@ -177,7 +175,7 @@ public final class EventObserverUtil {
 				srcObserverId,
 				touchpointName,
 				touchpointUrl,
-				feedbackEvent
+				fbe
 		);
 	}
 }

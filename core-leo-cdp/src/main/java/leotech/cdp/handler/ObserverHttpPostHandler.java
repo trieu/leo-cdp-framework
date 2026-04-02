@@ -175,6 +175,7 @@ public final class ObserverHttpPostHandler {
 				LogUtil.println("Recording Feedback Event for metric: " + metricName);
 				LogUtil.println(eventParams.entries());
 				FeedbackEvent feedbackEvent = HttpWebParamUtil.getFeedbackEvent(eventParams, metricName);
+				LogUtil.println("\n------------\n"+feedbackEvent+"\n------------");
 				EventObserverUtil.recordFeedbackEvent(req, device, ctxSession, feedbackEvent);
 			}
 			else {		
@@ -296,7 +297,6 @@ public final class ObserverHttpPostHandler {
 
 	private static void handleProfileUpdate(HttpServerRequest req, MultiMap params, HttpServerResponse resp,
 			DeviceInfo device, String ctxSessionKey, String ip) {
-
 		ContextSession session = ContextSessionManagement.get(ctxSessionKey, ip, params, device);
 		int status = 404;
 		if (session != null) {

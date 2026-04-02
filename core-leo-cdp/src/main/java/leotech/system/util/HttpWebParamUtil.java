@@ -402,6 +402,10 @@ public final class HttpWebParamUtil {
 			Gson gson = new Gson();
 			FeedbackEvent fbe = gson.fromJson(jsonStr, FeedbackEvent.class);
 			fbe.setEventName(eventName);
+			fbe.setTouchpointName(eventParams.get(HttpParamKey.TOUCHPOINT_NAME));
+			fbe.setTouchpointUrl(eventParams.get(HttpParamKey.TOUCHPOINT_URL));
+			fbe.setFingerprintId(eventParams.get(HttpParamKey.FINGERPRINT_ID));
+			fbe.setRefVisitorId(eventParams.get(HttpParamKey.VISITOR_ID));
 			return fbe;
 		}
 		return null;

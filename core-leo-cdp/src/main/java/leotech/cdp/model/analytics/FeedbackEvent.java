@@ -19,7 +19,8 @@ import rfx.core.util.DateTimeUtil;
 import rfx.core.util.StringUtil;
 
 /**
- * FeedbackEvent is the data model for ./resources/app-templates/web-form/template-survey-form.html
+ * FeedbackEvent is the data model for
+ * ./resources/app-templates/web-form/template-survey-form.html
  * 
  * @author tantrieuf31
  * @since 2021
@@ -30,12 +31,12 @@ public final class FeedbackEvent extends FeedbackData {
 	public static final String CONTACT = "CONTACT";
 
 	public static final String SURVEY = "SURVEY";
-	
+
 	public static final String RATING = "RATING";
 
 	@Expose
 	String eventName = "";
-	
+
 	@Expose
 	boolean onSharedDevices = false;
 
@@ -57,6 +58,9 @@ public final class FeedbackEvent extends FeedbackData {
 	String deviceId = "";
 
 	@Expose
+	String fingerprintId = "";
+
+	@Expose
 	String refVisitorId = "";
 
 	////////////////////////////////////////////
@@ -75,28 +79,28 @@ public final class FeedbackEvent extends FeedbackData {
 
 	@Expose
 	String profilePhone = "";
-	
+
 	@Expose
-	int profileGender = -1; 
-	
+	int profileGender = -1;
+
 	@Expose
 	int profileAge = -1;
-	
+
 	@Expose
 	int profileAgeGroup = -1;
-	
+
 	@Expose
 	String profileDateOfBirth = "";
-	
+
 	@Expose
 	String profileLivingLocation;
-	
+
 	@Expose
 	String profileLocationCode;
-	
+
 	@Expose
 	String profileNationality;
-	
+
 	@Expose
 	Map<String, Object> profileExtAttributes = new HashMap<>();
 
@@ -105,23 +109,23 @@ public final class FeedbackEvent extends FeedbackData {
 
 	////////////////////////////////////////////
 
-	
-	// ------------------------------------ survey answers for questions ------------------------------------
+	// ------------------------------------ survey answers for questions
+	// ------------------------------------
 
 	@Expose
 	Map<String, Map<String, String>> ratingQuestionAnswer = new HashMap<>();
 
 	@Expose
 	Map<String, QuestionAnswer> extraTextQuestionsAnswer = new HashMap<>();
-	
+
 	@Expose
 	Map<String, QuestionAnswer> singleChoiceQuestionAnswer = new HashMap<>();
-	
+
 	@Expose
 	Map<String, QuestionAnswer> multipleChoiceQuestionAnswer = new HashMap<>();
-	
+
 	// -------------------------------------------------------------------------------------------------------
-	
+
 	@Expose
 	double feedbackScore = -1;// 1 - 5 or 0 - 10
 
@@ -142,10 +146,10 @@ public final class FeedbackEvent extends FeedbackData {
 
 	@Expose
 	String dateKey = "";
-	
+
 	@Expose
 	double geoLatitude;
-	
+
 	@Expose
 	double geoLongitude;
 
@@ -154,14 +158,13 @@ public final class FeedbackEvent extends FeedbackData {
 		if (dataValidation()) {
 			super.cleanXss();
 			XssFilterUtil.cleanAllHtmlTags(this, FeedbackEvent.class);
-			
+
 			this.buildDateKey();
-			String keyHint = refProfileId + header + group + evaluatedObject + feedbackType
-					+ surveyChoicesId + refTemplateId + refTouchpointHubId + refProductItemId + refCampaignId
-					+ refContentItemId + refTouchpointId + touchpointId + this.createdAt.getTime();
+			String keyHint = refProfileId + header + group + evaluatedObject + feedbackType + surveyChoicesId
+					+ refTemplateId + refTouchpointHubId + refProductItemId + refCampaignId + refContentItemId
+					+ refTouchpointId + touchpointId + this.createdAt.getTime();
 			this.id = createId(this.id, keyHint);
-		} 
-		else {
+		} else {
 			System.err.println(new Gson().toJson(this));
 			throw new IllegalArgumentException("check isReadyForSave is failed ");
 		}
@@ -171,7 +174,7 @@ public final class FeedbackEvent extends FeedbackData {
 	public FeedbackEvent() {
 		// gson
 	}
-	
+
 	public FeedbackEvent(TrackingEvent event) {
 		setCreatedAt(event.getCreatedAt());
 		setRefProfileId(event.getRefProfileId());
@@ -187,8 +190,9 @@ public final class FeedbackEvent extends FeedbackData {
 		setTouchpointUrl(event.getSrcTouchpointUrl());
 		this.buildHashedId();
 	}
-	
-	public FeedbackEvent(String metricName, Date createdAt, String refProfileId, int ratingScore, Touchpoint srcTouchpoint) {
+
+	public FeedbackEvent(String metricName, Date createdAt, String refProfileId, int ratingScore,
+			Touchpoint srcTouchpoint) {
 		setCreatedAt(createdAt);
 		setRefProfileId(refProfileId);
 		setFeedbackType(RATING);
@@ -200,25 +204,24 @@ public final class FeedbackEvent extends FeedbackData {
 		setTouchpointUrl(srcTouchpoint.getUrl());
 		this.buildHashedId();
 	}
-	
 
 	@Override
 	public boolean dataValidation() {
 		boolean hasAnswer = false;
 		if (SURVEY.equals(this.feedbackType)) {
 			hasAnswer = this.getRatingQuestionAnswer().size() > 0;
-			if(!hasAnswer) {
+			if (!hasAnswer) {
 				// for simple survey to collect just basic profile data
-				hasAnswer = (StringUtil.isNotEmpty(profileFirstName) || StringUtil.isNotEmpty(profileLastName)) && (StringUtil.isNotEmpty(profileEmail) || StringUtil.isNotEmpty(profilePhone));
+				hasAnswer = (StringUtil.isNotEmpty(profileFirstName) || StringUtil.isNotEmpty(profileLastName))
+						&& (StringUtil.isNotEmpty(profileEmail) || StringUtil.isNotEmpty(profilePhone));
 			}
-		} 
-		else if (CONTACT.equals(this.feedbackType)) {
+		} else if (CONTACT.equals(this.feedbackType)) {
 			hasAnswer = StringUtil.isNotEmpty(this.profileEmail) || StringUtil.isNotEmpty(this.profilePhone);
-		} 
-		else {
+		} else {
 			hasAnswer = this.feedbackScore >= 0 && this.feedbackScore <= 10;
 		}
-		return hasAnswer && this.createdAt != null && StringUtil.isNotEmpty(this.refProfileId)  && StringUtil.isNotEmpty(this.touchpointId) && StringUtil.isNotEmpty(this.touchpointUrl);
+		return hasAnswer && this.createdAt != null && StringUtil.isNotEmpty(this.refProfileId)
+				&& StringUtil.isNotEmpty(this.touchpointId) && StringUtil.isNotEmpty(this.touchpointUrl);
 	}
 
 	public boolean isOnSharedDevices() {
@@ -395,7 +398,7 @@ public final class FeedbackEvent extends FeedbackData {
 	public void setRefVisitorId(String refVisitorId) {
 		this.refVisitorId = refVisitorId;
 	}
-	
+
 	public List<String> getDecisionMakers() {
 		return decisionMakers;
 	}
@@ -510,31 +513,37 @@ public final class FeedbackEvent extends FeedbackData {
 	public void setGeoLongitude(double geoLongitude) {
 		this.geoLongitude = geoLongitude;
 	}
-	
-	
-	
+
+	public String getFingerprintId() {
+		return fingerprintId;
+	}
+
+	public void setFingerprintId(String fingerprintId) {
+		this.fingerprintId = fingerprintId;
+	}
+
 	public Map<String, Object> getUpdatingProfileAttributes() {
 		Map<String, Object> map = this.profileExtAttributes;
-		
+
 		map.put("firstName", profileFirstName);
 		map.put("lastName", profileLastName);
 		map.put("primaryEmail", profileEmail);
 		map.put("primaryPhone", profilePhone);
 		map.put("gender", profileGender);
-		
+
 		map.put("age", profileAge);
 		map.put("ageGroup", profileAgeGroup);
 		map.put("dateOfBirth", profileDateOfBirth);
-		
+
 		map.put("livingLocation", profileLivingLocation);
 		map.put("locationCode", profileLocationCode);
 		map.put("primaryNationality", profileNationality);
 		// TODO add more fields
-		
+
 		this.enrichProfileExtAttributes();
 		return map;
 	}
-	
+
 	public Map<String, Object> getProfileExtAttributes() {
 		return profileExtAttributes;
 	}
@@ -542,29 +551,27 @@ public final class FeedbackEvent extends FeedbackData {
 	public void setProfileExtAttributes(Map<String, Object> profileExtAttributes) {
 		this.profileExtAttributes = profileExtAttributes;
 	}
-	
+
 	public void enrichProfileExtAttributes() {
 		Map<String, Object> newMap = new HashMap<>(this.profileExtAttributes.size());
 		this.profileExtAttributes.forEach((t, u) -> {
 			int intValue = StringUtil.safeParseInt(u);
-			if(t.equalsIgnoreCase("gender")) {
-				if(intValue == 1) {
+			if (t.equalsIgnoreCase("gender")) {
+				if (intValue == 1) {
 					u = "Male";
-				}
-				else if(intValue == 0) {
+				} else if (intValue == 0) {
 					u = "Female";
 				}
-			}
-			else if(t.equalsIgnoreCase("ageGroup")) {
+			} else if (t.equalsIgnoreCase("ageGroup")) {
 				u = ProfileAgeGroup.getAsLabelString(intValue);
 			}
-			if(intValue != -1 && !StringUtil.isEmpty(u)) {
+			if (intValue != -1 && !StringUtil.isEmpty(u)) {
 				newMap.put(t, u);
 			}
 		});
 		this.profileExtAttributes = newMap;
 	}
-	
+
 	public BasicContactData getBasicContactData() {
 		return new BasicContactData(profileEmail, profilePhone, profileFirstName, profileLastName);
 	}
