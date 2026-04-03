@@ -1,7 +1,7 @@
 package leotech.cdp.model.analytics;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -14,6 +14,7 @@ import com.google.gson.annotations.Expose;
 import leotech.cdp.model.customer.BasicContactData;
 import leotech.cdp.model.customer.ProfileAgeGroup;
 import leotech.cdp.model.journey.Touchpoint;
+import leotech.cdp.model.journey.TouchpointType;
 import leotech.system.util.XssFilterUtil;
 import rfx.core.util.DateTimeUtil;
 import rfx.core.util.StringUtil;
@@ -24,15 +25,16 @@ import rfx.core.util.StringUtil;
  * 
  * @author tantrieuf31
  * @since 2021
- *
  */
 public final class FeedbackEvent extends FeedbackData {
 
 	public static final String CONTACT = "CONTACT";
-
 	public static final String SURVEY = "SURVEY";
-
 	public static final String RATING = "RATING";
+
+	// Thread-safe formatter to replace heavy SimpleDateFormat instantiation
+	private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter
+			.ofPattern(DateTimeUtil.DATE_FORMAT_PATTERN).withZone(ZoneId.systemDefault());
 
 	@Expose
 	String eventName = "";
@@ -41,9 +43,11 @@ public final class FeedbackEvent extends FeedbackData {
 	boolean onSharedDevices = false;
 
 	@Expose
-	int status = 1;// 1 recorded, 0 computed, -1 deleted
+	int status = 1; // 1 recorded, 0 computed, -1 deleted
 
-	////////////////////////////////////////////
+	// ----------------------------------------------------------------------
+	// TOUCHPOINT METADATA
+	// ----------------------------------------------------------------------
 
 	@Expose
 	String touchpointId = "";
@@ -63,7 +67,9 @@ public final class FeedbackEvent extends FeedbackData {
 	@Expose
 	String refVisitorId = "";
 
-	////////////////////////////////////////////
+	// ----------------------------------------------------------------------
+	// PROFILE METADATA
+	// ----------------------------------------------------------------------
 
 	@Expose
 	String refProfileId = "";
@@ -107,10 +113,9 @@ public final class FeedbackEvent extends FeedbackData {
 	@Expose
 	Map<String, String> profileExtId = new HashMap<>();
 
-	////////////////////////////////////////////
-
-	// ------------------------------------ survey answers for questions
-	// ------------------------------------
+	// ----------------------------------------------------------------------
+	// SURVEY ANSWERS
+	// ----------------------------------------------------------------------
 
 	@Expose
 	Map<String, Map<String, String>> ratingQuestionAnswer = new HashMap<>();
@@ -124,19 +129,21 @@ public final class FeedbackEvent extends FeedbackData {
 	@Expose
 	Map<String, QuestionAnswer> multipleChoiceQuestionAnswer = new HashMap<>();
 
-	// -------------------------------------------------------------------------------------------------------
+	// ----------------------------------------------------------------------
+	// FEEDBACK CONFIGURATION
+	// ----------------------------------------------------------------------
 
 	@Expose
-	double feedbackScore = -1;// 1 - 5 or 0 - 10
+	double feedbackScore = -1; // 1 - 5 or 0 - 10
 
 	@Expose
-	List<String> decisionMakers = new ArrayList<String>();
+	List<String> decisionMakers = new ArrayList<>();
 
 	@Expose
-	List<String> originalSources = new ArrayList<String>();
+	List<String> originalSources = new ArrayList<>();
 
 	@Expose
-	List<String> mediaSources = new ArrayList<String>();
+	List<String> mediaSources = new ArrayList<>();
 
 	@Expose
 	String comment = ""; // comment text
@@ -153,26 +160,8 @@ public final class FeedbackEvent extends FeedbackData {
 	@Expose
 	double geoLongitude;
 
-	@Override
-	public String buildHashedId() throws IllegalArgumentException {
-		if (dataValidation()) {
-			super.cleanXss();
-			XssFilterUtil.cleanAllHtmlTags(this, FeedbackEvent.class);
-
-			this.buildDateKey();
-			String keyHint = refProfileId + header + group + evaluatedObject + feedbackType + surveyChoicesId
-					+ refTemplateId + refTouchpointHubId + refProductItemId + refCampaignId + refContentItemId
-					+ refTouchpointId + touchpointId + this.createdAt.getTime();
-			this.id = createId(this.id, keyHint);
-		} else {
-			System.err.println(new Gson().toJson(this));
-			throw new IllegalArgumentException("check isReadyForSave is failed ");
-		}
-		return this.id;
-	}
-
 	public FeedbackEvent() {
-		// gson
+		// Default constructor for Gson
 	}
 
 	public FeedbackEvent(TrackingEvent event) {
@@ -208,8 +197,9 @@ public final class FeedbackEvent extends FeedbackData {
 	@Override
 	public boolean dataValidation() {
 		boolean hasAnswer = false;
+
 		if (SURVEY.equals(this.feedbackType)) {
-			hasAnswer = this.getRatingQuestionAnswer().size() > 0;
+			hasAnswer = !this.getRatingQuestionAnswer().isEmpty();
 			if (!hasAnswer) {
 				// for simple survey to collect just basic profile data
 				hasAnswer = (StringUtil.isNotEmpty(profileFirstName) || StringUtil.isNotEmpty(profileLastName))
@@ -220,9 +210,160 @@ public final class FeedbackEvent extends FeedbackData {
 		} else {
 			hasAnswer = this.feedbackScore >= 0 && this.feedbackScore <= 10;
 		}
+
 		return hasAnswer && this.createdAt != null && StringUtil.isNotEmpty(this.refProfileId)
 				&& StringUtil.isNotEmpty(this.touchpointId) && StringUtil.isNotEmpty(this.touchpointUrl);
 	}
+
+	@Override
+	public String buildHashedId() throws IllegalArgumentException {
+		if (dataValidation()) {
+			super.cleanXss();
+			XssFilterUtil.cleanAllHtmlTags(this, FeedbackEvent.class);
+
+			this.buildDateKey();
+			String keyHint = refProfileId + header + group + evaluatedObject + feedbackType + surveyChoicesId
+					+ refTemplateId + refTouchpointHubId + refProductItemId + refCampaignId + refContentItemId
+					+ refTouchpointId + touchpointId + this.createdAt.getTime();
+
+			this.id = createId(this.id, keyHint);
+			return this.id;
+		} else {
+			// FIX: Replaced System.err.println with a meaningful exception string
+			throw new IllegalArgumentException(
+					"FeedbackEvent data validation failed. Missing required answers, profile ID, or touchpoint URLs. Payload: "
+							+ this.toString());
+		}
+	}
+
+	public String buildDateKey() {
+		if (this.createdAt != null) {
+			// FIX: Upgraded to thread-safe DateTimeFormatter
+			this.dateKey = DATE_FORMATTER.format(this.createdAt.toInstant());
+		}
+		return this.dateKey;
+	}
+
+	public Map<String, Object> getUpdatingProfileAttributes() {
+		// -------------------------------------------------------------------------
+		// 1. CORE IDENTITY & CONTACT
+		// Keys exactly match the property names in Profile.java / AbstractProfile.java
+		// -------------------------------------------------------------------------
+		this.profileExtAttributes.put("firstName", profileFirstName);
+		this.profileExtAttributes.put("lastName", profileLastName);
+		this.profileExtAttributes.put("primaryEmail", profileEmail);
+		this.profileExtAttributes.put("primaryPhone", profilePhone);
+		
+		// -------------------------------------------------------------------------
+		// 2. DEMOGRAPHICS
+		// -------------------------------------------------------------------------
+		this.profileExtAttributes.put("gender", profileGender);
+		this.profileExtAttributes.put("age", profileAge);
+		this.profileExtAttributes.put("ageGroup", profileAgeGroup);
+		this.profileExtAttributes.put("dateOfBirth", profileDateOfBirth);
+		this.profileExtAttributes.put("primaryNationality", profileNationality);
+
+		// -------------------------------------------------------------------------
+		// 3. LOCATION
+		// -------------------------------------------------------------------------
+		this.profileExtAttributes.put("livingLocation", profileLivingLocation);
+		this.profileExtAttributes.put("locationCode", profileLocationCode);
+		
+		// -------------------------------------------------------------------------
+		// 4. DEVICE & DIGITAL FOOTPRINT
+		// Maps exactly to AbstractProfile tracking fields for Identity Resolution
+		// -------------------------------------------------------------------------
+		this.profileExtAttributes.put("lastUsedDeviceId", deviceId);
+		this.profileExtAttributes.put("fingerprintId", fingerprintId);
+		this.profileExtAttributes.put("visitorId", refVisitorId);
+
+
+		// -------------------------------------------------------------------------
+		// 5. B2B, ACQUISITION & MARKETING CHANNELS
+		// Maps to Profile.java's Sets/Lists
+		// -------------------------------------------------------------------------
+		if (mediaSources != null && !mediaSources.isEmpty()) {
+			this.profileExtAttributes.put("mediaChannels", mediaSources);
+		}
+		if (originalSources != null && !originalSources.isEmpty()) {
+			this.profileExtAttributes.put("referrerChannels", originalSources);
+		}
+		if (decisionMakers != null && !decisionMakers.isEmpty()) {
+			// Closest match in Profile.java for decision makers is businessContacts
+			this.profileExtAttributes.put("businessContacts", decisionMakers);
+		}
+
+		// -------------------------------------------------------------------------
+		// 6. EXTERNAL IDENTITIES (CRM, Social, etc.)
+		// -------------------------------------------------------------------------
+		if (profileExtId != null && !profileExtId.isEmpty()) {
+			// If a CRM ID is passed in the feedback context, map it directly
+			if (profileExtId.containsKey("crmRefId")) {
+				this.profileExtAttributes.put("crmRefId", profileExtId.get("crmRefId"));
+			}
+			// Dump the rest into the profile's custom extAttributes map
+			this.profileExtAttributes.put("extAttributes", profileExtId);
+		}
+
+		// -------------------------------------------------------------------------
+		// 7. CUSTOM EXPERIENCE (CX) & FEEDBACK CONTEXT
+		// These will likely fall into Profile.extAttributes or dynamic variables
+		// -------------------------------------------------------------------------
+		
+		
+		if (StringUtil.isNotEmpty(language)) {
+			this.profileExtAttributes.put("primaryLanguage", language);
+		}
+		if (geoLatitude > 0 && geoLongitude > 0) {
+			String locUrl = "https://www.google.com/maps/search/?api=1&query="+geoLatitude+","+geoLongitude;
+			Touchpoint loc = new Touchpoint(TouchpointType.FEEDBACK_SURVEY, locUrl);
+			this.profileExtAttributes.put("lastTouchpoint", loc);
+		}
+
+		// -------------------------------------------------------------------------
+		// 8. ENRICH & CLEANUP
+		// Automatically drops keys resolving to -1, empty strings, or nulls.
+		// Translates gender integers to Strings (1 -> "Male") automatically.
+		// -------------------------------------------------------------------------
+		this.enrichProfileExtAttributes();
+
+		// Safely return the newly enriched and cleaned map
+		return this.profileExtAttributes;
+	}
+
+	public void enrichProfileExtAttributes() {
+		Map<String, Object> newMap = new HashMap<>(this.profileExtAttributes.size());
+
+		this.profileExtAttributes.forEach((key, val) -> {
+			if (val == null)
+				return;
+
+			String stringVal = String.valueOf(val);
+			int intValue = StringUtil.safeParseInt(stringVal);
+			Object enrichedVal = val;
+
+			if (key.equalsIgnoreCase("gender")) {
+				if (intValue == 1) {
+					enrichedVal = "Male";
+				} else if (intValue == 0) {
+					enrichedVal = "Female";
+				}
+			} else if (key.equalsIgnoreCase("ageGroup")) {
+				enrichedVal = ProfileAgeGroup.getAsLabelString(intValue);
+			}
+
+			// Maintains original logic: Drops properties resolving to -1
+			if (intValue != -1 && StringUtil.isNotEmpty(String.valueOf(enrichedVal))) {
+				newMap.put(key, enrichedVal);
+			}
+		});
+
+		this.profileExtAttributes = newMap;
+	}
+
+	// ----------------------------------------------------------------------
+	// GETTERS & SETTERS
+	// ----------------------------------------------------------------------
 
 	public boolean isOnSharedDevices() {
 		return onSharedDevices;
@@ -246,13 +387,6 @@ public final class FeedbackEvent extends FeedbackData {
 
 	public void setDateKey(String dateKey) {
 		this.dateKey = dateKey;
-	}
-
-	public String buildDateKey() {
-		DateFormat dateFormat = new SimpleDateFormat(DateTimeUtil.DATE_FORMAT_PATTERN);
-		Date reportedDate = this.createdAt;
-		this.dateKey = dateFormat.format(reportedDate);
-		return this.dateKey;
 	}
 
 	public String getRefProfileId() {
@@ -307,16 +441,16 @@ public final class FeedbackEvent extends FeedbackData {
 		return feedbackScore;
 	}
 
-	public int getFeedbackScoreInteger() {
-		return (int) Math.floor(feedbackScore);
+	public void setFeedbackScore(double feedbackScore) {
+		this.feedbackScore = feedbackScore;
 	}
 
 	public void setFeedbackScore(int feedbackScore) {
 		this.feedbackScore = feedbackScore;
 	}
 
-	public void setFeedbackScore(double feedbackScore) {
-		this.feedbackScore = feedbackScore;
+	public int getFeedbackScoreInteger() {
+		return (int) Math.floor(feedbackScore);
 	}
 
 	public String getComment() {
@@ -522,54 +656,12 @@ public final class FeedbackEvent extends FeedbackData {
 		this.fingerprintId = fingerprintId;
 	}
 
-	public Map<String, Object> getUpdatingProfileAttributes() {
-		Map<String, Object> map = this.profileExtAttributes;
-
-		map.put("firstName", profileFirstName);
-		map.put("lastName", profileLastName);
-		map.put("primaryEmail", profileEmail);
-		map.put("primaryPhone", profilePhone);
-		map.put("gender", profileGender);
-
-		map.put("age", profileAge);
-		map.put("ageGroup", profileAgeGroup);
-		map.put("dateOfBirth", profileDateOfBirth);
-
-		map.put("livingLocation", profileLivingLocation);
-		map.put("locationCode", profileLocationCode);
-		map.put("primaryNationality", profileNationality);
-		// TODO add more fields
-
-		this.enrichProfileExtAttributes();
-		return map;
-	}
-
 	public Map<String, Object> getProfileExtAttributes() {
 		return profileExtAttributes;
 	}
 
 	public void setProfileExtAttributes(Map<String, Object> profileExtAttributes) {
 		this.profileExtAttributes = profileExtAttributes;
-	}
-
-	public void enrichProfileExtAttributes() {
-		Map<String, Object> newMap = new HashMap<>(this.profileExtAttributes.size());
-		this.profileExtAttributes.forEach((t, u) -> {
-			int intValue = StringUtil.safeParseInt(u);
-			if (t.equalsIgnoreCase("gender")) {
-				if (intValue == 1) {
-					u = "Male";
-				} else if (intValue == 0) {
-					u = "Female";
-				}
-			} else if (t.equalsIgnoreCase("ageGroup")) {
-				u = ProfileAgeGroup.getAsLabelString(intValue);
-			}
-			if (intValue != -1 && !StringUtil.isEmpty(u)) {
-				newMap.put(t, u);
-			}
-		});
-		this.profileExtAttributes = newMap;
 	}
 
 	public BasicContactData getBasicContactData() {
@@ -580,5 +672,4 @@ public final class FeedbackEvent extends FeedbackData {
 	public String toString() {
 		return new Gson().toJson(this);
 	}
-
 }

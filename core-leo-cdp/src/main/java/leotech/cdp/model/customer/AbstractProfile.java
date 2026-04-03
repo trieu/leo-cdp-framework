@@ -139,6 +139,12 @@ public abstract class AbstractProfile extends PersistentObject {
 	@ExposeInSegmentList
 	protected Set<String> secondaryPhones = new HashSet<>(10);
 	
+	@Expose
+	@ProfileMetaDataField(identityResolutionKey = false, dataQualityScore=2, label="Primary Language", synchronizable = true)
+	@AutoSetData(setDataAsString = true)
+	@ExposeInSegmentList
+	protected String primaryLanguage = "en";
+	
 	/**
 	 * Facebook, Google, Tiktok, Twitter,
 	 */
@@ -922,6 +928,18 @@ public abstract class AbstractProfile extends PersistentObject {
 		}
 	}
 	
+	
+	
+	public String getPrimaryLanguage() {
+		return primaryLanguage;
+	}
+
+	public void setPrimaryLanguage(String primaryLanguage) {
+		if(StringUtil.isNotEmpty(primaryLanguage)) {
+			this.primaryLanguage = primaryLanguage;
+		}
+	}
+
 	/**
 	 * @param phone
 	 */

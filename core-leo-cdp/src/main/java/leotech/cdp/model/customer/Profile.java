@@ -141,6 +141,7 @@ public class Profile extends AbstractProfile implements Comparable<Profile> {
 	@Expose
 	@ProfileMetaDataField(identityResolutionKey = true, label="Web Visitor ID")
 	@ExposeInSegmentList
+	@AutoSetData(setDataAsString = true)
 	protected String visitorId = "";
 	
 	@Expose
@@ -149,6 +150,7 @@ public class Profile extends AbstractProfile implements Comparable<Profile> {
 	@Expose
 	@ProfileMetaDataField(identityResolutionKey = true, label="Fingerprint ID")
 	@ExposeInSegmentList
+	@AutoSetData(setDataAsString = true)
 	protected String fingerprintId = "";
 	
 	@Expose
@@ -167,6 +169,7 @@ public class Profile extends AbstractProfile implements Comparable<Profile> {
 	protected Set<String> fintechSystemIDs = new HashSet<>(100);
 	
 	@Expose
+	@AutoSetData(setDataAsString = true)
 	protected String lastUsedDeviceId = "";
 	
 	@Expose
