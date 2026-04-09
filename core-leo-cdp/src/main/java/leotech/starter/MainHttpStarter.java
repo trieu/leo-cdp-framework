@@ -12,16 +12,17 @@ import leotech.system.version.SystemMetaData;
 /**
  * The main starter for the LEO CDP service instance.
  * Configuration is defined in configs/http-routing-configs.json.
+ * 
  * @author tantrieuf31
  * @since 2020
  */
 public final class MainHttpStarter {
 
-	static Logger logger = LoggerFactory.getLogger(MainHttpStarter.class);
+    static Logger logger = LoggerFactory.getLogger(MainHttpStarter.class);
 
     private static final String CMD_HELP = "help";
     private static final String CMD_SETUP_NEW_SYSTEM = "setup-system-with-password";
-    
+
     // Upgrade Commands
     private static final String CMD_UPGRADE_SYSTEM = "upgrade-system";
     private static final String CMD_UPGRADE_RESET_CONFIGS = "upgrade-system-and-reset-configs";
@@ -43,7 +44,7 @@ public final class MainHttpStarter {
             initializeSystemEnvironment();
             dispatchCommand(args);
         } catch (Exception e) {
-            logger.error(e.getMessage(),e);
+            logger.error(e.getMessage(), e);
             System.exit(1);
         }
     }
@@ -84,20 +85,15 @@ public final class MainHttpStarter {
         // Use if-else for Java 11 compatibility (Switch expressions are Java 14+)
         if (CMD_UPGRADE_SYSTEM.equalsIgnoreCase(command)) {
             performSystemUpgrade();
-        } 
-        else if (CMD_UPGRADE_RESET_CONFIGS.equalsIgnoreCase(command)) {
+        } else if (CMD_UPGRADE_RESET_CONFIGS.equalsIgnoreCase(command)) {
             performSystemUpgradeWithConfigReset();
-        } 
-        else if (CMD_UPGRADE_AI_AGENT.equalsIgnoreCase(command)) {
+        } else if (CMD_UPGRADE_AI_AGENT.equalsIgnoreCase(command)) {
             performAiAgentUpgrade();
-        } 
-        else if (CMD_UPGRADE_INDEX_DB.equalsIgnoreCase(command)) {
+        } else if (CMD_UPGRADE_INDEX_DB.equalsIgnoreCase(command)) {
             SystemControl.upgradeIndexDatabase();
-        } 
-        else if (command.toLowerCase().contains(CMD_HELP)) {
+        } else if (command.toLowerCase().contains(CMD_HELP)) {
             printHelpInfo();
-        } 
-        else {
+        } else {
             // Assume the argument is a custom routing config key
             LogUtil.println("Starting HTTP Worker with config key: " + command);
             HttpWorker.start(command);
@@ -108,12 +104,10 @@ public final class MainHttpStarter {
         if (CMD_SETUP_NEW_SYSTEM.equalsIgnoreCase(command)) {
             var superAdminPassword = secondaryArg;
             SystemControl.setupNewSystem(superAdminPassword, true);
-        } 
-        else if (CMD_UPGRADE_SYSTEM_DATA.equalsIgnoreCase(command)) {
+        } else if (CMD_UPGRADE_SYSTEM_DATA.equalsIgnoreCase(command)) {
             var jobClasspath = secondaryArg;
             performSystemUpgradeWithData(jobClasspath);
-        } 
-        else {
+        } else {
             LogUtil.println("Invalid 2-argument command: " + command);
             printHelpInfo();
         }
@@ -143,18 +137,18 @@ public final class MainHttpStarter {
     private static void printHelpInfo() {
         var helpMessage = new StringBuilder();
         helpMessage.append("\n================ LEO CDP STARTER HELP ================\n")
-                   .append("Usage:\n")
-                   .append("  [No Args]                               Start with default Admin Config\n")
-                   .append("  [ConfigKey]                             Start with specific Routing Config\n\n")
-                   .append("System Management Commands:\n")
-                   .append("  ").append(CMD_SETUP_NEW_SYSTEM).append(" [password]   Setup new system\n")
-                   .append("  ").append(CMD_UPGRADE_SYSTEM).append("                 Upgrade system core\n")
-                   .append("  ").append(CMD_UPGRADE_RESET_CONFIGS).append("      Upgrade & reset configs\n")
-                   .append("  ").append(CMD_UPGRADE_AI_AGENT).append("     Upgrade AI agent & reset configs\n")
-                   .append("  ").append(CMD_UPGRADE_INDEX_DB).append("          Upgrade database indexes\n")
-                   .append("  ").append(CMD_UPGRADE_SYSTEM_DATA).append(" [jobCp]       Upgrade system & run data job\n")
-                   .append("======================================================");
-        
+                .append("Usage:\n")
+                .append("  [No Args]                               Start with default Admin Config\n")
+                .append("  [ConfigKey]                             Start with specific Routing Config\n\n")
+                .append("System Management Commands:\n")
+                .append("  ").append(CMD_SETUP_NEW_SYSTEM).append(" [password]   Setup new system\n")
+                .append("  ").append(CMD_UPGRADE_SYSTEM).append("                 Upgrade system core\n")
+                .append("  ").append(CMD_UPGRADE_RESET_CONFIGS).append("      Upgrade & reset configs\n")
+                .append("  ").append(CMD_UPGRADE_AI_AGENT).append("     Upgrade AI agent & reset configs\n")
+                .append("  ").append(CMD_UPGRADE_INDEX_DB).append("          Upgrade database indexes\n")
+                .append("  ").append(CMD_UPGRADE_SYSTEM_DATA).append(" [jobCp]       Upgrade system & run data job\n")
+                .append("======================================================");
+
         LogUtil.println(helpMessage.toString());
     }
 }
