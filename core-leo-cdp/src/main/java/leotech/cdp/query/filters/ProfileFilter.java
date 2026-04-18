@@ -27,7 +27,7 @@ public final class ProfileFilter extends DataFilter {
 	List<String> emails, phones, applicationIDs, fintechSystemIDs, governmentIssuedIDs, loyaltyIDs;
 	String fingerprintId;
 	String crmRefId;
-	
+
 	String lastTouchpointName;
 	String segmentName;
 	String segmentId;
@@ -38,76 +38,104 @@ public final class ProfileFilter extends DataFilter {
 	boolean showLeadAndProspect = false;
 	boolean showCustomer = false;
 	boolean dataDeduplicationJob = false;
-	
+
 	String searchKeywords;
 	String lastSeenIp;
 	String lastUsedDeviceId;
-	
-	
+
 	public ProfileFilter(boolean showAllActiveProfile, String segmentId, int start, int limit) {
 		super();
-		if(showAllActiveProfile) {
-			this.showVisitor = true;			
+		if (showAllActiveProfile) {
+			this.showVisitor = true;
 			this.showLeadAndProspect = true;
 			this.showCustomer = true;
 			this.status = Profile.STATUS_ACTIVE;
 		}
-		this.setSegmentId(segmentId);		
+		this.setSegmentId(segmentId);
 		this.setStart(start);
 		this.setLength(limit);
 	}
-	
+
+	public ProfileFilter(boolean showAllActiveProfile, String segmentId, String email, String phone, int start, int limit) {
+		super();
+		if (showAllActiveProfile) {
+			this.showVisitor = true;
+			this.showLeadAndProspect = true;
+			this.showCustomer = true;
+			this.status = Profile.STATUS_ACTIVE;
+		}
+		this.setSegmentId(segmentId);
+		this.setStart(start);
+		this.setLength(limit);
+
+		this.emails = ProfileFilterConstants.splitToList(email);
+		this.phones = ProfileFilterConstants.splitToList(phone);
+
+	}
+
 	public ProfileFilter() {
 		super();
 	}
-	
+
 	public ProfileFilter(String excludeProfileId) {
 		super();
-		if(StringUtil.isNotEmpty(excludeProfileId)) {
+		if (StringUtil.isNotEmpty(excludeProfileId)) {
 			this.excludeProfileId = excludeProfileId;
 			this.dataDeduplicationJob = true;
-		}
-		else {
+		} else {
 			throw new IllegalArgumentException("excludeProfileId is empty or null");
 		}
 	}
 
 	public ProfileFilter(SystemUser systemUser, String uri, JsonObject paramJson) {
 		super(systemUser, uri, paramJson);
-		
-		this.journeyMapId = paramJson.getString("journeyMapId", StringPool.BLANK);
-		this.showVisitor = paramJson.getBoolean("showVisitor", true);
-		this.showLeadAndProspect = paramJson.getBoolean("showLeadAndProspect", true);
-		this.showCustomer = paramJson.getBoolean("showCustomer", true);
-		
-		this.searchKeywords = paramJson.getString("searchKeywords", StringPool.BLANK);
-		this.visitorId = paramJson.getString("visitorId", StringPool.BLANK);
-		this.profileId = paramJson.getString("profileId", StringPool.BLANK);
-		
-		this.emails = Arrays.asList(paramJson.getString("emails", StringPool.BLANK).split(StringPool.SEMICOLON));
-		this.phones =  Arrays.asList(paramJson.getString("phones", StringPool.BLANK).split(StringPool.SEMICOLON));
-		
-		this.applicationIDs = Arrays.asList(paramJson.getString("applicationIDs", StringPool.BLANK).split(StringPool.SEMICOLON));
-		this.fintechSystemIDs = Arrays.asList(paramJson.getString("fintechSystemIDs", StringPool.BLANK).split(StringPool.SEMICOLON));
-		this.governmentIssuedIDs = Arrays.asList(paramJson.getString("governmentIssuedIDs", StringPool.BLANK).split(StringPool.SEMICOLON));
-		this.loyaltyIDs = Arrays.asList(paramJson.getString("loyaltyIDs", StringPool.BLANK).split(StringPool.SEMICOLON));
-		
-		this.fingerprintId = paramJson.getString("fingerprintId", StringPool.BLANK);
-		this.crmRefId = paramJson.getString("crmRefId", StringPool.BLANK);
-		
-		this.lastTouchpointName = paramJson.getString("lastTouchpointName", StringPool.BLANK);
-		this.segmentName = paramJson.getString("segmentName", StringPool.BLANK);
-		this.segmentId = paramJson.getString("segmentId", StringPool.BLANK);
-		this.dataLabel = paramJson.getString("dataLabel", StringPool.BLANK);
-		this.mediaChannel = paramJson.getString("mediaChannel", StringPool.BLANK);
-		
-		
-		this.excludeProfileId = paramJson.getString("excludeProfileId", StringPool.BLANK);
-		this.lastSeenIp = paramJson.getString("lastSeenIp", StringPool.BLANK);
-		this.lastUsedDeviceId = paramJson.getString("lastUsedDeviceId", StringPool.BLANK);
+
+		this.journeyMapId = paramJson.getString(ProfileFilterConstants.JOURNEY_MAP_ID,
+				ProfileFilterConstants.DEFAULT_STRING);
+		this.showVisitor = paramJson.getBoolean(ProfileFilterConstants.SHOW_VISITOR,
+				ProfileFilterConstants.DEFAULT_BOOLEAN);
+		this.showLeadAndProspect = paramJson.getBoolean(ProfileFilterConstants.SHOW_LEAD_AND_PROSPECT,
+				ProfileFilterConstants.DEFAULT_BOOLEAN);
+		this.showCustomer = paramJson.getBoolean(ProfileFilterConstants.SHOW_CUSTOMER,
+				ProfileFilterConstants.DEFAULT_BOOLEAN);
+
+		this.searchKeywords = paramJson.getString(ProfileFilterConstants.SEARCH_KEYWORDS,
+				ProfileFilterConstants.DEFAULT_STRING);
+		this.visitorId = paramJson.getString(ProfileFilterConstants.VISITOR_ID, ProfileFilterConstants.DEFAULT_STRING);
+		this.profileId = paramJson.getString(ProfileFilterConstants.PROFILE_ID, ProfileFilterConstants.DEFAULT_STRING);
+
+		this.emails = ProfileFilterConstants.splitToList(paramJson.getString(ProfileFilterConstants.EMAILS, ProfileFilterConstants.DEFAULT_STRING));
+		this.phones = ProfileFilterConstants.splitToList(paramJson.getString(ProfileFilterConstants.PHONES, ProfileFilterConstants.DEFAULT_STRING));
+
+		this.applicationIDs = ProfileFilterConstants.splitToList(
+				paramJson.getString(ProfileFilterConstants.APPLICATION_IDS, ProfileFilterConstants.DEFAULT_STRING));
+		this.fintechSystemIDs = ProfileFilterConstants.splitToList(
+				paramJson.getString(ProfileFilterConstants.FINTECH_SYSTEM_IDS, ProfileFilterConstants.DEFAULT_STRING));
+		this.governmentIssuedIDs = ProfileFilterConstants.splitToList(
+				paramJson.getString(ProfileFilterConstants.GOVERNMENT_ISSUED_IDS, ProfileFilterConstants.DEFAULT_STRING));
+		this.loyaltyIDs = ProfileFilterConstants.splitToList(
+				paramJson.getString(ProfileFilterConstants.LOYALTY_IDS, ProfileFilterConstants.DEFAULT_STRING));
+
+		this.fingerprintId = paramJson.getString(ProfileFilterConstants.FINGERPRINT_ID,
+				ProfileFilterConstants.DEFAULT_STRING);
+		this.crmRefId = paramJson.getString(ProfileFilterConstants.CRM_REF_ID, ProfileFilterConstants.DEFAULT_STRING);
+
+		this.lastTouchpointName = paramJson.getString(ProfileFilterConstants.LAST_TOUCHPOINT_NAME,
+				ProfileFilterConstants.DEFAULT_STRING);
+		this.segmentName = paramJson.getString(ProfileFilterConstants.SEGMENT_NAME,
+				ProfileFilterConstants.DEFAULT_STRING);
+		this.segmentId = paramJson.getString(ProfileFilterConstants.SEGMENT_ID, ProfileFilterConstants.DEFAULT_STRING);
+		this.dataLabel = paramJson.getString(ProfileFilterConstants.DATA_LABEL, ProfileFilterConstants.DEFAULT_STRING);
+		this.mediaChannel = paramJson.getString(ProfileFilterConstants.MEDIA_CHANNEL,
+				ProfileFilterConstants.DEFAULT_STRING);
+
+		this.excludeProfileId = paramJson.getString(ProfileFilterConstants.EXCLUDE_PROFILE_ID,
+				ProfileFilterConstants.DEFAULT_STRING);
+		this.lastSeenIp = paramJson.getString(ProfileFilterConstants.LAST_SEEN_IP,
+				ProfileFilterConstants.DEFAULT_STRING);
+		this.lastUsedDeviceId = paramJson.getString(ProfileFilterConstants.LAST_USED_DEVICE_ID,
+				ProfileFilterConstants.DEFAULT_STRING);
 	}
-	
-	
 
 	public String getExcludeProfileId() {
 		return excludeProfileId != null ? excludeProfileId : StringPool.BLANK;
@@ -133,7 +161,7 @@ public final class ProfileFilter extends DataFilter {
 		this.visitorId = visitorId;
 	}
 
-	public String getFingerprintId() {		
+	public String getFingerprintId() {
 		return fingerprintId != null ? fingerprintId : StringPool.BLANK;
 	}
 
@@ -156,7 +184,7 @@ public final class ProfileFilter extends DataFilter {
 	public void setProfileId(String profileId) {
 		this.profileId = profileId;
 	}
-	
+
 	@Override
 	public String getSegmentId() {
 		return segmentId;
@@ -184,7 +212,7 @@ public final class ProfileFilter extends DataFilter {
 	public void setLastTouchpointName(String lastTouchpointName) {
 		this.lastTouchpointName = lastTouchpointName;
 	}
-	
+
 	public String getSegmentName() {
 		return segmentName != null ? segmentName : StringPool.BLANK;
 	}
@@ -220,13 +248,13 @@ public final class ProfileFilter extends DataFilter {
 	public boolean isForDeduplication() {
 		return StringUtil.isNotEmpty(this.excludeProfileId);
 	}
-	
+
 	public boolean isDataDeduplicationJob() {
 		return dataDeduplicationJob;
 	}
 
 	public List<String> getApplicationIDs() {
-		return applicationIDs == null ? new ArrayList<String>(0): applicationIDs;
+		return applicationIDs == null ? new ArrayList<String>(0) : applicationIDs;
 	}
 
 	public void setApplicationIDs(List<String> applicationIDs) {
@@ -234,7 +262,7 @@ public final class ProfileFilter extends DataFilter {
 	}
 
 	public List<String> getFintechSystemIDs() {
-		return fintechSystemIDs == null ? new ArrayList<String>(0): fintechSystemIDs;
+		return fintechSystemIDs == null ? new ArrayList<String>(0) : fintechSystemIDs;
 	}
 
 	public void setFintechSystemIDs(List<String> fintechSystemIDs) {
@@ -242,7 +270,7 @@ public final class ProfileFilter extends DataFilter {
 	}
 
 	public List<String> getGovernmentIssuedIDs() {
-		return governmentIssuedIDs == null ? new ArrayList<String>(0): governmentIssuedIDs;
+		return governmentIssuedIDs == null ? new ArrayList<String>(0) : governmentIssuedIDs;
 	}
 
 	public void setGovernmentIssuedIDs(List<String> governmentIssuedIDs) {
@@ -250,7 +278,7 @@ public final class ProfileFilter extends DataFilter {
 	}
 
 	public List<String> getLoyaltyIDs() {
-		return loyaltyIDs == null ? new ArrayList<String>(0): loyaltyIDs;
+		return loyaltyIDs == null ? new ArrayList<String>(0) : loyaltyIDs;
 	}
 
 	public void setLoyaltyIDs(List<String> loyaltyIDs) {
@@ -258,7 +286,7 @@ public final class ProfileFilter extends DataFilter {
 	}
 
 	public List<String> getEmails() {
-		return emails == null ? new ArrayList<String>(0): emails;
+		return emails == null ? new ArrayList<String>(0) : emails;
 	}
 
 	public void setEmails(List<String> emails) {
@@ -266,7 +294,7 @@ public final class ProfileFilter extends DataFilter {
 	}
 
 	public List<String> getPhones() {
-		return phones == null ? new ArrayList<String>(0): phones;
+		return phones == null ? new ArrayList<String>(0) : phones;
 	}
 
 	public void setPhones(List<String> phones) {
@@ -290,8 +318,6 @@ public final class ProfileFilter extends DataFilter {
 	public void setDataLabel(String dataLabel) {
 		this.dataLabel = dataLabel;
 	}
-	
-	
 
 	public String getMediaChannel() {
 		return mediaChannel != null ? mediaChannel : StringPool.BLANK;
@@ -304,33 +330,34 @@ public final class ProfileFilter extends DataFilter {
 	public boolean showLeadOrProspectOrCustomer() {
 		return (this.showLeadAndProspect || this.showCustomer) && !this.showVisitor;
 	}
-	
+
 	public boolean showVisitorOrCustomer() {
 		return (this.showVisitor || this.showCustomer) && !this.showLeadAndProspect;
 	}
-	
+
 	public boolean showVisitorOrLead() {
 		return (this.showVisitor || this.showLeadAndProspect) && !this.showCustomer;
 	}
-	
+
 	public boolean showLeadAndProspectAndCustomer() {
 		return (this.showLeadAndProspect && this.showCustomer) && !this.showVisitor;
 	}
-	
+
 	public boolean showOnlyVisitor() {
 		return (!this.showLeadAndProspect && !this.showCustomer) && this.showVisitor;
 	}
-	
+
 	public boolean showOnlyLeadOrProspect() {
 		return (!this.showVisitor && !this.showCustomer) && this.showLeadAndProspect;
 	}
-	
+
 	public boolean showOnlyCustomer() {
 		return (!this.showLeadAndProspect && !this.showVisitor) && this.showCustomer;
 	}
-	
+
 	public boolean showAllActiveProfile() {
-		return (this.showLeadAndProspect || this.showCustomer || this.showVisitor) && this.status == PersistentObject.STATUS_ACTIVE;
+		return (this.showLeadAndProspect || this.showCustomer || this.showVisitor)
+				&& this.status == PersistentObject.STATUS_ACTIVE;
 	}
 
 	public String getLastSeenIp() {
@@ -348,7 +375,5 @@ public final class ProfileFilter extends DataFilter {
 	public void setLastUsedDeviceId(String lastUsedDeviceId) {
 		this.lastUsedDeviceId = lastUsedDeviceId;
 	}
-	
-	
 
 }

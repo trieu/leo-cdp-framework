@@ -69,6 +69,8 @@ public abstract class BaseApiHandler {
 	public static final String PARAM_START_INDEX = "start_index";
 	public static final String PARAM_NUMBER_RESULT = "number_result";
 	public static final String SEGMENT_ID = "segment_id";
+	public static final String EMAIL = "email";
+	public static final String PHONE = "phone";
 	
 	public static JsonDataPayload notFoundHttpHandler(String uri) {
 		return JsonDataPayload.fail(uri + " is not valid URI, not found any API handler!");

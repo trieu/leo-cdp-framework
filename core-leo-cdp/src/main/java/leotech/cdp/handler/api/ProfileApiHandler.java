@@ -10,6 +10,7 @@ import leotech.cdp.domain.ProfileDataManagement;
 import leotech.cdp.model.customer.Profile;
 import leotech.cdp.model.journey.EventObserver;
 import leotech.cdp.query.filters.ProfileFilter;
+import leotech.cdp.query.filters.ProfileFilterConstants;
 import leotech.system.model.JsonDataPayload;
 import leotech.system.util.HttpWebParamUtil;
 import leotech.system.util.LogUtil;
@@ -67,10 +68,12 @@ public class ProfileApiHandler extends BaseApiHandler {
 
 	JsonDataPayload listProfiles(EventObserver observer, String uri, MultiMap urlParams) {
 		String segmentId = HttpWebParamUtil.getString(urlParams, SEGMENT_ID, "");
+		String email = HttpWebParamUtil.getString(urlParams, ProfileFilterConstants.EMAILS, "");
+		String phone = HttpWebParamUtil.getString(urlParams, ProfileFilterConstants.PHONES, "");
 		int start = HttpWebParamUtil.getInteger(urlParams, PARAM_START_INDEX, 0);
 		int numberResult = HttpWebParamUtil.getInteger(urlParams, PARAM_NUMBER_RESULT, 10);
 
-		ProfileFilter filter = new ProfileFilter(true, segmentId, start, numberResult);
+		ProfileFilter filter = new ProfileFilter(true, segmentId, email, phone, start, numberResult);
 
 		List<Profile> list = ProfileDaoUtil.getProfilesByFilter(filter);
 		return JsonDataPayload.ok(uri, list);
