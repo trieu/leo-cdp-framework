@@ -227,6 +227,8 @@ public final class FeedbackDataDao extends AbstractCdpDatabaseUtil {
 		fbReport.setNeutralProfileCount(neutral.size());
 		return fbReport;
 	}
+	
+	
 
 	/**
 	 * @param refProfileId

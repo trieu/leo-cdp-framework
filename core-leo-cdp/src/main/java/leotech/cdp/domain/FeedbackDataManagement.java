@@ -14,6 +14,7 @@ import leotech.cdp.dao.FeedbackDataDao;
 import leotech.cdp.model.analytics.FeedbackEvent;
 import leotech.cdp.model.analytics.FeedbackRatingReport;
 import leotech.cdp.model.analytics.FeedbackSurveyReport;
+import leotech.cdp.model.analytics.QuestionAnswer;
 import leotech.cdp.model.analytics.SurveyChoice;
 import leotech.cdp.model.analytics.SurveyResult;
 import leotech.cdp.model.asset.AssetTemplate;
@@ -160,9 +161,58 @@ public final class FeedbackDataManagement {
 				}
 				
 				// TODO
-				//event.getSingleChoiceQuestionAnswer();
-				//event.getMultipleChoiceQuestionAnswer();
-				//event.getExtraTextQuestionsAnswer();
+				// ==========================================================
+				// HANDLE NON-RATING QUESTIONS
+				// ==========================================================
+
+				// ---------- SINGLE CHOICE ----------
+				Map<String, QuestionAnswer> singleChoice = event.getSingleChoiceQuestionAnswer();
+				if (singleChoice != null && !singleChoice.isEmpty()) {
+				    singleChoice.forEach((key, qa) -> {
+				        if (qa == null || qa.getAnswers() == null) return;
+
+				        QuestionAnswer existing = fbReport.getSingleChoiceQuestionAnswer().get(key);
+
+				        if (existing == null) {
+				            // clone to avoid shared reference
+				            fbReport.getSingleChoiceQuestionAnswer().put(key, qa);
+				        } else {
+				            existing.getAnswers().addAll(qa.getAnswers());
+				        }
+				    });
+				}
+
+				// ---------- MULTIPLE CHOICE ----------
+				Map<String, QuestionAnswer> multipleChoice = event.getMultipleChoiceQuestionAnswer();
+				if (multipleChoice != null && !multipleChoice.isEmpty()) {
+				    multipleChoice.forEach((key, qa) -> {
+				        if (qa == null || qa.getAnswers() == null) return;
+
+				        QuestionAnswer existing = fbReport.getMultipleChoiceQuestionAnswer().get(key);
+
+				        if (existing == null) {
+				            fbReport.getMultipleChoiceQuestionAnswer().put(key, qa);
+				        } else {
+				            existing.getAnswers().addAll(qa.getAnswers());
+				        }
+				    });
+				}
+
+				// ---------- EXTRA TEXT ----------
+				Map<String, QuestionAnswer> extraText = event.getExtraTextQuestionsAnswer();
+				if (extraText != null && !extraText.isEmpty()) {
+				    extraText.forEach((key, qa) -> {
+				        if (qa == null || qa.getAnswers() == null) return;
+
+				        QuestionAnswer existing = fbReport.getExtraTextQuestionsAnswer().get(key);
+
+				        if (existing == null) {
+				            fbReport.getExtraTextQuestionsAnswer().put(key, qa);
+				        } else {
+				            existing.getAnswers().addAll(qa.getAnswers());
+				        }
+				    });
+				}
 				
 				// build the unique ID
 				String id = fbReport.buildHashedId();
