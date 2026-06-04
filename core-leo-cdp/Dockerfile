@@ -14,6 +14,23 @@ COPY . .
 RUN gradle AutoBuildForDeployment --no-daemon \
       -PbuildOutputFolderPath=/dist -PstaticOutputFolderPath=/static -PbuildVersion=docker
 
+# ---- test stage ----
+# Runs the JUnit suite as part of the image build. Tolerant of failures (|| true) so the
+# JUnit XML is always produced and can be exported — many test.** classes need a live
+# ArangoDB/Redis and won't pass inside an isolated build (see CLAUDE.md). The workflow
+# surfaces pass/fail from the exported reports.
+FROM build AS test
+RUN gradle test --no-daemon \
+      -PbuildOutputFolderPath=/dist -PstaticOutputFolderPath=/static -PbuildVersion=docker || true
+RUN mkdir -p /test-results && \
+    cp -r /src/build/test-results/. /test-results/ 2>/dev/null || true
+
+# ---- test-results export stage ----
+# `scratch` so `docker buildx build --target test-export --output type=local` exports
+# ONLY the JUnit XML, not a whole image filesystem.
+FROM scratch AS test-export
+COPY --from=test /test-results /
+
 # ---- runtime stage ----
 FROM amazoncorretto:11
 WORKDIR /app
