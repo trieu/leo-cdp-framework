@@ -62,7 +62,7 @@ jobs:
           ARANGODB_USERNAME: root
           ARANGODB_PASSWORD: testpass
           ARANGODB_DATABASE: leocdp
-        run: echo "TODO: gradle integrationTest once tests are split unit vs integration"
+        run: 'echo "TODO: gradle integrationTest once tests are split unit vs integration"'
 
       - name: Validation summary
         if: always()
