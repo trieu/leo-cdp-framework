@@ -1,0 +1,165 @@
+name: Build and Release
+
+# Diagram steps 8-11: after an approved PR merges to MAIN (or a GitHub Release is
+# published), build the Docker image -> version-tag -> security-scan -> publish to
+# GHCR (and Docker Hub if configured) -> email the release notification.
+#
+# Publishing pattern adapted from leo-agentic-notebook: GHCR is always used; Docker
+# Hub is added automatically only when DOCKER_USERNAME/DOCKER_PASSWORD secrets exist.
+
+on:
+  push:
+    branches: [main]            # fires after the approved PR is merged (step 7 -> 8)
+    paths-ignore:
+      - '**.md'
+      - 'documents/**'
+      - '.github/workflows/claude*.yml'
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      platforms:
+        description: 'Target platforms'
+        required: true
+        default: 'linux/amd64'
+        type: choice
+        options:
+          - linux/amd64
+          - linux/amd64,linux/arm64
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  GHCR_IMAGE: ghcr.io/${{ github.repository }}
+  DOCKERHUB_IMAGE: trieu/leo-cdp-framework
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      has_dockerhub: ${{ steps.c.outputs.has_dockerhub }}
+    steps:
+      - name: Derive version tag           # step 8: version tagging (date + short SHA)
+        id: v
+        run: echo "version=$(date +%Y.%m.%d)-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Detect Docker Hub credentials
+        id: c
+        env:
+          DH_USER: ${{ secrets.DOCKER_USERNAME }}
+          DH_PASS: ${{ secrets.DOCKER_PASSWORD }}
+        run: |
+          if [[ -n "$DH_USER" && -n "$DH_PASS" ]]; then
+            echo "has_dockerhub=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_dockerhub=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  build-publish:
+    needs: detect
+    runs-on: ubuntu-latest        # diagram's "Build Agent / CO Runner" (or a self-hosted runner)
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free up disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          sudo docker image prune --all --force || true
+          df -h
+
+      - uses: docker/setup-qemu-action@v3      # enables arm64 emulation when requested
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Log in to Docker Hub
+        if: needs.detect.outputs.has_dockerhub == 'true'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: ${{ runner.os }}-buildx-
+
+      - name: Assemble image tags
+        id: tags
+        run: |
+          V="${{ needs.detect.outputs.version }}"
+          TAGS="${{ env.GHCR_IMAGE }}:${V},${{ env.GHCR_IMAGE }}:latest"
+          if [[ "${{ needs.detect.outputs.has_dockerhub }}" == "true" ]]; then
+            TAGS="${TAGS},${{ env.DOCKERHUB_IMAGE }}:${V},${{ env.DOCKERHUB_IMAGE }}:latest"
+          fi
+          echo "tags=${TAGS}" >> "$GITHUB_OUTPUT"
+
+      - name: Build for scan (amd64, no push)   # step 8: build Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./core-leo-cdp
+          file: ./core-leo-cdp/Dockerfile
+          load: true
+          tags: ${{ env.GHCR_IMAGE }}:scan
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+
+      - name: Security scan (gate on HIGH/CRITICAL)   # step 8: security scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.GHCR_IMAGE }}:scan
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Build & push                      # step 9: publish to registries
+        uses: docker/build-push-action@v6
+        with:
+          context: ./core-leo-cdp
+          file: ./core-leo-cdp/Dockerfile
+          platforms: ${{ github.event.inputs.platforms || 'linux/amd64' }}
+          push: true
+          tags: ${{ steps.tags.outputs.tags }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+
+      - name: Move cache
+        run: rm -rf /tmp/.buildx-cache && mv /tmp/.buildx-cache-new /tmp/.buildx-cache || true
+
+      - name: Release notification email        # steps 10-11
+        if: success()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_HOST }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USER }}
+          password: ${{ secrets.SMTP_PASS }}
+          subject: "Release published - ${{ needs.detect.outputs.version }}"
+          to: ${{ secrets.STAKEHOLDER_EMAILS }}
+          from: LEO CDP Release <release@leocdp.com>
+          body: |
+            Release completed. Image tags published:
+              ${{ env.GHCR_IMAGE }}:${{ needs.detect.outputs.version }}
+              ${{ env.GHCR_IMAGE }}:latest
+
+      - name: Build summary
+        if: always()
+        run: |
+          {
+            echo "## Release Summary"
+            echo "**Version:** ${{ needs.detect.outputs.version }}"
+            echo "**GHCR:** \`${{ env.GHCR_IMAGE }}\`"
+            if [[ "${{ needs.detect.outputs.has_dockerhub }}" == "true" ]]; then
+              echo "**Docker Hub:** \`${{ env.DOCKERHUB_IMAGE }}\`"
+            else
+              echo "**Docker Hub:** skipped (no credentials configured)"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

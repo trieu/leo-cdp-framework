@@ -1,0 +1,3 @@
+# Project Owner (diagram step 7): code review, approval & merge.
+# Pair this with a branch-protection rule on `main` that requires Code Owner review.
+* @trieu
