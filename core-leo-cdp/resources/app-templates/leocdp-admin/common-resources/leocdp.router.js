@@ -65,44 +65,44 @@ LeoCdpAdmin.navRouters = {
 		"Customer_Persona_List" : {
 			"menuName" : "Customer Persona List",
 			"functionName" : "loadCustomerPersonaList",
-			"breadcrumb" : ["Journey Data Hub", "Customer Persona List"]
+			"breadcrumb" : ["Customer Journey", "Customer Persona List"]
 		},
 		"Customer_Persona_Report" : {
 			"menuName" : "Customer Persona Report",
 			"functionName" : "loadCustomerPersonaReport",
-			"breadcrumb" : ["Journey Data Hub", "Customer Persona List", "Persona Report"]
+			"breadcrumb" : ["Customer Journey", "Customer Persona List", "Persona Report"]
 		},
 		"Customer_Persona_Editor" : {
 			"menuName" : "Customer Persona Details",
 			"functionName" : "loadCustomerPersonaDetails",
-			"breadcrumb" : ["Journey Data Hub", "Customer Persona List", "Persona Editor"]
+			"breadcrumb" : ["Customer Journey", "Customer Persona List", "Persona Editor"]
 		},
 		
 		// 2.2 Data Journey Map
 		"Data_Journey_Map" : {
 			"menuName" : "Data Journey Map",
 			"functionName" : "loadJourneyMap",
-			"breadcrumb" : ["Journey Data Hub", "Data Journey Map"],
+			"breadcrumb" : ["Customer Journey", "Data Journey Map"],
 			"activeMenuItem" : "Data_Journey_Map"
 		},
 		"Touchpoint_Hub_Report" : {
 			"menuName" : "Touchpoint Hub Report",
 			"functionName" : "loadTouchpointHubReport",
-			"breadcrumb" : ["Journey Data Hub", "Customer Journey Map", "Touchpoint Hub Report" ],
+			"breadcrumb" : ["Customer Journey", "Customer Journey Map", "Touchpoint Hub Report" ],
 			"activeMenuItem" : "Data_Journey_Map"
 		},
 		"Touchpoint_Hub_Editor" : {
 			"menuName" : "Touchpoint Hub Editor",
 			"functionName" : "loadTouchpointHubEditor",
-			"breadcrumb" : ["Journey Data Hub", "Customer Journey Map", "Touchpoint Hub Editor" ],
+			"breadcrumb" : ["Customer Journey", "Customer Journey Map", "Touchpoint Hub Editor" ],
 			"activeMenuItem" : "Data_Journey_Map"
 		},
 		
-		// 2.3 Event Data Funnel
+		// 2.3 Customer Journey Scoring
 		"Event_Data_Funnel" : {
-			"menuName" : "Event Data Funnel",
+			"menuName" : "Customer Journey Scoring",
 			"functionName" : "loadDataEventFunnel",
-			"breadcrumb" : ["Journey Data Hub", "Event Data Funnel"],
+			"breadcrumb" : ["Customer Journey", "Customer Journey Scoring"],
 			"activeMenuItem" : "Event_Data_Funnel"
 		},
 		
@@ -110,19 +110,19 @@ LeoCdpAdmin.navRouters = {
 		"Journey_Map_List" : {
 			"menuName" : "Journey Map List",
 			"functionName" : "loadDataJourneyMapList",
-			"breadcrumb" : ["Journey Data Hub", "Journey Map List"],
+			"breadcrumb" : ["Customer Journey", "Journey Map List"],
 			"activeMenuItem" : "Data_Journey_Map"
 		},
 		"Journey_Map_Report" : {
 			"menuName" : "Journey Map Report",
 			"functionName" : "loadJourneyMapReport",
-			"breadcrumb" : ["Journey Data Hub", "Journey Map List", "Journey Map Report"],
+			"breadcrumb" : ["Customer Journey", "Journey Map List", "Journey Map Report"],
 			"activeMenuItem" : "Data_Journey_Map"
 		},
 		"Customer_Persona" : {
 			"menuName" : "Customer Persona",
 			"functionName" : "loadPersonaEditor",
-			"breadcrumb" : ["Journey Data Hub", "Journey Map List","Customer Persona"],
+			"breadcrumb" : ["Customer Journey", "Journey Map List","Customer Persona"],
 			"activeMenuItem" : "Data_Journey_Map"
 		},
 		

@@ -56,7 +56,7 @@ LeoCdpAdmin.navFunctions.loadCustomDashboard = function(breadcrumbHtml) {
 }
 
 
-//###################### Journey Data Hub ######################
+//###################### Customer Journey ######################
 
 LeoCdpAdmin.navFunctions.loadPersonaEditor = function(journeyId) {
     LeoCdpAdmin.loadView('/view/modules/journey/persona-editor.html?admin=1', pageDomSelector, function () {
@@ -420,7 +420,7 @@ LeoCdpAdmin.navFunctions.deleteItemAsset = function(itemModel) {
 
 //###################### Customer Activation ######################
 
-//---  Activation Service functions ---
+//---  Activation Agent functions ---
 
 LeoCdpAdmin.navFunctions.loadAgentList = function (breadcrumbHtml) {
     LeoCdpAdmin.loadView('/view/modules/activation/agent-list.html?admin=1', pageDomSelector, function () {

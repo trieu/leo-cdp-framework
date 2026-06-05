@@ -30,7 +30,7 @@ public final class SystemUserRole {
 	public static final int CUSTOMER_DATA_EDITOR = 3;
 
 	/**
-	 * the login account has access Unified Analytics Hub, manage Journey Data Hub and update authorized customer profiles 
+	 * the login account has access Unified Analytics Hub, manage Customer Journey and update authorized customer profiles 
 	 */
 	public static final int DATA_OPERATOR = 4;
 
