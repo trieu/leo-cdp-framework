@@ -38,8 +38,8 @@ project.version = resolveProperty("buildVersion", "1.0.0")
 // We store these in 'project.ext' so other tasks (like Copy or Zip) can see them.
 // Default to 'build/dist' and 'build/static' to prevent crashes if config is empty.
 
-project.ext.buildOutputFolderPath = resolveProperty("buildOutputFolderPath", "${buildDir}/dist-release")
-project.ext.staticOutputFolderPath = resolveProperty("staticOutputFolderPath", "${buildDir}/static-release")
+project.ext.buildOutputFolderPath = resolveProperty("buildOutputFolderPath", layout.buildDirectory.dir("dist-release").get().asFile.path)
+project.ext.staticOutputFolderPath = resolveProperty("staticOutputFolderPath", layout.buildDirectory.dir("static-release").get().asFile.path)
 
 
 // --- 5. Helper: Generate timestamped implementation version ---
@@ -333,7 +333,7 @@ task buildLeoMainHttpStarter(type: Jar) {
     from(sourceSets.main.output) {
         include "**"
     }
-    baseName = 'leo-main-starter'
+    archiveBaseName = 'leo-main-starter'
     manifest {
         attributes ('Implementation-Title': 'MainHttpStarter', 
                     'Implementation-Version': getImplementationVersion(),
@@ -354,7 +354,7 @@ task buildLeoDataObserverStarter(type: Jar) {
     from(sourceSets.main.output) {
         include "**"
     }
-    baseName = 'leo-observer-starter'
+    archiveBaseName = 'leo-observer-starter'
     manifest {
         attributes ('Implementation-Title': 'DataObserverStarter', 
                     'Implementation-Version': getImplementationVersion(),
@@ -375,7 +375,7 @@ task buildLeoScheduledJobStarter(type: Jar) {
     from(sourceSets.main.output) {
         include "**"
     }
-    baseName = 'leo-scheduler-starter'
+    archiveBaseName = 'leo-scheduler-starter'
     manifest {
         attributes ('Implementation-Title': 'ScheduledJobStarter', 
                     'Implementation-Version': getImplementationVersion(),
@@ -396,7 +396,7 @@ task buildLeoDataProcessingStarter(type: Jar) {
     from(sourceSets.main.output) {
         include "**"
     }
-    baseName = 'leo-data-processing-starter'
+    archiveBaseName = 'leo-data-processing-starter'
     manifest {
         attributes ('Implementation-Title': 'DataProcessingStarter', 
                     'Implementation-Version': getImplementationVersion(),
@@ -417,7 +417,7 @@ task buildLeoUploadFileHttpStarter(type: Jar) {
     from(sourceSets.main.output) {
         include "**"
     }
-    baseName = 'leo-uploader-starter'
+    archiveBaseName = 'leo-uploader-starter'
     manifest {
         attributes ('Implementation-Title': 'UploadFileHttpStarter', 
                     'Implementation-Version': getImplementationVersion(),
