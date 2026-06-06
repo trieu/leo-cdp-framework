@@ -189,7 +189,7 @@ jobs:
             echo "::notice::No JUnit XML was exported from the Docker test stage — skipping the test report."
           fi
       - name: Publish test report
-        if: always() && steps.tests.outputs.found == 'true'
+        if: always() && steps.tests.outputs.found == 'true' && github.event_name != 'pull_request'
         uses: dorny/test-reporter@v1
         with:
           name: JUnit Tests (core-leo-cdp)
