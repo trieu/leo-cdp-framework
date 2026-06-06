@@ -15,10 +15,10 @@ RUN gradle AutoBuildForDeployment --no-daemon \
       -PbuildOutputFolderPath=/dist -PstaticOutputFolderPath=/static -PbuildVersion=docker
 
 # ---- test stage ----
-# Runs the JUnit suite as part of the image build. Tolerant of failures (|| true) so the
-# JUnit XML is always produced and can be exported — many test.** classes need a live
-# ArangoDB/Redis and won't pass inside an isolated build (see CLAUDE.md). The workflow
-# surfaces pass/fail from the exported reports.
+# Runs the JUnit suite as part of the image build. Best-effort (`|| true`) so the
+# build doesn't fail in this stage; JUnit XML is exported when available. Many
+# test.** classes need a live ArangoDB/Redis and won't pass inside an isolated build
+# (see CLAUDE.md). The workflow surfaces pass/fail from whatever reports are exported.
 FROM build AS test
 RUN gradle test --no-daemon \
       -PbuildOutputFolderPath=/dist -PstaticOutputFolderPath=/static -PbuildVersion=docker || true
