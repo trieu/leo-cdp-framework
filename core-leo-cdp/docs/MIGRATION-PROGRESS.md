@@ -15,9 +15,9 @@ Tracks execution of the [migration plan](00-java25-gradle9-migration-overview.md
 | 0 | 0c — Wrapper @6.9.4, branch, tag | ✅ done | — | Tag `pre-jdk25-migration` |
 | 1 | 1a — Gradle 7.6.4 (`maven` plugin removal) | ✅ done | — | Commit `d31df54`; also fixed I2 (typed-attribute collision) |
 | 1 | 1b — Gradle 8.14.x (`baseName`, `buildDir`) | ✅ done | — | Commit `0ba9cf9`; build green in 10m51s |
-| 1 | 1c — Gradle 9.1.0 full rewrite | 🔄 in progress | **G1** | All doc-01 §3 edits applied (group/url assignment, java.time timestamp, minify 2.1.1, options.release=11, lazy Class-Path doFirst, Main-Class space trim, Copy-task rewrite, configuration-role gate = I3). Rebuild running; then G1 diff vs `gradle694-*` baseline |
-| 2 | Code: JVM flags, Dockerfile, CI | ⬜ pending | — | |
-| 2 | Local JDK-25 boot smoke | ⬜ pending | — | Boot starters on 25; expect clean JVM init up to DB connect |
+| 1 | 1c — Gradle 9.1.0 full rewrite | ✅ done | **G1 PASS** | Commit `ab69e4f`. Build green on 9.1.0 + JDK 25 daemon (4m52s). G1: tree+deps identical to baseline; bytecode major 55; Class-Path intact (lazy doFirst); manifest diff = intended Main-Class trim only. ⚠ 4/19 minified JS differ (Closure bump in plugin 2.1.1) → **QA before CDN push** (R6). 2 warnings remain (`Task.project` at execution time — config-cache stretch goal, Gradle 10 horizon) |
+| 2 | Code: JVM flags, Dockerfile, CI | ✅ done | — | Shared `jvm-params.sh` sourced by 3 start scripts; Dockerfile → corretto:25 + wrapper + `JDK_JAVA_OPTIONS`; ci-cd.yml → JDK 25 + wrapper + bytecode-55 guard step; build.sh → `./gradlew` |
+| 2 | Local JDK-25 boot smoke | ✅ done | — | `leo-main-starter` boots on JDK 25 (and 11) with compat flags; fails only at missing `leocdp-metadata.properties` — expected without a deploy environment |
 | 2 | **Staging soak (72 h) + k6** | ⛔ blocked: needs staging env | **G2** | Cannot run from this box |
 | 3 | Prod canary rollout | ⛔ blocked: after G2 | **G3** | |
 | 4 | Bytecode → 25 (`options.release = 25`) | ⛔ blocked: after G3 soak | **G4** | One-line flip prepared in build.gradle comment |

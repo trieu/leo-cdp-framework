@@ -72,15 +72,13 @@ jobs:
           --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 12
     steps:
       - uses: actions/checkout@v4
-      - name: Set up JDK 11 (Corretto)
-        uses: actions/setup-java@v4    # cached + reliable; mirrors the Corretto 11 install-java.sh provisions
+      - name: Set up JDK 25 (Corretto)
+        uses: actions/setup-java@v4    # JDK 25 runs the Gradle 9 daemon; bytecode stays Java 11 via options.release
         with:
           distribution: corretto
-          java-version: '11'
-      - name: Set up Gradle 6.9.4
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '6.9.4'   # no wrapper in repo; legacy 'maven' plugin needs Gradle 6.x
+          java-version: '25'
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4   # version comes from the committed gradlew wrapper
       - name: Wait for ArangoDB + Redis
         run: |
           echo "Waiting for ArangoDB on :8529 ..."
@@ -101,10 +99,16 @@ jobs:
           if [ "$redis_ok" != "true" ]; then echo "Redis did not become reachable"; exit 1; fi
       - name: Build & unit tests
         working-directory: core-leo-cdp
-        run: gradle compileJava test
+        run: ./gradlew compileJava test
+      - name: Verify class-file target is Java 11 (major 55)
+        # Guards the migration invariant: bytecode stays Java 11 until Phase 4
+        # (then flip 55 -> 69). See docs/02-java-25-migration.md.
+        working-directory: core-leo-cdp
+        run: |
+          javap -verbose -cp build/classes/java/main leotech.starter.MainHttpStarter | grep "major version: 55"
       - name: Code quality
         working-directory: core-leo-cdp
-        run: gradle check -x test
+        run: ./gradlew check -x test
       - name: Integration tests
         working-directory: core-leo-cdp
         env:
