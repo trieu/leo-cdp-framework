@@ -32,7 +32,7 @@ A vertical numbered flow, with each step mapped to the `ci-cd.yml` **job** that 
 | 6 | Pull Request DEV → MAIN (+ `@gemini-cli` interactive aside) | `gemini-review` (+ `gemini`) |
 | 7 | Project Owner — review / approve / merge | — |
 | 8 | Build Agent / CI Runner — build, version tag, Trivy scan | `detect` → `release` |
-| 9 | Public Docker Repo — GHCR + Docker Hub | `release` |
+| 9 | Public Docker Repo — GHCR | `release` |
 | 10 | Email Notification | `release` |
 | 11 | Development Team — stakeholders | — |
 
@@ -60,8 +60,7 @@ Docker Build → Release Notification**:
    release.
 8. **Build Agent / CI Runner** — jobs **`detect`** + **`release`** derive a version tag,
    build the Docker image, and run a Trivy security scan (gated on HIGH/CRITICAL).
-9. **Public Docker Repo** — publishes the image to GHCR (always) and Docker Hub
-   (if credentials are configured), tagged `:<version>` and `:latest`.
+9. **Public Docker Repo** — publishes the image to GHCR, tagged `:<version>` and `:latest`.
 10. **Email Notification** — job **`release`** emails the release notification.
 11. **Development Team** — Product Owner and stakeholders pull & deploy the released
     image.
@@ -75,8 +74,8 @@ Docker Build → Release Notification**:
 | `validate` | push to `dev`, PR into `main`, nightly cron (`18:00 UTC`), manual | Build + unit tests, code quality, integration tests (ArangoDB 3.11.14 + Redis 7.4 service containers, pinned to the `devops-script/docker-arangodb` versions for production parity). |
 | `alert-on-failure` | `validate` failed | Emails the dev team (bug report). |
 | `docker` | any push, PR, manual | Builds the Docker image running the JUnit suite inside the multi-stage build and publishes the JUnit report. On a **push** (any branch) it pushes the runtime image to GHCR tagged with the commit SHA (full + short); on a **PR** it builds only (no push), validating the Dockerfile. |
-| `detect` | push to `main`, published Release | Derives the version tag (`YYYY.MM.DD-<shortsha>`) and detects whether Docker Hub creds exist. |
-| `release` | after `detect` | Build, Trivy scan (fails on HIGH/CRITICAL), push `:version` + `:latest` to GHCR and optionally Docker Hub, then email stakeholders. |
+| `detect` | push to `main`, published Release | Derives the version tag (`YYYY.MM.DD-<shortsha>`). |
+| `release` | after `detect` | Build, Trivy scan (fails on HIGH/CRITICAL), push `:version` + `:latest` to GHCR, then email stakeholders. |
 | `ai-check` | any PR / `@gemini-cli` comment event | Gate: outputs whether `GEMINI_API_KEY` is set so the AI jobs skip cleanly when it isn't. |
 | `gemini-review` | every PR (same-repo and fork) | Automatic AI code review via the Gemini CLI `code-review` extension. |
 | `gemini` | `@gemini-cli` in an issue/PR comment, review, or new issue | Runs Google's Gemini CLI to answer the request. Restricted to repo owners/members/collaborators. |
@@ -104,23 +103,17 @@ gracefully — workflows skip the steps whose secrets are missing rather than fa
 | `SMTP_PASS` | `alert-on-failure`, `release` | For email | SMTP password / app password. |
 | `DEV_TEAM_EMAILS` | `alert-on-failure` | For failure alerts | Comma-separated recipients of CI-failure alerts. |
 | `STAKEHOLDER_EMAILS` | `release` | For release notices | Comma-separated recipients of release notifications. |
-| `DOCKER_USERNAME` | `release` | Optional | Enables Docker Hub publishing. Omit to publish to GHCR only. |
-| `DOCKER_PASSWORD` | `release` | Optional | Docker Hub access token. |
 
 > `GITHUB_TOKEN` is provided automatically by GitHub Actions — no setup needed. It
 > authenticates the GHCR push and lets the Gemini workflows comment on PRs/issues.
+> The pipeline publishes to **GHCR only**; no Docker registry username/password is required.
 
 ### 2. Permissions
 
 - **GHCR publishing** needs `packages: write` (declared at the top of `ci-cd.yml`).
   Confirm **Settings → Actions → General → Workflow permissions** allows write access,
-  or that the default `GITHUB_TOKEN` has package scope.
-- **Docker Hub** image name defaults to `tantrieuf31/leocdp-free-trial-edition`. To
-  publish under your own namespace when you fork, set the repository **variable**
-  `DOCKER_IMAGE` (Settings → Secrets and variables → Actions → **Variables**) — the
-  `DOCKERHUB_IMAGE` env in [`ci-cd.yml`](ci-cd.yml) reads `${{ vars.DOCKER_IMAGE }}`
-  and falls back to the default when unset. `DOCKER_USERNAME` must own / have push
-  rights to whichever namespace you point it at.
+  or that the default `GITHUB_TOKEN` has package scope. The image name is
+  `ghcr.io/<owner>/<repo>` (the `IMAGE` env), derived automatically — nothing to configure.
 
 ### 3. Branch protection (recommended)
 
@@ -153,18 +146,15 @@ Run workflow**. It accepts a `platforms` input (`linux/amd64` or
 ### Pulling a published image
 
 ```bash
-# Latest release — GHCR (always published)
+# Latest release — GHCR
 docker pull ghcr.io/<owner>/leo-cdp-framework:latest
 
-# Latest release — Docker Hub (mirror, only if DOCKER_USERNAME/PASSWORD are set)
-docker pull tantrieuf31/leocdp-free-trial-edition:latest
-
-# A specific commit (from the `docker` job, GHCR only)
+# A specific commit (from the `docker` job)
 docker pull ghcr.io/<owner>/leo-cdp-framework:<short-sha>
 ```
 
 Replace `<owner>` with the GitHub org/user that owns this repository. The `release`
-job tags both registries with `:<version>` (`YYYY.MM.DD-<shortsha>`) and `:latest`.
+job tags GHCR with `:<version>` (`YYYY.MM.DD-<shortsha>`) and `:latest`.
 
 ### Deploying the image
 

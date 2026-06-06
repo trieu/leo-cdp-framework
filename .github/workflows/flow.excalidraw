@@ -502,7 +502,7 @@
     },
     {
       "type": "text", "id": "b9d", "x": 164, "y": 1172, "width": 440, "height": 40,
-      "text": "Publish image → GHCR (always) + Docker Hub (optional)\ntags: :<version>  ·  :latest", "originalText": "Publish image → GHCR (always) + Docker Hub (optional)\ntags: :<version>  ·  :latest", "fontSize": 13, "fontFamily": 3, "textAlign": "left", "verticalAlign": "top",
+      "text": "Publish image → GHCR\ntags: :<version>  ·  :latest", "originalText": "Publish image → GHCR\ntags: :<version>  ·  :latest", "fontSize": 13, "fontFamily": 3, "textAlign": "left", "verticalAlign": "top",
       "strokeColor": "#64748b", "backgroundColor": "transparent", "fillStyle": "solid", "strokeWidth": 1, "strokeStyle": "solid",
       "roughness": 0, "opacity": 100, "angle": 0, "seed": 90018, "version": 1, "versionNonce": 90019,
       "isDeleted": false, "groupIds": [], "boundElements": null, "link": null, "locked": false, "containerId": null, "lineHeight": 1.25

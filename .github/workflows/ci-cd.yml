@@ -51,10 +51,7 @@ permissions:
   actions: read
 
 env:
-  IMAGE: ghcr.io/${{ github.repository }}
-  # Docker Hub image name — override per fork via repo variable DOCKER_IMAGE
-  # (Settings → Secrets and variables → Actions → Variables). Falls back to the default.
-  DOCKERHUB_IMAGE: ${{ vars.DOCKER_IMAGE || 'tantrieuf31/leocdp-free-trial-edition' }}
+  IMAGE: ghcr.io/${{ github.repository }}   # GHCR only; auth via the built-in GITHUB_TOKEN
 
 jobs:
   # ───────────────────────── CI validation ─────────────────────────
@@ -256,22 +253,10 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.v.outputs.version }}
-      has_dockerhub: ${{ steps.c.outputs.has_dockerhub }}
     steps:
       - name: Derive version tag
         id: v
         run: echo "version=$(date +%Y.%m.%d)-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
-      - name: Detect Docker Hub credentials
-        id: c
-        env:
-          DH_USER: ${{ secrets.DOCKER_USERNAME }}
-          DH_PASS: ${{ secrets.DOCKER_PASSWORD }}
-        run: |
-          if [[ -n "$DH_USER" && -n "$DH_PASS" ]]; then
-            echo "has_dockerhub=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "has_dockerhub=false" >> "$GITHUB_OUTPUT"
-          fi
 
   release:
     needs: detect
@@ -295,27 +280,12 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Log in to Docker Hub
-        if: needs.detect.outputs.has_dockerhub == 'true'
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Cache Docker layers
         uses: actions/cache@v4
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-${{ github.sha }}
           restore-keys: ${{ runner.os }}-buildx-
-      - name: Assemble image tags
-        id: tags
-        run: |
-          V="${{ needs.detect.outputs.version }}"
-          TAGS="${{ env.IMAGE }}:${V},${{ env.IMAGE }}:latest"
-          if [[ "${{ needs.detect.outputs.has_dockerhub }}" == "true" ]]; then
-            TAGS="${TAGS},${{ env.DOCKERHUB_IMAGE }}:${V},${{ env.DOCKERHUB_IMAGE }}:latest"
-          fi
-          echo "tags=${TAGS}" >> "$GITHUB_OUTPUT"
       - name: Build for scan (amd64, no push)
         uses: docker/build-push-action@v6
         with:
@@ -338,7 +308,9 @@ jobs:
           file: ./core-leo-cdp/Dockerfile
           platforms: ${{ github.event.inputs.platforms || 'linux/amd64' }}
           push: true
-          tags: ${{ steps.tags.outputs.tags }}
+          tags: |
+            ${{ env.IMAGE }}:${{ needs.detect.outputs.version }}
+            ${{ env.IMAGE }}:latest
           cache-from: type=local,src=/tmp/.buildx-cache
       - name: Move cache
         run: rm -rf /tmp/.buildx-cache && mv /tmp/.buildx-cache-new /tmp/.buildx-cache || true
@@ -364,12 +336,7 @@ jobs:
           {
             echo "## Release Summary"
             echo "**Version:** ${{ needs.detect.outputs.version }}"
-            echo "**GHCR:** \`${{ env.IMAGE }}\`"
-            if [[ "${{ needs.detect.outputs.has_dockerhub }}" == "true" ]]; then
-              echo "**Docker Hub:** \`${{ env.DOCKERHUB_IMAGE }}\`"
-            else
-              echo "**Docker Hub:** skipped (no credentials configured)"
-            fi
+            echo "**GHCR:** \`${{ env.IMAGE }}:${{ needs.detect.outputs.version }}\` + \`:latest\`"
           } >> "$GITHUB_STEP_SUMMARY"
 
   # ───────────────────────── Gemini AI (review + assistant) ─────────────────────────
