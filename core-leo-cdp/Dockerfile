@@ -8,6 +8,9 @@
 # build.gradle (11 until migration Phase 4). The committed gradlew wrapper downloads
 # its own pinned Gradle distribution - no manual install needed.
 FROM amazoncorretto:25 AS build
+# findutils provides xargs, which the gradlew launcher script requires;
+# the minimal AL2023-based corretto image does not ship it.
+RUN yum install -y findutils
 WORKDIR /src
 COPY . .
 # Output goes to /dist with deps/ alongside; JAR manifest Class-Path points to ./deps
