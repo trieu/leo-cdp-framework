@@ -29,7 +29,7 @@ A vertical numbered flow, with each step mapped to the `ci-cd.yml` **job** that 
 | 3 | GitHub Repository (`leo-cdp-framework`) | — |
 | 4 | DEV Branch — commit & push | — |
 | 5 | Automated CI Validation → FAIL → Alert Email (red ✕) / PASS ↓ | `validate` + `docker` → `alert-on-failure` |
-| 6 | Pull Request DEV → MAIN (+ `@gemini-cli` interactive aside) | `gemini-review` (+ `gemini`) |
+| 6 | Pull Request DEV → MAIN (AI review by GitHub Copilot) | — (Copilot, native) |
 | 7 | Project Owner — review / approve / merge | — |
 | 8 | Build Agent / CI Runner — build, version tag, Trivy scan | `detect` → `release` |
 | 9 | Public Docker Repo — GHCR | `release` |
@@ -52,10 +52,10 @@ Docker Build → Release Notification**:
    on PRs into `main`, and on a nightly cron.
    - **FAIL →** job **`alert-on-failure`** emails an alert to the dev team (bug report).
    - **PASS →** continue to the pull request.
-6. **Pull Request `DEV → MAIN`** — opening it triggers job **`gemini-review`**, which
-   posts an automatic AI code review (Google Gemini). *(Separately, job **`gemini`**
-   lets anyone mention `@gemini-cli` in any issue or PR comment for an interactive
-   assistant.)*
+6. **Pull Request `DEV → MAIN`** — **GitHub Copilot** posts an automatic AI code review.
+   This is a native GitHub feature (not a workflow job) — enable it once via repo
+   **Settings → Rules** (a ruleset requesting Copilot review) or per-PR by adding
+   **Copilot** as a reviewer. Requires a Copilot license on the org/owner.
 7. **Project Owner** — reviews, approves, and merges to `main`. The merge triggers the
    release.
 8. **Build Agent / CI Runner** — jobs **`detect`** + **`release`** derive a version tag,
@@ -76,9 +76,9 @@ Docker Build → Release Notification**:
 | `docker` | any push, PR, manual | Builds the Docker image running the JUnit suite inside the multi-stage build and publishes the JUnit report. On a **push** (any branch) it pushes the runtime image to GHCR tagged with the commit SHA (full + short); on a **PR** it builds only (no push), validating the Dockerfile. |
 | `detect` | push to `main`, published Release | Derives the version tag (`YYYY.MM.DD-<shortsha>`). |
 | `release` | after `detect` | Build, Trivy scan (fails on HIGH/CRITICAL), push `:version` + `:latest` to GHCR, then email stakeholders. |
-| `ai-check` | any PR / `@gemini-cli` comment event | Gate: outputs whether `GEMINI_API_KEY` is set so the AI jobs skip cleanly when it isn't. |
-| `gemini-review` | every PR (same-repo and fork) | Automatic AI code review via the Gemini CLI `code-review` extension. |
-| `gemini` | `@gemini-cli` in an issue/PR comment, review, or new issue | Runs Google's Gemini CLI to answer the request. Restricted to repo owners/members/collaborators. |
+
+> **AI code review** is handled by **GitHub Copilot** (native PR reviewer configured in
+> repo settings), not by a workflow job — so it doesn't appear in this table.
 
 > All jobs share one workflow, so a single trigger (e.g. a `push`) starts the workflow
 > and each job's `if:` decides whether it actually runs. Unlike separate files, GitHub
@@ -96,7 +96,6 @@ gracefully — workflows skip the steps whose secrets are missing rather than fa
 
 | Secret | Used by | Required? | Notes |
 |---|---|---|---|
-| `GEMINI_API_KEY` | `gemini-review`, `gemini` | For AI jobs | Free key from [Google AI Studio](https://aistudio.google.com/apikey). Without it, both Gemini jobs skip cleanly. |
 | `SMTP_HOST` | `alert-on-failure`, `release` | For email | SMTP server hostname. |
 | `SMTP_PORT` | `alert-on-failure`, `release` | For email | e.g. `465` or `587`. |
 | `SMTP_USER` | `alert-on-failure`, `release` | For email | SMTP username. |
@@ -105,8 +104,9 @@ gracefully — workflows skip the steps whose secrets are missing rather than fa
 | `STAKEHOLDER_EMAILS` | `release` | For release notices | Comma-separated recipients of release notifications. |
 
 > `GITHUB_TOKEN` is provided automatically by GitHub Actions — no setup needed. It
-> authenticates the GHCR push and lets the Gemini workflows comment on PRs/issues.
-> The pipeline publishes to **GHCR only**; no Docker registry username/password is required.
+> authenticates the GHCR push. The pipeline publishes to **GHCR only**; no Docker
+> registry username/password is required, and **no AI API key** (Copilot review is
+> a native GitHub feature, not a workflow secret).
 
 ### 2. Permissions
 
@@ -120,7 +120,8 @@ gracefully — workflows skip the steps whose secrets are missing rather than fa
 Protect `main` and require these job status checks before merge:
 - **validate**
 - **docker**
-- **gemini-review**
+
+(Optionally also require **GitHub Copilot** review via the same ruleset.)
 
 ---
 
@@ -130,10 +131,8 @@ Protect `main` and require these job status checks before merge:
 
 - **Develop on `dev`.** Every push runs CI validation and a commit-tagged image build.
   Watch the run under the **Actions** tab; a failing `validate` job emails the dev team.
-- **Open a PR `dev → main`.** Gemini posts an automated review; the validation and
-  docker build run as PR checks.
-- **Ask `@gemini-cli` for help** by mentioning it in any PR or issue comment (e.g.
-  *"@gemini-cli why is this test flaky?"* or `@gemini-cli /review` to re-run the review).
+- **Open a PR `dev → main`.** GitHub Copilot posts an automated review (if enabled in
+  repo settings); the validation and docker build run as PR checks.
 - **Merge to `main`** (owner only) to cut a release — the image is version-tagged,
   scanned, published, and stakeholders are emailed.
 

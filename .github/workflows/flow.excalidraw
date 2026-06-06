@@ -337,7 +337,7 @@
     },
     {
       "type": "text", "id": "b6d", "x": 164, "y": 796, "width": 420, "height": 20,
-      "text": "job gemini-review posts an automatic AI review", "originalText": "job gemini-review posts an automatic AI review", "fontSize": 13, "fontFamily": 3, "textAlign": "left", "verticalAlign": "top",
+      "text": "GitHub Copilot posts an automatic AI code review (native PR reviewer, not a workflow job)", "originalText": "GitHub Copilot posts an automatic AI code review (native PR reviewer, not a workflow job)", "fontSize": 13, "fontFamily": 3, "textAlign": "left", "verticalAlign": "top",
       "strokeColor": "#64748b", "backgroundColor": "transparent", "fillStyle": "solid", "strokeWidth": 1, "strokeStyle": "solid",
       "roughness": 0, "opacity": 100, "angle": 0, "seed": 60018, "version": 1, "versionNonce": 60019,
       "isDeleted": false, "groupIds": [], "boundElements": null, "link": null, "locked": false, "containerId": null, "lineHeight": 1.25
@@ -360,14 +360,14 @@
     },
     {
       "type": "text", "id": "claudeh", "x": 712, "y": 764, "width": 200, "height": 20,
-      "text": "job: gemini", "originalText": "job: gemini", "fontSize": 15, "fontFamily": 3, "textAlign": "left", "verticalAlign": "top",
+      "text": "AI review: Copilot", "originalText": "AI review: Copilot", "fontSize": 15, "fontFamily": 3, "textAlign": "left", "verticalAlign": "top",
       "strokeColor": "#5b21b6", "backgroundColor": "transparent", "fillStyle": "solid", "strokeWidth": 1, "strokeStyle": "solid",
       "roughness": 0, "opacity": 100, "angle": 0, "seed": 60032, "version": 1, "versionNonce": 60033,
       "isDeleted": false, "groupIds": [], "boundElements": null, "link": null, "locked": false, "containerId": null, "lineHeight": 1.25
     },
     {
       "type": "text", "id": "clauded", "x": 712, "y": 788, "width": 200, "height": 46,
-      "text": "Interactive assistant —\nmention @gemini-cli in\nany issue or PR comment", "originalText": "Interactive assistant —\nmention @gemini-cli in\nany issue or PR comment", "fontSize": 12, "fontFamily": 3, "textAlign": "left", "verticalAlign": "top",
+      "text": "GitHub Copilot review —\nenable in repo Settings\n(Rules / Reviewers)", "originalText": "GitHub Copilot review —\nenable in repo Settings\n(Rules / Reviewers)", "fontSize": 12, "fontFamily": 3, "textAlign": "left", "verticalAlign": "top",
       "strokeColor": "#6d28d9", "backgroundColor": "transparent", "fillStyle": "solid", "strokeWidth": 1, "strokeStyle": "solid",
       "roughness": 0, "opacity": 100, "angle": 0, "seed": 60034, "version": 1, "versionNonce": 60035,
       "isDeleted": false, "groupIds": [], "boundElements": null, "link": null, "locked": false, "containerId": null, "lineHeight": 1.25
