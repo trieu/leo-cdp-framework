@@ -217,13 +217,14 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build & push image (tagged with commit SHA)
-        if: github.event_name != 'pull_request'
+      - name: Build image (push only on non-PR)
+        # Build the full runtime image on EVERY run so PRs validate the Dockerfile end-to-end;
+        # only push (login above) on non-PR events. PRs build but don't publish.
         uses: docker/build-push-action@v6
         with:
           context: ./core-leo-cdp
           file: ./core-leo-cdp/Dockerfile
-          push: true
+          push: ${{ github.event_name != 'pull_request' }}
           tags: |
             ${{ env.IMAGE }}:${{ steps.meta.outputs.sha }}
             ${{ env.IMAGE }}:${{ steps.meta.outputs.short_sha }}
