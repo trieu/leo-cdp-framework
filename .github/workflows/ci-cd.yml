@@ -395,8 +395,6 @@ jobs:
       (github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository) ||
       (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) )
     runs-on: ubuntu-latest
-    # Advisory only — a Gemini CLI hiccup (bad key, transient API error) must not fail CI.
-    continue-on-error: true
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -406,6 +404,9 @@ jobs:
           persist-credentials: false
       - name: Run Gemini PR review
         id: gemini-review
+        # Advisory only — skip cleanly on any Gemini error (exhausted quota / 429, bad key,
+        # transient API failure) so the step (and job) stay green instead of red.
+        continue-on-error: true
         uses: google-github-actions/run-gemini-cli@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -465,6 +466,8 @@ jobs:
           echo "Saved request ($(wc -c < .gemini/request.md) bytes)"
       - name: Run Gemini CLI
         id: gemini
+        # Advisory only — skip cleanly on any Gemini error (exhausted quota / 429, etc.).
+        continue-on-error: true
         uses: google-github-actions/run-gemini-cli@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
