@@ -1,4 +1,4 @@
-group 'leocdp'
+group = 'leocdp'
 
 // --- 1. Load configuration safely ---
 // We load this into a standard Properties object first to handle safe lookups
@@ -43,9 +43,11 @@ project.ext.staticOutputFolderPath = resolveProperty("staticOutputFolderPath", l
 
 
 // --- 5. Helper: Generate timestamped implementation version ---
+// java.time instead of Groovy Date.format(): the Date extension moved to the optional
+// groovy-dateutil module in Groovy 4 (bundled by Gradle 9) and may not be available.
 ext.getImplementationVersion = {
-    def date = new Date()
-    return "${project.version}_${date.format('yyyy-MM-dd-HH-mm-ss')}"
+    def ts = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern('yyyy-MM-dd-HH-mm-ss'))
+    return "${project.version}_${ts}"
 }
 
 
@@ -68,12 +70,12 @@ buildscript {
     repositories {
         mavenCentral()
         maven {
-            url "https://plugins.gradle.org/m2/"
+            url = "https://plugins.gradle.org/m2/"
         }
         mavenLocal()
     }
     dependencies {
-        classpath "org.gradle-webtools.minify:gradle-minify-plugin:1.3.2"
+        classpath "org.gradle-webtools.minify:gradle-minify-plugin:2.1.1"
     }
 }
 
@@ -87,7 +89,6 @@ eclipse {
     }
 }
 
-sourceCompatibility = 11 
 
 repositories {
     mavenLocal()
@@ -107,11 +108,18 @@ repositories {
 // NB: Gradle 7+ has the typed TargetJvmEnvironment attribute built in; a String-typed
 // attribute of the same name collides with it ("Cannot have two attributes with the
 // same name but different types"), so the typed API is mandatory here.
-configurations.all {
+// Gradle 9 enforces configuration roles: attributes() is only legal on resolvable or
+// consumable configurations; calling it on declarable ones (implementation, compileOnly,
+// ...) fails with "Method call not allowed". The exclude is fine everywhere.
+configurations.configureEach {
    exclude module: 'ch.qos.logback'
-   attributes {
-      attribute(TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE,
-                objects.named(TargetJvmEnvironment, TargetJvmEnvironment.STANDARD_JVM))
+   // resolvable-only: variant selection happens at resolution; consumable legacy
+   // configurations like ':archives' reject attributes() (error in Gradle 10)
+   if (it.canBeResolved) {
+      attributes {
+         attribute(TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE,
+                   objects.named(TargetJvmEnvironment, TargetJvmEnvironment.STANDARD_JVM))
+      }
    }
 }
 
@@ -235,8 +243,12 @@ dependencies {
     testImplementation 'net.datafaker:datafaker:1.5.0'
 }
 
-tasks.withType(JavaCompile) {
+tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+    // Phase 1-3 of the JDK-25 migration: compile against the Java 11 API and emit
+    // Java 11 bytecode regardless of the JDK running Gradle (17+ required by Gradle 9).
+    // Phase 4 flips this to 25 (see docs/02-java-25-migration.md).
+    options.release = 11
 }
 
 tasks.withType(Jar) {
@@ -322,6 +334,15 @@ def getClasspathStringJars() {
     return "." + separator + jarPaths.join(separator)
 }
 
+// Resolve the runtime classpath only at EXECUTION time (doFirst), not while the build
+// script is evaluated — config-time resolution is a configuration-cache blocker and a
+// Gradle 9 anti-pattern. Applies to all starter Jar tasks (and harmlessly to :jar).
+tasks.withType(Jar).configureEach {
+    doFirst {
+        manifest.attributes('Class-Path': getClasspathStringJars())
+    }
+}
+
 
 
 /////////////////////////// BEGIN BUILD FOR DEPLOYED JAR ///////////////////////////////
@@ -337,8 +358,7 @@ task buildLeoMainHttpStarter(type: Jar) {
     manifest {
         attributes ('Implementation-Title': 'MainHttpStarter', 
                     'Implementation-Version': getImplementationVersion(),
-                    'Main-Class': ' leotech.starter.MainHttpStarter',
-                    'Class-Path' : getClasspathStringJars() 
+                    'Main-Class': 'leotech.starter.MainHttpStarter'
         )
     }
     
@@ -358,8 +378,7 @@ task buildLeoDataObserverStarter(type: Jar) {
     manifest {
         attributes ('Implementation-Title': 'DataObserverStarter', 
                     'Implementation-Version': getImplementationVersion(),
-                    'Main-Class': ' leotech.starter.DataObserverStarter',
-                    'Class-Path' : getClasspathStringJars() 
+                    'Main-Class': 'leotech.starter.DataObserverStarter'
         )
     }
     
@@ -379,8 +398,7 @@ task buildLeoScheduledJobStarter(type: Jar) {
     manifest {
         attributes ('Implementation-Title': 'ScheduledJobStarter', 
                     'Implementation-Version': getImplementationVersion(),
-                    'Main-Class': ' leotech.starter.ScheduledJobStarter',
-                    'Class-Path' : getClasspathStringJars() 
+                    'Main-Class': 'leotech.starter.ScheduledJobStarter'
         )
     }
     
@@ -400,8 +418,7 @@ task buildLeoDataProcessingStarter(type: Jar) {
     manifest {
         attributes ('Implementation-Title': 'DataProcessingStarter', 
                     'Implementation-Version': getImplementationVersion(),
-                    'Main-Class': ' leotech.starter.DataProcessingStarter',
-                    'Class-Path' : getClasspathStringJars() 
+                    'Main-Class': 'leotech.starter.DataProcessingStarter'
         )
     }
     
@@ -421,8 +438,7 @@ task buildLeoUploadFileHttpStarter(type: Jar) {
     manifest {
         attributes ('Implementation-Title': 'UploadFileHttpStarter', 
                     'Implementation-Version': getImplementationVersion(),
-                    'Main-Class': ' leotech.starter.UploadFileHttpStarter',
-                    'Class-Path' : getClasspathStringJars() 
+                    'Main-Class': 'leotech.starter.UploadFileHttpStarter'
                     )
     }
     
@@ -541,30 +557,19 @@ task CopyPublicFolderToSTATIC(type: Copy) {
 
 
 // 6) copy shell-script-starter and installation
-task CopyDevOpsScriptToBUILD(type: Copy) {  
+// NB: previously this task called the project.copy() METHOD in its configuration body,
+// which executed the copies during the configuration phase on EVERY Gradle invocation.
+// Rewritten as a proper Copy spec so it only runs when the task is requested.
+task CopyDevOpsScriptToBUILD(type: Copy) {
     group = 'Deployment Preparation' // TASK GROUP
     description = 'Copies DevOps and installation scripts to the build folder.' // <-- Added description
 
-    copy {
-        from 'devops-script/docker-arangodb'
-        into buildOutputFolderPath + '/devops-script/docker-arangodb'
-    }
+    into buildOutputFolderPath + '/devops-script'
+    into('docker-arangodb')          { from 'devops-script/docker-arangodb' }
+    into('docker-kafka')             { from 'devops-script/docker-kafka' }
+    into('kafka-docker-production')  { from 'devops-script/kafka-docker-production' }
+    into('script-installation')     { from 'devops-script/script-installation' }
 
-    copy {
-        from 'devops-script/docker-kafka'
-        into buildOutputFolderPath + '/devops-script/docker-kafka'
-    }
-    
-    copy {
-        from 'devops-script/kafka-docker-production'
-        into buildOutputFolderPath + '/devops-script/kafka-docker-production'
-    }
-
-    copy {
-        from 'devops-script/script-installation'
-        into buildOutputFolderPath + '/devops-script/script-installation'
-    }
-    
     doLast {
         println '###  CopyDevOpsScriptToBUILD OK !!!  ###'
     }

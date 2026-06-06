@@ -1,0 +1,344 @@
+== leo-data-processing-starter-1.0.0.jar ==
+Manifest-Version: 1.0
+Implementation-Title: DataProcessingStarter
+Main-Class: leotech.starter.DataProcessingStarter
+Class-Path: . ; deps/query-builder-2.1.1.jar ; deps/rfx-core-1.0.jar ; d
+ eps/zalo-java-sdk-4.0-SNAPSHOT.jar ; deps/joda-time-2.12.2.jar ; deps/g
+ eoip2-3.0.2.jar ; deps/kafka-streams-3.5.2.jar ; deps/jackson-annotatio
+ ns-2.14.2.jar ; deps/jackson-module-scala_2.13-2.14.2.jar ; deps/vertx-
+ web-3.8.5.jar ; deps/vertx-web-client-3.8.5.jar ; deps/vertx-auth-jwt-3
+ .8.5.jar ; deps/vertx-web-common-3.8.5.jar ; deps/vertx-auth-common-3.8
+ .5.jar ; deps/vertx-jwt-3.8.5.jar ; deps/vertx-core-3.8.5.jar ; deps/ve
+ rtx-codegen-3.8.5.jar ; deps/jackson-databind-2.14.2.jar ; deps/google-
+ cloud-storage-2.22.5.jar ; deps/jackson-core-2.14.2.jar ; deps/univocit
+ y-parsers-2.9.1.jar ; deps/mysql-connector-j-9.5.0.jar ; deps/postgresq
+ l-42.7.10.jar ; deps/sqlite-jdbc-3.51.0.0.jar ; deps/jdbi3-sqlobject-3.
+ 49.6.jar ; deps/jdbi3-core-3.49.6.jar ; deps/thumbnailator-0.4.20.jar ;
+  deps/nanocaptcha-2.1.jar ; deps/libphonenumber-9.0.19.jar ; deps/quart
+ z-2.3.2.jar ; deps/javax.mail-1.6.2.jar ; deps/google-oauth-client-jett
+ y-1.34.1.jar ; deps/google-oauth-client-java6-1.34.1.jar ; deps/google-
+ api-services-drive-v3-rev20231128-2.0.0.jar ; deps/google-api-services-
+ sheets-v4-rev20230815-2.0.0.jar ; deps/google-api-client-2.2.0.jar ; de
+ ps/google-oauth-client-1.34.1.jar ; deps/fastexcel-0.19.0.jar ; deps/ar
+ angodb-java-driver-6.25.0.jar ; deps/jedis-7.0.0.jar ; deps/google-http
+ -client-gson-1.43.3.jar ; deps/gson-2.13.2.jar ; deps/log4j-slf4j2-impl
+ -2.23.1.jar ; deps/handlebars-4.3.1.jar ; deps/kafka-clients-3.5.2.jar 
+ ; deps/HikariCP-java7-2.4.13.jar ; deps/velocypack-2.5.4.jar ; deps/red
+ is-authx-core-0.1.1-beta2.jar ; deps/slf4j-api-2.0.17.jar ; deps/log4j-
+ core-2.23.1.jar ; deps/log4j-api-2.23.1.jar ; deps/jsoup-1.21.1.jar ; d
+ eps/owasp-java-html-sanitizer-20240325.1.jar ; deps/commons-text-1.14.0
+ .jar ; deps/commons-lang3-3.18.0.jar ; deps/commons-validator-1.7.jar ;
+  deps/commons-net-3.6.jar ; deps/commons-io-2.5.jar ; deps/google-http-
+ client-apache-v2-1.43.3.jar ; deps/google-http-client-1.43.3.jar ; deps
+ /httpclient-4.5.14.jar ; deps/mvel2-2.5.2.Final.jar ; deps/contiperf-2.
+ 3.4.jar ; deps/closure-compiler-v20210302.jar ; deps/compiler-0.9.6.jar
+  ; deps/snakeyaml-1.33.jar ; deps/friendly-id-1.1.0.jar ; deps/slugify-
+ 2.5.jar ; deps/junidecode-0.4.1.jar ; deps/openlocationcode-1.0.4.jar ;
+  deps/commons-math3-3.6.1.jar ; deps/okhttp-4.12.0.jar ; deps/javax.ser
+ vlet-api-3.1.0.jar ; deps/TextImageGen-1.9.jar ; deps/jai-imageio-core-
+ 1.4.0.jar ; deps/qrcodegen-1.8.0.jar ; deps/scala-library-2.13.10.jar ;
+  deps/paranamer-2.8.jar ; deps/protobuf-java-4.31.1.jar ; deps/opencens
+ us-contrib-http-util-0.31.1.jar ; deps/guava-32.0.1-jre.jar ; deps/chec
+ ker-qual-3.52.0.jar ; deps/geantyref-2.0.1.jar ; deps/c3p0-0.9.5.4.jar 
+ ; deps/mchange-commons-java-0.2.15.jar ; deps/activation-1.1.jar ; deps
+ /failureaccess-1.0.1.jar ; deps/listenablefuture-9999.0-empty-to-avoid-
+ conflict-with-guava.jar ; deps/error_prone_annotations-2.41.0.jar ; dep
+ s/j2objc-annotations-2.8.jar ; deps/google-http-client-jackson2-1.43.3.
+ jar ; deps/commons-codec-1.15.jar ; deps/google-api-services-storage-v1
+ -rev20230301-2.0.0.jar ; deps/google-cloud-core-2.20.0.jar ; deps/auto-
+ value-annotations-1.10.1.jar ; deps/google-cloud-core-http-2.20.0.jar ;
+  deps/google-http-client-appengine-1.43.3.jar ; deps/gax-httpjson-2.30.
+ 0.jar ; deps/google-cloud-core-grpc-2.20.0.jar ; deps/gax-2.30.0.jar ; 
+ deps/gax-grpc-2.30.0.jar ; deps/grpc-alts-1.55.1.jar ; deps/grpc-grpclb
+ -1.55.1.jar ; deps/conscrypt-openjdk-uber-2.5.2.jar ; deps/grpc-auth-1.
+ 55.1.jar ; deps/grpc-protobuf-1.55.1.jar ; deps/grpc-protobuf-lite-1.55
+ .1.jar ; deps/google-auth-library-credentials-1.18.0.jar ; deps/google-
+ auth-library-oauth2-http-1.18.0.jar ; deps/api-common-2.13.0.jar ; deps
+ /javax.annotation-api-1.3.2.jar ; deps/opencensus-api-0.31.1.jar ; deps
+ /grpc-context-1.55.1.jar ; deps/proto-google-iam-v1-1.16.0.jar ; deps/p
+ rotobuf-java-util-3.23.2.jar ; deps/proto-google-common-protos-2.21.0.j
+ ar ; deps/threetenbp-1.6.8.jar ; deps/proto-google-cloud-storage-v2-2.2
+ 2.5-alpha.jar ; deps/grpc-google-cloud-storage-v2-2.22.5-alpha.jar ; de
+ ps/gapic-google-cloud-storage-v2-2.22.5-alpha.jar ; deps/jsr305-3.0.2.j
+ ar ; deps/grpc-api-1.55.1.jar ; deps/grpc-netty-shaded-1.55.1.jar ; dep
+ s/perfmark-api-0.26.0.jar ; deps/grpc-core-1.55.1.jar ; deps/annotation
+ s-4.1.1.4.jar ; deps/animal-sniffer-annotations-1.23.jar ; deps/grpc-st
+ ub-1.55.1.jar ; deps/grpc-googleapis-1.55.1.jar ; deps/grpc-xds-1.55.1.
+ jar ; deps/opencensus-proto-0.2.0.jar ; deps/grpc-services-1.55.1.jar ;
+  deps/re2j-1.6.jar ; deps/grpc-rls-1.55.1.jar ; deps/opczip-1.2.0.jar ;
+  deps/netty-handler-proxy-4.1.42.Final.jar ; deps/netty-codec-http2-4.1
+ .42.Final.jar ; deps/netty-codec-http-4.1.42.Final.jar ; deps/netty-han
+ dler-4.1.42.Final.jar ; deps/netty-resolver-dns-4.1.42.Final.jar ; deps
+ /netty-codec-socks-4.1.42.Final.jar ; deps/netty-codec-dns-4.1.42.Final
+ .jar ; deps/netty-codec-4.1.42.Final.jar ; deps/netty-transport-4.1.42.
+ Final.jar ; deps/netty-buffer-4.1.42.Final.jar ; deps/netty-resolver-4.
+ 1.42.Final.jar ; deps/netty-common-4.1.42.Final.jar ; deps/vertx-bridge
+ -common-3.8.5.jar ; deps/java10-shim-20240325.1.jar ; deps/java8-shim-2
+ 0240325.1.jar ; deps/commons-beanutils-1.9.4.jar ; deps/commons-digeste
+ r-2.1.jar ; deps/commons-logging-1.2.jar ; deps/commons-collections-3.2
+ .2.jar ; deps/commons-pool2-2.12.1.jar ; deps/json-20250517.jar ; deps/
+ httpcore-4.4.16.jar ; deps/icu4j-64.2.jar ; deps/maxmind-db-2.1.0.jar ;
+  deps/okio-jvm-3.6.0.jar ; deps/kotlin-stdlib-jdk8-1.9.10.jar ; deps/zs
+ td-jni-1.5.5-1.jar ; deps/lz4-java-1.8.0.jar ; deps/snappy-java-1.1.10.
+ 5.jar ; deps/rocksdbjni-7.9.2.jar ; deps/tagsoup-1.2.1.jar ; deps/kotli
+ n-stdlib-jdk7-1.9.10.jar ; deps/kotlin-stdlib-1.9.10.jar ; deps/kotlin-
+ stdlib-common-1.9.10.jar ; deps/annotations-13.0.jar
+
+== leo-main-starter-1.0.0.jar ==
+Manifest-Version: 1.0
+Implementation-Title: MainHttpStarter
+Main-Class: leotech.starter.MainHttpStarter
+Class-Path: . ; deps/query-builder-2.1.1.jar ; deps/rfx-core-1.0.jar ; d
+ eps/zalo-java-sdk-4.0-SNAPSHOT.jar ; deps/joda-time-2.12.2.jar ; deps/g
+ eoip2-3.0.2.jar ; deps/kafka-streams-3.5.2.jar ; deps/jackson-annotatio
+ ns-2.14.2.jar ; deps/jackson-module-scala_2.13-2.14.2.jar ; deps/vertx-
+ web-3.8.5.jar ; deps/vertx-web-client-3.8.5.jar ; deps/vertx-auth-jwt-3
+ .8.5.jar ; deps/vertx-web-common-3.8.5.jar ; deps/vertx-auth-common-3.8
+ .5.jar ; deps/vertx-jwt-3.8.5.jar ; deps/vertx-core-3.8.5.jar ; deps/ve
+ rtx-codegen-3.8.5.jar ; deps/jackson-databind-2.14.2.jar ; deps/google-
+ cloud-storage-2.22.5.jar ; deps/jackson-core-2.14.2.jar ; deps/univocit
+ y-parsers-2.9.1.jar ; deps/mysql-connector-j-9.5.0.jar ; deps/postgresq
+ l-42.7.10.jar ; deps/sqlite-jdbc-3.51.0.0.jar ; deps/jdbi3-sqlobject-3.
+ 49.6.jar ; deps/jdbi3-core-3.49.6.jar ; deps/thumbnailator-0.4.20.jar ;
+  deps/nanocaptcha-2.1.jar ; deps/libphonenumber-9.0.19.jar ; deps/quart
+ z-2.3.2.jar ; deps/javax.mail-1.6.2.jar ; deps/google-oauth-client-jett
+ y-1.34.1.jar ; deps/google-oauth-client-java6-1.34.1.jar ; deps/google-
+ api-services-drive-v3-rev20231128-2.0.0.jar ; deps/google-api-services-
+ sheets-v4-rev20230815-2.0.0.jar ; deps/google-api-client-2.2.0.jar ; de
+ ps/google-oauth-client-1.34.1.jar ; deps/fastexcel-0.19.0.jar ; deps/ar
+ angodb-java-driver-6.25.0.jar ; deps/jedis-7.0.0.jar ; deps/google-http
+ -client-gson-1.43.3.jar ; deps/gson-2.13.2.jar ; deps/log4j-slf4j2-impl
+ -2.23.1.jar ; deps/handlebars-4.3.1.jar ; deps/kafka-clients-3.5.2.jar 
+ ; deps/HikariCP-java7-2.4.13.jar ; deps/velocypack-2.5.4.jar ; deps/red
+ is-authx-core-0.1.1-beta2.jar ; deps/slf4j-api-2.0.17.jar ; deps/log4j-
+ core-2.23.1.jar ; deps/log4j-api-2.23.1.jar ; deps/jsoup-1.21.1.jar ; d
+ eps/owasp-java-html-sanitizer-20240325.1.jar ; deps/commons-text-1.14.0
+ .jar ; deps/commons-lang3-3.18.0.jar ; deps/commons-validator-1.7.jar ;
+  deps/commons-net-3.6.jar ; deps/commons-io-2.5.jar ; deps/google-http-
+ client-apache-v2-1.43.3.jar ; deps/google-http-client-1.43.3.jar ; deps
+ /httpclient-4.5.14.jar ; deps/mvel2-2.5.2.Final.jar ; deps/contiperf-2.
+ 3.4.jar ; deps/closure-compiler-v20210302.jar ; deps/compiler-0.9.6.jar
+  ; deps/snakeyaml-1.33.jar ; deps/friendly-id-1.1.0.jar ; deps/slugify-
+ 2.5.jar ; deps/junidecode-0.4.1.jar ; deps/openlocationcode-1.0.4.jar ;
+  deps/commons-math3-3.6.1.jar ; deps/okhttp-4.12.0.jar ; deps/javax.ser
+ vlet-api-3.1.0.jar ; deps/TextImageGen-1.9.jar ; deps/jai-imageio-core-
+ 1.4.0.jar ; deps/qrcodegen-1.8.0.jar ; deps/scala-library-2.13.10.jar ;
+  deps/paranamer-2.8.jar ; deps/protobuf-java-4.31.1.jar ; deps/opencens
+ us-contrib-http-util-0.31.1.jar ; deps/guava-32.0.1-jre.jar ; deps/chec
+ ker-qual-3.52.0.jar ; deps/geantyref-2.0.1.jar ; deps/c3p0-0.9.5.4.jar 
+ ; deps/mchange-commons-java-0.2.15.jar ; deps/activation-1.1.jar ; deps
+ /failureaccess-1.0.1.jar ; deps/listenablefuture-9999.0-empty-to-avoid-
+ conflict-with-guava.jar ; deps/error_prone_annotations-2.41.0.jar ; dep
+ s/j2objc-annotations-2.8.jar ; deps/google-http-client-jackson2-1.43.3.
+ jar ; deps/commons-codec-1.15.jar ; deps/google-api-services-storage-v1
+ -rev20230301-2.0.0.jar ; deps/google-cloud-core-2.20.0.jar ; deps/auto-
+ value-annotations-1.10.1.jar ; deps/google-cloud-core-http-2.20.0.jar ;
+  deps/google-http-client-appengine-1.43.3.jar ; deps/gax-httpjson-2.30.
+ 0.jar ; deps/google-cloud-core-grpc-2.20.0.jar ; deps/gax-2.30.0.jar ; 
+ deps/gax-grpc-2.30.0.jar ; deps/grpc-alts-1.55.1.jar ; deps/grpc-grpclb
+ -1.55.1.jar ; deps/conscrypt-openjdk-uber-2.5.2.jar ; deps/grpc-auth-1.
+ 55.1.jar ; deps/grpc-protobuf-1.55.1.jar ; deps/grpc-protobuf-lite-1.55
+ .1.jar ; deps/google-auth-library-credentials-1.18.0.jar ; deps/google-
+ auth-library-oauth2-http-1.18.0.jar ; deps/api-common-2.13.0.jar ; deps
+ /javax.annotation-api-1.3.2.jar ; deps/opencensus-api-0.31.1.jar ; deps
+ /grpc-context-1.55.1.jar ; deps/proto-google-iam-v1-1.16.0.jar ; deps/p
+ rotobuf-java-util-3.23.2.jar ; deps/proto-google-common-protos-2.21.0.j
+ ar ; deps/threetenbp-1.6.8.jar ; deps/proto-google-cloud-storage-v2-2.2
+ 2.5-alpha.jar ; deps/grpc-google-cloud-storage-v2-2.22.5-alpha.jar ; de
+ ps/gapic-google-cloud-storage-v2-2.22.5-alpha.jar ; deps/jsr305-3.0.2.j
+ ar ; deps/grpc-api-1.55.1.jar ; deps/grpc-netty-shaded-1.55.1.jar ; dep
+ s/perfmark-api-0.26.0.jar ; deps/grpc-core-1.55.1.jar ; deps/annotation
+ s-4.1.1.4.jar ; deps/animal-sniffer-annotations-1.23.jar ; deps/grpc-st
+ ub-1.55.1.jar ; deps/grpc-googleapis-1.55.1.jar ; deps/grpc-xds-1.55.1.
+ jar ; deps/opencensus-proto-0.2.0.jar ; deps/grpc-services-1.55.1.jar ;
+  deps/re2j-1.6.jar ; deps/grpc-rls-1.55.1.jar ; deps/opczip-1.2.0.jar ;
+  deps/netty-handler-proxy-4.1.42.Final.jar ; deps/netty-codec-http2-4.1
+ .42.Final.jar ; deps/netty-codec-http-4.1.42.Final.jar ; deps/netty-han
+ dler-4.1.42.Final.jar ; deps/netty-resolver-dns-4.1.42.Final.jar ; deps
+ /netty-codec-socks-4.1.42.Final.jar ; deps/netty-codec-dns-4.1.42.Final
+ .jar ; deps/netty-codec-4.1.42.Final.jar ; deps/netty-transport-4.1.42.
+ Final.jar ; deps/netty-buffer-4.1.42.Final.jar ; deps/netty-resolver-4.
+ 1.42.Final.jar ; deps/netty-common-4.1.42.Final.jar ; deps/vertx-bridge
+ -common-3.8.5.jar ; deps/java10-shim-20240325.1.jar ; deps/java8-shim-2
+ 0240325.1.jar ; deps/commons-beanutils-1.9.4.jar ; deps/commons-digeste
+ r-2.1.jar ; deps/commons-logging-1.2.jar ; deps/commons-collections-3.2
+ .2.jar ; deps/commons-pool2-2.12.1.jar ; deps/json-20250517.jar ; deps/
+ httpcore-4.4.16.jar ; deps/icu4j-64.2.jar ; deps/maxmind-db-2.1.0.jar ;
+  deps/okio-jvm-3.6.0.jar ; deps/kotlin-stdlib-jdk8-1.9.10.jar ; deps/zs
+ td-jni-1.5.5-1.jar ; deps/lz4-java-1.8.0.jar ; deps/snappy-java-1.1.10.
+ 5.jar ; deps/rocksdbjni-7.9.2.jar ; deps/tagsoup-1.2.1.jar ; deps/kotli
+ n-stdlib-jdk7-1.9.10.jar ; deps/kotlin-stdlib-1.9.10.jar ; deps/kotlin-
+ stdlib-common-1.9.10.jar ; deps/annotations-13.0.jar
+
+== leo-observer-starter-1.0.0.jar ==
+Manifest-Version: 1.0
+Implementation-Title: DataObserverStarter
+Main-Class: leotech.starter.DataObserverStarter
+Class-Path: . ; deps/query-builder-2.1.1.jar ; deps/rfx-core-1.0.jar ; d
+ eps/zalo-java-sdk-4.0-SNAPSHOT.jar ; deps/joda-time-2.12.2.jar ; deps/g
+ eoip2-3.0.2.jar ; deps/kafka-streams-3.5.2.jar ; deps/jackson-annotatio
+ ns-2.14.2.jar ; deps/jackson-module-scala_2.13-2.14.2.jar ; deps/vertx-
+ web-3.8.5.jar ; deps/vertx-web-client-3.8.5.jar ; deps/vertx-auth-jwt-3
+ .8.5.jar ; deps/vertx-web-common-3.8.5.jar ; deps/vertx-auth-common-3.8
+ .5.jar ; deps/vertx-jwt-3.8.5.jar ; deps/vertx-core-3.8.5.jar ; deps/ve
+ rtx-codegen-3.8.5.jar ; deps/jackson-databind-2.14.2.jar ; deps/google-
+ cloud-storage-2.22.5.jar ; deps/jackson-core-2.14.2.jar ; deps/univocit
+ y-parsers-2.9.1.jar ; deps/mysql-connector-j-9.5.0.jar ; deps/postgresq
+ l-42.7.10.jar ; deps/sqlite-jdbc-3.51.0.0.jar ; deps/jdbi3-sqlobject-3.
+ 49.6.jar ; deps/jdbi3-core-3.49.6.jar ; deps/thumbnailator-0.4.20.jar ;
+  deps/nanocaptcha-2.1.jar ; deps/libphonenumber-9.0.19.jar ; deps/quart
+ z-2.3.2.jar ; deps/javax.mail-1.6.2.jar ; deps/google-oauth-client-jett
+ y-1.34.1.jar ; deps/google-oauth-client-java6-1.34.1.jar ; deps/google-
+ api-services-drive-v3-rev20231128-2.0.0.jar ; deps/google-api-services-
+ sheets-v4-rev20230815-2.0.0.jar ; deps/google-api-client-2.2.0.jar ; de
+ ps/google-oauth-client-1.34.1.jar ; deps/fastexcel-0.19.0.jar ; deps/ar
+ angodb-java-driver-6.25.0.jar ; deps/jedis-7.0.0.jar ; deps/google-http
+ -client-gson-1.43.3.jar ; deps/gson-2.13.2.jar ; deps/log4j-slf4j2-impl
+ -2.23.1.jar ; deps/handlebars-4.3.1.jar ; deps/kafka-clients-3.5.2.jar 
+ ; deps/HikariCP-java7-2.4.13.jar ; deps/velocypack-2.5.4.jar ; deps/red
+ is-authx-core-0.1.1-beta2.jar ; deps/slf4j-api-2.0.17.jar ; deps/log4j-
+ core-2.23.1.jar ; deps/log4j-api-2.23.1.jar ; deps/jsoup-1.21.1.jar ; d
+ eps/owasp-java-html-sanitizer-20240325.1.jar ; deps/commons-text-1.14.0
+ .jar ; deps/commons-lang3-3.18.0.jar ; deps/commons-validator-1.7.jar ;
+  deps/commons-net-3.6.jar ; deps/commons-io-2.5.jar ; deps/google-http-
+ client-apache-v2-1.43.3.jar ; deps/google-http-client-1.43.3.jar ; deps
+ /httpclient-4.5.14.jar ; deps/mvel2-2.5.2.Final.jar ; deps/contiperf-2.
+ 3.4.jar ; deps/closure-compiler-v20210302.jar ; deps/compiler-0.9.6.jar
+  ; deps/snakeyaml-1.33.jar ; deps/friendly-id-1.1.0.jar ; deps/slugify-
+ 2.5.jar ; deps/junidecode-0.4.1.jar ; deps/openlocationcode-1.0.4.jar ;
+  deps/commons-math3-3.6.1.jar ; deps/okhttp-4.12.0.jar ; deps/javax.ser
+ vlet-api-3.1.0.jar ; deps/TextImageGen-1.9.jar ; deps/jai-imageio-core-
+ 1.4.0.jar ; deps/qrcodegen-1.8.0.jar ; deps/scala-library-2.13.10.jar ;
+  deps/paranamer-2.8.jar ; deps/protobuf-java-4.31.1.jar ; deps/opencens
+ us-contrib-http-util-0.31.1.jar ; deps/guava-32.0.1-jre.jar ; deps/chec
+ ker-qual-3.52.0.jar ; deps/geantyref-2.0.1.jar ; deps/c3p0-0.9.5.4.jar 
+ ; deps/mchange-commons-java-0.2.15.jar ; deps/activation-1.1.jar ; deps
+ /failureaccess-1.0.1.jar ; deps/listenablefuture-9999.0-empty-to-avoid-
+ conflict-with-guava.jar ; deps/error_prone_annotations-2.41.0.jar ; dep
+ s/j2objc-annotations-2.8.jar ; deps/google-http-client-jackson2-1.43.3.
+ jar ; deps/commons-codec-1.15.jar ; deps/google-api-services-storage-v1
+ -rev20230301-2.0.0.jar ; deps/google-cloud-core-2.20.0.jar ; deps/auto-
+ value-annotations-1.10.1.jar ; deps/google-cloud-core-http-2.20.0.jar ;
+  deps/google-http-client-appengine-1.43.3.jar ; deps/gax-httpjson-2.30.
+ 0.jar ; deps/google-cloud-core-grpc-2.20.0.jar ; deps/gax-2.30.0.jar ; 
+ deps/gax-grpc-2.30.0.jar ; deps/grpc-alts-1.55.1.jar ; deps/grpc-grpclb
+ -1.55.1.jar ; deps/conscrypt-openjdk-uber-2.5.2.jar ; deps/grpc-auth-1.
+ 55.1.jar ; deps/grpc-protobuf-1.55.1.jar ; deps/grpc-protobuf-lite-1.55
+ .1.jar ; deps/google-auth-library-credentials-1.18.0.jar ; deps/google-
+ auth-library-oauth2-http-1.18.0.jar ; deps/api-common-2.13.0.jar ; deps
+ /javax.annotation-api-1.3.2.jar ; deps/opencensus-api-0.31.1.jar ; deps
+ /grpc-context-1.55.1.jar ; deps/proto-google-iam-v1-1.16.0.jar ; deps/p
+ rotobuf-java-util-3.23.2.jar ; deps/proto-google-common-protos-2.21.0.j
+ ar ; deps/threetenbp-1.6.8.jar ; deps/proto-google-cloud-storage-v2-2.2
+ 2.5-alpha.jar ; deps/grpc-google-cloud-storage-v2-2.22.5-alpha.jar ; de
+ ps/gapic-google-cloud-storage-v2-2.22.5-alpha.jar ; deps/jsr305-3.0.2.j
+ ar ; deps/grpc-api-1.55.1.jar ; deps/grpc-netty-shaded-1.55.1.jar ; dep
+ s/perfmark-api-0.26.0.jar ; deps/grpc-core-1.55.1.jar ; deps/annotation
+ s-4.1.1.4.jar ; deps/animal-sniffer-annotations-1.23.jar ; deps/grpc-st
+ ub-1.55.1.jar ; deps/grpc-googleapis-1.55.1.jar ; deps/grpc-xds-1.55.1.
+ jar ; deps/opencensus-proto-0.2.0.jar ; deps/grpc-services-1.55.1.jar ;
+  deps/re2j-1.6.jar ; deps/grpc-rls-1.55.1.jar ; deps/opczip-1.2.0.jar ;
+  deps/netty-handler-proxy-4.1.42.Final.jar ; deps/netty-codec-http2-4.1
+ .42.Final.jar ; deps/netty-codec-http-4.1.42.Final.jar ; deps/netty-han
+ dler-4.1.42.Final.jar ; deps/netty-resolver-dns-4.1.42.Final.jar ; deps
+ /netty-codec-socks-4.1.42.Final.jar ; deps/netty-codec-dns-4.1.42.Final
+ .jar ; deps/netty-codec-4.1.42.Final.jar ; deps/netty-transport-4.1.42.
+ Final.jar ; deps/netty-buffer-4.1.42.Final.jar ; deps/netty-resolver-4.
+ 1.42.Final.jar ; deps/netty-common-4.1.42.Final.jar ; deps/vertx-bridge
+ -common-3.8.5.jar ; deps/java10-shim-20240325.1.jar ; deps/java8-shim-2
+ 0240325.1.jar ; deps/commons-beanutils-1.9.4.jar ; deps/commons-digeste
+ r-2.1.jar ; deps/commons-logging-1.2.jar ; deps/commons-collections-3.2
+ .2.jar ; deps/commons-pool2-2.12.1.jar ; deps/json-20250517.jar ; deps/
+ httpcore-4.4.16.jar ; deps/icu4j-64.2.jar ; deps/maxmind-db-2.1.0.jar ;
+  deps/okio-jvm-3.6.0.jar ; deps/kotlin-stdlib-jdk8-1.9.10.jar ; deps/zs
+ td-jni-1.5.5-1.jar ; deps/lz4-java-1.8.0.jar ; deps/snappy-java-1.1.10.
+ 5.jar ; deps/rocksdbjni-7.9.2.jar ; deps/tagsoup-1.2.1.jar ; deps/kotli
+ n-stdlib-jdk7-1.9.10.jar ; deps/kotlin-stdlib-1.9.10.jar ; deps/kotlin-
+ stdlib-common-1.9.10.jar ; deps/annotations-13.0.jar
+
+== leo-scheduler-starter-1.0.0.jar ==
+Manifest-Version: 1.0
+Implementation-Title: ScheduledJobStarter
+Main-Class: leotech.starter.ScheduledJobStarter
+Class-Path: . ; deps/query-builder-2.1.1.jar ; deps/rfx-core-1.0.jar ; d
+ eps/zalo-java-sdk-4.0-SNAPSHOT.jar ; deps/joda-time-2.12.2.jar ; deps/g
+ eoip2-3.0.2.jar ; deps/kafka-streams-3.5.2.jar ; deps/jackson-annotatio
+ ns-2.14.2.jar ; deps/jackson-module-scala_2.13-2.14.2.jar ; deps/vertx-
+ web-3.8.5.jar ; deps/vertx-web-client-3.8.5.jar ; deps/vertx-auth-jwt-3
+ .8.5.jar ; deps/vertx-web-common-3.8.5.jar ; deps/vertx-auth-common-3.8
+ .5.jar ; deps/vertx-jwt-3.8.5.jar ; deps/vertx-core-3.8.5.jar ; deps/ve
+ rtx-codegen-3.8.5.jar ; deps/jackson-databind-2.14.2.jar ; deps/google-
+ cloud-storage-2.22.5.jar ; deps/jackson-core-2.14.2.jar ; deps/univocit
+ y-parsers-2.9.1.jar ; deps/mysql-connector-j-9.5.0.jar ; deps/postgresq
+ l-42.7.10.jar ; deps/sqlite-jdbc-3.51.0.0.jar ; deps/jdbi3-sqlobject-3.
+ 49.6.jar ; deps/jdbi3-core-3.49.6.jar ; deps/thumbnailator-0.4.20.jar ;
+  deps/nanocaptcha-2.1.jar ; deps/libphonenumber-9.0.19.jar ; deps/quart
+ z-2.3.2.jar ; deps/javax.mail-1.6.2.jar ; deps/google-oauth-client-jett
+ y-1.34.1.jar ; deps/google-oauth-client-java6-1.34.1.jar ; deps/google-
+ api-services-drive-v3-rev20231128-2.0.0.jar ; deps/google-api-services-
+ sheets-v4-rev20230815-2.0.0.jar ; deps/google-api-client-2.2.0.jar ; de
+ ps/google-oauth-client-1.34.1.jar ; deps/fastexcel-0.19.0.jar ; deps/ar
+ angodb-java-driver-6.25.0.jar ; deps/jedis-7.0.0.jar ; deps/google-http
+ -client-gson-1.43.3.jar ; deps/gson-2.13.2.jar ; deps/log4j-slf4j2-impl
+ -2.23.1.jar ; deps/handlebars-4.3.1.jar ; deps/kafka-clients-3.5.2.jar 
+ ; deps/HikariCP-java7-2.4.13.jar ; deps/velocypack-2.5.4.jar ; deps/red
+ is-authx-core-0.1.1-beta2.jar ; deps/slf4j-api-2.0.17.jar ; deps/log4j-
+ core-2.23.1.jar ; deps/log4j-api-2.23.1.jar ; deps/jsoup-1.21.1.jar ; d
+ eps/owasp-java-html-sanitizer-20240325.1.jar ; deps/commons-text-1.14.0
+ .jar ; deps/commons-lang3-3.18.0.jar ; deps/commons-validator-1.7.jar ;
+  deps/commons-net-3.6.jar ; deps/commons-io-2.5.jar ; deps/google-http-
+ client-apache-v2-1.43.3.jar ; deps/google-http-client-1.43.3.jar ; deps
+ /httpclient-4.5.14.jar ; deps/mvel2-2.5.2.Final.jar ; deps/contiperf-2.
+ 3.4.jar ; deps/closure-compiler-v20210302.jar ; deps/compiler-0.9.6.jar
+  ; deps/snakeyaml-1.33.jar ; deps/friendly-id-1.1.0.jar ; deps/slugify-
+ 2.5.jar ; deps/junidecode-0.4.1.jar ; deps/openlocationcode-1.0.4.jar ;
+  deps/commons-math3-3.6.1.jar ; deps/okhttp-4.12.0.jar ; deps/javax.ser
+ vlet-api-3.1.0.jar ; deps/TextImageGen-1.9.jar ; deps/jai-imageio-core-
+ 1.4.0.jar ; deps/qrcodegen-1.8.0.jar ; deps/scala-library-2.13.10.jar ;
+  deps/paranamer-2.8.jar ; deps/protobuf-java-4.31.1.jar ; deps/opencens
+ us-contrib-http-util-0.31.1.jar ; deps/guava-32.0.1-jre.jar ; deps/chec
+ ker-qual-3.52.0.jar ; deps/geantyref-2.0.1.jar ; deps/c3p0-0.9.5.4.jar 
+ ; deps/mchange-commons-java-0.2.15.jar ; deps/activation-1.1.jar ; deps
+ /failureaccess-1.0.1.jar ; deps/listenablefuture-9999.0-empty-to-avoid-
+ conflict-with-guava.jar ; deps/error_prone_annotations-2.41.0.jar ; dep
+ s/j2objc-annotations-2.8.jar ; deps/google-http-client-jackson2-1.43.3.
+ jar ; deps/commons-codec-1.15.jar ; deps/google-api-services-storage-v1
+ -rev20230301-2.0.0.jar ; deps/google-cloud-core-2.20.0.jar ; deps/auto-
+ value-annotations-1.10.1.jar ; deps/google-cloud-core-http-2.20.0.jar ;
+  deps/google-http-client-appengine-1.43.3.jar ; deps/gax-httpjson-2.30.
+ 0.jar ; deps/google-cloud-core-grpc-2.20.0.jar ; deps/gax-2.30.0.jar ; 
+ deps/gax-grpc-2.30.0.jar ; deps/grpc-alts-1.55.1.jar ; deps/grpc-grpclb
+ -1.55.1.jar ; deps/conscrypt-openjdk-uber-2.5.2.jar ; deps/grpc-auth-1.
+ 55.1.jar ; deps/grpc-protobuf-1.55.1.jar ; deps/grpc-protobuf-lite-1.55
+ .1.jar ; deps/google-auth-library-credentials-1.18.0.jar ; deps/google-
+ auth-library-oauth2-http-1.18.0.jar ; deps/api-common-2.13.0.jar ; deps
+ /javax.annotation-api-1.3.2.jar ; deps/opencensus-api-0.31.1.jar ; deps
+ /grpc-context-1.55.1.jar ; deps/proto-google-iam-v1-1.16.0.jar ; deps/p
+ rotobuf-java-util-3.23.2.jar ; deps/proto-google-common-protos-2.21.0.j
+ ar ; deps/threetenbp-1.6.8.jar ; deps/proto-google-cloud-storage-v2-2.2
+ 2.5-alpha.jar ; deps/grpc-google-cloud-storage-v2-2.22.5-alpha.jar ; de
+ ps/gapic-google-cloud-storage-v2-2.22.5-alpha.jar ; deps/jsr305-3.0.2.j
+ ar ; deps/grpc-api-1.55.1.jar ; deps/grpc-netty-shaded-1.55.1.jar ; dep
+ s/perfmark-api-0.26.0.jar ; deps/grpc-core-1.55.1.jar ; deps/annotation
+ s-4.1.1.4.jar ; deps/animal-sniffer-annotations-1.23.jar ; deps/grpc-st
+ ub-1.55.1.jar ; deps/grpc-googleapis-1.55.1.jar ; deps/grpc-xds-1.55.1.
+ jar ; deps/opencensus-proto-0.2.0.jar ; deps/grpc-services-1.55.1.jar ;
+  deps/re2j-1.6.jar ; deps/grpc-rls-1.55.1.jar ; deps/opczip-1.2.0.jar ;
+  deps/netty-handler-proxy-4.1.42.Final.jar ; deps/netty-codec-http2-4.1
+ .42.Final.jar ; deps/netty-codec-http-4.1.42.Final.jar ; deps/netty-han
+ dler-4.1.42.Final.jar ; deps/netty-resolver-dns-4.1.42.Final.jar ; deps
+ /netty-codec-socks-4.1.42.Final.jar ; deps/netty-codec-dns-4.1.42.Final
+ .jar ; deps/netty-codec-4.1.42.Final.jar ; deps/netty-transport-4.1.42.
+ Final.jar ; deps/netty-buffer-4.1.42.Final.jar ; deps/netty-resolver-4.
+ 1.42.Final.jar ; deps/netty-common-4.1.42.Final.jar ; deps/vertx-bridge
+ -common-3.8.5.jar ; deps/java10-shim-20240325.1.jar ; deps/java8-shim-2
+ 0240325.1.jar ; deps/commons-beanutils-1.9.4.jar ; deps/commons-digeste
+ r-2.1.jar ; deps/commons-logging-1.2.jar ; deps/commons-collections-3.2
+ .2.jar ; deps/commons-pool2-2.12.1.jar ; deps/json-20250517.jar ; deps/
+ httpcore-4.4.16.jar ; deps/icu4j-64.2.jar ; deps/maxmind-db-2.1.0.jar ;
+  deps/okio-jvm-3.6.0.jar ; deps/kotlin-stdlib-jdk8-1.9.10.jar ; deps/zs
+ td-jni-1.5.5-1.jar ; deps/lz4-java-1.8.0.jar ; deps/snappy-java-1.1.10.
+ 5.jar ; deps/rocksdbjni-7.9.2.jar ; deps/tagsoup-1.2.1.jar ; deps/kotli
+ n-stdlib-jdk7-1.9.10.jar ; deps/kotlin-stdlib-1.9.10.jar ; deps/kotlin-
+ stdlib-common-1.9.10.jar ; deps/annotations-13.0.jar
+
