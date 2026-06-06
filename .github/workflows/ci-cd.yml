@@ -163,11 +163,13 @@ jobs:
 
   # ──────────────── Docker build + test + publish (per commit) ────────────────
   docker:
-    # Runs on any push (build + push :sha image), on PRs (build only, no push), and manually.
+    # Any push builds + pushes a :sha image. A same-repo PR is skipped here because its
+    # commit already triggers a push-event run (which builds AND pushes) — avoids a confusing
+    # build-only duplicate run. Fork PRs have no push event, so they still build (no push).
     if: |
       github.event_name == 'workflow_dispatch' ||
-      github.event_name == 'pull_request' ||
-      github.event_name == 'push'
+      github.event_name == 'push' ||
+      (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
