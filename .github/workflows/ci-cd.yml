@@ -4,7 +4,7 @@ name: CI/CD
 # job is gated with an `if:` on the event that should run it:
 #   validate        — push dev · PR→main · nightly cron · manual   (build + tests + quality)
 #   alert-on-failure — runs only if validate fails (emails the dev team)
-#   docker          — push main/dev · PR · manual                  (build image, JUnit, push GHCR @ SHA)
+#   docker          — any push · PR · manual                       (build image; push GHCR @ SHA on push, build-only on PR)
 #   detect/release  — push main · published Release                (version tag, Trivy scan, publish)
 #   ai-check/gemini* — PR + @gemini-cli comments                   (auto AI review + interactive assistant)
 #
@@ -13,7 +13,7 @@ name: CI/CD
 
 on:
   push:
-    branches: [main, dev]
+    branches: ['**']   # any branch — every commit builds + pushes a :sha-tagged image
   pull_request:
     branches: [main]
   pull_request_target:
@@ -163,10 +163,11 @@ jobs:
 
   # ──────────────── Docker build + test + publish (per commit) ────────────────
   docker:
+    # Runs on any push (build + push :sha image), on PRs (build only, no push), and manually.
     if: |
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'pull_request' ||
-      (github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'dev'))
+      github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

@@ -74,7 +74,7 @@ Docker Build → Release Notification**:
 |---|---|---|
 | `validate` | push to `dev`, PR into `main`, nightly cron (`18:00 UTC`), manual | Build + unit tests, code quality, integration tests (ArangoDB 3.11.14 + Redis 7.4 service containers, pinned to the `devops-script/docker-arangodb` versions for production parity). |
 | `alert-on-failure` | `validate` failed | Emails the dev team (bug report). |
-| `docker` | push to `main`/`dev`, PR, manual | Builds the Docker image running the JUnit suite inside the multi-stage build, publishes the JUnit report, and pushes the runtime image to GHCR tagged with the commit SHA (full + short). PRs build/test but don't push. |
+| `docker` | any push, PR, manual | Builds the Docker image running the JUnit suite inside the multi-stage build and publishes the JUnit report. On a **push** (any branch) it pushes the runtime image to GHCR tagged with the commit SHA (full + short); on a **PR** it builds only (no push), validating the Dockerfile. |
 | `detect` | push to `main`, published Release | Derives the version tag (`YYYY.MM.DD-<shortsha>`) and detects whether Docker Hub creds exist. |
 | `release` | after `detect` | Build, Trivy scan (fails on HIGH/CRITICAL), push `:version` + `:latest` to GHCR and optionally Docker Hub, then email stakeholders. |
 | `ai-check` | any PR / `@gemini-cli` comment event | Gate: outputs whether `GEMINI_API_KEY` is set so the AI jobs skip cleanly when it isn't. |
