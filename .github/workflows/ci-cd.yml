@@ -84,16 +84,21 @@ jobs:
       - name: Wait for ArangoDB + Redis
         run: |
           echo "Waiting for ArangoDB on :8529 ..."
+          arango_ok=false
           for i in $(seq 1 30); do
             code=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:8529/_api/version" || echo 000)
-            if [ "$code" != "000" ]; then echo "ArangoDB up (HTTP $code)"; break; fi
+            if [ "$code" != "000" ]; then echo "ArangoDB up (HTTP $code)"; arango_ok=true; break; fi
             echo "  waiting ($i/30)..."; sleep 3
           done
+          if [ "$arango_ok" != "true" ]; then echo "ArangoDB did not become reachable"; exit 1; fi
+
           echo "Waiting for Redis on :6379 ..."
+          redis_ok=false
           for i in $(seq 1 30); do
-            (echo > /dev/tcp/localhost/6379) >/dev/null 2>&1 && { echo "Redis up"; break; }
-            sleep 2
+            (echo > /dev/tcp/localhost/6379) >/dev/null 2>&1 && { echo "Redis up"; redis_ok=true; break; }
+            echo "  waiting ($i/30)..."; sleep 2
           done
+          if [ "$redis_ok" != "true" ]; then echo "Redis did not become reachable"; exit 1; fi
       - name: Build & unit tests
         working-directory: core-leo-cdp
         run: gradle compileJava test
