@@ -1,3 +1,5 @@
+import org.gradle.api.attributes.Attribute
+
 group 'leocdp'
 
 // --- 1. Load configuration safely ---
@@ -99,21 +101,18 @@ repositories {
     }
 }
 
+// Guava ships both -jre and -android variants via Gradle Module Metadata. Several
+// transitive deps (selenium-java, google-cloud-storage, google-oauth-client, google-api-*)
+// request different Guava versions, and without an explicit JVM-environment attribute
+// Gradle 6.x cannot choose between Guava's `androidApiElements` and `jreApiElements`
+// variants on testCompileClasspath -> "Could not resolve com.google.guava:guava".
+// Pin to the standard (server) JVM variant so the -jre variant is selected.
+// NB: set the attribute by its string name/value — the typed TargetJvmEnvironment class
+// does not exist in Gradle 6.9.4, so referencing it fails to compile the build script.
 configurations.all {
    exclude module: 'ch.qos.logback'
-
-   // Guava ships both -jre and -android variants via Gradle Module Metadata. Several
-   // transitive deps (selenium-java, google-cloud-storage, google-oauth-client, google-api-*)
-   // request different Guava versions, and without an explicit JVM-environment attribute
-   // Gradle 6.x cannot choose between Guava's `androidApiElements` and `jreApiElements`
-   // variants on testCompileClasspath -> "Could not resolve com.google.guava:guava".
-   // Pin to the standard (server) JVM variant so the -jre variant is selected.
    attributes {
-      attribute(
-         org.gradle.api.attributes.java.TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE,
-         objects.named(org.gradle.api.attributes.java.TargetJvmEnvironment,
-                       org.gradle.api.attributes.java.TargetJvmEnvironment.STANDARD_JVM)
-      )
+      attribute(Attribute.of("org.gradle.jvm.environment", String), "standard-jvm")
    }
 }
 
