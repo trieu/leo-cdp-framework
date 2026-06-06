@@ -63,23 +63,21 @@ jobs:
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'push' && github.ref_name == 'dev')
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: core-leo-cdp
-    # Dependencies run as GitHub `services:` containers (auto health-gated + torn down).
-    # Images are pinned to the SAME versions the devops-script compose declares
-    # (core-leo-cdp/devops-script/docker-arangodb/docker-compose.yml) so CI keeps
-    # production parity without invoking VM-oriented provisioning scripts in an
-    # ephemeral runner. devops-script remains the source of truth for deployment.
+    # NOTE: do NOT set a job-level `defaults.run.working-directory` — GitHub applies it to
+    # the pre-checkout "Initialize containers" step too, which then fails with
+    # "working directory .../core-leo-cdp: No such file or directory" (the dir isn't
+    # checked out yet). Set working-directory per gradle step instead.
+    #
+    # Dependencies run as GitHub `services:` containers, pinned to the SAME versions the
+    # devops-script compose declares (core-leo-cdp/devops-script/docker-arangodb) for
+    # production parity. ArangoDB requires auth, so an in-container --health-cmd probe is
+    # fiddly and brittle — we wait for readiness explicitly in a step after checkout.
     services:
       arangodb:
         image: arangodb:3.11.14        # matches devops-script/docker-arangodb compose
         env:
           ARANGO_ROOT_PASSWORD: testpass
         ports: ['8529:8529']
-        options: >-
-          --health-cmd "arangosh --server.authentication false --javascript.execute-string 'require(\"@arangodb\").db._version()'"
-          --health-interval 10s --health-timeout 5s --health-retries 12
       redis:
         image: redis:7.4               # matches devops-script/docker-arangodb compose
         ports: ['6379:6379']
@@ -96,11 +94,27 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '6.9.4'   # no wrapper in repo; legacy 'maven' plugin needs Gradle 6.x
+      - name: Wait for ArangoDB + Redis
+        run: |
+          echo "Waiting for ArangoDB on :8529 ..."
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:8529/_api/version" || echo 000)
+            if [ "$code" != "000" ]; then echo "ArangoDB up (HTTP $code)"; break; fi
+            echo "  waiting ($i/30)..."; sleep 3
+          done
+          echo "Waiting for Redis on :6379 ..."
+          for i in $(seq 1 30); do
+            (echo > /dev/tcp/localhost/6379) >/dev/null 2>&1 && { echo "Redis up"; break; }
+            sleep 2
+          done
       - name: Build & unit tests
+        working-directory: core-leo-cdp
         run: gradle compileJava test
       - name: Code quality
+        working-directory: core-leo-cdp
         run: gradle check -x test
       - name: Integration tests
+        working-directory: core-leo-cdp
         env:
           ARANGODB_HOST: localhost
           ARANGODB_PORT: '8529'
@@ -122,8 +136,17 @@ jobs:
     needs: validate
     if: failure()
     runs-on: ubuntu-latest
+    # secrets can't be read in `if:` — hoist to env (where they're allowed) so the step
+    # below can gate on them and skip cleanly when email isn't configured.
+    env:
+      DEV_TEAM_EMAILS: ${{ secrets.DEV_TEAM_EMAILS }}
+      SMTP_HOST: ${{ secrets.SMTP_HOST }}
     steps:
-      - uses: dawidd6/action-send-mail@v3
+      - name: Email dev team
+        # Skip cleanly when no recipients / SMTP are configured (graceful degradation),
+        # otherwise the action hard-fails with "At least one of 'to', 'cc' or 'bcc'...".
+        if: ${{ env.DEV_TEAM_EMAILS != '' && env.SMTP_HOST != '' }}
+        uses: dawidd6/action-send-mail@v3
         with:
           server_address: ${{ secrets.SMTP_HOST }}
           server_port: ${{ secrets.SMTP_PORT }}
@@ -152,6 +175,7 @@ jobs:
           echo "sha=${GITHUB_SHA}"          >> "$GITHUB_OUTPUT"
           echo "short_sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
       - name: Build & run tests (export JUnit XML)
+        id: tests
         run: |
           docker buildx build \
             --target test-export \
@@ -160,8 +184,17 @@ jobs:
             ./core-leo-cdp
           echo "Exported test reports:"
           find ./test-results -name '*.xml' -print || true
+          # The in-image gradle test is best-effort (Dockerfile runs it with `|| true`), so it
+          # can legitimately export zero XML. Record whether any was produced; the report and
+          # artifact steps below are gated on this so an empty export does not fail the job.
+          if [ -n "$(find ./test-results -name '*.xml' -print -quit)" ]; then
+            echo "found=true"  >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No JUnit XML was exported from the Docker test stage — skipping the test report."
+          fi
       - name: Publish test report
-        if: always()
+        if: always() && steps.tests.outputs.found == 'true'
         uses: dorny/test-reporter@v1
         with:
           name: JUnit Tests (core-leo-cdp)
@@ -169,7 +202,7 @@ jobs:
           reporter: java-junit
           fail-on-error: false
       - name: Upload test results artifact
-        if: always()
+        if: always() && steps.tests.outputs.found == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: junit-test-results
@@ -237,6 +270,10 @@ jobs:
   release:
     needs: detect
     runs-on: ubuntu-latest
+    # secrets can't be read in `if:` — hoist the email gate to env (see notification step).
+    env:
+      STAKEHOLDER_EMAILS: ${{ secrets.STAKEHOLDER_EMAILS }}
+      SMTP_HOST: ${{ secrets.SMTP_HOST }}
     steps:
       - uses: actions/checkout@v4
       - name: Free up disk space
@@ -300,7 +337,8 @@ jobs:
       - name: Move cache
         run: rm -rf /tmp/.buildx-cache && mv /tmp/.buildx-cache-new /tmp/.buildx-cache || true
       - name: Release notification email
-        if: success()
+        # Skip cleanly when no recipients / SMTP are configured (graceful degradation).
+        if: ${{ success() && env.STAKEHOLDER_EMAILS != '' && env.SMTP_HOST != '' }}
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: ${{ secrets.SMTP_HOST }}
@@ -355,6 +393,8 @@ jobs:
       (github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository) ||
       (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) )
     runs-on: ubuntu-latest
+    # Advisory only — a Gemini CLI hiccup (bad key, transient API error) must not fail CI.
+    continue-on-error: true
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
