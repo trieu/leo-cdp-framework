@@ -23,7 +23,7 @@ function getBotUI() {
 }
 
 var notifyLeoBotOk = function() {
-	var bt = '<b> The AI ChatBot </b>';
+	var bt = '<b> AI Assistant </b>';
 	notifySuccessMessage(bt + ' is ready !')
 	$('#menu_ai_chatbot').show();
 }

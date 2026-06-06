@@ -1577,7 +1577,8 @@ ul#publisher_categories {
 	display: inline-block;
     max-height: 45px;
     line-height: 50px;
-    margin: 2px 7px 0 0px;
+    margin: 2px 7px 0 2px;
+    border-radius: 8px;
 }
 
 #add_script_wrap {
