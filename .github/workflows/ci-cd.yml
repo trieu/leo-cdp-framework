@@ -1,0 +1,454 @@
+name: CI/CD
+
+# Single pipeline for LEO CDP (core-leo-cdp). All triggers are declared here and each
+# job is gated with an `if:` on the event that should run it:
+#   validate        — push dev · PR→main · nightly cron · manual   (build + tests + quality)
+#   alert-on-failure — runs only if validate fails (emails the dev team)
+#   docker          — push main/dev · PR · manual                  (build image, JUnit, push GHCR @ SHA)
+#   detect/release  — push main · published Release                (version tag, Trivy scan, publish)
+#   ai-check/gemini* — PR + @gemini-cli comments                   (auto AI review + interactive assistant)
+#
+# Note: GitHub path filters are per-workflow (not per-job), so merging drops the old
+# core-leo-cdp/** path filters; jobs are gated by event/branch instead.
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main]
+  pull_request_target:
+    types: [opened, synchronize, ready_for_review, reopened]
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  pull_request_review:
+    types: [submitted]
+  issues:
+    types: [opened, assigned]
+  release:
+    types: [published]
+  schedule:
+    - cron: '0 18 * * *'   # nightly CI validation
+  workflow_dispatch:
+    inputs:
+      platforms:
+        description: 'Release target platforms'
+        required: true
+        default: 'linux/amd64'
+        type: choice
+        options:
+          - linux/amd64
+          - linux/amd64,linux/arm64
+
+permissions:
+  contents: read
+  packages: write          # GHCR push
+  checks: write            # JUnit test report check
+  pull-requests: write     # PR comments / review
+  issues: write
+  id-token: write
+  actions: read
+
+env:
+  IMAGE: ghcr.io/${{ github.repository }}
+  DOCKERHUB_IMAGE: tantrieuf31/leocdp-free-trial-edition
+
+jobs:
+  # ───────────────────────── CI validation ─────────────────────────
+  validate:
+    if: |
+      github.event_name == 'pull_request' ||
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' && github.ref_name == 'dev')
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: core-leo-cdp
+    # Dependencies run as GitHub `services:` containers (auto health-gated + torn down).
+    # Images are pinned to the SAME versions the devops-script compose declares
+    # (core-leo-cdp/devops-script/docker-arangodb/docker-compose.yml) so CI keeps
+    # production parity without invoking VM-oriented provisioning scripts in an
+    # ephemeral runner. devops-script remains the source of truth for deployment.
+    services:
+      arangodb:
+        image: arangodb:3.11.14        # matches devops-script/docker-arangodb compose
+        env:
+          ARANGO_ROOT_PASSWORD: testpass
+        ports: ['8529:8529']
+        options: >-
+          --health-cmd "arangosh --server.authentication false --javascript.execute-string 'require(\"@arangodb\").db._version()'"
+          --health-interval 10s --health-timeout 5s --health-retries 12
+      redis:
+        image: redis:7.4               # matches devops-script/docker-arangodb compose
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 11 (Corretto)
+        uses: actions/setup-java@v4    # cached + reliable; mirrors the Corretto 11 install-java.sh provisions
+        with:
+          distribution: corretto
+          java-version: '11'
+      - name: Set up Gradle 6.9.4
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '6.9.4'   # no wrapper in repo; legacy 'maven' plugin needs Gradle 6.x
+      - name: Build & unit tests
+        run: gradle compileJava test
+      - name: Code quality
+        run: gradle check -x test
+      - name: Integration tests
+        env:
+          ARANGODB_HOST: localhost
+          ARANGODB_PORT: '8529'
+          ARANGODB_USERNAME: root
+          ARANGODB_PASSWORD: testpass
+          ARANGODB_DATABASE: leocdp
+        run: 'echo "TODO: gradle integrationTest once tests are split unit vs integration"'
+      - name: Validation summary
+        if: always()
+        run: |
+          {
+            echo "## CI Validation"
+            echo "**Branch:** ${{ github.ref_name }}"
+            echo "**Commit:** ${{ github.sha }}"
+            echo "**Event:** ${{ github.event_name }}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  alert-on-failure:
+    needs: validate
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_HOST }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USER }}
+          password: ${{ secrets.SMTP_PASS }}
+          subject: "CI FAILED - ${{ github.repository }} (${{ github.ref_name }})"
+          to: ${{ secrets.DEV_TEAM_EMAILS }}
+          from: LEO CDP CI <ci@leocdp.com>
+          body: |
+            Validation failed on ${{ github.ref_name }} (${{ github.sha }}).
+            Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+  # ──────────────── Docker build + test + publish (per commit) ────────────────
+  docker:
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'pull_request' ||
+      (github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'dev'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Derive commit tags
+        id: meta
+        run: |
+          echo "sha=${GITHUB_SHA}"          >> "$GITHUB_OUTPUT"
+          echo "short_sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+      - name: Build & run tests (export JUnit XML)
+        run: |
+          docker buildx build \
+            --target test-export \
+            --output type=local,dest=./test-results \
+            --file ./core-leo-cdp/Dockerfile \
+            ./core-leo-cdp
+          echo "Exported test reports:"
+          find ./test-results -name '*.xml' -print || true
+      - name: Publish test report
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: JUnit Tests (core-leo-cdp)
+          path: 'test-results/**/*.xml'
+          reporter: java-junit
+          fail-on-error: false
+      - name: Upload test results artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-test-results
+          path: test-results/**/*.xml
+          if-no-files-found: warn
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build & push image (tagged with commit SHA)
+        if: github.event_name != 'pull_request'
+        uses: docker/build-push-action@v6
+        with:
+          context: ./core-leo-cdp
+          file: ./core-leo-cdp/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:${{ steps.meta.outputs.sha }}
+            ${{ env.IMAGE }}:${{ steps.meta.outputs.short_sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "## Docker Build, Test & Publish"
+            echo "**Commit:** \`${{ steps.meta.outputs.sha }}\`"
+            if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+              echo "**Image:** not pushed (pull_request build)"
+            else
+              echo "**Image tags:**"
+              echo "- \`${{ env.IMAGE }}:${{ steps.meta.outputs.sha }}\`"
+              echo "- \`${{ env.IMAGE }}:${{ steps.meta.outputs.short_sha }}\`"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ───────────────────────── Release (version-tagged) ─────────────────────────
+  detect:
+    if: |
+      github.event_name == 'release' ||
+      (github.event_name == 'push' && github.ref_name == 'main')
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      has_dockerhub: ${{ steps.c.outputs.has_dockerhub }}
+    steps:
+      - name: Derive version tag
+        id: v
+        run: echo "version=$(date +%Y.%m.%d)-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+      - name: Detect Docker Hub credentials
+        id: c
+        env:
+          DH_USER: ${{ secrets.DOCKER_USERNAME }}
+          DH_PASS: ${{ secrets.DOCKER_PASSWORD }}
+        run: |
+          if [[ -n "$DH_USER" && -n "$DH_PASS" ]]; then
+            echo "has_dockerhub=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_dockerhub=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  release:
+    needs: detect
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Free up disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          sudo docker image prune --all --force || true
+          df -h
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Log in to Docker Hub
+        if: needs.detect.outputs.has_dockerhub == 'true'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: ${{ runner.os }}-buildx-
+      - name: Assemble image tags
+        id: tags
+        run: |
+          V="${{ needs.detect.outputs.version }}"
+          TAGS="${{ env.IMAGE }}:${V},${{ env.IMAGE }}:latest"
+          if [[ "${{ needs.detect.outputs.has_dockerhub }}" == "true" ]]; then
+            TAGS="${TAGS},${{ env.DOCKERHUB_IMAGE }}:${V},${{ env.DOCKERHUB_IMAGE }}:latest"
+          fi
+          echo "tags=${TAGS}" >> "$GITHUB_OUTPUT"
+      - name: Build for scan (amd64, no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: ./core-leo-cdp
+          file: ./core-leo-cdp/Dockerfile
+          load: true
+          tags: ${{ env.IMAGE }}:scan
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+      - name: Security scan (gate on HIGH/CRITICAL)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.IMAGE }}:scan
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
+      - name: Build & push
+        uses: docker/build-push-action@v6
+        with:
+          context: ./core-leo-cdp
+          file: ./core-leo-cdp/Dockerfile
+          platforms: ${{ github.event.inputs.platforms || 'linux/amd64' }}
+          push: true
+          tags: ${{ steps.tags.outputs.tags }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+      - name: Move cache
+        run: rm -rf /tmp/.buildx-cache && mv /tmp/.buildx-cache-new /tmp/.buildx-cache || true
+      - name: Release notification email
+        if: success()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_HOST }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USER }}
+          password: ${{ secrets.SMTP_PASS }}
+          subject: "Release published - ${{ needs.detect.outputs.version }}"
+          to: ${{ secrets.STAKEHOLDER_EMAILS }}
+          from: LEO CDP Release <release@leocdp.com>
+          body: |
+            Release completed. Image tags published:
+              ${{ env.IMAGE }}:${{ needs.detect.outputs.version }}
+              ${{ env.IMAGE }}:latest
+      - name: Build summary
+        if: always()
+        run: |
+          {
+            echo "## Release Summary"
+            echo "**Version:** ${{ needs.detect.outputs.version }}"
+            echo "**GHCR:** \`${{ env.IMAGE }}\`"
+            if [[ "${{ needs.detect.outputs.has_dockerhub }}" == "true" ]]; then
+              echo "**Docker Hub:** \`${{ env.DOCKERHUB_IMAGE }}\`"
+            else
+              echo "**Docker Hub:** skipped (no credentials configured)"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ───────────────────────── Gemini AI (review + assistant) ─────────────────────────
+  ai-check:                 # skip the AI jobs gracefully if GEMINI_API_KEY is not set
+    if: |
+      contains(fromJSON('["pull_request", "pull_request_target", "issue_comment", "pull_request_review_comment", "pull_request_review", "issues"]'), github.event_name)
+    runs-on: ubuntu-latest
+    outputs:
+      has_token: ${{ steps.c.outputs.has_token }}
+    steps:
+      - id: c
+        env:
+          TOKEN: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          if [[ -n "$TOKEN" ]]; then
+            echo "has_token=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_token=false (GEMINI_API_KEY not set) - skipping" >> "$GITHUB_STEP_SUMMARY"
+            echo "has_token=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  gemini-review:
+    needs: ai-check
+    # fork PRs via pull_request_target, same-repo PRs via pull_request — never both
+    if: |
+      needs.ai-check.outputs.has_token == 'true' && (
+      (github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository) ||
+      (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) )
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Run Gemini PR review
+        id: gemini-review
+        uses: google-github-actions/run-gemini-cli@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_CLI_TRUST_WORKSPACE: 'true'
+        with:
+          gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
+          github_pr_number: ${{ github.event.pull_request.number }}
+          settings: |-
+            {
+              "approvalMode": "yolo",
+              "mcpServers": {
+                "github": {
+                  "command": "docker",
+                  "args": [
+                    "run", "-i", "--rm",
+                    "-e", "GITHUB_PERSONAL_ACCESS_TOKEN",
+                    "ghcr.io/github/github-mcp-server:v0.27.0"
+                  ],
+                  "includeTools": [
+                    "add_comment_to_pending_review",
+                    "pull_request_read",
+                    "pull_request_review_write"
+                  ],
+                  "env": { "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}" }
+                }
+              }
+            }
+          extensions: |
+            [
+              "https://github.com/gemini-cli-extensions/code-review"
+            ]
+          prompt: '/pr-code-review'
+
+  gemini:
+    needs: ai-check
+    # only run for @gemini-cli mentions from trusted authors who can write to the repo
+    if: |
+      needs.ai-check.outputs.has_token == 'true' &&
+      contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association || github.event.review.author_association || github.event.issue.author_association) && (
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@gemini-cli')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@gemini-cli')) ||
+      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@gemini-cli')) ||
+      (github.event_name == 'issues' && (contains(github.event.issue.body, '@gemini-cli') || contains(github.event.issue.title, '@gemini-cli'))) )
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Prepare request
+        env:
+          USER_REQUEST: ${{ github.event.comment.body || github.event.review.body || github.event.issue.body }}
+        run: |
+          mkdir -p .gemini
+          printf '%s' "$USER_REQUEST" > .gemini/request.md
+          echo "Saved request ($(wc -c < .gemini/request.md) bytes)"
+      - name: Run Gemini CLI
+        id: gemini
+        uses: google-github-actions/run-gemini-cli@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_CLI_TRUST_WORKSPACE: 'true'
+        with:
+          gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
+          settings: |-
+            {
+              "approvalMode": "yolo",
+              "mcpServers": {
+                "github": {
+                  "command": "docker",
+                  "args": [
+                    "run", "-i", "--rm",
+                    "-e", "GITHUB_PERSONAL_ACCESS_TOKEN",
+                    "ghcr.io/github/github-mcp-server:v0.27.0"
+                  ],
+                  "env": { "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}" }
+                }
+              }
+            }
+          prompt: |
+            You are a helpful coding assistant for the LEO CDP (leo-cdp-framework) repository.
+            A user mentioned @gemini-cli in a GitHub ${{ github.event_name }}
+            (repository ${{ github.repository }}, issue/PR #${{ github.event.issue.number || github.event.pull_request.number }}).
+            Their request is in the file .gemini/request.md — read it first.
+            Use the GitHub tools to gather any context you need, then post a concise,
+            helpful reply comment on the relevant issue or pull request.

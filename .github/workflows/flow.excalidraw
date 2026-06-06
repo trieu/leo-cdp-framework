@@ -232,8 +232,8 @@
     },
     {
       "type": "text", "id": "b5d", "x": 164, "y": 592, "width": 440, "height": 96,
-      "text": "ci-validation.yml — build + unit tests, code quality,\nintegration tests (ArangoDB + Redis)\ndocker-build-test-publish.yml — JUnit inside the\nDocker build · image → GHCR @ commit SHA\non: push dev · PR → main · nightly cron",
-      "originalText": "ci-validation.yml — build + unit tests, code quality,\nintegration tests (ArangoDB + Redis)\ndocker-build-test-publish.yml — JUnit inside the\nDocker build · image → GHCR @ commit SHA\non: push dev · PR → main · nightly cron",
+      "text": "job validate — build + unit tests, code quality,\nintegration tests (ArangoDB + Redis)\njob docker — JUnit inside the Docker build ·\nimage → GHCR @ commit SHA\non: push dev · PR → main · nightly cron",
+      "originalText": "job validate — build + unit tests, code quality,\nintegration tests (ArangoDB + Redis)\njob docker — JUnit inside the Docker build ·\nimage → GHCR @ commit SHA\non: push dev · PR → main · nightly cron",
       "fontSize": 13, "fontFamily": 3, "textAlign": "left", "verticalAlign": "top",
       "strokeColor": "#64748b", "backgroundColor": "transparent", "fillStyle": "solid", "strokeWidth": 1, "strokeStyle": "solid",
       "roughness": 0, "opacity": 100, "angle": 0, "seed": 50018, "version": 1, "versionNonce": 50019,
@@ -264,7 +264,7 @@
     },
     {
       "type": "text", "id": "alertd", "x": 712, "y": 642, "width": 196, "height": 50,
-      "text": "Dev team / bug report\n(ci-validation.yml,\non failure)", "originalText": "Dev team / bug report\n(ci-validation.yml,\non failure)", "fontSize": 13, "fontFamily": 3, "textAlign": "left", "verticalAlign": "top",
+      "text": "Dev team / bug report\n(job alert-on-failure,\nif validate fails)", "originalText": "Dev team / bug report\n(job alert-on-failure,\nif validate fails)", "fontSize": 13, "fontFamily": 3, "textAlign": "left", "verticalAlign": "top",
       "strokeColor": "#b91c1c", "backgroundColor": "transparent", "fillStyle": "solid", "strokeWidth": 1, "strokeStyle": "solid",
       "roughness": 0, "opacity": 100, "angle": 0, "seed": 50034, "version": 1, "versionNonce": 50035,
       "isDeleted": false, "groupIds": [], "boundElements": null, "link": null, "locked": false, "containerId": null, "lineHeight": 1.25
@@ -337,7 +337,7 @@
     },
     {
       "type": "text", "id": "b6d", "x": 164, "y": 796, "width": 420, "height": 20,
-      "text": "gemini-code-review.yml posts an automatic AI review", "originalText": "gemini-code-review.yml posts an automatic AI review", "fontSize": 13, "fontFamily": 3, "textAlign": "left", "verticalAlign": "top",
+      "text": "job gemini-review posts an automatic AI review", "originalText": "job gemini-review posts an automatic AI review", "fontSize": 13, "fontFamily": 3, "textAlign": "left", "verticalAlign": "top",
       "strokeColor": "#64748b", "backgroundColor": "transparent", "fillStyle": "solid", "strokeWidth": 1, "strokeStyle": "solid",
       "roughness": 0, "opacity": 100, "angle": 0, "seed": 60018, "version": 1, "versionNonce": 60019,
       "isDeleted": false, "groupIds": [], "boundElements": null, "link": null, "locked": false, "containerId": null, "lineHeight": 1.25
@@ -360,7 +360,7 @@
     },
     {
       "type": "text", "id": "claudeh", "x": 712, "y": 764, "width": 200, "height": 20,
-      "text": "gemini.yml", "originalText": "gemini.yml", "fontSize": 15, "fontFamily": 3, "textAlign": "left", "verticalAlign": "top",
+      "text": "job: gemini", "originalText": "job: gemini", "fontSize": 15, "fontFamily": 3, "textAlign": "left", "verticalAlign": "top",
       "strokeColor": "#5b21b6", "backgroundColor": "transparent", "fillStyle": "solid", "strokeWidth": 1, "strokeStyle": "solid",
       "roughness": 0, "opacity": 100, "angle": 0, "seed": 60032, "version": 1, "versionNonce": 60033,
       "isDeleted": false, "groupIds": [], "boundElements": null, "link": null, "locked": false, "containerId": null, "lineHeight": 1.25
@@ -457,7 +457,7 @@
     },
     {
       "type": "text", "id": "b8d", "x": 164, "y": 1018, "width": 440, "height": 76,
-      "text": "release.yml — on push to main / Release published\n• Build Docker image\n• Version tagging (YYYY.MM.DD-<sha>)\n• Trivy security scan (gate on HIGH/CRITICAL)", "originalText": "release.yml — on push to main / Release published\n• Build Docker image\n• Version tagging (YYYY.MM.DD-<sha>)\n• Trivy security scan (gate on HIGH/CRITICAL)", "fontSize": 13, "fontFamily": 3, "textAlign": "left", "verticalAlign": "top",
+      "text": "jobs detect + release — push main / Release published\n• Build Docker image\n• Version tagging (YYYY.MM.DD-<sha>)\n• Trivy security scan (gate on HIGH/CRITICAL)", "originalText": "jobs detect + release — push main / Release published\n• Build Docker image\n• Version tagging (YYYY.MM.DD-<sha>)\n• Trivy security scan (gate on HIGH/CRITICAL)", "fontSize": 13, "fontFamily": 3, "textAlign": "left", "verticalAlign": "top",
       "strokeColor": "#64748b", "backgroundColor": "transparent", "fillStyle": "solid", "strokeWidth": 1, "strokeStyle": "solid",
       "roughness": 0, "opacity": 100, "angle": 0, "seed": 80018, "version": 1, "versionNonce": 80019,
       "isDeleted": false, "groupIds": [], "boundElements": null, "link": null, "locked": false, "containerId": null, "lineHeight": 1.25
@@ -547,7 +547,7 @@
     },
     {
       "type": "text", "id": "b10d", "x": 164, "y": 1292, "width": 440, "height": 40,
-      "text": "release.yml — release completed\nImage tags published → stakeholders notified", "originalText": "release.yml — release completed\nImage tags published → stakeholders notified", "fontSize": 13, "fontFamily": 3, "textAlign": "left", "verticalAlign": "top",
+      "text": "job release — release completed\nImage tags published → stakeholders notified", "originalText": "job release — release completed\nImage tags published → stakeholders notified", "fontSize": 13, "fontFamily": 3, "textAlign": "left", "verticalAlign": "top",
       "strokeColor": "#64748b", "backgroundColor": "transparent", "fillStyle": "solid", "strokeWidth": 1, "strokeStyle": "solid",
       "roughness": 0, "opacity": 100, "angle": 0, "seed": 100118, "version": 1, "versionNonce": 100119,
       "isDeleted": false, "groupIds": [], "boundElements": null, "link": null, "locked": false, "containerId": null, "lineHeight": 1.25
