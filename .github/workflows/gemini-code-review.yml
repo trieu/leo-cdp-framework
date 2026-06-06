@@ -1,0 +1,85 @@
+name: Gemini Code Review
+
+# Automatic AI code review on every PR (supports both same-repo and fork PRs).
+# Requires the GEMINI_API_KEY secret (free key from https://aistudio.google.com/apikey).
+# Uses Google's official run-gemini-cli action with the code-review extension.
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review, reopened]
+  pull_request_target:
+    types: [opened, synchronize, ready_for_review, reopened]
+
+jobs:
+  check-secret:                 # skip the whole workflow gracefully if no key is configured
+    runs-on: ubuntu-latest
+    outputs:
+      has_token: ${{ steps.c.outputs.has_token }}
+    steps:
+      - id: c
+        env:
+          TOKEN: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          if [[ -n "$TOKEN" ]]; then
+            echo "has_token=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_token=false (GEMINI_API_KEY not set) - skipping" >> "$GITHUB_STEP_SUMMARY"
+            echo "has_token=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  gemini-review:
+    needs: check-secret
+    # fork PRs via pull_request_target, same-repo PRs via pull_request — never both
+    if: |
+      needs.check-secret.outputs.has_token == 'true' && (
+      (github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository) ||
+      (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) )
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Run Gemini PR review
+        id: gemini-review
+        uses: google-github-actions/run-gemini-cli@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_CLI_TRUST_WORKSPACE: 'true'
+        with:
+          gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
+          github_pr_number: ${{ github.event.pull_request.number }}
+          # the github MCP server lets Gemini read the PR and post review comments
+          settings: |-
+            {
+              "mcpServers": {
+                "github": {
+                  "command": "docker",
+                  "args": [
+                    "run", "-i", "--rm",
+                    "-e", "GITHUB_PERSONAL_ACCESS_TOKEN",
+                    "ghcr.io/github/github-mcp-server:v0.27.0"
+                  ],
+                  "includeTools": [
+                    "add_comment_to_pending_review",
+                    "pull_request_read",
+                    "pull_request_review_write"
+                  ],
+                  "env": { "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}" }
+                }
+              }
+            }
+          extensions: |
+            [
+              "https://github.com/gemini-cli-extensions/code-review"
+            ]
+          prompt: '/pr-code-review'

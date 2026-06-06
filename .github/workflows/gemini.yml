@@ -1,0 +1,96 @@
+name: Gemini Assistant
+
+# Interactive assistant: mention @gemini-cli in an issue, PR review, or comment and
+# the Gemini CLI runs against the repo. Requires the GEMINI_API_KEY secret
+# (free key from https://aistudio.google.com/apikey).
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  issues:
+    types: [opened, assigned]
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  check-secret:                 # skip the whole workflow gracefully if no key is configured
+    runs-on: ubuntu-latest
+    outputs:
+      has_token: ${{ steps.c.outputs.has_token }}
+    steps:
+      - id: c
+        env:
+          TOKEN: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          if [[ -n "$TOKEN" ]]; then
+            echo "has_token=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_token=false (GEMINI_API_KEY not set) - skipping" >> "$GITHUB_STEP_SUMMARY"
+            echo "has_token=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  gemini:
+    needs: check-secret
+    # only run for @gemini-cli mentions from trusted authors who can write to the repo
+    if: |
+      needs.check-secret.outputs.has_token == 'true' &&
+      contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association || github.event.review.author_association || github.event.issue.author_association) && (
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@gemini-cli')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@gemini-cli')) ||
+      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@gemini-cli')) ||
+      (github.event_name == 'issues' && (contains(github.event.issue.body, '@gemini-cli') || contains(github.event.issue.title, '@gemini-cli'))) )
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read   # lets Gemini read CI results on PRs
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      # write the request to a file (avoids shell-injection from interpolating the body)
+      - name: Prepare request
+        env:
+          USER_REQUEST: ${{ github.event.comment.body || github.event.review.body || github.event.issue.body }}
+        run: |
+          mkdir -p .gemini
+          printf '%s' "$USER_REQUEST" > .gemini/request.md
+          echo "Saved request ($(wc -c < .gemini/request.md) bytes)"
+
+      - name: Run Gemini CLI
+        id: gemini
+        uses: google-github-actions/run-gemini-cli@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_CLI_TRUST_WORKSPACE: 'true'
+        with:
+          gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
+          # the github MCP server lets Gemini read context and post a reply comment
+          settings: |-
+            {
+              "mcpServers": {
+                "github": {
+                  "command": "docker",
+                  "args": [
+                    "run", "-i", "--rm",
+                    "-e", "GITHUB_PERSONAL_ACCESS_TOKEN",
+                    "ghcr.io/github/github-mcp-server:v0.27.0"
+                  ],
+                  "env": { "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}" }
+                }
+              }
+            }
+          prompt: |
+            You are a helpful coding assistant for the LEO CDP (leo-cdp-framework) repository.
+            A user mentioned @gemini-cli in a GitHub ${{ github.event_name }}
+            (repository ${{ github.repository }}, issue/PR #${{ github.event.issue.number || github.event.pull_request.number }}).
+            Their request is in the file .gemini/request.md — read it first.
+            Use the GitHub tools to gather any context you need, then post a concise,
+            helpful reply comment on the relevant issue or pull request.

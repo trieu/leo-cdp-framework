@@ -9,7 +9,7 @@ on:
     paths-ignore:
       - '**.md'
       - 'documents/**'
-      - '.github/workflows/claude*.yml'
+      - '.github/workflows/gemini*.yml'
   pull_request:
     branches: [main]
   schedule:
