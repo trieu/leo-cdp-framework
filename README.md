@@ -22,37 +22,77 @@ Designed for developers, data scientists, marketers, and enterprises, LEO CDP en
 
 ---
 
-# 🔥 Key Features
+# 🔥 LEO CDP - Key Features
 
-1. **Omnichannel Data Collection & Unification**  
-   Collect data from web, mobile, CRM, IoT, POS, social media, and APIs. Unify into rich customer profiles.
+### 1. Omnichannel Data Collection & Unification
 
-2. **Real-Time Customer 360**  
-   Build a complete view of every customer using behavioral, transactional, and third-party data.
+Collect customer data from websites, mobile apps, CRM, POS, e-commerce platforms, customer service systems, social media, advertising platforms, IoT devices, and APIs. Unify all data into a single customer profile and source of truth.
 
-3. **AI-based Segmentation & Scoring**  
-   Use clustering, RFM, CLV prediction, churn scoring, and dynamic audiences using ML models.
+### 2. Real-Time Customer 360 Intelligence
 
-4. **Behavioral Tracking & Journey Mapping**  
-   Track individual actions and interactions in real time. Map customer journeys across channels.
+Build a comprehensive, real-time view of every customer by combining behavioral, transactional, demographic, and engagement data across all touchpoints.
 
-5. **Predictive Analytics & Insights**  
-   Leverage machine learning pipelines with Jupyter/Colab for real-time insights.
+### 3. AI-Based Segmentation & Customer Scoring
 
-6. **Personalization & Activation**  
-   Using Agentic AI to deliver personalized experiences via email, push, SMS, and content based on customer intent.
+Leverage machine learning to automatically create intelligent audiences and predictive customer segments using:
 
-7. **Event-Driven Architecture with ETL/ELT**  
-   Built-in Apache Airflow integration to manage data ingestion, transformation, and orchestration.
+* RFM Analysis
+* Customer Lifetime Value (CLV)
+* Churn Prediction
+* Purchase Propensity
+* Lead Scoring
+* Dynamic Audience Generation
 
-8. **Plug-in Ecosystem & API-First Design**  
-   Easy to extend, integrate, and automate via REST APIs and modular services.
+### 4. Behavioral Tracking & Journey Mapping
 
-9. **Data Governance & Privacy**  
-   Built-in consent tracking, GDPR compliance, and on-prem hosting for full control over customer data.
+Capture customer interactions and behavioral events in real time. Visualize and analyze customer journeys across channels to understand engagement patterns, conversion paths, and drop-off points.
 
-10. **DevOps Ready**  
-   Docker-based deployment, Prometheus + Grafana monitoring, scalable microservice architecture.
+### 5. Predictive Analytics & Customer Insights
+
+Apply machine learning and AI models to uncover hidden patterns, predict customer behavior, identify growth opportunities, and generate actionable business insights.
+
+### 6. Real-Time Audience Activation
+
+Activate customer segments instantly across marketing, sales, customer service, and advertising platforms. Trigger actions based on customer behavior, events, attributes, and predictive scores.
+
+### 7. Event-Driven Data Processing & Orchestration
+
+Support real-time and batch data pipelines using event-driven architecture. Integrate with Apache Airflow for data ingestion, transformation, workflow orchestration, and automation.
+
+### 8. Omnichannel Personalization with Agentic AI & LLMs
+
+Deliver personalized customer experiences across every channel using Agentic AI and Large Language Models (LLMs). Automatically generate content, recommend next-best actions, optimize campaigns, and orchestrate customer journeys in real time based on customer behavior, intent, and business goals.
+
+Key capabilities include:
+
+* AI-generated personalized content
+* Next Best Action recommendations
+* Dynamic journey orchestration
+* Real-time offer personalization
+* Conversational AI assistants
+* Intelligent campaign optimization
+* Context-aware customer engagement
+* Autonomous AI-driven marketing workflows
+
+### 9. Open Ecosystem & API-First Architecture
+
+Integrate seamlessly with CRM, ERP, Marketing Automation, Data Warehouse, Business Intelligence, AI platforms, and third-party applications through APIs, webhooks, and modular services.
+
+### 10. Enterprise Security, Governance & Scalability
+
+Ensure enterprise-grade reliability with:
+
+* Consent Management
+* Data Privacy Controls
+* Role-Based Access Control (RBAC)
+* Audit Logs
+* Data Governance
+* On-Premise & Private Cloud Deployment
+* Multi-Tenant Architecture
+* Docker & Kubernetes Support
+* Prometheus & Grafana Monitoring
+* High Availability & Scalable Infrastructure
+
 
 ---
 
@@ -88,7 +128,7 @@ Want to contribute? [Join the community](https://www.facebook.com/groups/bigdata
 
 - **URL**: https://dcdp.bigdatavietnam.org  
 - **Username**: `demo`  
-- **Password**: `123456`  
+- **Password**: `12345678`  
 
 ---
 
@@ -104,19 +144,19 @@ Want to contribute? [Join the community](https://www.facebook.com/groups/bigdata
 
 # 🛠️ Tech Stack
 
-- **Backend**: Java 11 (Amazon Corretto), Python 3.10
+- **Backend**: Java 11 (Amazon Corretto), Python 3.10 or Python 3.12
 - **Database**: ArangoDB 3.11 (Multi-model: Document + Graph + Search)
 - **Monitoring**: Prometheus 2 + Grafana 8
 - **Data Pipeline**: Apache Airflow
 - **Analytics & ML**: Jupyter Notebook / Google Colab
-- **Messaging**: Redis 6, OneSignal, Firebase
+- **Messaging**: Redis 8, OneSignal, Firebase
 - **Deployment**: Ubuntu 22 LTS, Docker, On-Prem / Cloud
 
 ---
 
 # ☁️ Cloud Options
 
-- Google Cloud, AWS, VNG Cloud, or **your own private infrastructure**
+- Google Cloud, AWS, VNG Cloud, Viettel Cloud or **your own private infrastructure**
 
 ---
 
