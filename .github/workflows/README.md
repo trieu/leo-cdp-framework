@@ -115,9 +115,12 @@ gracefully — workflows skip the steps whose secrets are missing rather than fa
 - **GHCR publishing** needs `packages: write` (declared at the top of `ci-cd.yml`).
   Confirm **Settings → Actions → General → Workflow permissions** allows write access,
   or that the default `GITHUB_TOKEN` has package scope.
-- **Docker Hub** image name is `tantrieuf31/leocdp-free-trial-edition` (see
-  `DOCKERHUB_IMAGE` in [`ci-cd.yml`](ci-cd.yml)). Change it there if you fork.
-  `DOCKER_USERNAME` must own / have push rights to that `tantrieuf31` namespace.
+- **Docker Hub** image name defaults to `tantrieuf31/leocdp-free-trial-edition`. To
+  publish under your own namespace when you fork, set the repository **variable**
+  `DOCKER_IMAGE` (Settings → Secrets and variables → Actions → **Variables**) — the
+  `DOCKERHUB_IMAGE` env in [`ci-cd.yml`](ci-cd.yml) reads `${{ vars.DOCKER_IMAGE }}`
+  and falls back to the default when unset. `DOCKER_USERNAME` must own / have push
+  rights to whichever namespace you point it at.
 
 ### 3. Branch protection (recommended)
 

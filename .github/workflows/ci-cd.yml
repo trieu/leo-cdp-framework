@@ -52,7 +52,9 @@ permissions:
 
 env:
   IMAGE: ghcr.io/${{ github.repository }}
-  DOCKERHUB_IMAGE: tantrieuf31/leocdp-free-trial-edition
+  # Docker Hub image name — override per fork via repo variable DOCKER_IMAGE
+  # (Settings → Secrets and variables → Actions → Variables). Falls back to the default.
+  DOCKERHUB_IMAGE: ${{ vars.DOCKER_IMAGE || 'tantrieuf31/leocdp-free-trial-edition' }}
 
 jobs:
   # ───────────────────────── CI validation ─────────────────────────
