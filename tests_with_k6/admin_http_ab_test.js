@@ -15,6 +15,7 @@ import { check, sleep } from "k6";
 // =====================================================================
 
 const BASE_URL = __ENV.BASE_URL || "http://leocdp-admin:9070";
+const STEADY = __ENV.STEADY || "60s"; // steady-state duration; longer for repeat-run protocol
 
 const ASSETS = [
   "/view/common-resources-min/leo.admin.common.js?admin=1",
@@ -30,7 +31,7 @@ export const options = {
       startVUs: 0,
       stages: [
         { duration: "15s", target: 50 },
-        { duration: "60s", target: 50 },
+        { duration: STEADY, target: 50 },
         { duration: "5s", target: 0 },
       ],
     },
