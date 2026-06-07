@@ -12,12 +12,14 @@ FROM amazoncorretto:25 AS build
 # the minimal AL2023-based corretto image does not ship it.
 RUN yum install -y findutils
 WORKDIR /src
-COPY . .
-# Pre-fetch the Gradle distribution with retries in its own layer: the wrapper
-# download from services.gradle.org is occasionally cut mid-stream ("Premature EOF")
-# on this network path, and a cheap --version layer retries it without redoing
-# the (expensive) build step.
+# Wrapper files FIRST, then pre-fetch the Gradle distribution in its own retried
+# layer: the services.gradle.org download is flaky on some networks ("Premature
+# EOF"/timeouts). Ordered before COPY . . so the cached layer survives source
+# changes; it only invalidates when the wrapper itself is upgraded.
+COPY gradlew gradlew.bat ./
+COPY gradle/ gradle/
 RUN ./gradlew --version --no-daemon || ./gradlew --version --no-daemon || ./gradlew --version --no-daemon
+COPY . .
 # Output goes to /dist with deps/ alongside; JAR manifest Class-Path points to ./deps
 RUN ./gradlew AutoBuildForDeployment --no-daemon \
       -PbuildOutputFolderPath=/dist -PstaticOutputFolderPath=/static -PbuildVersion=docker
