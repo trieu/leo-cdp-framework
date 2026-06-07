@@ -1,0 +1,161 @@
+{
+    "metrics": {
+        "iteration_duration": {
+            "med": 545.565074,
+            "max": 1547.658541,
+            "p(90)": 670.8030864000001,
+            "p(95)": 736.9209699999993,
+            "avg": 561.0118586587696,
+            "min": 308.310668
+        },
+        "iterations": {
+            "count": 14269,
+            "rate": 83.86724588109718
+        },
+        "http_reqs": {
+            "rate": 419.3362294054859,
+            "count": 71345
+        },
+        "data_received": {
+            "rate": 5033712.097783453,
+            "count": 856425380
+        },
+        "http_req_waiting": {
+            "p(90)": 175.178887,
+            "p(95)": 202.9408024,
+            "avg": 113.08857230342679,
+            "min": 0.889251,
+            "med": 106.823246,
+            "max": 719.973752
+        },
+        "vus_max": {
+            "value": 50,
+            "min": 50,
+            "max": 50
+        },
+        "http_req_duration": {
+            "avg": 113.4469538592329,
+            "min": 0.993632,
+            "med": 107.159918,
+            "max": 720.415267,
+            "p(90)": 175.5809294,
+            "p(95)": 203.4083472,
+            "thresholds": {
+                "p(95)<2000": false
+            }
+        },
+        "http_req_blocked": {
+            "avg": 1.769511912649805,
+            "min": 0.002759,
+            "med": 0.602371,
+            "max": 50.088342,
+            "p(90)": 6.364641999999999,
+            "p(95)": 7.113664000000001
+        },
+        "http_req_sending": {
+            "avg": 0.08600064455813244,
+            "min": 0.007309,
+            "med": 0.062552,
+            "max": 27.340245,
+            "p(90)": 0.1719916,
+            "p(95)": 0.2045274
+        },
+        "http_req_failed": {
+            "passes": 0,
+            "fails": 71345,
+            "thresholds": {
+                "rate<0.01": false
+            },
+            "value": 0
+        },
+        "checks": {
+            "passes": 71345,
+            "fails": 0,
+            "value": 1
+        },
+        "http_req_duration{expected_response:true}": {
+            "med": 107.159918,
+            "max": 720.415267,
+            "p(90)": 175.5809294,
+            "p(95)": 203.4083472,
+            "avg": 113.4469538592329,
+            "min": 0.993632
+        },
+        "http_req_tls_handshaking": {
+            "avg": 0,
+            "min": 0,
+            "med": 0,
+            "max": 0,
+            "p(90)": 0,
+            "p(95)": 0
+        },
+        "http_req_receiving": {
+            "avg": 0.27238091124816055,
+            "min": 0.040475,
+            "med": 0.260636,
+            "max": 69.457191,
+            "p(90)": 0.3848666,
+            "p(95)": 0.4502296
+        },
+        "vus": {
+            "value": 1,
+            "min": 1,
+            "max": 50
+        },
+        "http_req_connecting": {
+            "avg": 1.659818315621283,
+            "min": 0,
+            "med": 0.474172,
+            "max": 49.038075,
+            "p(90)": 6.2062054,
+            "p(95)": 6.960754400000002
+        },
+        "data_sent": {
+            "count": 8190406,
+            "rate": 48139.79913574978
+        }
+    },
+    "root_group": {
+        "name": "",
+        "path": "",
+        "id": "d41d8cd98f00b204e9800998ecf8427e",
+        "groups": {},
+        "checks": {
+                "login HTML 200": {
+                    "name": "login HTML 200",
+                    "path": "::login HTML 200",
+                    "id": "8317e442251153b78c9d9418d1d227ed",
+                    "passes": 14269,
+                    "fails": 0
+                },
+                "asset 0 200": {
+                    "name": "asset 0 200",
+                    "path": "::asset 0 200",
+                    "id": "3ff6b8571e55aadf56109abf120b7e9d",
+                    "passes": 14269,
+                    "fails": 0
+                },
+                "asset 1 200": {
+                    "name": "asset 1 200",
+                    "path": "::asset 1 200",
+                    "id": "7b479b32373b31f55725f05cc97be043",
+                    "passes": 14269,
+                    "fails": 0
+                },
+                "asset 2 200": {
+                    "name": "asset 2 200",
+                    "path": "::asset 2 200",
+                    "id": "95cca65e672d19fc746aba51b0bb9919",
+                    "passes": 14269,
+                    "fails": 0
+                },
+                "asset 3 200": {
+                    "name": "asset 3 200",
+                    "path": "::asset 3 200",
+                    "id": "b1c371a68efc08ad6d397bc7ab6e0817",
+                    "passes": 14269,
+                    "fails": 0
+                }
+            }
+    }
+}

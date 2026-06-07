@@ -85,6 +85,20 @@ Same-side spread: jdk11 RPS 279→503 (**±40%**), jdk25 344→426 (±20%). Each
 
 Same-side spread tightened to ±5–8%. **JDK 25+COH leads medians: +7.3% RPS, −19% median latency, −22% p95.** (r3's 0.38% failures are below the 1% threshold; they coincided with the run's highest RPS.)
 
+### Batch 3 — bytecode target: Java-11 (major 55) vs Java-25 (major 69), both on Corretto 25
+
+Modernization **Wave 0** (docs/06): same source, same JVM (Corretto 25 + compat flags), same image recipe — only `options.release` differs (11 vs 25). Isolates the pure bytecode-target effect.
+
+| Run | bc55 (jdk25-local) | bc69 (jdk25-bc69) |
+|---|---|---|
+| round 1 | 419.3 rps / med 107.2 / p95 203 ms | **441.6 rps / med 92.8 / p95 193 ms** |
+| round 2 | 473.8 rps / med 79.0 / p95 193 ms | **524.5 rps / med 41.5 / p95 180 ms** |
+| round 3 | 455.5 rps / med 88.6 / p95 175 ms | **493.5 rps / med 68.5 / p95 137 ms** |
+| **median** | **455.5 rps / 88.6 ms / 193 ms** | **493.5 rps (+8.3%) / 68.5 ms (−23%) / 180 ms (−7%)** |
+| memory (1200-req load) | 287.2 MiB | 286.5 MiB (parity, as expected) |
+
+**bc69 won all 3 rounds on every metric** — the only clean sweep in this study. The ~8% median-RPS delta sits near the quiet-window noise band (±5–8%), so treat the magnitude cautiously, but the *direction* was never reversed. Plausible mechanism: javac 25 emits slightly better synthetic/concat bytecode shapes for old source; the JIT also benefits from newer class-file semantics. Memory parity is expected — heap behavior is dominated by the runtime, not the class-file version (the −30% in §7 came from the JVM swap, not bytecode).
+
 ## 6. Aggregate latency view (medians of interleaved batches)
 
 | Metric | JDK 11 (batch 1 / 2) | JDK 25 (plain / +COH) | Direction |
@@ -125,7 +139,8 @@ COH measured neutral here (−8 MiB noise-level difference vs plain 25): expecte
 3. **Memory is the headline: −30% RSS** on identical load — the strongest, most reproducible JDK-25 advantage measured, and it requires nothing but the runtime swap.
 4. **Old Netty 4.1.44 under the JEP-498/472 flag set is not a bottleneck** at these loads: zero functional errors in >1M requests across all JDK-25 runs.
 5. **COH (JEP 519)**: no cost, no benefit on this surface; re-evaluate on object-heavy pipeline workloads in staging. It remains a JDK-25-only option JDK 11 structurally lacks.
-6. Recommendation: **proceed to staging gate G2 with the Corretto 25 image**; run this same harness (plus the observer/event-ingestion k6 suites) on staging hardware for the formal ±10% certification; measure COH on the data pipeline; carry the −30% RSS figure into container-limit planning.
+6. **Bytecode target 25 (Wave 0) is free-to-positive**: recompiling the same source at `release=25` swept all 3 interleaved rounds (+8% median RPS, −23% median latency, memory parity) on the same JVM. No reason to stay on bytecode 55 once the Java-25 runtime is committed.
+7. Recommendation: **proceed to staging gate G2 with the Corretto 25 image**; run this same harness (plus the observer/event-ingestion k6 suites) on staging hardware for the formal ±10% certification; measure COH on the data pipeline; carry the −30% RSS figure into container-limit planning; continue modernization Waves 1–3 ([docs/06](06-java25-code-modernization-plan.md)) for the deeper gains (records → allocation, virtual threads → blocking-path throughput).
 
 ## 10. Reproduction
 
