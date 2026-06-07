@@ -184,7 +184,8 @@ dependencies {
     implementation 'io.vertx:vertx-auth-jwt:3.8.5'
 
     // ────────────────────── JSON (Gson) ──────────────────────
-    implementation 'com.google.code.gson:gson:2.9.1'
+    // 2.10+ required for record deserialization (modernization Wave 2, docs/06)
+    implementation 'com.google.code.gson:gson:2.13.2'
 
     // ────────────────────── Logging (SLF4J + Log4j2) ──────────────────────
     implementation 'org.slf4j:slf4j-api:2.0.13'                         // SLF4J API
