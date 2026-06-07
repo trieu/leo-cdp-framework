@@ -245,10 +245,10 @@ dependencies {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
-    // Phase 1-3 of the JDK-25 migration: compile against the Java 11 API and emit
-    // Java 11 bytecode regardless of the JDK running Gradle (17+ required by Gradle 9).
-    // Phase 4 flips this to 25 (see docs/02-java-25-migration.md).
-    options.release = 11
+    // Phase 4 / modernization Wave 0 (docs/06-java25-code-modernization-plan.md):
+    // compile against the Java 25 API and emit class-file major 69. Artifacts from
+    // this point on require a Java 25 runtime. Last bytecode-55 state: commit d64612b.
+    options.release = 25
 }
 
 tasks.withType(Jar) {

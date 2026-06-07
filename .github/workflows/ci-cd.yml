@@ -100,12 +100,12 @@ jobs:
       - name: Build & unit tests
         working-directory: core-leo-cdp
         run: ./gradlew compileJava test
-      - name: Verify class-file target is Java 11 (major 55)
-        # Guards the migration invariant: bytecode stays Java 11 until Phase 4
-        # (then flip 55 -> 69). See docs/02-java-25-migration.md.
+      - name: Verify class-file target is Java 25 (major 69)
+        # Phase 4 / Wave 0 flipped the target to 25 (docs/06-java25-code-modernization-plan.md).
+        # Artifacts require a Java 25 runtime from here on.
         working-directory: core-leo-cdp
         run: |
-          javap -verbose -cp build/classes/java/main leotech.starter.MainHttpStarter | grep "major version: 55"
+          javap -verbose -cp build/classes/java/main leotech.starter.MainHttpStarter | grep "major version: 69"
       - name: Code quality
         working-directory: core-leo-cdp
         run: ./gradlew check -x test
