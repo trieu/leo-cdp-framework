@@ -13,6 +13,11 @@ FROM amazoncorretto:25 AS build
 RUN yum install -y findutils
 WORKDIR /src
 COPY . .
+# Pre-fetch the Gradle distribution with retries in its own layer: the wrapper
+# download from services.gradle.org is occasionally cut mid-stream ("Premature EOF")
+# on this network path, and a cheap --version layer retries it without redoing
+# the (expensive) build step.
+RUN ./gradlew --version --no-daemon || ./gradlew --version --no-daemon || ./gradlew --version --no-daemon
 # Output goes to /dist with deps/ alongside; JAR manifest Class-Path points to ./deps
 RUN ./gradlew AutoBuildForDeployment --no-daemon \
       -PbuildOutputFolderPath=/dist -PstaticOutputFolderPath=/static -PbuildVersion=docker
