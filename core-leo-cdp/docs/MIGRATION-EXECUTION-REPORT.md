@@ -98,6 +98,19 @@ Tool: `tests_with_k6/admin_http_ab_test.js` (new; 50 VUs, login HTML + the 4 cha
 
 **Interpretation:** same-side, same-image results swing by ±40% between rounds (jdk11: 279→503 RPS) — far beyond any consistent JDK 11↔25 difference. By medians, **JDK 25 is actually slightly ahead on both throughput (+10%) and p95 (−15%)** — but the honest read is *parity within noise*: a Windows laptop running Rancher Desktop/WSL cannot resolve a ±10% gate. The initial single-run “regression” (commit `cc50b9c`) is **not reproducible** and is reclassified as host noise (issue I6). **Conclusion: no JDK-25 performance regression demonstrable locally (0 errors across ~210k total requests); the precise ±10% perf gate moves to staging hardware, where doc 05 always placed it.**
 
+### 7.1 Follow-up batch: JDK 25 + `-XX:+UseCompactObjectHeaders` (JEP 519) vs JDK 11
+
+Same interleaved 3-round protocol; flag injected via a compose override (`jcmd VM.flags` confirmed active; **JDK 11 cannot run this flag** — it does not exist there). Host was quieter (same-side spread ±5–8%):
+
+| Run | JDK 11 | JDK 25 + COH |
+|---|---|---|
+| round 1 | 470.2 rps / p95 193 ms | 471.3 rps / p95 232 ms |
+| round 2 | 467.8 rps / p95 184 ms | 504.5 rps / p95 144 ms |
+| round 3 | 517.8 rps / p95 133 ms | 547.7 rps / p95 129 ms |
+| **median** | **470.2 rps / 184 ms** | **504.5 rps / 144 ms (+7% / −22%)** |
+
+Two independent batches now lean the same way (plain 25: +10% median RPS; 25+COH: +7% RPS, −22% p95). Still laptop-grade evidence, but the direction is consistent: **JDK 25 ≥ JDK 11 for this workload, with COH as a 25-only structural advantage** — whose primary payoff (heap-per-object on millions of profile/event objects) is expected on the data-processing paths, not this I/O-bound surface. Memory-footprint comparison per variant: §7.2 *(in progress)*.
+
 ## 8. Issues encountered & resolutions (I1–I6)
 
 | # | Issue | Resolution |
