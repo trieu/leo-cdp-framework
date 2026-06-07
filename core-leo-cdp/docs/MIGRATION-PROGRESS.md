@@ -1,6 +1,7 @@
 # Migration Progress Report — Java 25 / Gradle 9
 
 Tracks execution of the [migration plan](00-java25-gradle9-migration-overview.md). Updated as work lands.
+Companion documents: [MIGRATION-EXECUTION-REPORT.md](MIGRATION-EXECUTION-REPORT.md) (full narrative) · [PERFORMANCE-TEST-REPORT-JDK25.md](PERFORMANCE-TEST-REPORT-JDK25.md) (detailed perf + memory study, 1M+ requests).
 
 **Last updated:** 2026-06-06
 **Working branch:** `liem/java25-gradle9-migration` (off `liem/setup-local`)
