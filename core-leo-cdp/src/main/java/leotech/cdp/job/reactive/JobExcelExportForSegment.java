@@ -102,7 +102,8 @@ public class JobExcelExportForSegment extends ReactiveExportDataJob {
 
 	@Override
 	public FileApiResponse processAndReturnData(final Map<String, Object> data) {
-		ExecutorService executor = Executors.newFixedThreadPool(GET_SEGMENT_DATA_FOR_EXCEL_THREAD_POOL_SIZE);
+		// Wave 3 (docs/06): virtual threads for the blocking-read fan-out
+		ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
 
 		try {
 			String segmentId = data.get("segmentId").toString();
