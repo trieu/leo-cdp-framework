@@ -27,6 +27,8 @@ Companion documents: [MIGRATION-EXECUTION-REPORT.md](MIGRATION-EXECUTION-REPORT.
 | 2 | **Staging soak (72 h) + k6 — the real gate** | ⛔ blocked: needs staging env | **G2** | Local results above de-risk but do not replace it |
 | 3 | Prod canary rollout | ⛔ blocked: after G2 | **G3** | |
 | 4 | Bytecode → 25 (`options.release = 25`) — **Wave 0 executed on this branch** | ✅ done (branch) | **G4** | Commit `2e47813`: release=25, CI guard 69, compile green zero source changes, `jdk25-bc69` image boots clean. **k6 batch 3: bc69 swept all 3 rounds vs bc55 on the same JVM** (+8% rps, −23% med latency, memory parity). Branch artifacts now need Java 25 runtime; bc-55 rollback anchor = `d64612b`. Code modernization waves 1–3 (records/idioms/virtual threads): [06-java25-code-modernization-plan.md](06-java25-code-modernization-plan.md) |
+| 4 | Wave 1 — mechanical 21+/25 idioms (OpenRewrite, curated) | ✅ done | W1 | Commit `c6b5c5a`: 89 files (+241/−197) — instanceof patterns, `getFirst/getLast`, unnamed `_`, text blocks, `Path.of`, `@Serial`. **Rejected** from the composite: instance-main rewrite, `IO.println` churn, wrapper auto-bump (rationale in `rewrite-init.gradle`). Compile + boot smoke green |
+| 4 | Wave 2a — Gson 2.13.2 + first records | ✅ done | — | Commit `16546b9` (+21/−126): Gson bump (record-serde enabler; usage surface audited clean), `SentimentAnalysisResult/Params` + `TouchpointFlowReportCacheKey` → records. Wave 2b (more conversions) + Wave 3 (virtual threads) pending |
 
 Legend: ✅ done · 🔄 in progress · ⬜ pending · ⛔ blocked (external dependency)
 
