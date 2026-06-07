@@ -29,7 +29,7 @@ public class TestNotification {
 		List<Notification> notifications = u.getNotifications();
 		assertTrue(notifications.size() > 0);
 		
-		Notification n = notifications.get(0);
+		Notification n = notifications.getFirst();
 		System.out.println(n);
 		assertEquals(n.getMessage(), "Ok");
 		assertEquals(n.getType(), "test");

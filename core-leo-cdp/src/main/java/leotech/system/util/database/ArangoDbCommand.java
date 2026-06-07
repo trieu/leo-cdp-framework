@@ -114,8 +114,7 @@ public class ArangoDbCommand<T> {
 			String err = "Can not connect to ArangoDb at " + ArangoDbUtil.getDatabaseConnectionUrl();
 			throw new InvalidSystemException(err);
 		}
-		else if(e instanceof ArangoDBException) {
-			ArangoDBException ea = (ArangoDBException)e;
+		else if(e instanceof ArangoDBException ea) {
 			int errorNum = StringUtil.safeParseInt(ea.getErrorNum());
 			if (errorNum == 1200) {
 				System.err.println(ea.getErrorMessage());
@@ -131,7 +130,7 @@ public class ArangoDbCommand<T> {
 			try {
 				cursor.close();
 			} 
-			catch (Exception e) {}
+			catch (Exception _) {}
 		}
 	}
 
@@ -245,7 +244,7 @@ public class ArangoDbCommand<T> {
 				try {
 					cursor.close();
 				} 
-				catch (Exception e) {}
+				catch (Exception _) {}
 			}
 		}
 		return null;

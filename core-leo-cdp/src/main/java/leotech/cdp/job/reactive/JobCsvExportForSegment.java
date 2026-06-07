@@ -181,7 +181,7 @@ public class JobCsvExportForSegment extends ReactiveExportDataJob {
 
 			return new FileApiResponse(HttpStatus.SC_BAD_REQUEST, null, "Segment ID does not exist");
 		}
-		catch (InterruptedException e) {
+		catch (InterruptedException _) {
 			createFileExecutor.shutdownNow();
 			Thread.currentThread().interrupt();
 
@@ -199,7 +199,7 @@ public class JobCsvExportForSegment extends ReactiveExportDataJob {
 				if (!createFileExecutor.awaitTermination(60, TimeUnit.SECONDS)) {
 					createFileExecutor.shutdownNow();
 				}
-			} catch (InterruptedException e) {
+			} catch (InterruptedException _) {
 				createFileExecutor.shutdownNow();
 				Thread.currentThread().interrupt();
 			}

@@ -128,10 +128,10 @@ public class EventPayload {
 			}
 
 			return result;
-		} catch (IllegalArgumentException ex) {
+		} catch (IllegalArgumentException _) {
 			// Broken encoding from client / SDK — return original safely
 			return value;
-		} catch (Exception ex) {
+		} catch (Exception _) {
 			return value;
 		}
 	}

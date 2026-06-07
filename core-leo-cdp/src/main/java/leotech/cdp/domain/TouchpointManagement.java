@@ -149,7 +149,7 @@ public class TouchpointManagement {
 		Touchpoint tp = null;
 		try {
 			tp = cacheTouchpoint.get(id);
-		} catch (Exception e) {
+		} catch (Exception _) {
 			// skip
 		}
 		if(tp == null) {
@@ -342,7 +342,7 @@ public class TouchpointManagement {
 		try {
 			report = cacheTouchpointFlowReport.get(key);
 			System.out.println("getTouchpointFlowReportForJourney HIT CACHE TouchpointFlowReport");
-		} catch (Exception e) {
+		} catch (Exception _) {
 			// skip
 		}
 		if (report == null) {
@@ -370,7 +370,7 @@ public class TouchpointManagement {
 		try {
 			report = cacheTouchpointFlowReport.get(key);
 			System.out.println("getTouchpointFlowReportForProfile HIT CACHE TouchpointFlowReport");
-		} catch (Exception e) {
+		} catch (Exception _) {
 			// skip
 		}
 		if (report == null) {

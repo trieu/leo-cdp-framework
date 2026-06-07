@@ -387,7 +387,7 @@ public final class SegmentDataManagement {
 		Set<RefKey> set = null;
 		try {
 			set = cacheSegmentRefKey.get(StringUtil.joinFromList(StringPool.UNDERLINE, ids));
-		} catch (Exception e) {
+		} catch (Exception _) {
 			set = SegmentDaoUtil.getRefKeysByIds(ids);
 		}
 		return set;

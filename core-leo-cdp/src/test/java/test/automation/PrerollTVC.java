@@ -113,7 +113,7 @@ public class PrerollTVC {
 					System.out.println(click + "==> Click Ad OK");
 					Utils.sleep(RandomUtil.randomNumber(8000, 16000));
 				}
-			} catch (NoSuchElementException e) {
+			} catch (NoSuchElementException _) {
 				System.out.println("No ad, just Skip ..." + url);
 			}
 

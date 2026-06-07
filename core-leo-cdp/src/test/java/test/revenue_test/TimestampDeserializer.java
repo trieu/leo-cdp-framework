@@ -13,7 +13,7 @@ public class TimestampDeserializer implements JsonDeserializer<Timestamp> {
     public Timestamp deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
         try {
             return new Timestamp(dateFormat.parse(json.getAsString()).getTime());
-        } catch (ParseException e) {
+        } catch (ParseException _) {
             throw new JsonParseException("Failed parsing '" + json.getAsString() + "' as Timestamp");
         }
     }

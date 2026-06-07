@@ -80,7 +80,7 @@ public final class JourneyMapManagement {
 		Set<JourneyMapRefKey> set = null;
 		try {
 			set = cacheJourneyMapRefKey.get(StringUtil.joinFromList(StringPool.UNDERLINE, ids));
-		} catch (Exception e) {
+		} catch (Exception _) {
 			set = JourneyMapDao.getRefKeysByIds(ids);
 		}
 		return set;
@@ -166,7 +166,7 @@ public final class JourneyMapManagement {
 				list = cache.get(userLogin);
 			}
 			System.out.println("HIT CACHE JourneyMap");
-		} catch (Exception e) {
+		} catch (Exception _) {
 			if (loginUser.hasAdminRole()) {
 				list = JourneyMapDao.getAllJourneyMaps();
 				cache.put("", list);

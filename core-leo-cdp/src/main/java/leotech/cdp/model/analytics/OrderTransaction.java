@@ -35,7 +35,7 @@ public class OrderTransaction {
 	double totalTransactionValue = 0, transactionDiscount = 0;
 	String currencyCode = ProductItem.USD, paymentInfo = "", transactionStatus = "";
 	
-	double tax = 0, shippingValue = 0; ; 
+	double tax = 0, shippingValue = 0; 
 	Map<String, Object> shippingInfo = new HashMap<String, Object>();
 	
 	Set<OrderedItem> orderedItems;

@@ -1290,7 +1290,7 @@ public final class TrackingEvent extends PersistentObject implements SingleViewA
 	
 	public void setSrcTouchpointHub(TouchpointHub srcTouchpointHub) {
 		if(srcTouchpointHub != null) {
-			this.srcTouchpointHubId = srcTouchpointHub.getId();;
+			this.srcTouchpointHubId = srcTouchpointHub.getId();
 			this.observerId = srcTouchpointHub.getObserverId();
 			String importerName = StringUtil.safeString(srcTouchpointName) + " " + srcTouchpointHub.getName();
 			setSrcTouchpointName(importerName.trim());

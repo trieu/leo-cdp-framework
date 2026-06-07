@@ -61,7 +61,7 @@ public class EmailFlowManagement {
             return false;
         }
 
-        ProductItem item = productItems.get(0);
+        ProductItem item = productItems.getFirst();
 
         TargetMediaUnit target =
                 new TargetMediaUnit(

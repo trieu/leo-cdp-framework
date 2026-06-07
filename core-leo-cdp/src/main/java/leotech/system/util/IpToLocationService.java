@@ -40,7 +40,7 @@ public class IpToLocationService {
 					GeoLocation geoLoc = convertJsonObjectToGeoLocation(ip, json);
 					return geoLoc;
 				}
-			} catch (Exception e) {
+			} catch (Exception _) {
 				LogUtil.logInfo(IpToLocationService.class, "getGeoLocation is failed for ["+ip+"]");
 			}
 		}

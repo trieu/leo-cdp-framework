@@ -58,7 +58,7 @@ public class TestSearchAndQueryContent {
 
 		for (String catSlug : catSlugs) {
 			List<MeasurableItem> posts = results.get(catSlug);
-			for (MeasurableItem p : posts) {
+			for (MeasurableItem _ : posts) {
 				// System.out.println(catSlug + " => " + p.getTitle());
 			}
 		}

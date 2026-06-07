@@ -18,8 +18,10 @@ public class TestCustomQueryValidation {
 
 	@Test
 	void testQueryWithUpdateShouldFail() {
-		String aql = "FOR p IN system_event\n" + "    FILTER p.action == \"brevo\"\n"
-				+ "    UPDATE p WITH { action: \"\" } IN system_event";
+		String aql = """
+				FOR p IN system_event
+				    FILTER p.action == "brevo"
+				    UPDATE p WITH { action: "" } IN system_event""";
 
 		assertFalse(SegmentQuery.customQueryValidation(aql), "Query containing UPDATE must be rejected");
 	}
@@ -73,12 +75,19 @@ public class TestCustomQueryValidation {
 
 	@Test
 	void testQueryWithUpdateShouldOK() {
-		String aql = "LET nowISO = DATE_ISO8601(DATE_NOW())\n"
-				+ "LET sevenDaysAgoISO = DATE_ISO8601(DATE_SUBTRACT(DATE_NOW(), 7, \"days\"))\n"
-				+ "LET events = [\"remove-trendline\"]\n" + "LET useCount = LENGTH(\n"
-				+ "   FOR e IN cdp_trackingevent\n" + "       FILTER e.refProfileId == d._key\n"
-				+ "       AND e.metricName IN events\n" + "       AND e.createdAt >= sevenDaysAgoISO\n"
-				+ "       AND e.createdAt <= nowISO\n" + "       RETURN 1\n" + ")\n" + "FILTER useCount > 30";
+		String aql = """
+				LET nowISO = DATE_ISO8601(DATE_NOW())
+				LET sevenDaysAgoISO = DATE_ISO8601(DATE_SUBTRACT(DATE_NOW(), 7, "days"))
+				LET events = ["remove-trendline"]
+				LET useCount = LENGTH(
+				   FOR e IN cdp_trackingevent
+				       FILTER e.refProfileId == d._key
+				       AND e.metricName IN events
+				       AND e.createdAt >= sevenDaysAgoISO
+				       AND e.createdAt <= nowISO
+				       RETURN 1
+				)
+				FILTER useCount > 30""";
 
 		assertTrue(SegmentQuery.customQueryValidation(aql), "Query is valid and should be accepted");
 	}
@@ -92,16 +101,22 @@ public class TestCustomQueryValidation {
 
 	@Test
 	void testVariableNameContainsRemoveShouldPass() {
-		String aql = "LET removeSomething = 1\n" + "FOR x IN items\n" + "    FILTER x.v > removeSomething\n"
-				+ "    RETURN x";
+		String aql = """
+				LET removeSomething = 1
+				FOR x IN items
+				    FILTER x.v > removeSomething
+				    RETURN x""";
 
 		assertTrue(SegmentQuery.customQueryValidation(aql), "Variable names containing 'remove' should be allowed");
 	}
 
 	@Test
 	void testQueryMultiLineSafeShouldPass() {
-		String aql = "FOR u IN users\n" + "    FILTER u.age > 18\n" + "    FILTER u.status == \"active\"\n"
-				+ "RETURN u";
+		String aql = """
+				FOR u IN users
+				    FILTER u.age > 18
+				    FILTER u.status == "active"
+				RETURN u""";
 
 		assertTrue(SegmentQuery.customQueryValidation(aql), "Normal read-only filtered query must be accepted");
 	}

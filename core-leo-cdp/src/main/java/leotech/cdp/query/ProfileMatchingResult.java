@@ -37,7 +37,7 @@ public class ProfileMatchingResult {
 		List<ProfileSingleView> deterministicProfiles = getDeterministic();
 
 		if (deterministicProfiles.size() > 0) {
-			return deterministicProfiles.get(0);
+			return deterministicProfiles.getFirst();
 		}
 
 		return null;
@@ -51,12 +51,12 @@ public class ProfileMatchingResult {
 	public ProfileSingleView getBestMatchingProfile() {
 		List<ProfileSingleView> deterministicProfiles = getDeterministic();
 		List<ProfileSingleView> probabilisticProfiles = getProbabilistic();
-		ProfileSingleView profileSingleView = null;;
+		ProfileSingleView profileSingleView = null;
 		if (deterministicProfiles.size() > 0) {
-			profileSingleView = deterministicProfiles.get(0);
+			profileSingleView = deterministicProfiles.getFirst();
 		} 
 		else if (probabilisticProfiles.size() > 0) {
-			profileSingleView = probabilisticProfiles.get(0);
+			profileSingleView = probabilisticProfiles.getFirst();
 		}
 		if(profileSingleView != null) {
 			profileSingleView.unifyData();

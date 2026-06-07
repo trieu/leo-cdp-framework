@@ -84,7 +84,7 @@ public final class DeviceManagement {
 		Device d = null;
 		try {
 			d = cacheDevice.get(id);
-		} catch (Exception e) {
+		} catch (Exception _) {
 			d = DeviceDaoUtil.getById(id);
 		}
 		return d;

@@ -1,5 +1,6 @@
 package leotech.cdp.model.activation;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Date;
@@ -36,7 +37,8 @@ import rfx.core.util.StringUtil;
  * @since 2026
  */
 public final class Agent extends SystemService implements Serializable {
-	
+
+	@Serial
 	private static final long serialVersionUID = -8291232649419081101L;
 	
 	// Action types

@@ -75,7 +75,7 @@ public class TestQueue {
             if (!completed) {
                 System.err.println(ts() + "Timeout waiting for async operations to finish.");
             }
-        } catch (InterruptedException e) {
+        } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
         }
 

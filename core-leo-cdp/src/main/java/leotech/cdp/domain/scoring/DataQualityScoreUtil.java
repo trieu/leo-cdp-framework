@@ -58,7 +58,7 @@ public final class DataQualityScoreUtil {
 		Integer score = null;
 		try {
 			score = dataQualityFieldCache.get(fieldName);
-		} catch (Exception e) {
+		} catch (Exception _) {
 			// skip
 		}
 		

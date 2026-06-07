@@ -180,7 +180,7 @@ public class CreativeContentWebHandler extends SecuredHttpDataHandler {
 				model.setPageKeywords(post.getKeywords());
 				String pageUrl = model.getBaseStaticUrl() + HTML_POST + slug;
 				model.setPageUrl(pageUrl);
-				model.setContextPageId(contextGroupIds.size() > 0 ? contextGroupIds.get(0) : "");
+				model.setContextPageId(contextGroupIds.size() > 0 ? contextGroupIds.getFirst() : "");
 
 				// TODO implement recommendation engine here
 				List<AssetContent> simlilarPosts = ContentItemManagement.getSimilarPosts(contextGroupIds, itemId);

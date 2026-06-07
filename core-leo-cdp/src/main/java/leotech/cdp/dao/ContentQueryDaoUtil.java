@@ -141,7 +141,7 @@ public class ContentQueryDaoUtil {
 				// static url update
 				p.compactDataForList(headlineOnly);
 
-				String catId = p.getCategoryIds().size() > 0 ? p.getCategoryIds().get(0) : "";
+				String catId = p.getCategoryIds().size() > 0 ? p.getCategoryIds().getFirst() : "";
 				String catSlug = mapCatSlug.get(catId);
 
 				if (catSlug != null && !catId.isEmpty()) {
@@ -160,7 +160,7 @@ public class ContentQueryDaoUtil {
 				if (cursor != null) {
 					cursor.close();
 				}
-			} catch (IOException e) {
+			} catch (IOException _) {
 			}
 		}
 		return results;

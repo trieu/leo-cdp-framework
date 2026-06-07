@@ -29,10 +29,14 @@ import rfx.core.util.StringUtil;
 public class ProfileQueryBuilder {
 	static Logger logger = LoggerFactory.getLogger(ProfileQueryBuilder.class);
 	
-	static final String PROFILE_LAST_EVENTS = " LET lastItemViewEvent = FIRST( FOR e IN cdp_trackingevent FILTER e.refProfileId == p._key AND e.metricName == 'item-view' SORT e.createdAt DESC LIMIT 1 RETURN UNSET(e, ['rawJsonData','partitionId','sessionKey','state','environment']) ) \n "
-			+ " LET lastPurchaseEvent = FIRST( FOR e IN cdp_trackingevent FILTER e.refProfileId == p._key AND (e.metricName == 'purchase' OR e.metricName == 'order-checkout') SORT e.createdAt DESC LIMIT 1 RETURN UNSET(e, ['rawJsonData','partitionId','sessionKey','state','environment']) ) \n "
-			+ " LET lastTrackingEvent = FIRST( FOR e IN cdp_trackingevent FILTER e.refProfileId == p._key SORT e.createdAt DESC LIMIT 1 RETURN UNSET(e, ['rawJsonData','partitionId','sessionKey','state','environment']) ) \n "
-			+ " LET events = {lastTrackingEvent:lastTrackingEvent, lastPurchaseEvent : lastPurchaseEvent, lastItemViewEvent: lastItemViewEvent} ";
+	static final String PROFILE_LAST_EVENTS = """
+			 LET lastItemViewEvent = FIRST( FOR e IN cdp_trackingevent FILTER e.refProfileId == p._key AND e.metricName == 'item-view' SORT e.createdAt DESC LIMIT 1 RETURN UNSET(e, ['rawJsonData','partitionId','sessionKey','state','environment']) )\s
+			 \
+			 LET lastPurchaseEvent = FIRST( FOR e IN cdp_trackingevent FILTER e.refProfileId == p._key AND (e.metricName == 'purchase' OR e.metricName == 'order-checkout') SORT e.createdAt DESC LIMIT 1 RETURN UNSET(e, ['rawJsonData','partitionId','sessionKey','state','environment']) )\s
+			 \
+			 LET lastTrackingEvent = FIRST( FOR e IN cdp_trackingevent FILTER e.refProfileId == p._key SORT e.createdAt DESC LIMIT 1 RETURN UNSET(e, ['rawJsonData','partitionId','sessionKey','state','environment']) )\s
+			 \
+			 LET events = {lastTrackingEvent:lastTrackingEvent, lastPurchaseEvent : lastPurchaseEvent, lastItemViewEvent: lastItemViewEvent} """;
 
 	static final String CDP_EVENT_JOIN = " f.refProfileId == d._key ";
 	static final String CDP_DEVICE_JOIN = " (f._key == d.lastUsedDeviceId  || f._key IN d.usedDeviceIds) ";

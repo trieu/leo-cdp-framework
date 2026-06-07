@@ -207,7 +207,7 @@ public final class ProfileQueryManagement {
 	public static Profile getByApplicationID(String appId) {
 		Set<String> appIds = Sets.newHashSet(appId);
 		List<Profile> profiles = ProfileDaoUtil.getByApplicationIDs(appIds);
-		return profiles.size() > 0 ? profiles.get(0) : null;
+		return profiles.size() > 0 ? profiles.getFirst() : null;
 	}
 	
 	
@@ -220,7 +220,7 @@ public final class ProfileQueryManagement {
 	public static Profile getByGovernmentIssuedID(String govId) {
 		Set<String> govIds = Sets.newHashSet(govId);
 		List<Profile> profiles = ProfileDaoUtil.getByGovernmentIssuedIDs(govIds);
-		return profiles.size() > 0 ? profiles.get(0) : null;
+		return profiles.size() > 0 ? profiles.getFirst() : null;
 	}
 	
 	/**

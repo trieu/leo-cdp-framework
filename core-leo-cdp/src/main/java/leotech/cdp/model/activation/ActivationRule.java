@@ -1,5 +1,6 @@
 package leotech.cdp.model.activation;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
@@ -26,6 +27,7 @@ import rfx.core.util.StringUtil;
  */
 public class ActivationRule extends PersistentObject implements Comparable<ActivationRule>, Serializable {
 
+	@Serial
 	private static final long serialVersionUID = 1825726230556120351L;
 
 	public static final String SCHEDULING_TASK = "scheduling_task";
@@ -174,7 +176,7 @@ public class ActivationRule extends PersistentObject implements Comparable<Activ
 	// =========================
 	@Override
 	public boolean equals(Object o) {
-		return (o instanceof ActivationRule) && Objects.equals(id, ((ActivationRule) o).id);
+		return (o instanceof ActivationRule ar) && Objects.equals(id, ar.id);
 	}
 
 	@Override

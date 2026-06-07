@@ -20,23 +20,25 @@ public class QueryParserTest {
 
 	public static void main(String[] args) throws ParserNotFoundException, Exception {
 
-		String jsonQueryRules = "{\n" + 
-				"  \"condition\": \"AND\",\n" + 
-				"  \"rules\": [\n" + 
-				"    {\n" + 
-				"      \"id\": \"age\",\n" + 
-				"      \"field\": \"age\",\n" + 
-				"      \"type\": \"integer\",\n" + 
-				"      \"input\": \"number\",\n" + 
-				"      \"operator\": \"between\",\n" + 
-				"      \"value\": [\n" + 
-				"        18,\n" + 
-				"        40\n" + 
-				"      ]\n" + 
-				"    }\n" + 
-				"  ],\n" + 
-				"  \"valid\": true\n" + 
-				"}";
+		String jsonQueryRules = """
+				{
+				  "condition": "AND",
+				  "rules": [
+				    {
+				      "id": "age",
+				      "field": "age",
+				      "type": "integer",
+				      "input": "number",
+				      "operator": "between",
+				      "value": [
+				        18,
+				        40
+				      ]
+				    }
+				  ],
+				  "valid": true
+				}\
+				""";
 		jsonQueryRules = "{\"condition\":\"AND\",\"rules\":[{\"id\":\"dataContext\",\"field\":\"dataContext\",\"type\":\"integer\",\"input\":\"radio\",\"operator\":\"equal\",\"value\":1}],\"valid\":true}";
 		String customQuery = "FILTER d.age > 10 AND d.age < 30";
 		

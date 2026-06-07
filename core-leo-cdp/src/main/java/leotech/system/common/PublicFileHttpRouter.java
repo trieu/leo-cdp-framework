@@ -75,7 +75,7 @@ public final class PublicFileHttpRouter {
 					return false;
 				}
 			}
-		} catch (Exception e) {
+		} catch (Exception _) {
 			resp.setStatusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR);
 			resp.end(TemplateUtil._500);
 		}

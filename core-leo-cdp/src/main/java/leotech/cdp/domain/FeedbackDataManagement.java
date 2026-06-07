@@ -300,7 +300,7 @@ public final class FeedbackDataManagement {
 			SortedSet<SurveyResult> survetResults = report.getSurveyResults();
 			
 			// building header
-			SurveyResult headResult = survetResults.first();
+			SurveyResult headResult = survetResults.getFirst();
 			if(headResult != null) {
 				String question = "\"[" + headResult.getQuestionGroup() + "]" +headResult.getQuestion()+ "\"";
 				exportedStr.append(question).append(",");

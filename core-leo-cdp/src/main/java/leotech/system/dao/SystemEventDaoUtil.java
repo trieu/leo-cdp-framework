@@ -44,7 +44,7 @@ public class SystemEventDaoUtil extends AbstractCdpDatabaseUtil {
 					col.insertDocument(systemEvent, optionToUpsertInSilent());
 					return systemEvent.getId();
 				}
-			} catch (Exception e) {
+			} catch (Exception _) {
 				// skip
 			}
 		} else {

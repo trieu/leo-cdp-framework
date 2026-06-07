@@ -68,7 +68,7 @@ public final class TouchpointHubManagement {
 		TouchpointHub hub = null;
 		try {
 			hub = cacheById.get(id);
-		} catch (Exception e) {
+		} catch (Exception _) {
 			hub = TouchpointHubDaoUtil.getById(id);
 		}
 		return hub;
@@ -82,7 +82,7 @@ public final class TouchpointHubManagement {
 		TouchpointHub hub = TouchpointHub.DATA_OBSERVER;
 		try {
 			hub = cacheByObserverId.get(observerId);
-		} catch (Exception e) {
+		} catch (Exception _) {
 			hub = TouchpointHubDaoUtil.getByObserverId(observerId);
 		}
 		return hub;
@@ -97,7 +97,7 @@ public final class TouchpointHubManagement {
 		if (StringUtil.isNotEmpty(journeyMapId)) {
 			try {
 				hubs = cacheByJourneyId.get(journeyMapId);
-			} catch (Exception e) {
+			} catch (Exception _) {
 				hubs = TouchpointHubDaoUtil.getTouchpointHubsByJourneyMap(journeyMapId);
 			}
 		}

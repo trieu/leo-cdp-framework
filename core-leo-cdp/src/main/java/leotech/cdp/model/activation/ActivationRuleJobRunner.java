@@ -98,7 +98,7 @@ public final class ActivationRuleJobRunner {
 			if (toks.length == 2) {
 				return DateBuilder.todayAt(StringUtil.safeParseInt(toks[0]), StringUtil.safeParseInt(toks[1]), 0);
 			}
-		} catch (Exception ignored) {
+		} catch (Exception _) {
 		}
 		return new Date();
 	}
