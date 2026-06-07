@@ -109,7 +109,21 @@ Same interleaved 3-round protocol; flag injected via a compose override (`jcmd V
 | round 3 | 517.8 rps / p95 133 ms | 547.7 rps / p95 129 ms |
 | **median** | **470.2 rps / 184 ms** | **504.5 rps / 144 ms (+7% / −22%)** |
 
-Two independent batches now lean the same way (plain 25: +10% median RPS; 25+COH: +7% RPS, −22% p95). Still laptop-grade evidence, but the direction is consistent: **JDK 25 ≥ JDK 11 for this workload, with COH as a 25-only structural advantage** — whose primary payoff (heap-per-object on millions of profile/event objects) is expected on the data-processing paths, not this I/O-bound surface. Memory-footprint comparison per variant: §7.2 *(in progress)*.
+Two independent batches now lean the same way (plain 25: +10% median RPS; 25+COH: +7% RPS, −22% p95). Still laptop-grade evidence, but the direction is consistent: **JDK 25 ≥ JDK 11 for this workload, with COH as a 25-only structural advantage** — whose primary payoff (heap-per-object on millions of profile/event objects) is expected on the data-processing paths, not this I/O-bound surface. Memory-footprint comparison per variant: §7.2.
+
+### 7.2 Memory footprint per variant (identical 1200-request load, `docker stats` RSS)
+
+| Variant | Container RSS | vs JDK 11 |
+|---|---|---|
+| JDK 11 (`5f688f0`) | 412.7 MiB | — |
+| JDK 25 plain (`jdk25-local`) | **289.2 MiB** | **−30%** |
+| JDK 25 + `UseCompactObjectHeaders` | 297.3 MiB | −28% |
+
+The JDK 25 **runtime itself** delivers ~30% lower RSS for the same application and load — the clearest measured JDK-25 advantage in this exercise (G1/metaspace/footprint ergonomics improvements across 14 years of JDK evolution). COH shows no additional effect *at this small live-object count*, as expected: its per-object savings scale with heap population, so its real test is the data-processing/segmentation path under production-sized profile volumes (staging item).
+
+### 7.3 Performance verdict
+
+**JDK 25 ≥ JDK 11 for core-leo-cdp on every axis measured locally:** equal-to-better throughput (medians +7…+10%), equal-to-better p95 (−15…−22%), −30% memory, zero functional errors across ~420k requests. No measurement showed JDK 11 ahead beyond noise. Definitive ±10% certification still belongs to staging hardware (doc 05 G2), but the local evidence is uniformly in JDK 25's favor.
 
 ## 8. Issues encountered & resolutions (I1–I6)
 
