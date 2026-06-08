@@ -264,6 +264,20 @@ test {
     useJUnitPlatform()
     filter { unitTestPatterns.each { includeTestsMatching it } }
 }
+// Seeds default system data (data-funnel stages + event metrics) into the configured
+// ArangoDB so integration tests that read DataFlowManagement.getCustomerFunnelStages()
+// don't NPE. Run once before integrationTest. Same env/workingDir convention.
+tasks.register('seedDefaultData', JavaExec) {
+    group = 'verification'
+    description = 'Seeds default journey/funnel system data into ArangoDB.'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'test.cdp.DataSampleSetup' // its main() runs JourneyFlowSchema.init()
+    workingDir = projectDir
+    ['ARANGODB_HOST','ARANGODB_PORT','ARANGODB_USERNAME','ARANGODB_PASSWORD','ARANGODB_DATABASE'].each { k ->
+        if (System.getenv(k) != null) environment k, System.getenv(k)
+    }
+}
+
 tasks.register('integrationTest', Test) {
     group = 'verification'
     description = 'Runs the full test set (requires live ArangoDB/Redis/Kafka).'
