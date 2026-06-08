@@ -271,6 +271,13 @@ tasks.register('integrationTest', Test) {
     testClassesDirs = sourceSets.test.output.classesDirs
     classpath = sourceSets.test.runtimeClasspath
     failOnNoDiscoveredTests = false
+    // Working dir = project dir so SystemMetaData finds leocdp-metadata.properties + configs/.
+    workingDir = projectDir
+    // ArangoDB connection (mainDatabaseConfig=SYSTEM_ENV_VARS); values come from the
+    // environment so no credentials live in the build script.
+    ['ARANGODB_HOST','ARANGODB_PORT','ARANGODB_USERNAME','ARANGODB_PASSWORD','ARANGODB_DATABASE'].each { k ->
+        if (System.getenv(k) != null) environment k, System.getenv(k)
+    }
 }
 
 tasks.withType(JavaCompile).configureEach {
