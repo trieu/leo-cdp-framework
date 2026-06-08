@@ -239,9 +239,38 @@ dependencies {
 
     // ────────────────────── Testing ──────────────────────
     testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.10.3'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.10.3' // align with jupiter 5.10.x
     testImplementation 'org.assertj:assertj-core:3.26.3'
     testImplementation 'org.seleniumhq.selenium:selenium-java:4.22.0'
     testImplementation 'net.datafaker:datafaker:1.5.0'
+}
+
+// JUnit 5 tests are only discovered when the JUnit Platform is selected explicitly;
+// without this, Gradle 9's failOnNoDiscoveredTests check fails the :test task
+// ("test sources present ... did not discover any tests"). NB: much of test.** needs
+// a live ArangoDB/Redis (see CLAUDE.md) - the Docker test stage stays best-effort.
+// Most of src/test/java/test/** are integration probes that statically initialize
+// DB-backed model classes (Profile, PersistentObject, …) which read
+// leocdp-metadata.properties and open ArangoDB/Redis connections at class-load — they
+// throw NoClassDefFoundError without live infra (see CLAUDE.md). The default `test`
+// task therefore runs only the infra-free UNIT tests, so `:test` is a meaningful green
+// gate; the full set runs against a provisioned stack via `integrationTest`.
+// (Resolves the "split unit vs integration" TODO noted in docs/05.)
+def unitTestPatterns = [
+    'test.cdp.profile.ProfileDataValidatorTest',
+    'test.cdp.VoucherCodesTest',
+]
+test {
+    useJUnitPlatform()
+    filter { unitTestPatterns.each { includeTestsMatching it } }
+}
+tasks.register('integrationTest', Test) {
+    group = 'verification'
+    description = 'Runs the full test set (requires live ArangoDB/Redis/Kafka).'
+    useJUnitPlatform()
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    failOnNoDiscoveredTests = false
 }
 
 tasks.withType(JavaCompile).configureEach {

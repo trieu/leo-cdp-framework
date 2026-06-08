@@ -35,7 +35,7 @@ public class DatabaseManager {
 			update.bind("lastName", person.getLastName());
 			update.bind("createdAt", person.getCreatedAt());
 			update.bind("updatedAt", person.getUpdatedAt());
-			return update.executeAndReturnGeneratedKeys("id").mapTo(int.class).findOnly();
+			return update.executeAndReturnGeneratedKeys("id").mapTo(int.class).one();
 		});
 	}
 
