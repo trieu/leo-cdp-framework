@@ -21,6 +21,30 @@ Migrates `core-leo-cdp` from **Java 11 + Gradle 6.9.4** to **Java 25 (LTS) + Gra
 | Gson | 2.9.1 | **2.13.2** (record-capable serde) |
 | JVM run flags | `-server`, CompressedOops… | JDK-25 set (`--sun-misc-unsafe-memory-access=allow`, `--enable-native-access`, targeted `--add-opens`) |
 
+## Key Performance Indicators (KPI)
+
+Baseline = `main` (Corretto 11, bytecode 55). Target = this branch (Corretto 25, bytecode 69). Runtime numbers are medians of interleaved k6 A/B rounds on the admin worker (~1.4M total requests); full method + raw data in [PERFORMANCE-TEST-REPORT-JDK25.md](PERFORMANCE-TEST-REPORT-JDK25.md).
+
+| KPI | Baseline (JDK 11) | This branch (JDK 25) | Δ | Goal |
+|---|---|---|---|---|
+| Throughput (req/s, median) | 383–470 | 423–505 | **+7 … +10 %** | ↑ |
+| Latency p95 | 184–355 ms | 144–303 ms | **−15 … −22 %** | ↓ |
+| Latency median | 73–108 ms | 59–90 ms | **≈ −20 %** | ↓ |
+| Container RSS (same load) | 412.7 MiB | 289.2 MiB | **−30 %** | ↓ |
+| Error rate (≈1.4M reqs) | 0 % | 0 % | **=** | 0 % |
+| Bytecode-69 vs -55 (same JVM) | — | +8.3 % RPS / −23 % med lat | swept 3/3 rounds | ↑ |
+| Build status | green | green | maintained | green |
+| CI pipeline | green | **green** | maintained | green |
+| Unit tests | 12/12 | **12/12** | = | 100 % |
+| Integration tests (live DB) | (not run) | **60/66** | migration paths 100 % | ↑ |
+| Class-file equivalence (gate G1) | — | tree+deps identical | pass | pass |
+| Image size | 670 MB | 752 MB | +12 % | (acceptable) |
+| Java LTS currency | 11 (2018) | 25 (2025) | +14 yrs | current LTS |
+
+**Headline:** JDK 25 is **faster on every measured axis and uses ~30 % less memory** for the same workload — the memory cut is the most reproducible win and directly lowers container memory limits. The only KPI moving the "wrong" way is image size (+82 MB from the newer base), which is expected and acceptable.
+
+> Caveat: runtime KPIs are laptop-grade (Rancher Desktop/WSL2); the formal ±10 % certification belongs to staging hardware (gate G2). Direction was consistent across two independent batches and never favored JDK 11.
+
 ## Change groups
 
 - **Build (`build.gradle`, +164/−52):** wrapper to 9.1.0; `options.release=25`; typed `TargetJvmEnvironment`; `archiveBaseName`; `layout.buildDirectory`; lazy manifest `Class-Path`; Groovy-4 `java.time` timestamp; configuration-role-safe attribute pin; `useJUnitPlatform()` + unit/integration split (`integrationTest`, `seedDefaultData` tasks).
