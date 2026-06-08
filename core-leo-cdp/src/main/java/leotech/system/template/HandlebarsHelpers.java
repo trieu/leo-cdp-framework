@@ -260,7 +260,7 @@ public class HandlebarsHelpers {
 			try {
 			    String s = options.fn(context).toString();
 			    out.append(s);
-			} catch (Exception e) {
+			} catch (Exception _) {
 			}
 			context.clear();
 		    }

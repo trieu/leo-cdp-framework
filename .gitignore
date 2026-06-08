@@ -17,13 +17,10 @@ adsplay-report/public/ads/
 **.classpath
 **.log
 **.iml
-**/gradlew
-**/gradlew.bat
 
 docs/domain.txt
 core-leo-cdp/data-of-real-customer/
 core-leo-cdp/data-of-real-customer/*
-core-leo-cdp/gradle/*
 
 # CDP database configs must be excluded in commit 
 core-leo-cdp/configs/database-configs.json
@@ -42,3 +39,5 @@ airflow-ai-agent/.env
 
 # linux APT keys
 **.gpg
+# Playwright MCP transient artifacts
+**/.playwright-mcp/

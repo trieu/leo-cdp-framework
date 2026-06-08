@@ -406,7 +406,7 @@ public final class ContextSessionManagement {
 	public static ContextSession getByProfileId(String profileId) {
 		List<ContextSession> sessions = ContextSessionDaoUtil.getSessionsByProfileId(profileId);
 		if (sessions.size() > 0) {
-			return sessions.get(0);
+			return sessions.getFirst();
 		}
 		return null;
 	}

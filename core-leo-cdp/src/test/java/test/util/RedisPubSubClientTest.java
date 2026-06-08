@@ -34,7 +34,7 @@ class RedisPubSubClientTest {
         try {
         	 boolean ok = pool.borrowObject().ping().equals("PONG");
         	 System.out.println("=> Is Redis 8.x running ? " + ok);
-		} catch (Exception e) {
+		} catch (Exception _) {
 			// TODO: handle exception
 		}
     }

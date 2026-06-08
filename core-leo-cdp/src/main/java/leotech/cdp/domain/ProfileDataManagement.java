@@ -264,7 +264,6 @@ public final class ProfileDataManagement {
 		profile.setFirstName(updateData.getFirstName());
 		profile.setLastName(updateData.getLastName());
 		isLead = profile.setEmail(updateData.getEmail());
-		;
 		isLead = profile.setPhone(updateData.getPhone()) || isLead;
 		// only an anonymous profile can be set as Lead
 		if (isLead && profile.isAnonymousProfile()) {
@@ -806,7 +805,7 @@ public final class ProfileDataManagement {
 			logger.info("getProductViewActivityFlowOfProfile events.size() = " + events.size());
 			if (events.size() > 0) {
 				// find the last recent product-view to get Product SKU
-				return events.get(0);
+				return events.getFirst();
 			}
 		} else {
 			logger.info(" [#Activation Trigger#] getLastTrackingEventForRetargeting Profile is not found for visitorId "

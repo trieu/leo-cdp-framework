@@ -211,7 +211,7 @@ public class AuthKeycloakHandlers {
         
         String sid = getQueryParam(ctx, PARAM_SESSION_ID);
         if (sid != null) {
-            sessionRepo.deleteSession(sid, r -> logger.debug("Session deleted: " + sid));
+            sessionRepo.deleteSession(sid, _ -> logger.debug("Session deleted: " + sid));
         }
 
         try {
@@ -276,7 +276,7 @@ public class AuthKeycloakHandlers {
         String tokenUrl = kcEndpoint(config, URI_OPENID_CONNECT_TOKEN);
         
         // --- STEP 1: Set a hard safety timer ---
-        long timerId = ctx.vertx().setTimer(KC_REQUEST_TIMEOUT_MS, id -> {
+        long timerId = ctx.vertx().setTimer(KC_REQUEST_TIMEOUT_MS, _ -> {
             if (!ctx.response().ended()) {
                 logger.error("Hard Timeout reached for ExchangeCode. Keycloak is unreachable.");
                 redirect(ctx, SsoRoutePaths.ERROR + "?error=timeout&detail=connection_to_iam_failed");
@@ -410,7 +410,7 @@ public class AuthKeycloakHandlers {
                     JsonObject newTokens = ar.result().bodyAsJsonObject();
                     session.put(TOKEN, newTokens);
 
-                    sessionRepo.updateSession(sid, session, r -> sendJson(ctx, newTokens));
+                    sessionRepo.updateSession(sid, session, _ -> sendJson(ctx, newTokens));
                 });
     }
 
@@ -456,7 +456,7 @@ public class AuthKeycloakHandlers {
             if("invalid_grant".equals(providerError)) errorCode = "invalid_grant"; // Code expired
             else if(status == 403) errorCode = "forbidden"; // Scope issue
             
-        } catch (Exception e) {
+        } catch (Exception _) {
             // Fallback if not JSON
             logger.error("{} failed [{}]: {}", actionName, status, body);
         }
@@ -476,9 +476,9 @@ public class AuthKeycloakHandlers {
         try {
             List<String> vals = ctx.queryParam(name);
             if (vals == null || vals.isEmpty()) return null;
-            String v = vals.get(0);
+            String v = vals.getFirst();
             return (v == null || v.isBlank()) ? null : v;
-        } catch (Exception e) {
+        } catch (Exception _) {
             return null;
         }
     }

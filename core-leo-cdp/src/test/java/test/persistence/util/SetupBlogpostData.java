@@ -12,8 +12,9 @@ public class SetupBlogpostData {
 		for (int i = 1; i <= 30; i++) {
 			String title = "blog-post " + i;
 
-			String mediaInfo = "Enim labore aliqua consequat ut quis ad occaecat aliquip incididunt. Sunt nulla eu enim irure\n"
-					+ " enim nostrud aliqua consectetur ad consectetur sunt ullamco officia. Ex officia laborum et consequat duis.";
+			String mediaInfo = """
+					Enim labore aliqua consequat ut quis ad occaecat aliquip incididunt. Sunt nulla eu enim irure
+					 enim nostrud aliqua consectetur ad consectetur sunt ullamco officia. Ex officia laborum et consequat duis.""";
 			String ownerId = "admin";
 			MeasurableItem p = new AssetContent();
 			p.initNewItem("", "", title, mediaInfo, ContentType.HTML_TEXT, ownerId);

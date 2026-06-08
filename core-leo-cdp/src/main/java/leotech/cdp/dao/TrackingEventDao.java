@@ -269,7 +269,7 @@ public final class TrackingEventDao extends AbstractCdpDatabaseUtil {
 	public static TrackingEvent getLastTrackingEventsByProfileId(String refProfileId) {
 		List<TrackingEvent> events = getEventsByProfileIdAndPagination(refProfileId, "" , "", 0, 1);
 		if(events.size() > 0) {
-			return events.get(0);
+			return events.getFirst();
 		}
 		return null;
 	}

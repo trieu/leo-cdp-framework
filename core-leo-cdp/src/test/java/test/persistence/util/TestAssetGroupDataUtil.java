@@ -59,7 +59,7 @@ public class TestAssetGroupDataUtil {
 	@Order(4)
 	public void listByNetwork() {
 		List<AssetGroup> pages = AssetGroupDaoUtil.list( 0, 10);
-		System.out.println("pages.first " + pages.get(0).getTitle());
+		System.out.println("pages.first " + pages.getFirst().getTitle());
 		System.out.println("pages.last " + pages.get(9).getTitle());
 		assertTrue(pages.size() == 10);
 	}

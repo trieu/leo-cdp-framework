@@ -260,7 +260,7 @@ public final class ProfileGraphManagement {
 	private static String getProfileId(String visitorId) {
 		try {
 			return PROFILE_ID_CACHE.get(visitorId);
-		} catch (ExecutionException e) {
+		} catch (ExecutionException _) {
 			LOGGER.warn("Failed to retrieve profileId for visitorId: {}", visitorId);
 			return null;
 		} catch (Exception e) {

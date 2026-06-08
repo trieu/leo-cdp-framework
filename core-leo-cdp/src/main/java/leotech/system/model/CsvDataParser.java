@@ -75,7 +75,7 @@ public abstract class CsvDataParser<T> {
 				List<String[]> allRows = csvParser.parseAll(new FileReader(file));
 				int len = allRows.size();
 				if(len > 0) {
-					String[] headers = allRows.get(0);
+					String[] headers = allRows.getFirst();
 					records = new ArrayList<>(len);				
 					for (int i = 1; i < len; i++) {
 						String[] csvDataRow = allRows.get(i);	

@@ -9,8 +9,11 @@ JAR_MAIN="leo-main-starter-${BUILD_VERSION}.jar"
 # Define all admin router keys
 HTTP_ROUTER_KEYS=("admin1" "admin2" "admin3")
 
-# Java VM tuning
-JVM_PARAMS="-Xms256m -Xmx1G -XX:+TieredCompilation -XX:+UseCompressedOops -XX:+DisableExplicitGC -XX:+UseNUMA -server"
+# Java VM tuning. JDK 25: shared compat flags (Netty/Unsafe/JNI) come from
+# jvm-params.sh (see docs/02-java-25-migration.md); obsolete flags dropped
+# (-server, -XX:+TieredCompilation, -XX:+UseCompressedOops are JVM defaults).
+source "$(dirname "$0")/jvm-params.sh"
+JVM_PARAMS="-Xms256m -Xmx1G -XX:+DisableExplicitGC -XX:+UseNUMA $JAVA25_COMPAT_FLAGS"
 
 # === PREPARE ENVIRONMENT ===
 if [ -n "${LEO_CDP_FOLDER:-}" ]; then

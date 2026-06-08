@@ -966,7 +966,7 @@ public final class ProfileModelUtil {
 					// 2024-09-08T18:20:46Z
 					return toISO8601WithTimezone(dateStr, zoneIdStr);	
 				}
-			} catch (Exception e) {}
+			} catch (Exception _) {}
 			
 			// date with no time
 			try {
@@ -982,7 +982,7 @@ public final class ProfileModelUtil {
 					DateFormat dateFormat = new SimpleDateFormat(DD_MM_YYYY);
 					return dateFormat.parse(dateStr);
 				}
-			} catch (Exception e) {}
+			} catch (Exception _) {}
 		}
 		return null;
 	}
@@ -1008,7 +1008,7 @@ public final class ProfileModelUtil {
 		try {
 			DateFormat dateFormat = new SimpleDateFormat(YYYY_MM_DD);
 			return dateFormat.format(date);
-		} catch (Exception e) {
+		} catch (Exception _) {
 		}
 		return "";
 	}

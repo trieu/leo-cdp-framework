@@ -44,7 +44,7 @@ public class XssFilterUtil {
 	public static double safeGetDouble(JsonObject params, String name, double defaultVal) {
 		try {
 			return params.getDouble(name, defaultVal);
-		} catch (Exception e) {
+		} catch (Exception _) {
 		}
 		return defaultVal;
 	}
@@ -52,7 +52,7 @@ public class XssFilterUtil {
 	public static int safeGetInteger(JsonObject params, String name, int defaultVal) {
 		try {
 			return params.getInteger(name, defaultVal);
-		} catch (Exception e) {
+		} catch (Exception _) {
 		}
 		return defaultVal;
 	}

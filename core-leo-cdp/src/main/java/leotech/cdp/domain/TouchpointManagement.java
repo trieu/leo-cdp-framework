@@ -31,70 +31,33 @@ public class TouchpointManagement {
 
 	private static final int CACHE_TIME = 15;
 
-	static class TouchpointFlowReportCacheKey {
-		public final String refProfileId, refJourneyId, beginFilterDate, endFilterDate;
-		public final int startIndex, numberFlow;
-		String cacheKey;
+	/**
+	 * Guava-cache key. As a record, equality/hashCode derive from the components
+	 * directly — strictly stronger than the previous hashed-string comparison
+	 * (no hash-collision risk, no derived field to keep in sync).
+	 */
+	record TouchpointFlowReportCacheKey(String refProfileId, String refJourneyId, String beginFilterDate,
+			String endFilterDate, int startIndex, int numberFlow) {
 
-		public TouchpointFlowReportCacheKey(String refJourneyId, String beginFilterDate, String endFilterDate,
+		TouchpointFlowReportCacheKey(String refJourneyId, String beginFilterDate, String endFilterDate,
 				int startIndex, int numberFlow) {
-			super();
-			this.refProfileId = "";
-			this.refJourneyId = refJourneyId;
-			this.beginFilterDate = beginFilterDate;
-			this.endFilterDate = endFilterDate;
-			this.startIndex = startIndex;
-			this.numberFlow = numberFlow;
-			buildCacheKey();
+			this("", refJourneyId, beginFilterDate, endFilterDate, startIndex, numberFlow);
 		}
-
-		public TouchpointFlowReportCacheKey(String refProfileId, String refJourneyId, String beginFilterDate,
-				String endFilterDate, int startIndex, int numberFlow) {
-			super();
-			this.refProfileId = refProfileId;
-			this.refJourneyId = refJourneyId;
-			this.beginFilterDate = beginFilterDate;
-			this.endFilterDate = endFilterDate;
-			this.startIndex = startIndex;
-			this.numberFlow = numberFlow;
-			buildCacheKey();			
-		}
-		
-		void buildCacheKey() {
-			String keyHint = this.refProfileId + refJourneyId + beginFilterDate + endFilterDate + startIndex + "" + numberFlow;
-			this.cacheKey = IdGenerator.createHashedId(keyHint);
-		}
-
-		@Override
-		public String toString() {
-			return cacheKey;
-		}
-
-		@Override
-		public int hashCode() {
-			return Objects.hash(cacheKey);
-		}
-
-		@Override
-		public boolean equals(Object obj) {
-			return cacheKey.equals(obj.toString());
-		}
-
 	}
 
 	// ------- BEGIN Main Dashboard
 	static CacheLoader<TouchpointFlowReportCacheKey, List<TouchpointFlowReport>> cacheLoaderTouchpointFlowReport = new CacheLoader<>() {
 		@Override
 		public List<TouchpointFlowReport> load(TouchpointFlowReportCacheKey key) {
-			if(key != null && StringUtil.isEmpty(key.refProfileId)) {
+			if(key != null && StringUtil.isEmpty(key.refProfileId())) {
 				System.out.println("MISS CACHE , cache load getTouchpointFlowReportForJourney");
-				return getTouchpointFlowReportForJourney(key.refJourneyId, key.beginFilterDate, key.endFilterDate,
-						key.startIndex, key.numberFlow);
+				return getTouchpointFlowReportForJourney(key.refJourneyId(), key.beginFilterDate(), key.endFilterDate(),
+						key.startIndex(), key.numberFlow());
 			}
 			else {
 				System.out.println("MISS CACHE , cache load getTouchpointFlowReportForProfile");
-				return getTouchpointFlowReportForProfile(key.refProfileId, key.refJourneyId, key.beginFilterDate, key.endFilterDate,
-						key.startIndex, key.numberFlow);
+				return getTouchpointFlowReportForProfile(key.refProfileId(), key.refJourneyId(), key.beginFilterDate(), key.endFilterDate(),
+						key.startIndex(), key.numberFlow());
 			}
 		}
 	};
@@ -149,7 +112,7 @@ public class TouchpointManagement {
 		Touchpoint tp = null;
 		try {
 			tp = cacheTouchpoint.get(id);
-		} catch (Exception e) {
+		} catch (Exception _) {
 			// skip
 		}
 		if(tp == null) {
@@ -342,7 +305,7 @@ public class TouchpointManagement {
 		try {
 			report = cacheTouchpointFlowReport.get(key);
 			System.out.println("getTouchpointFlowReportForJourney HIT CACHE TouchpointFlowReport");
-		} catch (Exception e) {
+		} catch (Exception _) {
 			// skip
 		}
 		if (report == null) {
@@ -370,7 +333,7 @@ public class TouchpointManagement {
 		try {
 			report = cacheTouchpointFlowReport.get(key);
 			System.out.println("getTouchpointFlowReportForProfile HIT CACHE TouchpointFlowReport");
-		} catch (Exception e) {
+		} catch (Exception _) {
 			// skip
 		}
 		if (report == null) {

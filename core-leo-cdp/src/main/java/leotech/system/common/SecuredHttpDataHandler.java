@@ -233,7 +233,7 @@ public abstract class SecuredHttpDataHandler extends BaseHttpHandler {
 		if (systemUser != null) {
 			try {
 				return systemUser.get();
-			} catch (Exception e) {
+			} catch (Exception _) {
 
 			}
 		}

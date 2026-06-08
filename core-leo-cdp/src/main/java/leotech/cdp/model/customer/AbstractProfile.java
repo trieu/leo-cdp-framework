@@ -2526,7 +2526,7 @@ public abstract class AbstractProfile extends PersistentObject {
 	}
 
 	public void setTimeseriesProspectScore(Map<String, Integer> timeseriesProspectScore) {
-		this.timeseriesProspectScore.putAll(timeseriesProspectScore);;
+		this.timeseriesProspectScore.putAll(timeseriesProspectScore);
 	}
 	
 	public void addTimeseriesProspectScore(String dateKey, int score) {
@@ -2706,7 +2706,7 @@ public abstract class AbstractProfile extends PersistentObject {
 	}
 
 	public void setTimeseriesReach(Map<String, Integer> timeseriesReach) {
-		this.timeseriesReach.putAll(timeseriesReach);;
+		this.timeseriesReach.putAll(timeseriesReach);
 	}
 	
 	public void addTimeseriesReach(String dateKey, int reach) {
@@ -2914,7 +2914,7 @@ public abstract class AbstractProfile extends PersistentObject {
 					}
 				}
 				this.notes = StringUtils.abbreviate(s.toString(), ".", PROFILE_NOTES_MAX_LENGTH) ;
-			} catch (Exception e) {}
+			} catch (Exception _) {}
 		}
 	}
 	

@@ -1,0 +1,8 @@
+{
+	"clusterInfoRedis": [ { "host": "redis", "port": 6379, "auth": "" } ],
+	"realtimeDataStats": [ { "host": "redis", "port": 6379, "auth": "" } ],
+	"localCache":        [ { "host": "redis", "port": 6379, "auth": "" } ],
+	"masterCache":       [ { "host": "redis", "port": 6379, "auth": "" } ],
+	"pubSubQueue":       [ { "host": "redis", "port": 6379, "auth": "" } ],
+	"agentPubSubQueue":  [ { "host": "redis", "port": 6379, "auth": "" } ]
+}

@@ -71,8 +71,13 @@ public class AssetProductItemDaoUtil extends AssetItemDao {
 		item.setUpdatedAt(new Date());
 
 		// ---- REAL UPSERT (silent, atomic) ----
-		String aql = "UPSERT { _key: @key } " + "INSERT @doc " + "UPDATE @doc " + "IN @@col "
-				+ "OPTIONS { silent: true }";
+		String aql = """
+				UPSERT { _key: @key } \
+				INSERT @doc \
+				UPDATE @doc \
+				IN @@col \
+				OPTIONS { silent: true }\
+				""";
 
 		Map<String, Object> bindVars = new HashMap<>();
 		bindVars.put("@col", col.name());

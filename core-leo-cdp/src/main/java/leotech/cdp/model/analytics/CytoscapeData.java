@@ -228,7 +228,7 @@ public final class CytoscapeData {
 		Collections.sort(this.nodes);
 		if (nodes.size() > 0) {
 			// the highest ranked node , the first node in list, is the root node
-			rootNodeId = nodes.get(0).data.id;
+			rootNodeId = nodes.getFirst().data.id;
 		}
 	}
 

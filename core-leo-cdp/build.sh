@@ -77,9 +77,10 @@ echo "buildVersion=$FINAL_VERSION" >> "$PROPS_FILE"
 
 echo ">> Configuration saved to $PROPS_FILE"
 
-# 5. Run Gradle
+# 5. Run Gradle (committed wrapper; needs JDK 17+ to run, emits Java 11 bytecode
+# via options.release - see docs/00-java25-gradle9-migration-overview.md)
 echo ">> Starting Gradle Build..."
-gradle AutoBuildForDeployment
+./gradlew AutoBuildForDeployment
 
 echo -e "\n !!!!! build All Tasks For Deployment DONE !!!!! \n"
 echo -e "!!!!!!!!!!!!!!!!!!!! ALL BUILD DONE !!!!!!!!!!!!!!!!!!!!!!!!! \n"

@@ -122,7 +122,7 @@ public class EventMetricManagement {
         }
 
         // Runtime: use cached version
-        return cacheMap.computeIfAbsent(flowName, name -> {
+        return cacheMap.computeIfAbsent(flowName, _ -> {
             // Load from DB on first use
             List<EventMetric> metrics = EventMetricDaoUtil.getEventMetricsByFlowName(flowName);
             EventMetricCache c = new EventMetricCache();

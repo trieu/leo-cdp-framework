@@ -107,7 +107,7 @@ public final class ObserverHttpPostHandler {
 		// event)
 		// If payload has visid, we might prioritize it
 		if (events.size() >0) {
-			EventPayload event = events.get(0);
+			EventPayload event = events.getFirst();
 			visitorId = StringUtil.safeString(event.getVisId());
 		}
 		else {

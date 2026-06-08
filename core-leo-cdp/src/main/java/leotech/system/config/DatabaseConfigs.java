@@ -11,6 +11,7 @@ import static leotech.system.util.database.ArangoDbUtil.ENV_ARANGO_PASSWORD;
 import static leotech.system.util.database.ArangoDbUtil.ENV_ARANGO_PORT;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.io.Serializable;
 import java.sql.Driver;
 import java.util.HashMap;
@@ -28,6 +29,7 @@ import rfx.core.util.StringUtil;
 
 public class DatabaseConfigs implements Serializable {
 
+	@Serial
 	private static final long serialVersionUID = 6185084071488833500L;
 
 	public static final String SYSTEM_ENV_VARS = "SYSTEM_ENV_VARS";
@@ -110,7 +112,7 @@ public class DatabaseConfigs implements Serializable {
 		if (dbConfigsJson == null) {
 			try {
 				dbConfigsJson = FileUtils.readFileAsString(filePath);
-			} catch (IOException e) {
+			} catch (IOException _) {
 				throw new IllegalArgumentException("File is not found at " + filePath);
 			}
 		}

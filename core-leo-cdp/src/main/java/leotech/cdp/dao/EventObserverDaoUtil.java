@@ -103,7 +103,7 @@ public final class EventObserverDaoUtil extends AbstractCdpDatabaseUtil {
 	public static EventObserver getDefaultDataObserver() {
 		List<EventObserver> list = getAllByType(TouchpointType.DATA_OBSERVER);
 		if( list.size() > 0 ) {
-			return list.get(0);
+			return list.getFirst();
 		}
 		return null;
 	}

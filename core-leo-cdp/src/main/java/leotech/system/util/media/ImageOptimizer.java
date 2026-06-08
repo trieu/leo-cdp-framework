@@ -3,7 +3,6 @@ package leotech.system.util.media;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import org.apache.commons.io.FilenameUtils;
 
@@ -77,7 +76,7 @@ public class ImageOptimizer {
 
 	public static void main(String[] args) {
 		try {
-			Files.walk(Paths.get(folderPath)).filter(Files::isRegularFile).filter(ImageOptimizer::imageFilter)
+			Files.walk(Path.of(folderPath)).filter(Files::isRegularFile).filter(ImageOptimizer::imageFilter)
 					.forEach(ImageOptimizer::processFile);
 			// Files.walk(Paths.get(folderPath)).filter(Files::isRegularFile).forEach(ImageOptimizer::deleteImage);
 		} catch (Exception e) {

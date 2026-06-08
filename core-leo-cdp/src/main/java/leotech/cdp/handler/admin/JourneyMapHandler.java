@@ -269,7 +269,7 @@ public final class JourneyMapHandler extends SecuredHttpDataHandler {
 			}.getType();
 			List<TouchpointHub> list = GSON.fromJson(json, type);
 			return list != null ? list : Collections.emptyList();
-		} catch (Exception e) {
+		} catch (Exception _) {
 			return Collections.emptyList();
 		}
 	}

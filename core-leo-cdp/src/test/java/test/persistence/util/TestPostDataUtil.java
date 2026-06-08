@@ -23,13 +23,13 @@ public class TestPostDataUtil {
 	static String ownerId = "admin";
 
 	@BeforeAll
-	public void setup() {
+	public static void setup() {
 		System.out.println("setup");
 		groupId = "10000-5d88679c7945f3297d57321109b713d2ac1723ed";
 	}
 
 	@AfterAll
-	public void clean() {
+	public static void clean() {
 		System.out.println("clean");
 	}
 

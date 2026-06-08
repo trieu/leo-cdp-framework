@@ -110,7 +110,7 @@ public class CampaignManagement {
 
 			TaskRunner.run(() -> {
 				Segment targetSegment = SegmentDaoUtil.getSegmentById(cam.getTargetSegmentId());
-				SegmentDataManagement.processProfilesInSegment(targetSegment, PROFILE_PROCESS_BATCH_SIZE, profile -> {
+				SegmentDataManagement.processProfilesInSegment(targetSegment, PROFILE_PROCESS_BATCH_SIZE, _ -> {
 					// TODO
 				});
 			});

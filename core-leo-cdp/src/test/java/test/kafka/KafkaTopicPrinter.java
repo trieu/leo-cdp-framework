@@ -41,7 +41,7 @@ public class KafkaTopicPrinter {
 			listings.forEach(topic -> {
 				System.out.println("Name: " + topic.name() + ", isInternal: " + topic.isInternal());
 			});
-		} catch (InterruptedException e) {
+		} catch (InterruptedException _) {
 			Thread.currentThread().interrupt();
 		} catch (ExecutionException e) {
 			logger.debug("Failed to get topic list {0}", e.getCause());
@@ -62,13 +62,13 @@ public class KafkaTopicPrinter {
 					
 					System.out.println(new Gson().toJson(topicDescription));
 					
-				} catch (InterruptedException e) {
+				} catch (InterruptedException _) {
 					Thread.currentThread().interrupt();
 				} catch (ExecutionException e) {
 					logger.debug("Failed to execute", e.getCause());
 				}
 			});
-		} catch (InterruptedException e) {
+		} catch (InterruptedException _) {
 			Thread.currentThread().interrupt();
 		} catch (ExecutionException e) {
 			logger.debug("Failed to get topic list", e.getCause());

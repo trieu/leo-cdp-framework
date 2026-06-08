@@ -54,7 +54,7 @@ public class TestOnMacOs {
 			try {
 				WebElement div = driver.findElement(By.id("body"));
 				System.out.println(div.getText());
-			} catch (NoSuchElementException e) {
+			} catch (NoSuchElementException _) {
 				System.out.println("No ad, just Skip ..." + url);
 			}
 

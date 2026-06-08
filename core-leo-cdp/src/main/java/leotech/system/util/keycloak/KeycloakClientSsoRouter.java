@@ -136,9 +136,7 @@ public class KeycloakClientSsoRouter {
 	        .setIdleTimeout(10)         // 10 seconds to close idle connections
 	        .setKeepAlive(true)
 			.setLogActivity(true);   // Helpful for debugging network issues
-			;
-
-	    if (isHttps) {
+			if (isHttps) {
 	        if (config.isVerifySSL()) {
 	            // 🔒 REAL SSL verification (UI = Verify SSL)
 	            opt.setTrustAll(false)

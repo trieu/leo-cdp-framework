@@ -109,7 +109,7 @@ public class ProductItemManagement {
 				String id = null;
 				try {
 					id = AssetProductItemDaoUtil.save(item);
-				} catch (ArangoDBException e) {
+				} catch (ArangoDBException _) {
 					fail.incrementAndGet();
 				}
 				if(id != null) {
