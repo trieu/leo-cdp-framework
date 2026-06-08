@@ -29,20 +29,28 @@ public class TestNotification {
 
 	@BeforeAll
 	public static void setup() {
-		SystemUserDaoUtil.deleteSystemUserByUserLogin(USER_LOGIN); // idempotent re-run
+		deleteIfExists(); // idempotent re-run (delete throws on absent user, so guard it)
 		SystemUser user = new SystemUser(USER_LOGIN, "qwerty", "Notif Test", "notif_test@example.com", AppMetadata.DEFAULT_ID);
 		userKey = SystemUserDaoUtil.createNewSystemUser(user);
 	}
 
 	@AfterAll
 	public static void clean() {
-		SystemUserDaoUtil.deleteSystemUserByUserLogin(USER_LOGIN);
+		deleteIfExists();
+	}
+
+	private static void deleteIfExists() {
+		if (SystemUserDaoUtil.getByUserLogin(USER_LOGIN) != null) {
+			SystemUserDaoUtil.deleteSystemUserByUserLogin(USER_LOGIN);
+		}
 	}
 
 	@Test
 	@Order(1)
 	public void testCreate1() {
-		JsonObject o = new JsonObject().put("message", "Ok").put("status", "test");
+		// Notification(JsonObject) reads the "type" key (not "status"); the assertion below
+		// checks getType()=="test", so build with "type".
+		JsonObject o = new JsonObject().put("message", "Ok").put("type", "test");
 		SystemUserDaoUtil.setNotification(userKey, new Notification(o));
 
 		SystemUser u = SystemUserDaoUtil.getSystemUserByKey(userKey);
