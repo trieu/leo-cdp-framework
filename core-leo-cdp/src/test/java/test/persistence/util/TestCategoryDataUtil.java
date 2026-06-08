@@ -17,13 +17,13 @@ public class TestCategoryDataUtil {
 	static String saveId = "";
 
 	@BeforeAll
-	public void setup() {
+	public static void setup() {
 		saveId = "";
 		System.out.println("setup");
 	}
 
 	@AfterAll
-	public void clean() {
+	public static void clean() {
 		AssetCategoryDaoUtil.deleteById(saveId);
 		System.out.println("clean");
 	}

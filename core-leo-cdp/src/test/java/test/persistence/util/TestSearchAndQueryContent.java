@@ -25,12 +25,12 @@ import leotech.system.util.database.ArangoDbUtil;
 
 public class TestSearchAndQueryContent {
 	@BeforeAll
-	public void setup() {
+	public static void setup() {
 		System.out.println("setup");
 	}
 
 	@AfterAll
-	public void clean() {
+	public static void clean() {
 		System.out.println("clean");
 	}
 
