@@ -168,13 +168,37 @@ See: [Installation Guide](core-leo-cdp/NOTES-FOR-NEW-SETUP.md)
 
 # 🧑‍💻 Author & License
 
-Created by: [Trieu Nguyen (Thomas)](https://www.facebook.com/dataism.one)  
-**License**: Open Source - MIT-style.  
-Use freely. Customize. Brand your own white-label CDP. Just respect the original creator 🙏.
+Created and maintained by **Trieu Nguyen (Thomas)** — Founder of the LEO CDP Framework and advocate for open, data-driven innovation.
 
----
+🌐 Connect: https://www.facebook.com/dataism.one
+
+## License
+
+Released under the **MIT License**.
+
+You are free to:
+- ✅ Use in personal and commercial projects
+- ✅ Modify and extend the source code
+- ✅ Build and distribute your own white-label solutions
+- ✅ Integrate into proprietary products
+
+Attribution is appreciated and helps support the continued growth of the open-source community.
+
+> Built for organizations that want to own their customer data, AI capabilities, and digital future.
+
+## Contributors
+
+Special thanks to all contributors who have helped improve the framework.
+
+<a href="https://github.com/trieu/leo-cdp-framework/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=trieu/leo-cdp-framework" alt="Contributors" />
+</a>
+
+--- 
 
 # 💬 Community & Support
+
+⭐ If this project helps your business or development team, consider starring the repository and sharing it with the community.
 
 - Bugs or ideas? Email: **trieu@leocdp.com**
 - Join our learning group: [BigDataVietnam.org](https://www.facebook.com/groups/bigdatavietnam.org)
