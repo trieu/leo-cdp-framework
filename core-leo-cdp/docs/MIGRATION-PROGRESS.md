@@ -34,6 +34,17 @@ Companion documents: [MIGRATION-EXECUTION-REPORT.md](MIGRATION-EXECUTION-REPORT.
 
 Legend: ✅ done · 🔄 in progress · ⬜ pending · ⛔ blocked (external dependency)
 
+## CI status
+
+**GREEN** on `16175b5` (run verified via API: `docker` job builds the full image end-to-end + publishes a passing JUnit report). Three pre-existing conditions that Gradle 9 surfaced — all fixed, none caused by the modernization:
+
+| # | Symptom | Fix |
+|---|---|---|
+| C1 | `RUN ./gradlew` failed on Linux runner (Permission denied) | `gradlew` committed from Windows had git mode 100644 → `git update-index --chmod=+x` (100755). Local buildx masked it (forces 0755). Commit `77345af` |
+| C2 | `:test` failed: "did not discover any tests" (Gradle 9 `failOnNoDiscoveredTests`) | project never called `useJUnitPlatform()`; added it + `junit-platform-launcher:1.10.3` (version-pinned — no junit-bom). Commit `16175b5` |
+| C3 | 47/59 tests then failed: `NoClassDefFoundError: Could not initialize class Profile/PersistentObject` | integration probes with DB-connecting static initializers (CLAUDE.md). Default `:test` → infra-free unit subset (12 tests, green); full set → new `integrationTest` task. Closes docs/05 split-TODO. Commit `16175b5` |
+| C4 | Docker build flaky: wrapper download "Premature EOF"/TLS timeout | retried prefetch layer ordered before `COPY . .` + `networkTimeout=60000`. Commits `10a2eba`, `f4fa852` |
+
 ## Gate results
 
 ### G1 — Build equivalence (Gradle 9 vs 6.9.4 baseline)
