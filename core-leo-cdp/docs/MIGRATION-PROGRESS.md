@@ -51,7 +51,10 @@ Legend: ✅ done · 🔄 in progress · ⬜ pending · ⛔ blocked (external dep
 _not yet run_
 
 ### G2 — Staging on Corretto 25
-_blocked: requires staging environment with ArangoDB/Redis/Kafka/PostgreSQL_
+_formal gate still requires a staging environment (Kafka/PostgreSQL/Airflow + production-scale data)._
+
+**Local DB-layer validation (2026-06-08, commit `ed07ab7`):** the modernized JDK-25 / bytecode-69 build (records, Gson 2.13.2, virtual threads) was run against the **live local ArangoDB** via the new `integrationTest` task — **40 / 59 tests pass**. Per-class: ✅ VoucherCodes, TestCampaignDAO, ProfileDataValidator, TestCustomQueryValidation, CrudSegment, TestAssetGroupDataUtil; ⚠ 19 failures, all **non-migration**: NPEs from un-seeded journey/user data (`ProfileMergeServiceTest`, `TestNotification`, `TestUserDataUtil`), Redis pub/sub timing (`RedisPubSubClientTest`), and a pre-existing non-static `@BeforeAll` bug (`TestCategoryDataUtil`). Fixing those = seed data via `GenerateCdpTestData`/`DataSampleSetup` + one test-quality fix, not migration work.
+Repro: live stack on `:8529`/`:6379`, extra Redis on `:6480` (auth `test123456`) to match `configs/redis-configs.json`, gitignored `leocdp-metadata.properties` (runtimeEnvironment blank) + minimal `configs/database-configs.json`, `ARANGODB_*` env exported.
 
 ### G3 / G4
 _blocked on G2/G3_
