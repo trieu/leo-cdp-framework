@@ -39,3 +39,5 @@ airflow-ai-agent/.env
 
 # linux APT keys
 **.gpg
+# Playwright MCP transient artifacts
+**/.playwright-mcp/

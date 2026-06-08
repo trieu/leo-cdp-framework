@@ -56,6 +56,18 @@ _formal gate still requires a staging environment (Kafka/PostgreSQL/Airflow + pr
 **Local DB-layer validation (2026-06-08, commit `ed07ab7`):** the modernized JDK-25 / bytecode-69 build (records, Gson 2.13.2, virtual threads) was run against the **live local ArangoDB** via the new `integrationTest` task — **40 / 59 tests pass**. Per-class: ✅ VoucherCodes, TestCampaignDAO, ProfileDataValidator, TestCustomQueryValidation, CrudSegment, TestAssetGroupDataUtil; ⚠ 19 failures, all **non-migration**: NPEs from un-seeded journey/user data (`ProfileMergeServiceTest`, `TestNotification`, `TestUserDataUtil`), Redis pub/sub timing (`RedisPubSubClientTest`), and a pre-existing non-static `@BeforeAll` bug (`TestCategoryDataUtil`). Fixing those = seed data via `GenerateCdpTestData`/`DataSampleSetup` + one test-quality fix, not migration work.
 Repro: live stack on `:8529`/`:6379`, extra Redis on `:6480` (auth `test123456`) to match `configs/redis-configs.json`, gitignored `leocdp-metadata.properties` (runtimeEnvironment blank) + minimal `configs/database-configs.json`, `ARANGODB_*` env exported.
 
+**Test-fix progress → 60/66** (commits `dea052b`, `e9f2cbd`, `24a9ef2`, `90e5a76`): split unit/integration, `@BeforeAll` static, default-data seeding, `@TestMethodOrder` on ordered classes, `TestNotification` self-seeded + key fix.
+
+**Remaining 6 = pre-existing test defects, NOT migration regressions** — tracked as a separate integration-test remediation task:
+| Class | Fails | Defect | Fix needed |
+|---|---|---|---|
+| `TestCategoryDataUtil` | 2 | `AssetCategoryDaoUtil.save()` returns null in test ctx | debug DAO/collection setup |
+| `TestUserDataUtil` | 2–3 | `@AfterAll clean()` commented out → 409 on re-run; Order-4 asserts `≥10 users` *after* Order-3 deletes its 10 (unsatisfiable on clean DB) | add teardown + correct assertion |
+| `TestSearchAndQueryContent` | 1 | asserts on hard-coded category IDs (`1329181…`) absent without a specific dataset | seed exact fixtures or rewrite |
+| `RedisPubSubClientTest` | 2 | async pub/sub timing race | de-flake with awaitility |
+
+All migration-sensitive paths (records, Gson 2.13.2, query/segment/campaign/DAO, bytecode-69) are green against the live DB. Full 66/66 requires editing test logic/assertions + a seeded baseline — out of scope for the JDK-25/Gradle-9 migration.
+
 ### G3 / G4
 _blocked on G2/G3_
 
