@@ -1453,7 +1453,7 @@ const deleteSegment = function() {
 	                	    title: 'OK',
 	                	    message: 'Successfully deleted the segment "'+segmentDataModel.name +'". Total deleted profile: ' + c,
 	                	    onClosing: function(instance, toast, closedBy){
-	                	    	location.hash = "calljs-leoCdpRouter('Segment_Management')";
+	                	    	location.hash = "calljs-leoCdpRouter('Customer_Segments')";
 	                	    }
 	                	});
 	                } 

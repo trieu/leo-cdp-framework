@@ -98,12 +98,12 @@ LeoCdpAdmin.navRouters = {
 			"activeMenuItem" : "Data_Journey_Map"
 		},
 		
-		// 2.3 Customer Journey Scoring
-		"Event_Data_Funnel" : {
-			"menuName" : "Customer Journey Scoring",
+		// 2.3 Data Journey Scoring
+		"Journey_Scoring" : {
+			"menuName" : "Data Journey Scoring",
 			"functionName" : "loadDataEventFunnel",
-			"breadcrumb" : ["Customer Journey", "Customer Journey Scoring"],
-			"activeMenuItem" : "Event_Data_Funnel"
+			"breadcrumb" : ["Customer Journey", "Journey Scoring"],
+			"activeMenuItem" : "Journey_Scoring"
 		},
 		
 		// 2.4 Journey Map List, Report and Editor
@@ -128,211 +128,214 @@ LeoCdpAdmin.navRouters = {
 		
 		////////////////////////// 3) CUSTOMER DATA MODULE //////////////////////////
 		
-		// 3.1 Profile Management
-		"Profile_Management" : {
-			"menuName" : "Profile Management",
+		// 3.1 Customer Profiles
+		"Customer_Profiles" : {
+			"menuName" : "Customer Profiles",
 			"functionName" : "loadCustomerProfileList",
-			"breadcrumb" : ["Customer Data Hub", "Profile Management"],
-			"activeMenuItem" : "Profile_Management"
+			"breadcrumb" : ["Customer Data Hub", "Customer Profiles"],
+			"activeMenuItem" : "Customer_Profiles"
 		},	
 		"Profile_List_By_Type" : {
-			"menuName" : "Profile Management",
+			"menuName" : "Customer Profiles",
 			"functionName" : "loadCustomerProfileListByType",
-			"breadcrumb" : ["Customer Data Hub", "Profile Management"],
-			"activeMenuItem" : "Profile_Management"
+			"breadcrumb" : ["Customer Data Hub", "Customer Profiles"],
+			"activeMenuItem" : "Customer_Profiles"
 		},	
 		"Customer_Profile_Info" : {
 			"menuName" : "Profile Information",
 			"functionName" : "loadCustomerProfileInfo",
-			"breadcrumb" : ["Customer Data Hub", "Profile Management", "Profile Information"],
-			"activeMenuItem" : "Profile_Management"
+			"breadcrumb" : ["Customer Data Hub", "Customer Profiles", "Profile Information"],
+			"activeMenuItem" : "Customer_Profiles"
 		},
 		"Customer_Profile_Info_By_CRM_ID" : {
 			"menuName" : "Profile Information",
 			"functionName" : "loadCustomerProfileInfoByCrmId",
-			"breadcrumb" : ["Customer Data Hub", "Profile Management", "Profile Information"],
-			"activeMenuItem" : "Profile_Management"
+			"breadcrumb" : ["Customer Data Hub", "Customer Profiles", "Profile Information"],
+			"activeMenuItem" : "Customer_Profiles"
 		},
 		"Customer_Profile_Info_By_Visitor_ID" : {
 			"menuName" : "Profile Information",
 			"functionName" : "loadCustomerProfileInfoByVisitorId",
-			"breadcrumb" : ["Customer Data Hub", "Profile Management", "Profile Information"],
-			"activeMenuItem" : "Profile_Management"
+			"breadcrumb" : ["Customer Data Hub", "Customer Profiles", "Profile Information"],
+			"activeMenuItem" : "Customer_Profiles"
 		},
 		"Customer_Profile_Editor" : {
 			"menuName" : "Profile Editor",
 			"functionName" : "loadCustomerProfileEditor",
-			"breadcrumb" : ["Customer Data Hub", "Profile Management", "Profile Editor"],
-			"activeMenuItem" : "Profile_Management"
+			"breadcrumb" : ["Customer Data Hub", "Customer Profiles", "Profile Editor"],
+			"activeMenuItem" : "Customer_Profiles"
 		},
 		"Customer_Profile_Import" : {
 			"menuName" : "Profile Data Import",
 			"functionName" : "loadProfileImporter",
-			"breadcrumb" : ["Customer Data Hub", "Profile Management", "Profile Data Import"],
-			"activeMenuItem" : "Profile_Management"
+			"breadcrumb" : ["Customer Data Hub", "Customer Profiles", "Profile Data Import"],
+			"activeMenuItem" : "Customer_Profiles"
 		},
 		"Customer_Event_Import" : {
 			"menuName" : "Event Data Import",
 			"functionName" : "loadEventImporter",
-			"breadcrumb" : ["Customer Data Hub", "Profile Management", "Event Data Import"],
-			"activeMenuItem" : "Profile_Management"
+			"breadcrumb" : ["Customer Data Hub", "Customer Profiles", "Event Data Import"],
+			"activeMenuItem" : "Customer_Profiles"
 		},
 		
 		// 3.3 Data Segmentation
-		"Segment_Management" : {
-			"menuName" : "Segment Management",
+		"Customer_Segments" : {
+			"menuName" : "Customer Segments",
 			"functionName" : "loadSegmentList",
-			"breadcrumb" : ["Customer Data Hub", "Segment Management"],
-			"activeMenuItem" : "Segment_Management"
+			"breadcrumb" : ["Customer Data Hub", "Customer Segments"],
+			"activeMenuItem" : "Customer_Segments"
 		},
 		"Segment_Builder" : {
 			"menuName" : "Segment Builder",
 			"functionName" : "loadSegmentBuilder",
-			"breadcrumb" : ["Customer Data Hub", "Segment Management", "Segment Builder"],
-			"activeMenuItem" : "Segment_Management"
+			"breadcrumb" : ["Customer Data Hub", "Customer Segments", "Segment Builder"],
+			"activeMenuItem" : "Customer_Segments"
 		},
 		"Segment_Details" : {
 			"menuName" : "Segment Details",
 			"functionName" : "loadSegmentDetails",
-			"breadcrumb" : ["Customer Data Hub", "Segment Management", "Segment Details"],
-			"activeMenuItem" : "Segment_Management"
+			"breadcrumb" : ["Customer Data Hub", "Customer Segments", "Segment Details"],
+			"activeMenuItem" : "Customer_Segments"
 		},
 		"Segment_Activation" : {
 			"menuName" : "Segment Activation",
 			"functionName" : "loadSegmentActivation",
-			"breadcrumb" : ["Customer Data Hub", "Segment Management", "Segment Activation"],
-			"activeMenuItem" : "Segment_Management"
+			"breadcrumb" : ["Customer Data Hub", "Customer Segments", "Segment Activation"],
+			"activeMenuItem" : "Customer_Segments"
 		},
 		
 		// 3.4 Customer Profile Search
 		"Customer_Profile_Search" : {
 			"menuName" : "Customer Profile Search",
 			"functionName" : "loadCustomerProfileSearch",
-			"breadcrumb" : ["Customer Data Hub", "Profile Management"],
-			"activeMenuItem" : "Profile_Management"
+			"breadcrumb" : ["Customer Data Hub", "Customer Profiles"],
+			"activeMenuItem" : "Customer_Profiles"
 		},	
 		
 		// 3.5 Customer Profile Filter
 		"Customer_Profile_Filter" : {
 			"menuName" : "Customer Profile Filter",
 			"functionName" : "loadCustomerProfileFilter",
-			"breadcrumb" : ["Customer Data Hub", "Profile Management"],
-			"activeMenuItem" : "Profile_Management"
+			"breadcrumb" : ["Customer Data Hub", "Customer Profiles"],
+			"activeMenuItem" : "Customer_Profiles"
 		},	
 		
-		////////////////////////// 4) DATA ACTIVATION HUB //////////////////////////
 		
-		
-		// 4.2 Digital Asset Management
-		"Digital_Asset_Management" : {
-			"menuName" : "Digital Asset Management",
-			"functionName" : "loadDigitalAssetCategories",
-			"breadcrumb" : ["Data Activation Hub", "Digital Asset Management"],
-			"activeMenuItem" : "Digital_Asset_Management"
-		},
-		// 4.3 AI Agent for Data Activation 
 
+		
+		////////////////////////// 4) Data Activation //////////////////////////
+		
+		// 4.1 Customer AI Agents 
 		"AI_Agent_Activation" : {
 			"menuName" : "AI Agent Activation",
 			"functionName" : "loadAgentList",
-			"breadcrumb" : ["Data Activation Hub", "AI Agent Activation"],
+			"breadcrumb" : ["Data Activation", "AI Agent Activation"],
 			"activeMenuItem" : "AI_Agent_Activation"
 		},
+		
+		// 4.2 Marketing Assets
+		"Marketing_Assets" : {
+			"menuName" : "Marketing Assets",
+			"functionName" : "loadDigitalAssetCategories",
+			"breadcrumb" : ["Data Activation", "Marketing Assets"],
+			"activeMenuItem" : "Marketing_Assets"
+		},
+
 		
 		// Asset Group List
 		"Asset_Groups" : {
 			"menuName" : "Asset Group ",
 			"functionName" : "loadGroupsInCategory",
-			"breadcrumb" : ["Data Activation Hub", "Digital Asset Management", "Asset Groups"],
-			"activeMenuItem" : "Digital_Asset_Management"
+			"breadcrumb" : ["Data Activation", "Marketing Assets", "Asset Groups"],
+			"activeMenuItem" : "Marketing_Assets"
 		},
 		
 		// Asset Group Details and Items
 		"Asset_Group_Details" : {
 			"menuName" : "Asset Group Details",
 			"functionName" : "loadGroupDetails",
-			"breadcrumb" : ["Data Activation Hub", "Digital Asset Management", "Asset Groups", "Asset Group Details"],
-			"activeMenuItem" : "Digital_Asset_Management"
+			"breadcrumb" : ["Data Activation", "Marketing Assets", "Asset Groups", "Asset Group Details"],
+			"activeMenuItem" : "Marketing_Assets"
 		},
 		
 		// Asset Product Importer
 		"Product_Importer" : {
 			"menuName" : "Product Importer",
 			"functionName" : "loadProductImporter",
-			"breadcrumb" : ["Data Activation Hub", "Digital Asset Management", "Asset Groups", "Product Importer"],
-			"activeMenuItem" : "Digital_Asset_Management"
+			"breadcrumb" : ["Data Activation", "Marketing Assets", "Asset Groups", "Product Importer"],
+			"activeMenuItem" : "Marketing_Assets"
 		},
 		
 		// Asset Group Editor 
 		"Asset_Group_Editor" : {
 			"menuName" : "Asset Group Editor",
 			"functionName" : "loadGroupEditor",
-			"breadcrumb" : ["Data Activation Hub", "Digital Asset Management", "Asset Groups", "Asset Group Editor"],
-			"activeMenuItem" : "Digital_Asset_Management"
+			"breadcrumb" : ["Data Activation", "Marketing Assets", "Asset Groups", "Asset Group Editor"],
+			"activeMenuItem" : "Marketing_Assets"
 		},
 		
 		// Digital Asset Item Viewer
 		"Asset_Content_View" : {
 			"menuName" : "Item Information",
 			"functionName" : "assetContentView",
-			"breadcrumb" : ["Data Activation Hub", "Digital Asset Management", "Asset Groups", "Asset Group Details", "Item Information"],
-			"activeMenuItem" : "Digital_Asset_Management"
+			"breadcrumb" : ["Data Activation", "Marketing Assets", "Asset Groups", "Asset Group Details", "Item Information"],
+			"activeMenuItem" : "Marketing_Assets"
 		},
 		
 		// Template Item Editor
 		"Asset_Template_Editor" : {
 			"menuName" : "Asset Template Editor",
 			"functionName" : "assetTemplateEditor",
-			"breadcrumb" : ["Data Activation Hub", "Digital Asset Management", "Asset Groups", "Asset Group Details", "Asset Template Editor"],
-			"activeMenuItem" : "Digital_Asset_Management"
+			"breadcrumb" : ["Data Activation", "Marketing Assets", "Asset Groups", "Asset Group Details", "Asset Template Editor"],
+			"activeMenuItem" : "Marketing_Assets"
 		},
 		
 		// Feedback Form Editor
 		"Asset_Feedback_Form_Editor" : {
 			"menuName" : "Feedback Form Editor",
 			"functionName" : "assetFeedbackFormEditor",
-			"breadcrumb" : ["Data Activation Hub", "Digital Asset Management", "Asset Groups", "Asset Group Details", "Feedback Form Editor"],
-			"activeMenuItem" : "Digital_Asset_Management"
+			"breadcrumb" : ["Data Activation", "Marketing Assets", "Asset Groups", "Asset Group Details", "Feedback Form Editor"],
+			"activeMenuItem" : "Marketing_Assets"
 		},
 		
 		// HTML Presentation Editor
 		"Asset_Presentation_Editor" : {
 			"menuName" : "Presentation Editor",
 			"functionName" : "assetPresentationEditor",
-			"breadcrumb" : ["Data Activation Hub", "Digital Asset Management", "Asset Groups", "Asset Group Details", "Presentation Editor"],
-			"activeMenuItem" : "Digital_Asset_Management"
+			"breadcrumb" : ["Data Activation", "Marketing Assets", "Asset Groups", "Asset Group Details", "Presentation Editor"],
+			"activeMenuItem" : "Marketing_Assets"
 		},
 		
 		// Content Item Editor
 		"Asset_Content_Editor" : {
 			"menuName" : "Asset Content Editor",
 			"functionName" : "assetContentEditor",
-			"breadcrumb" : ["Data Activation Hub", "Digital Asset Management", "Asset Groups", "Asset Group Details", "Asset Content Editor"],
-			"activeMenuItem" : "Digital_Asset_Management"
+			"breadcrumb" : ["Data Activation", "Marketing Assets", "Asset Groups", "Asset Group Details", "Asset Content Editor"],
+			"activeMenuItem" : "Marketing_Assets"
 		},
 		
 		// Product Item Editor
 		"Asset_Product_Item_Editor" : {
 			"menuName" : "Asset Product Item Editor",
 			"functionName" : "assetProductItemEditor",
-			"breadcrumb" : ["Data Activation Hub", "Digital Asset Management", "Asset Groups", "Asset Group Details", "Asset Product Item Editor"],
-			"activeMenuItem" : "Digital_Asset_Management"
+			"breadcrumb" : ["Data Activation", "Marketing Assets", "Asset Groups", "Asset Group Details", "Asset Product Item Editor"],
+			"activeMenuItem" : "Marketing_Assets"
 		},
 		
 		// Smart Link Editor
 		"Asset_Short_Link_Editor" : {
 			"menuName" : "Asset Short Link Editor",
 			"functionName" : "assetShortUrlLinkEditor",
-			"breadcrumb" : ["Data Activation Hub", "Digital Asset Management", "Asset Groups", "Asset Group Details", "Short Link Editor"],
-			"activeMenuItem" : "Digital_Asset_Management"
+			"breadcrumb" : ["Data Activation", "Marketing Assets", "Asset Groups", "Asset Group Details", "Short Link Editor"],
+			"activeMenuItem" : "Marketing_Assets"
 		},
 		
 		// Service Item Editor
 		"Asset_Service_Item_Editor" : {
 			"menuName" : "Asset Product Service Editor",
 			"functionName" : "assetSubscriptionItemEditor",
-			"breadcrumb" : ["Data Activation Hub", "Digital Asset Management", "Asset Groups", "Asset Group Details", "Asset Product Service Editor"],
-			"activeMenuItem" : "Digital_Asset_Management"
+			"breadcrumb" : ["Data Activation", "Marketing Assets", "Asset Groups", "Asset Group Details", "Asset Product Service Editor"],
+			"activeMenuItem" : "Marketing_Assets"
 		},
 
 		
@@ -341,19 +344,19 @@ LeoCdpAdmin.navRouters = {
 		"Automated_Campaigns" : {
 			"menuName" : "Automated Campaigns",
 			"functionName" : "loadCampaignList",
-			"breadcrumb" : ["Data Activation Hub", "Automated Campaigns"],
+			"breadcrumb" : ["Data Activation", "Automated Campaigns"],
 			"activeMenuItem" : "Automated_Campaigns"
 		},
 		"Campaign_Info" : {
 			"menuName" : "Campaign Information",
 			"functionName" : "loadCampaignInfo",
-			"breadcrumb" : ["Data Activation Hub", "Automated Campaigns", "Campaign Information"],
+			"breadcrumb" : ["Data Activation", "Automated Campaigns", "Campaign Information"],
 			"activeMenuItem" : "Automated_Campaigns"
 		},
 		"Campaign_Editor" : {
 			"menuName" : "Campaign Editor",
 			"functionName" : "loadCampaignEditor",
-			"breadcrumb" : ["Data Activation Hub", "Automated Campaigns", "Campaign Editor"],
+			"breadcrumb" : ["Data Activation", "Automated Campaigns", "Campaign Editor"],
 			"activeMenuItem" : "Automated_Campaigns"
 		},
 		

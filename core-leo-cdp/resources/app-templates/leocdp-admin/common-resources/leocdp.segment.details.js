@@ -49,7 +49,7 @@ const refreshAllSegments = function() {
     	    message: "Total segment: <b>" + json.data + "</b>",
     	    onClosing: function(instance, toast, closedBy){
     	    	var t = new Date().getTime();
-				location.hash = "#calljs-leoCdpRouter('Segment_Management','_refresh_"+t+"')"
+				location.hash = "#calljs-leoCdpRouter('Customer_Segments','_refresh_"+t+"')"
     	    }
     	});
     });	

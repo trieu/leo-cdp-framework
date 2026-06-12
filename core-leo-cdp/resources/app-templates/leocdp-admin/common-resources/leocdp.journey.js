@@ -42,14 +42,7 @@ const initJourneyMapAndTouchpointHubs = function(){
 	var callback = function(journeyMap, touchpointCount){
 		containerNode.empty();
 		
-		var reportNodeId = 'journey_map_event_matrix'
-		
-		setTimeout(function(){
-    		loadJourneyMapEventMatrix(reportNodeId, currentJourneyMapId);
-    	}, 2000)
-		
-		// var maxSize = touchpointCount * 3;
-		// loadJourneyTouchpointHubReport(window.currentJourneyMapId, maxSize);
+
 		
 		// data authorization
 		if( window.currentUserProfile.role >=5 ) {
@@ -1666,12 +1659,12 @@ const loadBehavioralEventList = function(){
 			$('button.data-control').attr('disabled','disabled');
 		 }
 		
-		 behavioralMetricsData = json.data['behavioral_metrics'];
+		 var behavioralMetricsData = json.data['behavioral_metrics'];
 		 var currentFlowName = behavioralMetricsData[0] ? behavioralMetricsData[0].flowName : "general_business_event";
 		 
-		 customerFunnelStages = json.data['general_data_funnel']; 
-		 
-		 renderFunnelChart("#profile_funnel",customerFunnelStages, profileFunnelOptions, getColorCodeProfileFunnel)
+		 // hide show funnel <div id="profile_funnel" ></div>
+		 var customerFunnelStages = json.data['general_data_funnel']; 
+		 // renderFunnelChart("#profile_funnel",customerFunnelStages, profileFunnelOptions, getColorCodeProfileFunnel)
 		 
 		 var gridControls =  { 
 			type: "control", width: 70, editButton: true, deleteButton: true, itemTemplate: function(value, item) {
@@ -1840,11 +1833,11 @@ const loadBehavioralEventList = function(){
 		        { name: "eventName", title : "Event Name", align: 'center', type: "text", validate: "required", filtering: true },
 		        { name: "eventLabel", title : "Event Label", align: 'center', type: "text", validate: "required", filtering: true },
 		        { name: "score", title : "Event Score", type: "number", align: 'center', width: 40, validate: "required", filtering: true },
-		        { name: "cumulativePoint", title : "Loyalty Point", type: "number", width: 44, align: 'center', validate: "required", filtering: true },
+		        { name: "cumulativePoint", title : "Loyalty Points", type: "number", width: 44, align: 'center', validate: "required", filtering: true },
 		        { name: "funnelStageId", title : "Default Funnel Stage", type: "select", items: customerFunnelStages, valueField: "id", textField: "name", filtering: true },
 		        { name: "scoreModel", title : "Scoring Model", type: "select", items: scoringModels, width: 80, valueField: "id", textField: "name", filtering: true },
 		        { name: "journeyStage", type: "select", title : "CX Journey Stage", items: journeyStages, align: 'center', width: 74, valueField: "id", textField: "name", filtering: true },
-		        { name: "showInObserverJS", title : "Show in JS Code", type: "CustomCheckBox", width: 48, align: "center", filtering: false },
+		        { name: "showInObserverJS", title : "Enable Tracking", type: "CustomCheckBox", width: 48, align: "center", filtering: false },
 		        gridControls // Make sure your `type: "control"` object is configured to handle the filter buttons if you use them.
 		    ]
 		});

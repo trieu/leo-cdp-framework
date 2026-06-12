@@ -1,5 +1,5 @@
 // 
-var agentStatusReadyHtml = '<i class="fa fa-check-square" aria-hidden="true" style="font-size:1.1em"></i> The service is active';
+var agentStatusReadyHtml = '<i class="fa fa-check-square" aria-hidden="true" style="font-size:1.1em"></i> Status: Active';
 var dataServiceMap = {};
 
 var renderAgent = function(dataList){

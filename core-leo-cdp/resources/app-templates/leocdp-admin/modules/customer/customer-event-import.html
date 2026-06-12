@@ -118,7 +118,7 @@
 	
 	function doEventImportingJob(importFileUrl){
 		var gotoProfileList = function(){
-			location.hash = "calljs-leoCdpRouter('Profile_Management')";
+			location.hash = "calljs-leoCdpRouter('Customer_Profiles')";
 		}
 		var params = {'importFileUrl' : importFileUrl}
 		LeoAdminApiUtil.callPostAdminApi('/cdp/events/import', params , function (json) {

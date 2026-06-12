@@ -69,7 +69,7 @@
 
 
 <div class="top_page_header">
-	<h4> <i class="fa fa-address-card-o" aria-hidden="true"></i> Profile Data Management </h4>
+	<h4> <i class="fa fa-address-card-o" aria-hidden="true"></i> Customer Profiles </h4>
 </div>
 
 <div id="profile_list_loader" class="loader"></div>
@@ -374,7 +374,7 @@
 		var k = LeoCdpAdmin.routerKey;
 		if (k === "Customer_Profile_Search" || k === "Profile_List_By_Type" || k === 'Customer_Profile_Filter') {
 			$('#main_search_profile').val('');
-			location.hash = "calljs-leoCdpRouter('Profile_Management')";
+			location.hash = "calljs-leoCdpRouter('Customer_Profiles')";
 		}
 		else {
 			window.currentJourneyMapId = currentUserProfile.viewableJourneyMapIds[0] || '_';
@@ -448,7 +448,7 @@
 
 	var refreshAllProfiles = function () {
 		var t = new Date().getTime();
-		location.hash = "#calljs-leoCdpRouter('Profile_Management','_refresh_" + t + "')"
+		location.hash = "#calljs-leoCdpRouter('Customer_Profiles','_refresh_" + t + "')"
 	}
 
 	function initCustomerProfileFilter(dataLabels) {

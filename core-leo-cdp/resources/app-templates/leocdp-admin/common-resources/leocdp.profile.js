@@ -979,7 +979,7 @@ function deduplicateCurrentProfile() {
 			    	});
 				}
 				var t = new Date().getTime();
-				location.hash = "#calljs-leoCdpRouter('Profile_Management','_refresh_"+t+"')"
+				location.hash = "#calljs-leoCdpRouter('Customer_Profiles','_refresh_"+t+"')"
 	        } else {
 	            LeoAdminApiUtil.logErrorPayload(json);
 	        }
@@ -1827,7 +1827,7 @@ function profileInfoGoBack(){
 		history.back()
 	}
 	else {
-		location.hash = "calljs-leoCdpRouter('Profile_Management')"
+		location.hash = "calljs-leoCdpRouter('Customer_Profiles')"
 	}
 }
 

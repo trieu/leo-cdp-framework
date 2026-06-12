@@ -175,7 +175,7 @@ LeoCdpAdmin.navFunctions.removeCustomerProfile = function(id) {
 	         LeoAdminApiUtil.callPostAdminApi(urlStr, { 'id': id }, function (json) {
 	             if (json.httpCode === 0 && json.errorMessage === '') {
 	                 if (json.data) {
-	                     location.hash = 'calljs-leoCdpRouter("Profile_Management")';
+	                     location.hash = 'calljs-leoCdpRouter("Customer_Profiles")';
 	                 }
 	             }
 	         });
@@ -302,7 +302,7 @@ LeoCdpAdmin.navFunctions.deleteGroup = function(assetGroupModel) {
 	         LeoAdminApiUtil.callPostAdminApi(urlStr, params, function (json) {
 	             if (json.httpCode === 0 && json.errorMessage === '') {
 	                 if (json.data) {
-	                     location.hash = 'calljs-leoCdpRouter("Digital_Asset_Management")';
+	                     location.hash = 'calljs-leoCdpRouter("Marketing_Assets")';
 	                 }
 	             }
 	         });
@@ -408,7 +408,7 @@ LeoCdpAdmin.navFunctions.deleteItemAsset = function(itemModel) {
 	             'groupId': itemModel.groupIds[0] ? itemModel.groupIds[0] : ''
 	         };
 	         LeoAdminApiUtil.callPostAdminApi(urlStr, params, function (json) {
-	            location.hash = 'calljs-leoCdpRouter("Digital_Asset_Management")';
+	            location.hash = 'calljs-leoCdpRouter("Marketing_Assets")';
 	         });
 	     }
 	     $('#delete_callback').val(callback);
