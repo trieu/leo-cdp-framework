@@ -1,7 +1,7 @@
 
 # 🔥 Giải thích logic toàn bộ code K6 (LEO CDP Load Test)
 
-*Code: `tests_with_k6/user_session_load_test.js`*
+*Code: `tests_with_k6/web_user_session_load_test.js`*
 
 Bài test này mô phỏng **hành vi duyệt web của user thật** khi truy cập các trang có gắn **LEO CDP Observer script**.
 Mỗi VU (virtual user) được cấp:

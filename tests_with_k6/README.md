@@ -40,7 +40,7 @@ Once complete, `k6` is ready to use system-wide.
 To simulate the beginning of a real user journey, run your session-init test:
 
 ```bash
-k6 run user_session_load_test.js
+k6 run web_user_session_load_test.js
 ```
 
 This script typically:
