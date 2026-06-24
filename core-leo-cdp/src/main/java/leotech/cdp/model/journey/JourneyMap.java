@@ -458,7 +458,7 @@ public final class JourneyMap extends PersistentObject {
 	 */
 	public static JourneyMap setTouchpointHubsForJourneyMap(JourneyMap map, List<TouchpointHub> touchpointHubs, List<TouchpointHubReport> reports, boolean validationInput) {
 		int size = touchpointHubs.size();
-		if(size >= 2 && map != null) {
+		if(size > 0 && map != null) {
 			String journeyMapId = map.getId();
 			
 			// core elements of Journey Map
@@ -566,7 +566,7 @@ public final class JourneyMap extends PersistentObject {
 			return map;
 		}
 		else {
-			throw new InvalidDataException("JourneyMap must not be NULL and touchpointHubs.size must be larger or equals 2 !");
+			throw new InvalidDataException("JourneyMap must not be NULL and touchpointHubs.size must be not empty !");
 		}
 	}
 }
