@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Trust Bank - CDP Testing</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+
+    <script>
+    // (1) CDP_EVENT_OBSERVER: load JavaScript code for [AXIS UAT TEST ]
+    (function() {   
+        // Parse parameters from location.hash
+        // Example URL: http://localhost/index.html#domain=cdp.bank.com&id=obs_12345
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+
+        // Observer ID loaded from hash
+        window.leoObserverId = hashParams.get('id') || "";
+        
+        // Default batch size of Event Tracking
+        window.leoObserverBatchSize = 10;
+        
+        // Log Domain loaded from hash
+        window.leoObserverLogDomain = hashParams.get('domain') || "";
+        
+        if(leoObserverLogDomain === "" || leoObserverId === "") {
+            console.warn("CDP Warning: Please set the domain and id in the URL hash (e.g., #domain=xyz&id=123) for event tracking.");
+            // We return early here so the script doesn't break if parameters are missing during local UI testing
+            return; 
+        }
+
+        window.leoObserverCdnDomain = "cdn.jsdelivr.net/gh/USPA-Technology/leo-cdp-static-files@v0.9";
+        
+        // Data Touchpoint Metadata 
+        window.srcTouchpointName = encodeURIComponent(document.title);
+        window.srcTouchpointUrl = encodeURIComponent(location.href);
+
+        // the main proxy CDP JS
+        var leoproxyJsPath = '/js/leo-observer/leo.proxy.min.js';
+        var src = location.protocol + '//' + window.leoObserverCdnDomain + leoproxyJsPath;
+        var jsNode = document.createElement('script');
+        jsNode.async=true; jsNode.defer=true; jsNode.src = src;
+        var s = document.getElementsByTagName('script')[0];
+        s.parentNode.insertBefore(jsNode, s);
+    })();
+
+    var parseDataUTM = window.parseDataUTM || function () {
+        if (location.search.indexOf('utm_') > 0) {
+            var search = location.search.substring(1);
+            var json = decodeURI(search).replace(/"/g, '\\"').replace(/&/g, '","').replace(/=/g, '":"');
+            return JSON.parse('{"' + json + '"}');
+        }
+    }
+        
+    // (2) CDP EVENT OBSERVER: set-up all event tracking functions
+    var LeoObserver = {};
+
+    LeoObserver.recordEventPageView = function(eventData) {
+        eventData = eventData ? eventData : {};
+        if(typeof LeoObserverProxy !== "undefined") LeoObserverProxy.recordViewEvent("page-view",eventData);
+    }
+
+    LeoObserver.recordEventAcceptTracking = function(eventData) {
+        eventData = eventData ? eventData : {};
+        if(typeof LeoObserverProxy !== "undefined") LeoObserverProxy.recordViewEvent("accept-tracking",eventData);
+    }
+
+    LeoObserver.recordEventContentView = function(eventData) {
+        eventData = eventData ? eventData : {};
+        if(typeof LeoObserverProxy !== "undefined") LeoObserverProxy.recordViewEvent("content-view",eventData);
+    }
+
+    LeoObserver.recordEventSearch = function(eventData) {
+        eventData = eventData ? eventData : {};
+        if(typeof LeoObserverProxy !== "undefined") LeoObserverProxy.recordActionEvent("search",eventData);
+    }
+
+    LeoObserver.recordEventItemView = function(eventData) {
+        eventData = eventData ? eventData : {};
+        if(typeof LeoObserverProxy !== "undefined") LeoObserverProxy.recordViewEvent("item-view",eventData);
+    }
+
+    LeoObserver.recordEventClickDetails = function(eventData) {
+        eventData = eventData ? eventData : {};
+        if(typeof LeoObserverProxy !== "undefined") LeoObserverProxy.recordActionEvent("click-details",eventData);
+    }
+
+    LeoObserver.recordEventSubmitContact = function(eventData) {
+        eventData = eventData ? eventData : {};
+        if(typeof LeoObserverProxy !== "undefined") LeoObserverProxy.recordActionEvent("submit-contact",eventData);
+    }
+
+    LeoObserver.recordEventRegisterAccount = function(eventData) {
+        eventData = eventData ? eventData : {};
+        if(typeof LeoObserverProxy !== "undefined") LeoObserverProxy.recordActionEvent("register-account",eventData);
+    }
+
+    LeoObserver.recordEventUserLogin = function(eventData) {
+        eventData = eventData ? eventData : {};
+        if(typeof LeoObserverProxy !== "undefined") LeoObserverProxy.recordActionEvent("user-login",eventData);
+    }
+
+    LeoObserver.recordEventAskQuestion = function(eventData) {
+        eventData = eventData ? eventData : {};
+        if(typeof LeoObserverProxy !== "undefined") LeoObserverProxy.recordActionEvent("ask-question",eventData);
+    }
+
+    // (3) CDP EVENT OBSERVER is ready
+    function leoObserverProxyReady(session) {
+        LeoObserver.recordEventPageView(parseDataUTM()) ;
+        
+        LeoObserverProxy.synchLeoVisitorId(function(vid){
+            $('a').each(function() {
+                var hrefUrl = $(this).attr('href') || "";
+                var check = hrefUrl.indexOf('http') >= 0 && hrefUrl.indexOf(location.host) < 0 ;
+                if(check) {
+                    hrefUrl += (hrefUrl.indexOf('?') > 0 ? "&leosyn=" : "?leosyn=") + vid;
+                    $(this).attr('href', hrefUrl);
+                }
+            });
+            if(typeof window.synchLeoCdpToGA4 === "function") {
+                window.synchLeoCdpToGA4(vid)
+            }
+        });
+        
+        LeoObserver.addTrackingAllLinks();
+        LeoObserver.addTrackingAllButtons();
+    }
+
+    LeoObserver.addTrackingAllLinks = function(){
+        setTimeout(function(){
+            $('a').on('click', function(){
+                var url = $(this).attr('href') || "";
+                var data = {'url': url, 'link-text' : $(this).text() };
+                LeoObserver.recordEventClickDetails(data)
+            });
+        },1500);
+    }
+
+    LeoObserver.addTrackingAllButtons = function(){
+        setTimeout(function(){
+            $('button').on('click', function(){
+                var data = {'button-text' : $(this).text() };
+                LeoObserver.recordEventClickDetails(data)
+            });
+        },1600);
+    }
+    </script>
+</head>
+<body class="bg-light">
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand fw-bold" href="#">Global Trust Bank</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link track-content" href="#accounts" data-category="Accounts">Accounts</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link track-content" href="#cards" data-category="Credit Cards">Credit Cards</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link track-content" href="#loans" data-category="Loans">Loans</a>
+                    </li>
+                </ul>
+                
+                <div class="d-flex align-items-center gap-2">
+                    <input type="email" id="username" class="form-control form-control-sm" placeholder="Email" value="test@example.com">
+                    <input type="password" id="password" class="form-control form-control-sm" placeholder="Password" value="password123">
+                    <button id="btnLogin" class="btn btn-warning btn-sm fw-bold">Login</button>
+                    <button id="btnRegister" class="btn btn-success btn-sm fw-bold text-nowrap">Open Account</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-5">
+        
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body">
+                        <h4 class="card-title text-primary mb-3">Find Information</h4>
+                        <div class="input-group">
+                            <input type="text" id="searchBox" class="form-control" placeholder="Search for routing number, fees, etc...">
+                            <button class="btn btn-primary" id="btnSearch">Search</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-5">
+            <h4 class="text-primary mb-3">Featured Products</h4>
+            
+            <div class="col-md-6 mb-3">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body text-center">
+                        <h5 class="card-title fw-bold">Platinum Credit Card</h5>
+                        <p class="card-text text-muted">0% APR for 15 months.</p>
+                        <button class="btn btn-outline-primary btn-view-item" data-item="Platinum Credit Card">View Details</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-3">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body text-center">
+                        <h5 class="card-title fw-bold">High-Yield Savings</h5>
+                        <p class="card-text text-muted">Earn 4.5% APY on your balance.</p>
+                        <button class="btn btn-outline-primary btn-view-item" data-item="High-Yield Savings Account">View Details</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body">
+                        <h4 class="card-title text-primary mb-3">Need Help?</h4>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <input type="email" id="contactEmail" class="form-control" placeholder="Your Email">
+                            </div>
+                            <div class="col-md-8">
+                                <input type="text" id="questionText" class="form-control" placeholder="How can we help you?">
+                            </div>
+                            <div class="col-12 mt-3">
+                                <button id="btnAskQuestion" class="btn btn-info text-white me-2">Ask Question</button>
+                                <button id="btnSubmitContact" class="btn btn-secondary">Submit Contact Info</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="cookie-banner" class="fixed-bottom bg-dark text-white p-3 shadow-lg" style="z-index: 1050;">
+        <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center">
+            <span class="mb-2 mb-md-0">We use cookies to improve your banking experience and provide tailored services.</span>
+            <button id="btnAcceptCookies" class="btn btn-success fw-bold px-4">Accept & Continue</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            
+            // Handle Cookie Acceptance
+            $('#btnAcceptCookies').on('click', function() {
+                console.log("Triggering: recordEventAcceptTracking");
+                LeoObserver.recordEventAcceptTracking({ consent_given: true, timestamp: new Date().toISOString() });
+                $('#cookie-banner').fadeOut();
+            });
+
+            // Handle Login
+            $('#btnLogin').on('click', function() {
+                let user = $('#username').val() || 'guest';
+                console.log("Triggering: recordEventUserLogin for", user);
+                LeoObserver.recordEventUserLogin({ username: user, login_status: "attempted" });
+                alert("Login event sent to CDP for user: " + user);
+            });
+
+            // Handle Registration
+            $('#btnRegister').on('click', function() {
+                console.log("Triggering: recordEventRegisterAccount");
+                LeoObserver.recordEventRegisterAccount({ account_type: "checking", source: "header_button" });
+                alert("Register event sent to CDP.");
+            });
+
+            // Handle Search
+            $('#btnSearch').on('click', function() {
+                let query = $('#searchBox').val();
+                console.log("Triggering: recordEventSearch with query:", query);
+                LeoObserver.recordEventSearch({ search_keyword: query });
+            });
+
+            // Handle Item View (Product Cards)
+            $('.btn-view-item').on('click', function() {
+                let itemName = $(this).data('item');
+                console.log("Triggering: recordEventItemView for", itemName);
+                LeoObserver.recordEventItemView({ item_name: itemName, item_category: "banking_product" });
+                alert("Viewed Item: " + itemName);
+            });
+
+            // Handle Ask Question
+            $('#btnAskQuestion').on('click', function() {
+                let question = $('#questionText').val();
+                console.log("Triggering: recordEventAskQuestion");
+                LeoObserver.recordEventAskQuestion({ question_text: question });
+                alert("Question event sent.");
+            });
+
+            // Handle Submit Contact
+            $('#btnSubmitContact').on('click', function() {
+                let email = $('#contactEmail').val();
+                console.log("Triggering: recordEventSubmitContact");
+                LeoObserver.recordEventSubmitContact({ "email": email, form_name: "help_desk" });
+                alert("Contact submission event sent.");
+            });
+
+            // Handle Navigation Content Views
+            $('.track-content').on('click', function() {
+                let category = $(this).data('category');
+                console.log("Triggering: recordEventContentView for category:", category);
+                LeoObserver.recordEventContentView({ category: category });
+            });
+
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Enterprise Banking CDP Demo v2</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <style>
+      body {
+        background: #f4f7fb;
+      }
+      .score {
+        font-size: 28px;
+        font-weight: bold;
+      }
+      pre {
+        max-height: 400px;
+        overflow: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="navbar navbar-dark bg-primary">
+      <div class="container-fluid">
+        <span class="navbar-brand">CDP - Banking Customer 360 Demo</span>
+      </div>
+    </nav>
+
+    <div class="container mt-4">
+      <div class="row">
+        <div class="col-md-4">
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <h5>Customer Identity</h5>
+
+              <input
+                id="email"
+                class="form-control mb-2"
+                placeholder="Email"
+                value="customer@example.com"
+              />
+              <input
+                id="phone"
+                class="form-control mb-2"
+                placeholder="Phone"
+                value="0901234567"
+              />
+
+              <button id="btnIdentify" class="btn btn-primary w-100">
+                Identify Customer
+              </button>
+
+              <hr />
+
+              <button id="btnConsent" class="btn btn-success w-100">
+                Accept Tracking Consent
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-8">
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <h5>Customer 360 Profile</h5>
+              <pre id="customer360"></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row mt-4">
+        <div class="col-md-3">
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <h6>KYC</h6>
+              <button
+                class="btn btn-outline-primary w-100 mb-2"
+                onclick="trackKycStart()"
+              >
+                KYC Start
+              </button>
+              <button
+                class="btn btn-outline-success w-100"
+                onclick="trackKycComplete()"
+              >
+                KYC Complete
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-3">
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <h6>Credit Card</h6>
+              <button
+                class="btn btn-outline-primary w-100 mb-2"
+                onclick="trackCardView()"
+              >
+                View Platinum Card
+              </button>
+              <button
+                class="btn btn-outline-success w-100"
+                onclick="trackCardApply()"
+              >
+                Apply Card
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-3">
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <h6>Mortgage Loan</h6>
+              <button
+                class="btn btn-outline-primary w-100 mb-2"
+                onclick="trackLoanView()"
+              >
+                View Loan
+              </button>
+              <button
+                class="btn btn-outline-success w-100"
+                onclick="trackLoanApply()"
+              >
+                Apply Loan
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-3">
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <h6>Payments</h6>
+              <button
+                class="btn btn-warning w-100 mb-2"
+                onclick="trackPayment()"
+              >
+                Payment Success
+              </button>
+              <button class="btn btn-info w-100" onclick="trackTransfer()">
+                Transfer Success
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row mt-4">
+        <div class="col-md-3">
+          <div class="card shadow-sm text-center">
+            <div class="card-body">
+              Lead Score
+              <div id="leadScore" class="score">85</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-3">
+          <div class="card shadow-sm text-center">
+            <div class="card-body">
+              Fraud Score
+              <div id="fraudScore" class="score">12</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-3">
+          <div class="card shadow-sm text-center">
+            <div class="card-body">
+              Interest Score
+              <div id="interestScore" class="score">90</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-3">
+          <div class="card shadow-sm text-center">
+            <div class="card-body">
+              CLV
+              <div class="score">150M</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row mt-4">
+        <div class="col-md-6">
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <h5>Live Event Stream</h5>
+              <pre id="eventLog"></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <h5>Raw CDP Payload</h5>
+              <pre id="lastPayload"></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // (1) CDP_EVENT_OBSERVER: load JavaScript code for [AXIS UAT TEST ]
+      (function () {
+        // Parse parameters from location.hash
+        // Example URL: http://localhost/index.html#domain=cdp.bank.com&id=obs_12345
+        const hashParams = new URLSearchParams(
+          window.location.hash.substring(1),
+        );
+
+        // Observer ID loaded from hash
+        window.leoObserverId = hashParams.get("id") || "";
+
+        // Default batch size of Event Tracking
+        window.leoObserverBatchSize = 10;
+
+        // Log Domain loaded from hash
+        window.leoObserverLogDomain = hashParams.get("domain") || "";
+
+        if (leoObserverLogDomain === "" || leoObserverId === "") {
+          console.warn(
+            "CDP Warning: Please set the domain and id in the URL hash (e.g., #domain=xyz&id=123) for event tracking.",
+          );
+          // We return early here so the script doesn't break if parameters are missing during local UI testing
+          return;
+        }
+
+        window.leoObserverCdnDomain =
+          "cdn.jsdelivr.net/gh/USPA-Technology/leo-cdp-static-files@v0.9";
+
+        // Data Touchpoint Metadata
+        window.srcTouchpointName = encodeURIComponent(document.title);
+        window.srcTouchpointUrl = encodeURIComponent(location.href);
+
+        // the main proxy CDP JS
+        var leoproxyJsPath = "/js/leo-observer/leo.proxy.min.js";
+        var src =
+          location.protocol +
+          "//" +
+          window.leoObserverCdnDomain +
+          leoproxyJsPath;
+        var jsNode = document.createElement("script");
+        jsNode.async = true;
+        jsNode.defer = true;
+        jsNode.src = src;
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(jsNode, s);
+      })();
+    </script>
+
+    <script>
+      const Customer360 = {
+        customer_id_hash: null,
+        session_id: crypto.randomUUID(),
+        device_id: localStorage.deviceId || crypto.randomUUID(),
+        channel: "web",
+        consent: false,
+        segments: ["unknown"],
+        products: [],
+        scores: {
+          lead: 85,
+          fraud: 12,
+          interest: 90,
+        },
+      };
+
+      localStorage.deviceId = Customer360.device_id;
+
+      async function sha256(str) {
+        const buffer = await crypto.subtle.digest(
+          "SHA-256",
+          new TextEncoder().encode(str),
+        );
+        return [...new Uint8Array(buffer)]
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
+      }
+
+      function render360() {
+        document.getElementById("customer360").textContent = JSON.stringify(
+          Customer360,
+          null,
+          2,
+        );
+      }
+
+      function fraudSignals() {
+        return {
+          user_agent: navigator.userAgent,
+          language: navigator.language,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          screen: screen.width + "x" + screen.height,
+        };
+      }
+
+      function logEvent(payload) {
+        const el = document.getElementById("eventLog");
+        el.textContent =
+          JSON.stringify(payload, null, 2) + "\n\n" + el.textContent;
+        document.getElementById("lastPayload").textContent = JSON.stringify(
+          payload,
+          null,
+          2,
+        );
+      }
+
+      function sendToCDP(eventName, payload) {
+        console.log("CDP EVENT", eventName, payload);
+
+        LeoObserverProxy.recordActionEvent(eventName, payload);
+      }
+
+      function recordBankingEvent(eventName, eventData = {}) {
+        const payload = {
+          event_id: crypto.randomUUID(),
+          event_name: eventName,
+          event_time: new Date().toISOString(),
+          customer_id_hash: Customer360.customer_id_hash,
+          session_id: Customer360.session_id,
+          device_id: Customer360.device_id,
+          channel: Customer360.channel,
+          consent: Customer360.consent,
+          page_url: location.href,
+          fraud_signals: fraudSignals(),
+          event_data: eventData,
+        };
+
+        sendToCDP(eventName, payload);
+        logEvent(payload);
+      }
+
+      document.getElementById("btnIdentify").onclick = async () => {
+        const email = document.getElementById("email").value;
+        const phone = document.getElementById("phone").value;
+
+        Customer360.customer_id_hash = await sha256(email);
+        Customer360.phone_hash = await sha256(phone);
+        Customer360.segments = ["banking", "credit-card-interest"];
+
+        render360();
+
+        recordBankingEvent("customer-identify");
+      };
+
+      document.getElementById("btnConsent").onclick = () => {
+        Customer360.consent = true;
+        render360();
+        recordBankingEvent("consent-given");
+      };
+
+      function trackKycStart() {
+        recordBankingEvent("kyc-start");
+      }
+
+      function trackKycComplete() {
+        recordBankingEvent("kyc-complete", {
+          method: "eKYC",
+        });
+      }
+
+      function trackCardView() {
+        recordBankingEvent("credit-card-view", {
+          product_code: "CC_PLATINUM",
+        });
+      }
+
+      function trackCardApply() {
+        recordBankingEvent("credit-card-apply", {
+          product_code: "CC_PLATINUM",
+          annual_income: 500000000,
+        });
+      }
+
+      function trackLoanView() {
+        recordBankingEvent("loan-view", {
+          product_code: "MORTGAGE",
+        });
+      }
+
+      function trackLoanApply() {
+        recordBankingEvent("loan-application", {
+          amount: 1500000000,
+          tenor_months: 240,
+        });
+      }
+
+      function trackPayment() {
+        recordBankingEvent("payment-success", {
+          amount: 500000,
+          currency: "VND",
+        });
+      }
+
+      function trackTransfer() {
+        recordBankingEvent("transfer-success", {
+          amount: 2500000,
+        });
+      }
+
+      render360();
+      recordBankingEvent("page-view");
+    </script>
+  </body>
+</html>
