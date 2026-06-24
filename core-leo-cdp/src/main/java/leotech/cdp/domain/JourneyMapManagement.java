@@ -40,6 +40,7 @@ import rfx.core.util.StringUtil;
 public final class JourneyMapManagement {
 
 	public static final String GOOGLE_COM = "https://google.com";
+	public static final String BING_COM = "https://bing.com";
 
 	private static final int CACHE_TIME = 5;
 
@@ -186,7 +187,9 @@ public final class JourneyMapManagement {
 		List<TouchpointHub> hubs = new ArrayList<TouchpointHub>();
 
 		TouchpointHub google = new TouchpointHub("Google", TouchpointType.SEARCH_ENGINE, false, GOOGLE_COM, 1);
+		TouchpointHub bing = new TouchpointHub("Bing", TouchpointType.SEARCH_ENGINE, false, BING_COM, 1);
 		hubs.add(google);
+		hubs.add(bing);
 
 		JourneyMap map = JourneyMap.buildDefaultJourneyMap(hubs);
 		JourneyMapManagement.saveJourney(map);
