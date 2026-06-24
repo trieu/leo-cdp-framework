@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Trust Bank - CDP Testing</title>
+    <style>
+        /* Basic styling for the mock banking site */
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f7f6; color: #333; }
+        header { background-color: #004080; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+        header h1 { margin: 0; font-size: 24px; }
+        .nav-bar { background-color: #0059b3; padding: 10px 20px; }
+        .nav-bar a { color: white; text-decoration: none; margin-right: 15px; font-weight: bold; }
+        .container { max-width: 1000px; margin: 20px auto; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .section { margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #eee; }
+        input[type="text"], input[type="password"] { padding: 8px; margin-right: 10px; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 9px 15px; background-color: #ff9900; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        button:hover { background-color: #e68a00; }
+        .card-grid { display: flex; gap: 20px; }
+        .card { flex: 1; border: 1px solid #ddd; padding: 15px; border-radius: 5px; text-align: center; }
+        #cookie-banner { position: fixed; bottom: 0; width: 100%; background: #222; color: white; padding: 15px; text-align: center; display: block; }
+    </style>
+
+    <script>
+    // (1) CDP_EVENT_OBSERVER: load JavaScript code for [AXIS UAT TEST ]
+    (function() {   
+        // Observer ID
+        window.leoObserverId = "";
+        
+        // Default batch size of Event Tracking
+        window.leoObserverBatchSize = 10;
+        
+        // CDN of JS
+        window.leoObserverLogDomain = "";
+        if(leoObserverLogDomain === "" || leoObserverId === "") {
+            alert("Please set the leoObserverLogDomain and leoObserverId variables to your own values for event tracking.");
+            return;
+        }
+
+        window.leoObserverCdnDomain = "cdn.jsdelivr.net/gh/USPA-Technology/leo-cdp-static-files@v0.9";
+        
+        // Data Touchpoint Metadata 
+        window.srcTouchpointName = encodeURIComponent(document.title);
+        window.srcTouchpointUrl = encodeURIComponent(location.href);
+
+        // the main proxy CDP JS
+        var leoproxyJsPath = '/js/leo-observer/leo.proxy.min.js';
+        var src = location.protocol + '//' + window.leoObserverCdnDomain + leoproxyJsPath;
+        var jsNode = document.createElement('script');
+        jsNode.async=true; jsNode.defer=true; jsNode.src = src;
+        var s = document.getElementsByTagName('script')[0];
+        s.parentNode.insertBefore(jsNode, s);
+    })();
+
+    var parseDataUTM = window.parseDataUTM || function () {
+        if (location.search.indexOf('utm_') > 0) {
+            var search = location.search.substring(1);
+            var json = decodeURI(search).replace(/"/g, '\\"').replace(/&/g, '","').replace(/=/g, '":"');
+            return JSON.parse('{"' + json + '"}');
+        }
+    }
+        
+    // (2) CDP EVENT OBSERVER: set-up all event tracking functions
+    var LeoObserver = {};
+
+    LeoObserver.recordEventPageView = function(eventData) {
+        eventData = eventData ? eventData : {};
+        LeoObserverProxy.recordViewEvent("page-view",eventData);
+    }
+
+    LeoObserver.recordEventAcceptTracking = function(eventData) {
+        eventData = eventData ? eventData : {};
+        LeoObserverProxy.recordViewEvent("accept-tracking",eventData);
+    }
+
+    LeoObserver.recordEventContentView = function(eventData) {
+        eventData = eventData ? eventData : {};
+        LeoObserverProxy.recordViewEvent("content-view",eventData);
+    }
+
+    LeoObserver.recordEventSearch = function(eventData) {
+        eventData = eventData ? eventData : {};
+        LeoObserverProxy.recordActionEvent("search",eventData);
+    }
+
+    LeoObserver.recordEventItemView = function(eventData) {
+        eventData = eventData ? eventData : {};
+        LeoObserverProxy.recordViewEvent("item-view",eventData);
+    }
+
+    LeoObserver.recordEventClickDetails = function(eventData) {
+        eventData = eventData ? eventData : {};
+        LeoObserverProxy.recordActionEvent("click-details",eventData);
+    }
+
+    LeoObserver.recordEventSubmitContact = function(eventData) {
+        eventData = eventData ? eventData : {};
+        LeoObserverProxy.recordActionEvent("submit-contact",eventData);
+    }
+
+    LeoObserver.recordEventRegisterAccount = function(eventData) {
+        eventData = eventData ? eventData : {};
+        LeoObserverProxy.recordActionEvent("register-account",eventData);
+    }
+
+    LeoObserver.recordEventUserLogin = function(eventData) {
+        eventData = eventData ? eventData : {};
+        LeoObserverProxy.recordActionEvent("user-login",eventData);
+    }
+
+    LeoObserver.recordEventAskQuestion = function(eventData) {
+        eventData = eventData ? eventData : {};
+        LeoObserverProxy.recordActionEvent("ask-question",eventData);
+    }
+
+    // (3) CDP EVENT OBSERVER is ready
+    function leoObserverProxyReady(session) {
+        // auto tracking when CDP JS is ready
+        LeoObserver.recordEventPageView(parseDataUTM()) ;
+        
+        // set tracking CDP web visitor ID into all a[href] nodes
+        LeoObserverProxy.synchLeoVisitorId(function(vid){
+            var aNodes = document.querySelectorAll('a');
+            [].forEach.call(aNodes, function(aNode) {
+                var hrefUrl = aNode.href || "";
+                var check = hrefUrl.indexOf('http') >= 0 && hrefUrl.indexOf(location.host) < 0 ;
+                if(check) {
+                    if(hrefUrl.indexOf('?') > 0) hrefUrl += ("&leosyn=" + vid);
+                    else hrefUrl += ("?leosyn=" + vid);
+                    aNode.href = hrefUrl;
+                }
+            });
+            if(typeof window.synchLeoCdpToGA4 === "function") {
+                window.synchLeoCdpToGA4(vid)
+            }
+        });
+        
+        // Initialize automatic button/link tracking defined below
+        LeoObserver.addTrackingAllLinks();
+        LeoObserver.addTrackingAllButtons();
+    }
+
+    LeoObserver.addTrackingAllLinks = function(){
+        setTimeout(function(){
+            document.querySelectorAll('a').forEach(function (e) {
+                e.addEventListener('click',function(){
+                    var url = e.getAttribute('href') || "";
+                    var data = {'url': url, 'link-text' : e.innerText };
+                    LeoObserver.recordEventClickDetails(data)
+                })
+            })
+        },1500);
+    }
+
+    LeoObserver.addTrackingAllButtons = function(){
+        setTimeout(function(){
+            document.querySelectorAll('button').forEach(function (e) {
+                e.addEventListener('click',function(){
+                    var data = {'button-text' : e.innerText };
+                    LeoObserver.recordEventClickDetails(data)
+                })
+            })
+        },1600);
+    }
+    </script>
+</head>
+<body>
+
+    <header>
+        <h1>Global Trust Bank</h1>
+        <div>
+            <input type="text" id="username" placeholder="Username">
+            <input type="password" id="password" placeholder="Password">
+            <button id="btnLogin" onclick="handleLogin()">Login</button>
+            <button id="btnRegister" onclick="handleRegister()" style="background-color: #4CAF50;">Open Account</button>
+        </div>
+    </header>
+
+    <div class="nav-bar">
+        <a href="#accounts" onclick="LeoObserver.recordEventContentView({category: 'Accounts'})">Accounts</a>
+        <a href="#cards" onclick="LeoObserver.recordEventContentView({category: 'Credit Cards'})">Credit Cards</a>
+        <a href="#loans" onclick="LeoObserver.recordEventContentView({category: 'Loans'})">Loans</a>
+    </div>
+
+    <div class="container">
+        
+        <div class="section">
+            <h2>Find Information</h2>
+            <input type="text" id="searchBox" placeholder="Search for routing number, fees, etc...">
+            <button onclick="handleSearch()">Search</button>
+        </div>
+
+        <div class="section">
+            <h2>Featured Products</h2>
+            <div class="card-grid">
+                <div class="card">
+                    <h3>Platinum Credit Card</h3>
+                    <p>0% APR for 15 months.</p>
+                    <button onclick="handleItemView('Platinum Credit Card')">View Details</button>
+                </div>
+                <div class="card">
+                    <h3>High-Yield Savings</h3>
+                    <p>Earn 4.5% APY on your balance.</p>
+                    <button onclick="handleItemView('High-Yield Savings Account')">View Details</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Need Help?</h2>
+            <input type="text" id="contactEmail" placeholder="Your Email"><br><br>
+            <input type="text" id="questionText" placeholder="How can we help you?" style="width: 80%;"><br><br>
+            <button onclick="handleAskQuestion()" style="background-color: #17a2b8;">Ask Question</button>
+            <button onclick="handleSubmitContact()">Submit Contact Info</button>
+        </div>
+    </div>
+
+    <div id="cookie-banner">
+        We use cookies to improve your banking experience. 
+        <button onclick="handleAcceptCookies()" style="margin-left: 15px; background-color: #4CAF50;">Accept & Continue</button>
+    </div>
+
+    <script>
+        // Triggered by "Accept & Continue" on the cookie banner
+        function handleAcceptCookies() {
+            console.log("Triggering: recordEventAcceptTracking");
+            LeoObserver.recordEventAcceptTracking({ consent_given: true, timestamp: new Date().toISOString() });
+            document.getElementById("cookie-banner").style.display = "none";
+        }
+
+        // Triggered by "Login" button
+        function handleLogin() {
+            let user = document.getElementById('username').value || 'guest';
+            console.log("Triggering: recordEventUserLogin for", user);
+            LeoObserver.recordEventUserLogin({ username: user, login_status: "attempted" });
+            alert("Login event sent to CDP for user: " + user);
+        }
+
+        // Triggered by "Open Account" button
+        function handleRegister() {
+            console.log("Triggering: recordEventRegisterAccount");
+            LeoObserver.recordEventRegisterAccount({ account_type: "checking", source: "header_button" });
+            alert("Register event sent to CDP.");
+        }
+
+        // Triggered by "Search" button
+        function handleSearch() {
+            let query = document.getElementById('searchBox').value;
+            console.log("Triggering: recordEventSearch with query:", query);
+            LeoObserver.recordEventSearch({ search_keyword: query });
+        }
+
+        // Triggered by "View Details" on the product cards
+        function handleItemView(itemName) {
+            console.log("Triggering: recordEventItemView for", itemName);
+            LeoObserver.recordEventItemView({ item_name: itemName, item_category: "banking_product" });
+            alert("Viewed Item: " + itemName);
+        }
+
+        // Triggered by "Ask Question" button
+        function handleAskQuestion() {
+            let question = document.getElementById('questionText').value;
+            console.log("Triggering: recordEventAskQuestion");
+            LeoObserver.recordEventAskQuestion({ question_text: question });
+            alert("Question event sent.");
+        }
+
+        // Triggered by "Submit Contact Info" button
+        function handleSubmitContact() {
+            let email = document.getElementById('contactEmail').value;
+            console.log("Triggering: recordEventSubmitContact");
+            LeoObserver.recordEventSubmitContact({ contact_email: email, form_name: "help_desk" });
+            alert("Contact submission event sent.");
+        }
+    </script>
+
+</body>
+</html>
