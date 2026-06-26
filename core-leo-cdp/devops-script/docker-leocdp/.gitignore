@@ -1,0 +1,2 @@
+# Local runtime env (copy from sample.env). Keep secrets out of git.
+.env

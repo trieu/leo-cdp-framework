@@ -1,5 +1,6 @@
 package leotech.cdp.model.marketing;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 import com.google.gson.annotations.Expose;
@@ -12,6 +13,7 @@ import com.google.gson.annotations.Expose;
  */
 public class Scenario implements Serializable {
 
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	@Expose

@@ -45,7 +45,7 @@ public class TouchpointManagementTest {
 		}
 		
 		System.out.println("report.size "+reports.size());
-		System.out.println("TouchpointFlowReport \n "+reports.get(0));
+		System.out.println("TouchpointFlowReport \n "+reports.getFirst());
 		CytoscapeData data = new CytoscapeData(journeyMapId, reports, true);
 		System.out.println("report.getNodes "+data.getNodes().size());
 		System.out.println("report.getEdges "+data.getEdges().size());

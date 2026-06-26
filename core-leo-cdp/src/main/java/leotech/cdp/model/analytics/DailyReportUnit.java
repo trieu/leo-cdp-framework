@@ -188,7 +188,7 @@ public final class DailyReportUnit extends PersistentObject implements Comparabl
 		this.dailyCount += dailyReportUnit.getDailyCount();
 		Map<String, Map<String, Long>> newHourlyEventStatistics = dailyReportUnit.getHourlyEventStatistics();
 		newHourlyEventStatistics.forEach((newHourKey, newEventMap) -> {
-			Map<String, Long> myEventMap = this.hourlyEventStatistics.computeIfAbsent(newHourKey,k -> new ConcurrentHashMap<>(24));
+			Map<String, Long> myEventMap = this.hourlyEventStatistics.computeIfAbsent(newHourKey,_ -> new ConcurrentHashMap<>(24));
 			newEventMap.forEach((newEventKey, newCount) -> {
 				myEventMap.merge(newEventKey, newCount, Long::sum);
 			});
@@ -203,7 +203,7 @@ public final class DailyReportUnit extends PersistentObject implements Comparabl
 	private void updateHourlyEventCount() {
 		String hourtimeStr = HOUR_FORMATTER.format(this.createdAt.toInstant());
 		Map<String, Long> stats = this.hourlyEventStatistics.computeIfAbsent(hourtimeStr,
-				k -> new ConcurrentHashMap<>(24));
+				_ -> new ConcurrentHashMap<>(24));
 		stats.merge(this.eventName, 1L, Long::sum);
 	}
 

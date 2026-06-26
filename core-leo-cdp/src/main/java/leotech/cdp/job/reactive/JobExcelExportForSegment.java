@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -103,7 +102,8 @@ public class JobExcelExportForSegment extends ReactiveExportDataJob {
 
 	@Override
 	public FileApiResponse processAndReturnData(final Map<String, Object> data) {
-		ExecutorService executor = Executors.newFixedThreadPool(GET_SEGMENT_DATA_FOR_EXCEL_THREAD_POOL_SIZE);
+		// Wave 3 (docs/06): virtual threads for the blocking-read fan-out
+		ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
 
 		try {
 			String segmentId = data.get("segmentId").toString();
@@ -132,7 +132,7 @@ public class JobExcelExportForSegment extends ReactiveExportDataJob {
 			String fullFilePath = getLocalFilePath(segmentId);
 			String localPath = "." + fullFilePath;
 
-			Path path = Paths.get(localPath);
+			Path path = Path.of(localPath);
 			File file = path.toFile();
 			file.getParentFile().mkdirs();
 
@@ -171,7 +171,7 @@ public class JobExcelExportForSegment extends ReactiveExportDataJob {
              SegmentDataManagement.saveExportedFileUrlCsvForSegment(csvType, segment, securedAccessUrl);
 
 			return new FileApiResponse(200, securedAccessUrl, "OK");
-		} catch (InterruptedException e) {
+		} catch (InterruptedException _) {
 			Thread.currentThread().interrupt();
 			executor.shutdownNow();
 			return new FileApiResponse(HttpStatus.SC_INTERNAL_SERVER_ERROR, null, "Export interrupted");
@@ -181,7 +181,7 @@ public class JobExcelExportForSegment extends ReactiveExportDataJob {
 		} finally {
 			try {
 				executor.awaitTermination(60, TimeUnit.SECONDS);
-			} catch (InterruptedException e) {
+			} catch (InterruptedException _) {
 				executor.shutdownNow();
 				Thread.currentThread().interrupt();
 			}

@@ -6,13 +6,17 @@ import java.util.List;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 import leotech.system.dao.SystemUserDaoUtil;
 import leotech.system.model.AppMetadata;
 import leotech.system.model.SystemUser;
 
+// @Order needs @TestMethodOrder to take effect (create-before-check sequence).
+@TestMethodOrder(OrderAnnotation.class)
 public class TestUserDataUtil {
 	private static final String TEST_EMAIL = "test1@gmail.com";
 	private static final String PASS = "qwerty";

@@ -1,6 +1,4 @@
-import org.gradle.api.attributes.Attribute
-
-group 'leocdp'
+group = 'leocdp'
 
 // --- 1. Load configuration safely ---
 // We load this into a standard Properties object first to handle safe lookups
@@ -40,14 +38,16 @@ project.version = resolveProperty("buildVersion", "1.0.0")
 // We store these in 'project.ext' so other tasks (like Copy or Zip) can see them.
 // Default to 'build/dist' and 'build/static' to prevent crashes if config is empty.
 
-project.ext.buildOutputFolderPath = resolveProperty("buildOutputFolderPath", "${buildDir}/dist-release")
-project.ext.staticOutputFolderPath = resolveProperty("staticOutputFolderPath", "${buildDir}/static-release")
+project.ext.buildOutputFolderPath = resolveProperty("buildOutputFolderPath", layout.buildDirectory.dir("dist-release").get().asFile.path)
+project.ext.staticOutputFolderPath = resolveProperty("staticOutputFolderPath", layout.buildDirectory.dir("static-release").get().asFile.path)
 
 
 // --- 5. Helper: Generate timestamped implementation version ---
+// java.time instead of Groovy Date.format(): the Date extension moved to the optional
+// groovy-dateutil module in Groovy 4 (bundled by Gradle 9) and may not be available.
 ext.getImplementationVersion = {
-    def date = new Date()
-    return "${project.version}_${date.format('yyyy-MM-dd-HH-mm-ss')}"
+    def ts = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern('yyyy-MM-dd-HH-mm-ss'))
+    return "${project.version}_${ts}"
 }
 
 
@@ -70,17 +70,16 @@ buildscript {
     repositories {
         mavenCentral()
         maven {
-            url "https://plugins.gradle.org/m2/"
+            url = "https://plugins.gradle.org/m2/"
         }
         mavenLocal()
     }
     dependencies {
-        classpath "org.gradle-webtools.minify:gradle-minify-plugin:1.3.2"
+        classpath "org.gradle-webtools.minify:gradle-minify-plugin:2.1.1"
     }
 }
 
 apply plugin: 'java'
-apply plugin: 'maven'
 apply plugin: 'eclipse'
 apply plugin: "org.gradlewebtools.minify"
 
@@ -90,7 +89,6 @@ eclipse {
     }
 }
 
-sourceCompatibility = 11 
 
 repositories {
     mavenLocal()
@@ -104,15 +102,24 @@ repositories {
 // Guava ships both -jre and -android variants via Gradle Module Metadata. Several
 // transitive deps (selenium-java, google-cloud-storage, google-oauth-client, google-api-*)
 // request different Guava versions, and without an explicit JVM-environment attribute
-// Gradle 6.x cannot choose between Guava's `androidApiElements` and `jreApiElements`
+// Gradle cannot choose between Guava's `androidApiElements` and `jreApiElements`
 // variants on testCompileClasspath -> "Could not resolve com.google.guava:guava".
 // Pin to the standard (server) JVM variant so the -jre variant is selected.
-// NB: set the attribute by its string name/value — the typed TargetJvmEnvironment class
-// does not exist in Gradle 6.9.4, so referencing it fails to compile the build script.
-configurations.all {
+// NB: Gradle 7+ has the typed TargetJvmEnvironment attribute built in; a String-typed
+// attribute of the same name collides with it ("Cannot have two attributes with the
+// same name but different types"), so the typed API is mandatory here.
+// Gradle 9 enforces configuration roles: attributes() is only legal on resolvable or
+// consumable configurations; calling it on declarable ones (implementation, compileOnly,
+// ...) fails with "Method call not allowed". The exclude is fine everywhere.
+configurations.configureEach {
    exclude module: 'ch.qos.logback'
-   attributes {
-      attribute(Attribute.of("org.gradle.jvm.environment", String), "standard-jvm")
+   // resolvable-only: variant selection happens at resolution; consumable legacy
+   // configurations like ':archives' reject attributes() (error in Gradle 10)
+   if (it.canBeResolved) {
+      attributes {
+         attribute(TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE,
+                   objects.named(TargetJvmEnvironment, TargetJvmEnvironment.STANDARD_JVM))
+      }
    }
 }
 
@@ -177,7 +184,8 @@ dependencies {
     implementation 'io.vertx:vertx-auth-jwt:3.8.5'
 
     // ────────────────────── JSON (Gson) ──────────────────────
-    implementation 'com.google.code.gson:gson:2.9.1'
+    // 2.10+ required for record deserialization (modernization Wave 2, docs/06)
+    implementation 'com.google.code.gson:gson:2.13.2'
 
     // ────────────────────── Logging (SLF4J + Log4j2) ──────────────────────
     implementation 'org.slf4j:slf4j-api:2.0.13'                         // SLF4J API
@@ -231,21 +239,67 @@ dependencies {
 
     // ────────────────────── Testing ──────────────────────
     testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.10.3'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.10.3' // align with jupiter 5.10.x
     testImplementation 'org.assertj:assertj-core:3.26.3'
     testImplementation 'org.seleniumhq.selenium:selenium-java:4.22.0'
     testImplementation 'net.datafaker:datafaker:1.5.0'
 }
 
-uploadArchives {
-    repositories {
-       flatDir {
-           dirs 'repos'
-       }
+// JUnit 5 tests are only discovered when the JUnit Platform is selected explicitly;
+// without this, Gradle 9's failOnNoDiscoveredTests check fails the :test task
+// ("test sources present ... did not discover any tests"). NB: much of test.** needs
+// a live ArangoDB/Redis (see CLAUDE.md) - the Docker test stage stays best-effort.
+// Most of src/test/java/test/** are integration probes that statically initialize
+// DB-backed model classes (Profile, PersistentObject, …) which read
+// leocdp-metadata.properties and open ArangoDB/Redis connections at class-load — they
+// throw NoClassDefFoundError without live infra (see CLAUDE.md). The default `test`
+// task therefore runs only the infra-free UNIT tests, so `:test` is a meaningful green
+// gate; the full set runs against a provisioned stack via `integrationTest`.
+// (Resolves the "split unit vs integration" TODO noted in docs/05.)
+def unitTestPatterns = [
+    'test.cdp.profile.ProfileDataValidatorTest',
+    'test.cdp.VoucherCodesTest',
+]
+test {
+    useJUnitPlatform()
+    filter { unitTestPatterns.each { includeTestsMatching it } }
+}
+// Seeds default system data (data-funnel stages + event metrics) into the configured
+// ArangoDB so integration tests that read DataFlowManagement.getCustomerFunnelStages()
+// don't NPE. Run once before integrationTest. Same env/workingDir convention.
+tasks.register('seedDefaultData', JavaExec) {
+    group = 'verification'
+    description = 'Seeds default journey/funnel system data into ArangoDB.'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'test.cdp.DataSampleSetup' // its main() runs JourneyFlowSchema.init()
+    workingDir = projectDir
+    ['ARANGODB_HOST','ARANGODB_PORT','ARANGODB_USERNAME','ARANGODB_PASSWORD','ARANGODB_DATABASE'].each { k ->
+        if (System.getenv(k) != null) environment k, System.getenv(k)
     }
 }
 
-tasks.withType(JavaCompile) {
+tasks.register('integrationTest', Test) {
+    group = 'verification'
+    description = 'Runs the full test set (requires live ArangoDB/Redis/Kafka).'
+    useJUnitPlatform()
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    failOnNoDiscoveredTests = false
+    // Working dir = project dir so SystemMetaData finds leocdp-metadata.properties + configs/.
+    workingDir = projectDir
+    // ArangoDB connection (mainDatabaseConfig=SYSTEM_ENV_VARS); values come from the
+    // environment so no credentials live in the build script.
+    ['ARANGODB_HOST','ARANGODB_PORT','ARANGODB_USERNAME','ARANGODB_PASSWORD','ARANGODB_DATABASE'].each { k ->
+        if (System.getenv(k) != null) environment k, System.getenv(k)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+    // Phase 4 / modernization Wave 0 (docs/06-java25-code-modernization-plan.md):
+    // compile against the Java 25 API and emit class-file major 69. Artifacts from
+    // this point on require a Java 25 runtime. Last bytecode-55 state: commit d64612b.
+    options.release = 25
 }
 
 tasks.withType(Jar) {
@@ -331,6 +385,15 @@ def getClasspathStringJars() {
     return "." + separator + jarPaths.join(separator)
 }
 
+// Resolve the runtime classpath only at EXECUTION time (doFirst), not while the build
+// script is evaluated — config-time resolution is a configuration-cache blocker and a
+// Gradle 9 anti-pattern. Applies to all starter Jar tasks (and harmlessly to :jar).
+tasks.withType(Jar).configureEach {
+    doFirst {
+        manifest.attributes('Class-Path': getClasspathStringJars())
+    }
+}
+
 
 
 /////////////////////////// BEGIN BUILD FOR DEPLOYED JAR ///////////////////////////////
@@ -342,12 +405,11 @@ task buildLeoMainHttpStarter(type: Jar) {
     from(sourceSets.main.output) {
         include "**"
     }
-    baseName = 'leo-main-starter'
+    archiveBaseName = 'leo-main-starter'
     manifest {
         attributes ('Implementation-Title': 'MainHttpStarter', 
                     'Implementation-Version': getImplementationVersion(),
-                    'Main-Class': ' leotech.starter.MainHttpStarter',
-                    'Class-Path' : getClasspathStringJars() 
+                    'Main-Class': 'leotech.starter.MainHttpStarter'
         )
     }
     
@@ -363,12 +425,11 @@ task buildLeoDataObserverStarter(type: Jar) {
     from(sourceSets.main.output) {
         include "**"
     }
-    baseName = 'leo-observer-starter'
+    archiveBaseName = 'leo-observer-starter'
     manifest {
         attributes ('Implementation-Title': 'DataObserverStarter', 
                     'Implementation-Version': getImplementationVersion(),
-                    'Main-Class': ' leotech.starter.DataObserverStarter',
-                    'Class-Path' : getClasspathStringJars() 
+                    'Main-Class': 'leotech.starter.DataObserverStarter'
         )
     }
     
@@ -384,12 +445,11 @@ task buildLeoScheduledJobStarter(type: Jar) {
     from(sourceSets.main.output) {
         include "**"
     }
-    baseName = 'leo-scheduler-starter'
+    archiveBaseName = 'leo-scheduler-starter'
     manifest {
         attributes ('Implementation-Title': 'ScheduledJobStarter', 
                     'Implementation-Version': getImplementationVersion(),
-                    'Main-Class': ' leotech.starter.ScheduledJobStarter',
-                    'Class-Path' : getClasspathStringJars() 
+                    'Main-Class': 'leotech.starter.ScheduledJobStarter'
         )
     }
     
@@ -405,12 +465,11 @@ task buildLeoDataProcessingStarter(type: Jar) {
     from(sourceSets.main.output) {
         include "**"
     }
-    baseName = 'leo-data-processing-starter'
+    archiveBaseName = 'leo-data-processing-starter'
     manifest {
         attributes ('Implementation-Title': 'DataProcessingStarter', 
                     'Implementation-Version': getImplementationVersion(),
-                    'Main-Class': ' leotech.starter.DataProcessingStarter',
-                    'Class-Path' : getClasspathStringJars() 
+                    'Main-Class': 'leotech.starter.DataProcessingStarter'
         )
     }
     
@@ -426,12 +485,11 @@ task buildLeoUploadFileHttpStarter(type: Jar) {
     from(sourceSets.main.output) {
         include "**"
     }
-    baseName = 'leo-uploader-starter'
+    archiveBaseName = 'leo-uploader-starter'
     manifest {
         attributes ('Implementation-Title': 'UploadFileHttpStarter', 
                     'Implementation-Version': getImplementationVersion(),
-                    'Main-Class': ' leotech.starter.UploadFileHttpStarter',
-                    'Class-Path' : getClasspathStringJars() 
+                    'Main-Class': 'leotech.starter.UploadFileHttpStarter'
                     )
     }
     
@@ -550,30 +608,19 @@ task CopyPublicFolderToSTATIC(type: Copy) {
 
 
 // 6) copy shell-script-starter and installation
-task CopyDevOpsScriptToBUILD(type: Copy) {  
+// NB: previously this task called the project.copy() METHOD in its configuration body,
+// which executed the copies during the configuration phase on EVERY Gradle invocation.
+// Rewritten as a proper Copy spec so it only runs when the task is requested.
+task CopyDevOpsScriptToBUILD(type: Copy) {
     group = 'Deployment Preparation' // TASK GROUP
     description = 'Copies DevOps and installation scripts to the build folder.' // <-- Added description
 
-    copy {
-        from 'devops-script/docker-arangodb'
-        into buildOutputFolderPath + '/devops-script/docker-arangodb'
-    }
+    into buildOutputFolderPath + '/devops-script'
+    into('docker-arangodb')          { from 'devops-script/docker-arangodb' }
+    into('docker-kafka')             { from 'devops-script/docker-kafka' }
+    into('kafka-docker-production')  { from 'devops-script/kafka-docker-production' }
+    into('script-installation')     { from 'devops-script/script-installation' }
 
-    copy {
-        from 'devops-script/docker-kafka'
-        into buildOutputFolderPath + '/devops-script/docker-kafka'
-    }
-    
-    copy {
-        from 'devops-script/kafka-docker-production'
-        into buildOutputFolderPath + '/devops-script/kafka-docker-production'
-    }
-
-    copy {
-        from 'devops-script/script-installation'
-        into buildOutputFolderPath + '/devops-script/script-installation'
-    }
-    
     doLast {
         println '###  CopyDevOpsScriptToBUILD OK !!!  ###'
     }

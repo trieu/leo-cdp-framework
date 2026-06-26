@@ -98,7 +98,7 @@ public final class AssetItemHandler extends SecuredHttpDataHandler {
 					String itemId = paramJson.getString("itemId", "");
 					String categoryId = paramJson.getString("categoryId", "");
 					String groupId = paramJson.getString("groupId", "");
-					AssetItem item = null;;
+					AssetItem item = null;
 					
 					AssetCategory cate = AssetCategoryManagement.getCategory(categoryId);
 					AssetGroup group = AssetGroupManagement.getAssetGroupById(groupId);

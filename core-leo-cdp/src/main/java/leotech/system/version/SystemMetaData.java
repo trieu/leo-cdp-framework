@@ -5,7 +5,6 @@ import java.io.FileInputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Date;
@@ -91,7 +90,7 @@ public final class SystemMetaData {
 		loadDefaultMetaDataMap(); 
 		String runtimePath = metaDataMap.get("runtimePath");
 		if (StringUtil.isEmpty(runtimePath)) {
-			metaDataMap.put("runtimePath", Paths.get(".").toString());
+			metaDataMap.put("runtimePath", Path.of(".").toString());
 		}
 		logger.debug(LogUtil.toPrettyJson(metaDataMap));
 	}
@@ -102,7 +101,7 @@ public final class SystemMetaData {
 	private static void loadDefaultMetaDataMap() {
 		Properties props = new Properties();
 		try {
-			String currentRelativePath = Paths.get(".").toString();
+			String currentRelativePath = Path.of(".").toString();
 			String configPath = currentRelativePath + "/" + LEOCDP_METADATA_DEFAULT_VALUE;
 			props.load(new FileInputStream(configPath));
 		} catch (final Exception exception) {
@@ -115,11 +114,11 @@ public final class SystemMetaData {
 	 * save Meta Data Map to file LEOCDP_METADATA_DEFAULT_VALUE
 	 */
 	public static void saveMetaDataMapPreserveFormat() {
-	    String configPath = Paths.get(".").toString()
+	    String configPath = Path.of(".").toString()
 	            + File.separator
 	            + LEOCDP_METADATA_DEFAULT_VALUE;
 
-	    Path filePath = Paths.get(configPath);
+	    Path filePath = Path.of(configPath);
 
 	    try {
 	        List<String> lines = Files.readAllLines(filePath, StandardCharsets.UTF_8);

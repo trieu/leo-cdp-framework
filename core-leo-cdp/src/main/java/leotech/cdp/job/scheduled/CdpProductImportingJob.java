@@ -17,14 +17,7 @@ import rfx.core.util.StringUtil;
  */
 public class CdpProductImportingJob extends ScheduledJob  {
 
-	public static class ProductImportingEvent {
-		public final String groupId;
-		public final String importFileUrl;
-		public ProductImportingEvent(String groupId, String importFileUrl) {
-			super();
-			this.groupId = groupId;
-			this.importFileUrl = importFileUrl;
-		}
+	public record ProductImportingEvent(String groupId, String importFileUrl) {
 	}
 
 	static ExecutorService executor = Executors.newFixedThreadPool(4);
@@ -41,8 +34,8 @@ public class CdpProductImportingJob extends ScheduledJob  {
 	public void doTheJob() {
 		ProductImportingEvent e = queue.poll();
 		if(e != null) {
-			if(StringUtil.isNotEmpty(e.groupId) && StringUtil.isNotEmpty(e.importFileUrl)) {
-				ImportingResult rs = ProductItemManagement.importCsvProductItems(e.groupId, e.importFileUrl);
+			if(StringUtil.isNotEmpty(e.groupId()) && StringUtil.isNotEmpty(e.importFileUrl())) {
+				ImportingResult rs = ProductItemManagement.importCsvProductItems(e.groupId(), e.importFileUrl());
 				System.out.println("importCsvProductItems "+rs);
 			}
 		}

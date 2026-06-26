@@ -5,7 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -61,7 +61,7 @@ public final class GoogleStorageUtil {
 				BlobId blobId = BlobId.of(bucketName, objectName);
 				BlobInfo blobInfo = BlobInfo.newBuilder(blobId).setContentEncoding(UTF_8).setContentType(contentType)
 						.setAcl(defaultAcls).build();
-				Blob uploadedBlob = storage.create(blobInfo, Files.readAllBytes(Paths.get(filePath)));
+				Blob uploadedBlob = storage.create(blobInfo, Files.readAllBytes(Path.of(filePath)));
 
 				System.out.println("File " + filePath + " uploaded to bucket " + bucketName + " as " + objectName);
 

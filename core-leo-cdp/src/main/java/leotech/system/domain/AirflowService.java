@@ -155,7 +155,7 @@ public final class AirflowService {
 				return StringUtil.isNotEmpty(responseBody);
 			}
 
-		} catch (Exception e) {
+		} catch (Exception _) {
 			LogUtil.logError(AirflowService.class, "Trigger DAG failed | dagUrl=" + dagUrl);
 			return false;
 		}

@@ -137,8 +137,8 @@ public class IdentityResolutionManagement {
 		// minimum is 2 to de-duplicate
 		if(size > 1) {
 			// pick the first profile that has maximum data quality score
-			Profile targetProfile = allProfilesToMerge.get(0);
-			allProfilesToMerge.remove(0);
+			Profile targetProfile = allProfilesToMerge.getFirst();
+			allProfilesToMerge.removeFirst();
 			mergeResult = buildFinalListAndMerge(targetProfile, allProfilesToMerge);
 			
 			if(mergeResult > 0) {

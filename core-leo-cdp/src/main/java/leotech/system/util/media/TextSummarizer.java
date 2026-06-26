@@ -49,12 +49,12 @@ public class TextSummarizer {
 
 		for (String s : words) {
 			if (countMap.get(s) != null)
-				countMap.compute(s, (k, v) -> v++);
+				countMap.compute(s, (_, v) -> v++);
 			else
 				countMap.put(s, 0);
 		}
 
-		countMap.forEach((word, count) -> {
+		countMap.forEach((word, _) -> {
 			double wordPercentage = countMap.get(word) * 1.0 / words.size();
 			if (wordPercentage <= 0.5 && wordPercentage >= 0.05)
 				ret.add(word);

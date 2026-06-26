@@ -30,7 +30,7 @@ public class TokenUtil {
 						}
 					}
 				} else {
-					return vals.get(0);
+					return vals.getFirst();
 				}
 
 			}
@@ -91,7 +91,7 @@ public class TokenUtil {
 			tok = tok.substring(tok.indexOf("&url=http") + 5);
 			String v = tok.substring(0, tok.indexOf("&"));
 			return v;
-		} catch (Throwable e) {
+		} catch (Throwable _) {
 		}
 		return StringPool.BLANK;
 	}
@@ -102,7 +102,7 @@ public class TokenUtil {
 			int lastIndex = tok.indexOf(";");
 			String v = lastIndex > 0 ? tok.substring(0, lastIndex) : tok;
 			return v;
-		} catch (Throwable e) {
+		} catch (Throwable _) {
 		}
 		return StringPool.BLANK;
 	}
@@ -113,7 +113,7 @@ public class TokenUtil {
 			int lastIndex = cookie.indexOf(";");
 			String v = lastIndex > 0 ? cookie.substring(0, lastIndex) : cookie;
 			return v;
-		} catch (Throwable e) {
+		} catch (Throwable _) {
 		}
 		return StringPool.BLANK;
 	}
@@ -124,7 +124,7 @@ public class TokenUtil {
 			String v = url.substring(0, url.indexOf("/"));
 			if (!v.startsWith("="))
 				return v;
-		} catch (Throwable e) {
+		} catch (Throwable _) {
 		}
 		return StringPool.BLANK;
 	}
@@ -136,7 +136,7 @@ public class TokenUtil {
 			if (toks.length == 2) {
 				return StringUtil.safeParseInt(toks[0], 1);
 			}
-		} catch (Exception e) {
+		} catch (Exception _) {
 		}
 		return 1;
 	}

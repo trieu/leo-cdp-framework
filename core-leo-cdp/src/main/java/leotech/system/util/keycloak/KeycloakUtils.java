@@ -41,7 +41,7 @@ public final class KeycloakUtils {
 				return new JsonObject();
 			String payloadJson = new String(Base64.getDecoder().decode(parts[1]), StandardCharsets.UTF_8);
 			return new JsonObject(payloadJson);
-		} catch (Exception e) {
+		} catch (Exception _) {
 			return new JsonObject();
 		}
 	}
@@ -54,7 +54,7 @@ public final class KeycloakUtils {
 		try {
 			JsonObject payload = decodeJwtWithoutVerify(accessToken);
 			return payload.getJsonObject("realm_access").getJsonArray("roles");
-		} catch (Exception e) {
+		} catch (Exception _) {
 			return new JsonArray();
 		}
 	}
@@ -113,7 +113,7 @@ public final class KeycloakUtils {
 	public static String encodeUrl(String url) {
 		try {
 			return URLEncoder.encode(url, StandardCharsets.UTF_8.name());
-		} catch (Exception e) {
+		} catch (Exception _) {
 			return url;
 		}
 	}

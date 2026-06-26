@@ -255,7 +255,7 @@ public class GoogleSheetUtils {
     public String getRange(String sheetTabName, int startRowNum, List<List<Object>> values) {
         String tabName = StringUtil.safeString(sheetTabName, "Sheet1");
         String start = "A" + startRowNum;
-        String end = convertNumberToColumnLetter(values.get(0).size()) + (startRowNum + values.size());
+        String end = convertNumberToColumnLetter(values.getFirst().size()) + (startRowNum + values.size());
 
         return tabName + "!" + start + ":" + end;
     }

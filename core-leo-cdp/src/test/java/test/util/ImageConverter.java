@@ -3,7 +3,6 @@ package test.util;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import org.apache.commons.io.FilenameUtils;
 
@@ -59,7 +58,7 @@ public class ImageConverter {
 
     public static void main(String[] args) {
 	try {
-	    Files.walk(Paths.get(folderPath)).filter(Files::isRegularFile).filter(ImageConverter::shouldCopy)
+	    Files.walk(Path.of(folderPath)).filter(Files::isRegularFile).filter(ImageConverter::shouldCopy)
 		    .forEach(ImageConverter::processFile);
 	} catch (Exception e) {
 	    // TODO Auto-generated catch block

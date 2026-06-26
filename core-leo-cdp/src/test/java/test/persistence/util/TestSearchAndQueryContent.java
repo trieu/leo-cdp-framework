@@ -25,12 +25,12 @@ import leotech.system.util.database.ArangoDbUtil;
 
 public class TestSearchAndQueryContent {
 	@BeforeAll
-	public void setup() {
+	public static void setup() {
 		System.out.println("setup");
 	}
 
 	@AfterAll
-	public void clean() {
+	public static void clean() {
 		System.out.println("clean");
 	}
 
@@ -58,7 +58,7 @@ public class TestSearchAndQueryContent {
 
 		for (String catSlug : catSlugs) {
 			List<MeasurableItem> posts = results.get(catSlug);
-			for (MeasurableItem p : posts) {
+			for (MeasurableItem _ : posts) {
 				// System.out.println(catSlug + " => " + p.getTitle());
 			}
 		}

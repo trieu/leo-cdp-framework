@@ -1,5 +1,6 @@
 package leotech.query.util;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -10,6 +11,7 @@ import rfx.core.util.StringUtil;
 
 public class ContentQuery implements Serializable {
 
+	@Serial
 	private static final long serialVersionUID = -593243868837720868L;
 
 	private String deviceOS = "";

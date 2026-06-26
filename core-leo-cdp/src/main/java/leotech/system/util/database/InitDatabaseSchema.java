@@ -3,7 +3,6 @@ package leotech.system.util.database;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -136,7 +135,7 @@ public class InitDatabaseSchema {
 	private static void ensureRequiredDirectoriesExist() {
 		for (String pathStr : REQUIRED_PATHS) {
 			try {
-				Path path = Paths.get(pathStr);
+				Path path = Path.of(pathStr);
 				if (Files.notExists(path)) {
 					Files.createDirectories(path);
 					System.out.println("[INFO] Environment setup: Created directory " + path.toAbsolutePath());

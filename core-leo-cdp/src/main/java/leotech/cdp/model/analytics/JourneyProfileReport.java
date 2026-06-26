@@ -26,7 +26,7 @@ public class JourneyProfileReport {
 		this.funnelIndex = funnelIndex;
 		this.funnelIndexName = funnelIndexName;
 		total = reportData.stream().map(list -> {
-			return list.size() > 0 ? list.get(0) : 0;
+			return list.size() > 0 ? list.getFirst() : 0;
 		}).reduce(0, (a, b) -> a + b);
 		this.scoreCX = scoreCX;
 	}

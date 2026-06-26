@@ -1,10 +1,12 @@
 package leotech.system.template;
 
+import java.io.Serial;
 import java.util.HashMap;
 import java.util.Map;
 
 public class MustacheServiceModel extends HashMap<String, Object> implements DataModel{
 	static final String classpath = MustacheServiceModel.class.getName();
+	@Serial
 	private static final long serialVersionUID = 5072021270346354454L;
 	
 	public MustacheServiceModel(){}

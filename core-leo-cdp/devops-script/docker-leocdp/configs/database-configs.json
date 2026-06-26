@@ -1,0 +1,5 @@
+{
+	"map": {
+		"_comment": "Fallback name if RUNTIME_ENVIRONMENT prefixing is not applied. DB creds come from ARANGODB_* env vars."
+	}
+}

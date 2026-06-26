@@ -1,0 +1,34 @@
+// Wave 1 (docs/06): OpenRewrite via init script - build.gradle stays untouched.
+// Usage: ./gradlew --init-script rewrite-init.gradle rewriteDryRun
+// Patch lands at build/reports/rewrite/rewrite.patch. NOT committed to git.
+initscript {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
+    dependencies { classpath("org.openrewrite:plugin:latest.release") }
+}
+rootProject {
+    plugins.apply(org.openrewrite.gradle.RewritePlugin)
+    dependencies {
+        rewrite("org.openrewrite.recipe:rewrite-migrate-java:latest.release")
+    }
+    rewrite {
+        // Curated Wave-1 set (docs/06): behavior-preserving idioms only.
+        // Deliberately EXCLUDED from the UpgradeToJava25 composite:
+        //  - MigrateMainMethodToInstanceMain (rewrites starter main(); reflection risk, zero gain)
+        //  - ReplaceSystemOutWithIOPrint (churn, mostly manual test utilities)
+        //  - UpdateGradleWrapper / UpgradePluginsForJava (build is hand-managed)
+        activeRecipe(
+            "org.openrewrite.java.migrate.util.SequencedCollection",
+            "org.openrewrite.java.migrate.util.ListFirstAndLast",
+            "org.openrewrite.java.migrate.lang.ReplaceUnusedVariablesWithUnderscore",
+            "org.openrewrite.java.migrate.lang.UseTextBlocks",
+            "org.openrewrite.java.migrate.nio.file.PathsGetToPathOf",
+            "org.openrewrite.staticanalysis.InstanceOfPatternMatch",
+            "org.openrewrite.staticanalysis.RemoveExtraSemicolons",
+            "org.openrewrite.staticanalysis.AddSerialAnnotationToSerialVersionUID"
+        )
+        exclusion("**/public/**", "**/resources/**", "**/devops-script/**")
+    }
+}

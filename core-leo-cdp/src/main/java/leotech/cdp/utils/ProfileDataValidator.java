@@ -36,7 +36,7 @@ public final class ProfileDataValidator {
 			try {
 				PhoneNumber numberProto = phoneUtil.parse(phoneNumber, regionCode);
 				return phoneUtil.isValidNumber(numberProto);
-			} catch (Exception e) {
+			} catch (Exception _) {
 				return false;
 			}
 		}
@@ -72,7 +72,7 @@ public final class ProfileDataValidator {
 			try {
 				InternetAddress emailAddr = new InternetAddress(email);
 				emailAddr.validate();
-			} catch (Exception ex) {
+			} catch (Exception _) {
 				result = false;
 			}
 		} else {

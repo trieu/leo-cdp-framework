@@ -109,8 +109,10 @@ public class JobCsvExportForSegment extends ReactiveExportDataJob {
 	 */
 	@Override
 	public FileApiResponse processAndReturnData(final Map<String, Object> data) {
-		// Use all thread for exporting and 1 thread for websocket notification
-		ExecutorService createFileExecutor = Executors.newFixedThreadPool(GET_SEGMENT_DATA_FOR_CSV_THREAD_POOL_SIZE);
+		// Wave 3 (docs/06): virtual threads — fan-out tasks are blocking ArangoDB reads;
+		// thread-per-task replaces the fixed pool, DB parallelism stays bounded by the
+		// driver's connection pool.
+		ExecutorService createFileExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
 		try {
 			String segmentId = data.get("segmentId").toString();
@@ -181,7 +183,7 @@ public class JobCsvExportForSegment extends ReactiveExportDataJob {
 
 			return new FileApiResponse(HttpStatus.SC_BAD_REQUEST, null, "Segment ID does not exist");
 		}
-		catch (InterruptedException e) {
+		catch (InterruptedException _) {
 			createFileExecutor.shutdownNow();
 			Thread.currentThread().interrupt();
 
@@ -199,7 +201,7 @@ public class JobCsvExportForSegment extends ReactiveExportDataJob {
 				if (!createFileExecutor.awaitTermination(60, TimeUnit.SECONDS)) {
 					createFileExecutor.shutdownNow();
 				}
-			} catch (InterruptedException e) {
+			} catch (InterruptedException _) {
 				createFileExecutor.shutdownNow();
 				Thread.currentThread().interrupt();
 			}

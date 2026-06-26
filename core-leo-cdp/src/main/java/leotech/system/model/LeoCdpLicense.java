@@ -189,7 +189,7 @@ public final class LeoCdpLicense implements PersistentArangoObject {
 			cdpLicense.setExpiredAt(c.getTime());
 			
 			return cdpLicense;
-		} catch (Exception e) {
+		} catch (Exception _) {
 			System.out.println("need ROOT_LICENSE_BUILD_KEY.txt");
 		}
 		return null;

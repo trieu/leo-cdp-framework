@@ -301,7 +301,7 @@ public final class GeoLocationUtil {
 		
 		String code = null;
 		if(queriedLocations.size() > 0) {
-			OsmGeoLocation locationData = queriedLocations.get(0);
+			OsmGeoLocation locationData = queriedLocations.getFirst();
 			double lat = StringUtil.safeParseDouble(locationData.getLat());
 			double lon = StringUtil.safeParseDouble(locationData.getLon());
 			code = OpenLocationCode.encode(lat, lon);

@@ -132,8 +132,8 @@ public class SegmentQueryManagement {
 		List<Profile> profiles = null;
 		try {
 			if(realtimeQuery) {
-				// Create an ExecutorService with a fixed thread pool size of 2 (since we have 2 tasks)
-		        ExecutorService executor = Executors.newFixedThreadPool(2);
+				// Wave 3 (docs/06): virtual threads — two parallel blocking AQL tasks
+		        ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
 
 		        // Task 1: Get profiles
 		        Callable<List<Profile>> getProfilesTask = () -> ProfileDaoUtil.getProfilesBySegmentQuery(segmentQuery);
@@ -306,7 +306,8 @@ public class SegmentQueryManagement {
 					List<String> rows = new ArrayList<String>(totalCount);
 					int startIndex = 0;
 					List<Profile> tempList;
-					ExecutorService executor = Executors.newFixedThreadPool(SystemMetaData.NUMBER_CORE_CPU);
+					// Wave 3 (docs/06): virtual threads for the blocking-read export fan-out
+					ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
 					List<Future<String>> futures = new ArrayList<>();
 
 					while (true) {

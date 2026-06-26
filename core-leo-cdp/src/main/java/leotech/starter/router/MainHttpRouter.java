@@ -281,7 +281,7 @@ public final class MainHttpRouter extends BaseHttpRouter {
 				resp.setStatusCode(HttpStatus.SC_NOT_FOUND);
 				resp.end(TemplateUtil._404);
 			}
-		} catch (Exception e) {
+		} catch (Exception _) {
 			resp.setStatusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR);
 			resp.end(TemplateUtil._500);
 		}

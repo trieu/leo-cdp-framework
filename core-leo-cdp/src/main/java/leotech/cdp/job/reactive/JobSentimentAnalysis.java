@@ -14,84 +14,15 @@ public class JobSentimentAnalysis {
 
 	static String url = "http://leosentimentanalysis-env.eba-zfpijjzc.ap-south-1.elasticbeanstalk.com/analysis/";
 
-	public final static class SentimentAnalysisResult {
-		double neg;
-		double neu;
-		double pos;
-		double compound;
-		
-		public SentimentAnalysisResult() {
-			// TODO Auto-generated constructor stub
-		}
-
-		public double getNeg() {
-			return neg;
-		}
-
-		public void setNeg(double neg) {
-			this.neg = neg;
-		}
-
-		public double getNeu() {
-			return neu;
-		}
-
-		public void setNeu(double neu) {
-			this.neu = neu;
-		}
-
-		public double getPos() {
-			return pos;
-		}
-
-		public void setPos(double pos) {
-			this.pos = pos;
-		}
-
-		public double getCompound() {
-			return compound;
-		}
-
-		public void setCompound(double compound) {
-			this.compound = compound;
-		}
-
+	/** Gson-deserialized API response (record support requires Gson 2.10+, see docs/06 Wave 2). */
+	public record SentimentAnalysisResult(double neg, double neu, double pos, double compound) {
 	}
 
-	public final static class SentimentAnalysisParams {
-		String profileId = "";
-		String eventId = "";
-		String message;
-		
-		
+	/** Gson-serialized request payload; component names match the JSON field names. */
+	public record SentimentAnalysisParams(String profileId, String eventId, String message) {
 
 		public SentimentAnalysisParams(String message) {
-			super();
-			this.message = message;
-		}
-
-		public String getProfileId() {
-			return profileId;
-		}
-
-		public void setProfileId(String profileId) {
-			this.profileId = profileId;
-		}
-
-		public String getEventId() {
-			return eventId;
-		}
-
-		public void setEventId(String eventId) {
-			this.eventId = eventId;
-		}
-
-		public String getMessage() {
-			return message;
-		}
-
-		public void setMessage(String message) {
-			this.message = message;
+			this("", "", message);
 		}
 	}
 

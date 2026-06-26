@@ -15,29 +15,37 @@ public class DatabaseManager {
 
 	public void createTable() {
 		jdbi.useHandle(handle -> {
-			handle.execute("CREATE TABLE IF NOT EXISTS people (" + "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-					+ "first_name TEXT NOT NULL," + "last_name TEXT," + "created_at DATETIME," + "updated_at DATETIME"
-					+ ")");
+			handle.execute("""
+					CREATE TABLE IF NOT EXISTS people (\
+					id INTEGER PRIMARY KEY AUTOINCREMENT,\
+					first_name TEXT NOT NULL,\
+					last_name TEXT,\
+					created_at DATETIME,\
+					updated_at DATETIME\
+					)""");
 		});
 	}
 
 	public int insertPerson(Person person) {
 		return jdbi.withHandle(handle -> {
-			Update update = handle.createUpdate("INSERT INTO people (first_name, last_name, created_at, updated_at) "
-					+ "VALUES (:firstName, :lastName, :createdAt, :updatedAt)");
+			Update update = handle.createUpdate("""
+					INSERT INTO people (first_name, last_name, created_at, updated_at) \
+					VALUES (:firstName, :lastName, :createdAt, :updatedAt)""");
 			update.bind("firstName", person.getFirstName());
 			update.bind("lastName", person.getLastName());
 			update.bind("createdAt", person.getCreatedAt());
 			update.bind("updatedAt", person.getUpdatedAt());
-			return update.executeAndReturnGeneratedKeys("id").mapTo(int.class).findOnly();
+			return update.executeAndReturnGeneratedKeys("id").mapTo(int.class).one();
 		});
 	}
 
 	public List<Person> listPeople(int limit, int offset) {
 		return jdbi.withHandle(handle -> handle
-				.createQuery("SELECT id, first_name, last_name, created_at, updated_at FROM people "
-						+ "ORDER BY created_at DESC " + "LIMIT :limit OFFSET :offset")
-				.bind("limit", limit).bind("offset", offset).map((rs, ctx) -> {
+				.createQuery("""
+						SELECT id, first_name, last_name, created_at, updated_at FROM people \
+						ORDER BY created_at DESC \
+						LIMIT :limit OFFSET :offset""")
+				.bind("limit", limit).bind("offset", offset).map((rs, _) -> {
 					Person person = new Person();
 					person.setId(rs.getInt("id"));
 					person.setFirstName(rs.getString("first_name"));

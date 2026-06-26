@@ -73,8 +73,8 @@ public final class AdminRedisCacheUtil {
 
             if (rawChannels != null) {
                 for (Object obj : rawChannels) {
-                    if (obj instanceof byte[]) {
-                        channels.add(new String((byte[]) obj, StandardCharsets.UTF_8));
+                    if (obj instanceof byte[] bytes) {
+                        channels.add(new String(bytes, StandardCharsets.UTF_8));
                     }
                 }
             }

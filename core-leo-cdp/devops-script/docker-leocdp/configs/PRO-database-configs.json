@@ -1,0 +1,5 @@
+{
+	"map": {
+		"_comment": "DB creds come from ARANGODB_* env vars (mainDatabaseConfig=SYSTEM_ENV_VARS). This file only needs to exist + be valid JSON for the loader."
+	}
+}

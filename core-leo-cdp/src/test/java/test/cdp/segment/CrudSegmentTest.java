@@ -16,23 +16,25 @@ import rfx.core.util.Utils;
 
 public class CrudSegmentTest {
 	
-	static String jsonQueryRules = "{\n" + 
-			"  \"condition\": \"AND\",\n" + 
-			"  \"rules\": [\n" + 
-			"    {\n" + 
-			"      \"id\": \"age\",\n" + 
-			"      \"field\": \"age\",\n" + 
-			"      \"type\": \"integer\",\n" + 
-			"      \"input\": \"number\",\n" + 
-			"      \"operator\": \"between\",\n" + 
-			"      \"value\": [\n" + 
-			"        20,\n" + 
-			"        40\n" + 
-			"      ]\n" + 
-			"    }\n" + 
-			"  ],\n" + 
-			"  \"valid\": true\n" + 
-			"}";
+	static String jsonQueryRules = """
+			{
+			  "condition": "AND",
+			  "rules": [
+			    {
+			      "id": "age",
+			      "field": "age",
+			      "type": "integer",
+			      "input": "number",
+			      "operator": "between",
+			      "value": [
+			        20,
+			        40
+			      ]
+			    }
+			  ],
+			  "valid": true
+			}\
+			""";
 	
 	
     @Test

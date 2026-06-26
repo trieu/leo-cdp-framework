@@ -7,23 +7,28 @@ import java.util.List;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 import leotech.cdp.dao.AssetCategoryDaoUtil;
 import leotech.cdp.model.asset.AssetCategory;
 
+// @Order is ignored without @TestMethodOrder: getById/listByNetwork ran before
+// saveOne set saveId, so saveId was empty -> null lookups. Enforce declared order.
+@TestMethodOrder(OrderAnnotation.class)
 public class TestCategoryDataUtil {
 	static String saveId = "";
 
 	@BeforeAll
-	public void setup() {
+	public static void setup() {
 		saveId = "";
 		System.out.println("setup");
 	}
 
 	@AfterAll
-	public void clean() {
+	public static void clean() {
 		AssetCategoryDaoUtil.deleteById(saveId);
 		System.out.println("clean");
 	}

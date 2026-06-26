@@ -7,7 +7,9 @@ BUILD_VERSION="v_0.9.0"
 JOB_NAME="DataConnectorScheduler"
 JAR_MAIN="leo-scheduler-starter-${BUILD_VERSION}.jar"
 
-JVM_PARAMS="-Xms256m -Xmx1500m -XX:+TieredCompilation -XX:+UseCompressedOops -XX:+DisableExplicitGC -XX:+UseNUMA -server"
+# JDK 25: shared compat flags (Netty/Unsafe/JNI) from jvm-params.sh; obsolete flags dropped.
+source "$(dirname "$0")/jvm-params.sh"
+JVM_PARAMS="-Xms256m -Xmx1500m -XX:+DisableExplicitGC -XX:+UseNUMA $JAVA25_COMPAT_FLAGS"
 
 LOG_DIR="${LEO_CDP_FOLDER}/logs"
 LOG_FILE="${LOG_DIR}/${JOB_NAME}.log"

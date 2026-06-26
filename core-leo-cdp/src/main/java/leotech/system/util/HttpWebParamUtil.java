@@ -76,8 +76,8 @@ public final class HttpWebParamUtil {
      */
     public final static String getIpAsString(SocketAddress address) {
         try {
-            if (address instanceof InetSocketAddress) {
-                return ((InetSocketAddress) address).getAddress().getHostAddress();
+            if (address instanceof InetSocketAddress socketAddress) {
+                return socketAddress.getAddress().getHostAddress();
             }
             String[] toks = address.toString().split("/");
             if (toks.length > 1) {
@@ -229,7 +229,7 @@ public final class HttpWebParamUtil {
                 }
                 return result;
             }
-        } catch (Exception e) {
+        } catch (Exception _) {
             System.err.println("URL Decode error: " + e.getMessage());
         }
         return defaultValue != null ? defaultValue : "";

@@ -170,7 +170,7 @@ public abstract class ComputeProfileCLV {
     			System.out.println(date);
     		}
 			if (!purchaseDates.isEmpty()) {
-                Date lastPurchaseDate = purchaseDates.get(purchaseDates.size() - 1);
+                Date lastPurchaseDate = purchaseDates.getLast();
                 System.out.println("lastPurchaseDate " +lastPurchaseDate + " \n\n");
                 if (currentTimeMillis - lastPurchaseDate.getTime() > churnThresholdMillis) {
                     inactiveCount++;

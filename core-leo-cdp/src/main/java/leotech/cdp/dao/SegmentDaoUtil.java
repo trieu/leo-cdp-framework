@@ -95,7 +95,7 @@ public final class SegmentDaoUtil extends AbstractCdpDatabaseUtil {
 		Long c = null;
 		try {
 			c = getSegmentSizeByQueryAsync(profileQuery).get();
-		} catch (Exception e) {
+		} catch (Exception _) {
 		}
 		if (c == null) {
 			return 0L;

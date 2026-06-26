@@ -118,8 +118,8 @@ public class JobGoogleSheetExportForSegment extends ReactiveExportDataJob {
 	 */
 	@Override
 	public FileApiResponse processAndReturnData(Map<String, Object> data) {
-		ExecutorService writeSheetService = Executors
-				.newFixedThreadPool(GET_SEGMENT_DATA_FOR_GG_SHEET_THREAD_POOL_SIZE);
+		// Wave 3 (docs/06): virtual threads for the blocking Sheets-API fan-out
+		ExecutorService writeSheetService = Executors.newVirtualThreadPerTaskExecutor();
 		CompletionService<List<List<Object>>> completionService = new ExecutorCompletionService<>(writeSheetService);
 
 		try {

@@ -121,7 +121,7 @@ public final class Analytics360Management {
 		List<StatisticCollector> report = null;
 		try {
 			report = cacheStatisticCollector.get(PROFILE_TOTAL_STATISTICS);
-		} catch (Exception e) {
+		} catch (Exception _) {
 			// skip
 		}
 		report = report == null ? new ArrayList<>(0) : report;
@@ -209,7 +209,7 @@ public final class Analytics360Management {
 		try {
 			report = cacheMainDashboard.get(key);
 			System.out.println("HIT CACHE DashboardReport");
-		} catch (Exception e) {
+		} catch (Exception _) {
 			// skip
 		}
 		if (report == null) {
@@ -325,7 +325,7 @@ public final class Analytics360Management {
 		try {
 			report = cacheEventReport.get(key);
 			System.out.println("HIT CACHE DashboardEventReport");
-		} catch (Exception e) {
+		} catch (Exception _) {
 			// skip
 		}
 		if (report == null) {
