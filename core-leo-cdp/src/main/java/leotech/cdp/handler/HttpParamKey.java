@@ -130,6 +130,8 @@ public final class HttpParamKey {
     public static final String QC_ENV = "qc";
     public static final String DATA_ENVIRONMENT = "envi";
 	public static final String RATING_SCORE = "ratingscore";
+    public static final String EMAIL = "email";
+    public static final String PASSWORD = "password";
 	
 	
 }

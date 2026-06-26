@@ -1940,4 +1940,16 @@ public class Profile extends AbstractProfile implements Comparable<Profile> {
 	public long getMinutesSinceLastUpdate() {
 		return getDifferenceInMinutes(this.updatedAt);
 	}
+
+	/**
+	 * check password
+	 * @param password
+	 * @return true if the password is correct
+	 */
+    public final boolean checkPassword(String password) {
+		if (StringUtil.isEmpty(password)) {
+			return false;
+		}
+		return this.password.equals(password);
+    }
 }

@@ -76,6 +76,9 @@ import rfx.core.util.StringPool;
 import rfx.core.util.StringUtil;
 import rfx.core.util.Utils;
 
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+
 /**
  * Profile Data Management for updating and saving
  * 
@@ -117,7 +120,8 @@ public final class ProfileDataManagement {
 	public static Profile updateOrCreateFromWebTouchpoint(String observerId, Touchpoint srcTouchpoint,
 			String touchpointRefDomain, String lastSeenIp, String visitorId, String userDeviceId,
 			String fingerprintId) {
-		Profile p = updateOrCreate(observerId, srcTouchpoint, touchpointRefDomain, lastSeenIp, userDeviceId, visitorId, fingerprintId, new BasicContactData());
+		Profile p = updateOrCreate(observerId, srcTouchpoint, touchpointRefDomain, lastSeenIp, userDeviceId, visitorId,
+				fingerprintId, new BasicContactData());
 		return p;
 	}
 
@@ -131,11 +135,10 @@ public final class ProfileDataManagement {
 	 */
 	public static Profile updateOrCreateFromWebTouchpoint(String observerId, Touchpoint srcTouchpoint,
 			String lastSeenIp, String deviceId, BasicContactData contactData) {
-		Profile p = updateOrCreate(observerId, srcTouchpoint, srcTouchpoint.getHostname(), lastSeenIp, deviceId, "", "", contactData);
+		Profile p = updateOrCreate(observerId, srcTouchpoint, srcTouchpoint.getHostname(), lastSeenIp, deviceId, "", "",
+				contactData);
 		return p;
 	}
-	
-	
 
 	/**
 	 * @param observerId
@@ -154,10 +157,11 @@ public final class ProfileDataManagement {
 			String lastSeenIp, String userDeviceId, String visitorId, String fingerprintId, BasicContactData contact) {
 
 		// query
-		ProfileSingleView profile = ProfileQueryManagement.getProfileByPrimaryKeys(visitorId, contact.email, contact.phone, "", "", lastSeenIp, userDeviceId, fingerprintId);
+		ProfileSingleView profile = ProfileQueryManagement.getProfileByPrimaryKeys(visitorId, contact.email,
+				contact.phone, "", "", lastSeenIp, userDeviceId, fingerprintId);
 
 		// TODO use queue to submit profile and batch process
-		
+
 		if (profile == null) {
 			if (contact.hasData()) {
 				profile = ProfileSingleView.newContactProfile(observerId, srcTouchpoint, lastSeenIp, visitorId,
@@ -279,7 +283,6 @@ public final class ProfileDataManagement {
 
 		profile.setAge(updateData.getAge());
 		profile.setDateOfBirth(updateData.getDateOfBirth());
-		
 
 		String genderStr = updateData.getGenderStr();
 		profile.setGender(genderStr);
@@ -409,7 +412,8 @@ public final class ProfileDataManagement {
 		String funnelStage = FunnelMetaData.STAGE_LEAD;
 
 		// search profile
-		ProfileSingleView profile = ProfileDataManagement.searchAndMergeAsUniqueProfile(observer, fromTouchpoint, profileIdentity, false, funnelStage);
+		ProfileSingleView profile = ProfileDataManagement.searchAndMergeAsUniqueProfile(observer, fromTouchpoint,
+				profileIdentity, false, funnelStage);
 		if (profile != null) {
 			profile.addDataLabel(ZaloUserDetail.ZALO_USER);
 			profile.setFirstName(zaloUser.getDisplayName());
@@ -435,7 +439,8 @@ public final class ProfileDataManagement {
 			// update the touchpoint-hub graph
 			String touchpointHubId = observer.getTouchpointHubId();
 			if (StringUtil.isNotEmpty(touchpointHubId)) {
-				EventMetric eventMetric = EventMetricManagement.getEventMetricByName(BehavioralEvent.General.DATA_IMPORT);
+				EventMetric eventMetric = EventMetricManagement
+						.getEventMetricByName(BehavioralEvent.General.DATA_IMPORT);
 				GraphProfile2TouchpointHub.updateEdgeData(profile, touchpointHubId, theJourneyMapId, eventMetric);
 			}
 		}
@@ -497,7 +502,8 @@ public final class ProfileDataManagement {
 	 * @param observer
 	 * @return
 	 */
-	private static boolean saveJsonDataIntoProfile(ProfileIdentity pIdentity, ProfileSingleView profile, EventObserver observer, JsonObject jsonObjData) {
+	private static boolean saveJsonDataIntoProfile(ProfileIdentity pIdentity, ProfileSingleView profile,
+			EventObserver observer, JsonObject jsonObjData) {
 		String profileId = profile.getId();
 		boolean ok = false;
 		System.out.println("BEGIN saveJsonDataIntoProfile.id: " + profileId);
@@ -613,7 +619,8 @@ public final class ProfileDataManagement {
 			// update the touchpoint-hub graph
 			String touchpointHubId = observer.getTouchpointHubId();
 			if (StringUtil.isNotEmpty(touchpointHubId)) {
-				EventMetric eventMetric = EventMetricManagement.getEventMetricByName(BehavioralEvent.General.DATA_IMPORT);
+				EventMetric eventMetric = EventMetricManagement
+						.getEventMetricByName(BehavioralEvent.General.DATA_IMPORT);
 				GraphProfile2TouchpointHub.updateEdgeData(profile, touchpointHubId, theJourneyMapId, eventMetric);
 			}
 		} catch (Exception e) {
@@ -764,8 +771,8 @@ public final class ProfileDataManagement {
 		} else {
 			profile.setStatus(Profile.STATUS_REMOVED);
 			ok = ProfileDaoUtil.saveProfile(profile) != null;
-			
-			if(ok) {
+
+			if (ok) {
 				Analytics360Management.clearCacheProfileReport();
 			}
 		}
@@ -822,7 +829,8 @@ public final class ProfileDataManagement {
 	 * @param computeAllEventsInDatabase
 	 * @return
 	 */
-	public final static boolean updateProfileFromEvents(final ProfileSingleView profile, boolean startAtBeginning, List<TrackingEvent> eventDataList) {
+	public final static boolean updateProfileFromEvents(final ProfileSingleView profile, boolean startAtBeginning,
+			List<TrackingEvent> eventDataList) {
 		String profileId = profile.getId();
 		int daysSinceLastUpdate = SystemDateTimeUtil.getDaysSinceLastUpdate(profile.getUpdatedAt());
 
@@ -961,8 +969,7 @@ public final class ProfileDataManagement {
 					profile.setLastTrackingEvent(event);
 					if (BehavioralEvent.General.ITEM_VIEW.equals(eventName)) {
 						profile.setLastItemViewEvent(event);
-					} 
-					else if (eventMetric.isPurchasingEvent()) {
+					} else if (eventMetric.isPurchasingEvent()) {
 						profile.setLastPurchaseEvent(event);
 					}
 
@@ -1268,7 +1275,7 @@ public final class ProfileDataManagement {
 		logger.info("removeEventsofDeadProfiles " + e);
 
 		long rs = c1 + c2;
-		if(rs > 0) {
+		if (rs > 0) {
 			Analytics360Management.clearCacheProfileReport();
 		}
 		return rs;
@@ -1343,13 +1350,13 @@ public final class ProfileDataManagement {
 	static boolean deleteAllRelatedDataOfProfile(String profileId) {
 		boolean ok = ProfileDaoUtil.delete(profileId) != null;
 		if (ok) {
-			// delete feedback 
+			// delete feedback
 			FeedbackDataDao.deleteDataByProfileId(profileId);
 			// delete event
 			TrackingEventDao.deleteDataByProfileId(profileId);
 			// clear cache
 			Analytics360Management.clearCacheProfileReport();
-			// TODO delete touchpoints and target media unit 
+			// TODO delete touchpoints and target media unit
 		}
 		return ok;
 	}
@@ -1385,6 +1392,33 @@ public final class ProfileDataManagement {
 		});
 		ProfileDaoUtil.batchUpdateProfileStatus(selectedProfileIds, Profile.STATUS_REMOVED);
 		return selectedProfileIds.size();
+	}
+
+
+	    // JWT Configuration
+    static final String JSON_WEB_TOKEN_SECRET = "YOUR_SUPER_LONG_AND_SECURE_SECRET_KEY"; // Load from env/config
+    static final long JSON_WEB_TOKEN_EXPIRATION = 1800000 * 4; // 120 minutes in milliseconds
+
+	public static String loginProfile(EventObserver observer, JsonObject jsonObject) {
+		String email = jsonObject.getString(HttpParamKey.EMAIL, "");
+		String password = jsonObject.getString(HttpParamKey.PASSWORD, "");
+
+		Profile profile = ProfileDaoUtil.getByPrimaryEmail(email);
+
+		// Validate profile existence and password
+		if (profile == null || !profile.checkPassword(password)) {
+			return ""; // Or throw AuthenticationException
+		}
+
+		// Generate JWT Token
+		String token = Jwts.builder()
+				.setSubject(profile.getPrimaryEmail())
+				.setIssuedAt(new Date())
+				.setExpiration(new Date(System.currentTimeMillis() + JSON_WEB_TOKEN_EXPIRATION))
+				.signWith(SignatureAlgorithm.HS256, JSON_WEB_TOKEN_SECRET.getBytes())
+				.compact();
+
+		return token;
 	}
 
 }
