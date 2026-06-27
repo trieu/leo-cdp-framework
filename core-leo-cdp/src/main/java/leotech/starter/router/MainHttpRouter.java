@@ -91,7 +91,6 @@ public final class MainHttpRouter extends BaseHttpRouter {
 
 		// CORS Header
 		MultiMap reqHeaders = req.headers();
-		String origin = StringUtil.safeString(reqHeaders.get(BaseHttpHandler.ORIGIN), "*");
 
 		// User Info
 		String userSession = StringUtil.safeString(reqHeaders.get(BaseWebRouter.HEADER_SESSION));
@@ -110,7 +109,6 @@ public final class MainHttpRouter extends BaseHttpRouter {
 		// API of CDP
 		if (path.equals(URI_API_ROUTER)) {
 			outHeaders.set(CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
-			BaseHttpRouter.setCorsHeaders(outHeaders, origin);
 			String json = SecuredApiHandler.process(context, req);
 			resp.end(json);
 		}
@@ -131,7 +129,6 @@ public final class MainHttpRouter extends BaseHttpRouter {
 		// Progressive Web App in Mobile Hibrid App
 		else if (path.startsWith(URI_APP_ROUTER)) {
 			outHeaders.set(CONTENT_TYPE, MIME_TYPE_HTML);
-			BaseHttpRouter.setCorsHeaders(outHeaders, origin);
 
 			// handler as SPA app for end-user
 			// String appId = req.getParam("appid");
@@ -146,7 +143,6 @@ public final class MainHttpRouter extends BaseHttpRouter {
 		// Admin app
 		else if (path.equals(URI_ADMIN_ROUTER)) {
 			outHeaders.set(CONTENT_TYPE, MIME_TYPE_HTML);
-			BaseHttpRouter.setCorsHeaders(outHeaders, origin);
 			String tplFolder = AppMetadataUtil.DEFAULT_ADMIN_TEMPLATE_FOLDER;
 			handleWebPageRequest(params, false, host, tplFolder, "index", resp);
 		}
@@ -194,7 +190,6 @@ public final class MainHttpRouter extends BaseHttpRouter {
 		// 
 		else if (path.equals(URI_DEFAULT_ROUTER)) {
 			outHeaders.set(CONTENT_TYPE, MIME_TYPE_HTML);
-			BaseHttpRouter.setCorsHeaders(outHeaders, origin);
 
 			boolean isSearchEngineBot = SPIDER.equals(device.deviceName);
 			// detect template folder name from domain

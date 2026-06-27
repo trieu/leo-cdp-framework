@@ -9,6 +9,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import leotech.cdp.handler.api.BaseApiHandler;
 import leotech.cdp.handler.api.EventApiHandler;
+import leotech.cdp.handler.api.UserNoteApiHandler;
 import leotech.cdp.handler.api.ProfileApiHandler;
 import leotech.cdp.handler.api.SegmentApiHandler;
 import leotech.system.common.BaseWebRouter;
@@ -33,11 +34,15 @@ public class CdpPublicApiRouter extends BaseWebRouter {
 	public static final String PREFIX_API = "/api/";
 
 	public static final String API_PROFILE = PREFIX_API + "profile";
+	public static final String API_PROFILE_LOGIN = PREFIX_API + "profile/login";
+	
 	public static final String API_SEGMENT = PREFIX_API +  "segment";
 	public static final String API_EVENT = PREFIX_API +  "event";
 
 
 	// ---- Shared Handler Instances (stateless => safe) ----
+	
+	private static final UserNoteApiHandler USER_NOTE = new UserNoteApiHandler();
 	private static final ProfileApiHandler PROFILE = new ProfileApiHandler();
 	private static final EventApiHandler EVENT = new EventApiHandler();
 	private static final SegmentApiHandler SEGMENT = new SegmentApiHandler();

@@ -143,9 +143,6 @@ public final class ObserverHttpGetHandler {
 
 	private static void handleSessionInit(HttpServerRequest req, MultiMap params, HttpServerResponse resp,
 			MultiMap outHeaders, DeviceInfo device, String origin) {
-
-		enableCors(outHeaders, origin);
-
 		ContextSession session = ContextSessionManagement.checkAndCreate(req, params, device);
 		if (session != null) {
 			ObserverResponse rs = new ObserverResponse(session.getVisitorId(), session.getSessionKey(), OK, 101);
@@ -164,7 +161,6 @@ public final class ObserverHttpGetHandler {
 	private static void handleEventTracking(HttpServerRequest req, String urlPath, MultiMap params,
 			HttpServerResponse resp, MultiMap outHeaders, DeviceInfo device, String origin) {
 
-		enableCors(outHeaders, origin);
 		String eventName = StringUtil.safeString(params.get(HttpParamKey.EVENT_METRIC_NAME)).toLowerCase();
 		String ctxSessionKey = StringUtil.safeString(params.get(HttpParamKey.CTX_SESSION_KEY));
 		String ip = HttpWebParamUtil.getRemoteIP(req);
@@ -191,7 +187,6 @@ public final class ObserverHttpGetHandler {
 
 	private static void handleJsonRecommender(MultiMap params, HttpServerResponse resp, MultiMap outHeaders,
 			String origin, boolean isProduct) {
-		enableCors(outHeaders, origin);
 		resp.setStatusCode(200);
 
 		String observerId = HttpWebParamUtil.getString(params, HttpParamKey.OBSERVER_ID, "");
@@ -242,7 +237,6 @@ public final class ObserverHttpGetHandler {
 
 	private static void handleFeedbackScore(MultiMap params, HttpServerResponse resp, MultiMap outHeaders,
 			String origin) {
-		enableCors(outHeaders, origin);
 
 		String templateId = StringUtil.safeString(params.get(HttpParamKey.TEMPLATE_ID));
 		String refVisitorId = StringUtil.safeString(params.get(HttpParamKey.VISITOR_ID));
@@ -265,10 +259,6 @@ public final class ObserverHttpGetHandler {
 	// =================================================================================
 	// Helper Methods
 	// =================================================================================
-
-	private static void enableCors(MultiMap headers, String origin) {
-		BaseHttpRouter.setCorsHeaders(headers, origin);
-	}
 
 	private static void renderWebData(HttpServerResponse resp, MultiMap outHeaders, WebData model) {
 		String html = WebData.renderHtml(model);

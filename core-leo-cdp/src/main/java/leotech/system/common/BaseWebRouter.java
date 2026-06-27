@@ -82,9 +82,6 @@ public abstract class BaseWebRouter extends BaseHttpRouter {
 		String origin = StringUtil.safeString(reqHeaders.get(BaseHttpHandler.ORIGIN), "*");
 		String contentType = StringUtil.safeString(reqHeaders.get(BaseHttpHandler.CONTENT_TYPE),BaseHttpHandler.CONTENT_TYPE_JSON);
 
-		// CORS Header
-		BaseHttpRouter.setCorsHeaders(outHeaders, origin);
-
 		String httpMethod = request.rawMethod();
 		String uri = request.path();
 		String host = request.host();

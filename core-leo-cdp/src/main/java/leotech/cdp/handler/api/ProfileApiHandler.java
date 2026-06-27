@@ -7,6 +7,7 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonObject;
 import leotech.cdp.dao.ProfileDaoUtil;
 import leotech.cdp.domain.ProfileDataManagement;
+import leotech.cdp.handler.HttpParamKey;
 import leotech.cdp.model.customer.Profile;
 import leotech.cdp.model.journey.EventObserver;
 import leotech.cdp.query.ProfileQueryBuilder;
@@ -15,6 +16,7 @@ import leotech.cdp.query.filters.ProfileFilterConstants;
 import leotech.system.model.JsonDataPayload;
 import leotech.system.util.HttpWebParamUtil;
 import leotech.system.util.LogUtil;
+import rfx.core.util.StringUtil;
 
 /**
  * Profile Data API
@@ -25,9 +27,7 @@ import leotech.system.util.LogUtil;
  */
 public class ProfileApiHandler extends BaseApiHandler {
 
-	
 	static final String API_PROFILE_SAVE = "/api/profile/save";
-	static final String API_PROFILE_LOGIN = "/api/profile/login";
 	static final String API_PROFILE_LIST = "/api/profile/list";
 
 	@Override
@@ -45,20 +45,10 @@ public class ProfileApiHandler extends BaseApiHandler {
 		JsonDataPayload payload;
 		if (uri.equals(API_PROFILE_SAVE)) {
 			payload = saveProfileFromApi(observer, uri, jsonObject);
-		} 
-		else if (uri.equals(API_PROFILE_LOGIN)) {
-			payload = loginProfile(observer, uri, jsonObject);
-		}
-		else {
+		} else {
 			payload = notFoundHttpHandler(uri);
 		}
 		return payload;
-	}
-
-	JsonDataPayload loginProfile(EventObserver observer, String uri, JsonObject jsonObject) {
-		// TODO Auto-generated method stub
-		String token = ProfileDataManagement.loginProfile(observer, jsonObject);
-		return JsonDataPayload.ok(uri, token);
 	}
 
 	JsonDataPayload saveProfileFromApi(EventObserver observer, String uri, JsonObject jsonObject) {

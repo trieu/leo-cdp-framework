@@ -62,7 +62,6 @@ public final class ObserverHttpPostHandler {
 			String serverInfo) {
 
 		outHeaders.set(CONTENT_TYPE, BaseHttpHandler.CONTENT_TYPE_JSON);
-		BaseHttpRouter.setCorsHeaders(outHeaders, origin);
 
 		String ctxSessionKey = StringUtil.safeString(params.get(HttpParamKey.CTX_SESSION_KEY));
 		int eventCount = StringUtil.safeParseInt(params.get(PARAM_EVENT_COUNT));

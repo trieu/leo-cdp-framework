@@ -97,7 +97,6 @@ public final class ProfileSingleView extends Profile implements SingleViewAnalyt
 		loadProfileTypeAsText();
 		loadGenderAndMarialStatus();
 		
-
 		loadEngagedTouchpoints();
 		loadDailyReportUnits();
 		loadTargetMediaUnits();
@@ -269,7 +268,6 @@ public final class ProfileSingleView extends Profile implements SingleViewAnalyt
 		return p;
 	}
 
-
 	
 	void updateSegmentRefKeys() {
 		List<String> idList = this.inSegments.stream().map(ref->{
@@ -371,8 +369,6 @@ public final class ProfileSingleView extends Profile implements SingleViewAnalyt
 		String profileId = this.id;
 		this.dailyReportUnits = DailyReportUnitDaoUtil.getDailyReportUnitMapForProfile(profileId, fromDate, toDate);
 	}
-
-
 
 	public Device getLastUsedDevice() {
 		return lastUsedDevice;
@@ -536,6 +532,7 @@ public final class ProfileSingleView extends Profile implements SingleViewAnalyt
 	public void runPersonalizationJob() {
 		// TODO
 	}
+
 
 
 

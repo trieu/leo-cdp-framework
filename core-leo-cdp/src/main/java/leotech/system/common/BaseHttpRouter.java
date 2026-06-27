@@ -56,10 +56,10 @@ public abstract class BaseHttpRouter {
 	final protected static Logger logger = LoggerFactory.getLogger(BaseHttpRouter.class);
 
 	final protected RoutingContext context;
-	
+
 	final protected String host;
 	final protected int port;
-	
+
 	final protected String nodeId;
 	final protected String nodeInfo;
 
@@ -100,34 +100,6 @@ public abstract class BaseHttpRouter {
 		} else {
 			headers.set(HttpHeaders.CACHE_CONTROL, "no-cache, no-store");
 		}
-	}
-
-	public static void setCorsHeaders(MultiMap headers, String origin) {
-		if (headers == null) {
-			throw new IllegalArgumentException("Headers cannot be null");
-		}
-
-		// Use a whitelist or fallback for security
-		String allowOrigin = (origin != null && !origin.isEmpty()) ? origin : "*";
-
-		headers.set("Accept-Ranges", "bytes");
-		headers.set("Access-Control-Allow-Origin", allowOrigin);
-		headers.set("Access-Control-Allow-Credentials", "true");
-
-		// Expanded for better REST compatibility
-		headers.set("Access-Control-Allow-Methods",
-				String.join(", ", "GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"));
-
-		headers.set("Access-Control-Allow-Headers", String.join(", ", "Origin", "Accept", "Content-Type",
-				"Authorization", "Range", "leouss", "X-Requested-With"));
-
-		headers.set("Access-Control-Expose-Headers", String.join(", ", "Content-Range", "Content-Length", "leouss"));
-
-		headers.set("Access-Control-Max-Age", "86400"); // 1 day
-		headers.set("Cache-Control", "no-cache, no-store, must-revalidate");
-		headers.set("Connection", "keep-alive");
-		headers.set("P3P", "CP=\"CAO PSA OUR\"");
-		headers.set("Pragma", "no-cache");
 	}
 
 	/**

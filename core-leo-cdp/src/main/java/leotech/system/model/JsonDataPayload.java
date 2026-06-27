@@ -68,6 +68,10 @@ public class JsonDataPayload {
 		payload.setUserLoginPermission(user, clazz);
 		return payload;
 	}
+	
+	public static  JsonDataPayload fail(String uri, String errorMessage, int httpCode) {
+		return new JsonDataPayload(uri, errorMessage, httpCode);
+	}
 
 	public static  JsonDataPayload fail(String errorMessage, int httpCode) {
 		return new JsonDataPayload(errorMessage, httpCode);
@@ -103,6 +107,18 @@ public class JsonDataPayload {
 	protected JsonDataPayload(String errorMessage, int httpCode) {
 		super();
 		this.data = "";
+		this.errorMessage = errorMessage;
+		this.httpCode = httpCode;
+		if (httpCode >= 400) {
+			this.errorCode = httpCode;
+		}
+		this.gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
+	}
+	
+	protected JsonDataPayload(String uri, String errorMessage, int httpCode) {
+		super();
+		this.uri = uri;
+		this.data = rfx.core.util.StringPool.BLANK;
 		this.errorMessage = errorMessage;
 		this.httpCode = httpCode;
 		if (httpCode >= 400) {

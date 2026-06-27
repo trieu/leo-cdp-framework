@@ -46,7 +46,6 @@ public final class WebhookDataHandler {
 			return ZaloWebhookHandler.verify(urlPath, params, resp, outHeaders);
 		} else if (urlPath.startsWith(PREFIX_WEBHOOK)) {
 			outHeaders.set(CONTENT_TYPE, BaseHttpHandler.CONTENT_TYPE_TEXT);
-			BaseHttpRouter.setCorsHeaders(outHeaders, origin);
 
 			String tokenValue = HttpWebParamUtil.getString(params, HttpParamKey.ACCESS_TOKEN_VALUE);
 			boolean isValidToken = observer.getAccessTokens().getOrDefault(observerId, "").equals(tokenValue);

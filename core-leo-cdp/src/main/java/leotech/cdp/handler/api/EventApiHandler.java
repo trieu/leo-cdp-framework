@@ -38,6 +38,7 @@ import rfx.core.util.StringUtil;
  */
 public class EventApiHandler extends BaseApiHandler {
 
+	
 	// API endpoints handled by this class
 	static final String API_EVENT_LIST = "/api/event/list";
 	static final String API_EVENT_SAVE = "/api/event/save";
@@ -46,8 +47,7 @@ public class EventApiHandler extends BaseApiHandler {
 	// HTTP handlers
 	// --------------------------
 	@Override
-	protected JsonDataPayload handlePost(EventObserver observer, HttpServerRequest req, String uri,
-			JsonObject jsonData) {
+	protected JsonDataPayload handlePost(EventObserver observer, HttpServerRequest req, String uri, JsonObject jsonData) {
 
 		try {
 			switch (uri) {
@@ -140,7 +140,7 @@ public class EventApiHandler extends BaseApiHandler {
 	 * @param json      payload from client
 	 * @return id of saved event (string) or error marker as produced by downstream
 	 */
-	protected static String saveEventHandler(EventObserver observer, HttpServerRequest req, String eventName,
+	public static String saveEventHandler(EventObserver observer, HttpServerRequest req, String eventName,
 			JsonObject json) {
 
 		LogUtil.logInfo(EventApiHandler.class, "[EVENT] " + new Date() + " payload=" + json);
@@ -171,7 +171,7 @@ public class EventApiHandler extends BaseApiHandler {
 
 		// --- Device Info (with fallbacks to HTTP request) ---
 		String sourceIP = json.getString(FIELD_SOURCE_IP, HttpWebParamUtil.getRemoteIP(req));
-		String userAgent = json.getString(FIELD_USER_AGENT, req.headers().get("User-Agent"));
+		String userAgent = json.getString(FIELD_USER_AGENT, req.headers().get(USER_AGENT));
 		Device userDevice = new Device(userAgent);
 		String userDeviceUUID = json.getString(FIELD_USER_DEVICE_UUID, "");
 		String fingerprintId = HashUtil.sha256(userDeviceUUID + observerId + userAgent + environment);

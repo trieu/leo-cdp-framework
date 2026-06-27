@@ -144,27 +144,28 @@ public abstract class SecuredApiHandler extends BaseHttpHandler {
 	public static EventObserver checkApiTokenAndGetEventObserver(HttpServerRequest req) {
 
 		MultiMap headers = req.headers();
+		
 
 		// Read provided tokens (or fallback to placeholders)
 		String tokenKey = StringUtil.safeString(headers.get(HttpParamKey.ACCESS_TOKEN_KEY), "_");
 		String tokenValue = StringUtil.safeString(headers.get(HttpParamKey.ACCESS_TOKEN_VALUE), "_");
-
+		
 		EventObserver observer;
 
 		// Default observer shortcut
 		if (EventObserver.DEFAULT_ACCESS_KEY.equals(tokenKey)) {
 			observer = EventObserverDaoUtil.getDefaultDataObserver();
 		} else {
-			observer = EventObserverManagement.getById(tokenKey);
+			String observerId = StringUtil.safeString(headers.get(HttpParamKey.OBSERVER_ID), tokenKey);
+			observer = EventObserverManagement.getById(observerId);
 		}
 
-		if (observer == null) {
-			return null;
+		if (observer != null) {
+			// Validate token match
+			String validToken = observer.getAccessTokens().getOrDefault(tokenKey, "");
+			return validToken.equals(tokenValue) ? observer : null;
 		}
-
-		// Validate token match
-		String validToken = observer.getAccessTokens().getOrDefault(tokenKey, "");
-		return validToken.equals(tokenValue) ? observer : null;
+		return null;
 	}
 
 	// Subclasses implement HTTP handlers for JSON body POST and URL-param GET

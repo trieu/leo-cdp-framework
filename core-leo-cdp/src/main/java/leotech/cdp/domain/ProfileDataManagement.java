@@ -11,6 +11,7 @@ import static leotech.cdp.model.journey.EventMetric.SCORING_PROMOTER_METRIC;
 import static leotech.cdp.model.journey.EventMetric.SCORING_PROSPECT_METRIC;
 import static leotech.cdp.model.journey.EventMetric.SCORING_SATISFACTION_METRIC;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -20,6 +21,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.crypto.SecretKey;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
@@ -78,6 +81,7 @@ import rfx.core.util.Utils;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
 
 /**
  * Profile Data Management for updating and saving
@@ -221,9 +225,9 @@ public final class ProfileDataManagement {
 	 * @param crmId
 	 * @return
 	 */
-	public static ProfileSingleView createNewProfile(String fName, String lName, Date createdAt,
-			String observerId, Touchpoint fromTouchpoint, String sourceIP, String govId, String phone, String email,
-			String socialId, String appId, String crmId) {
+	public static ProfileSingleView createNewProfile(String fName, String lName, Date createdAt, String observerId,
+			Touchpoint fromTouchpoint, String sourceIP, String govId, String phone, String email, String socialId,
+			String appId, String crmId) {
 		// create new profile from input data
 		ProfileSingleView profile = ProfileSingleView.newProfileForAPI(createdAt, observerId, fromTouchpoint, sourceIP);
 		profile.setFirstName(fName);
@@ -1394,15 +1398,17 @@ public final class ProfileDataManagement {
 		return selectedProfileIds.size();
 	}
 
+	// JWT Configuration
+	static final String JSON_WEB_TOKEN_SECRET = "YOUR_SUPER_LONG_AND_SECURE_SECRET_KEY"; // Load from env/config
+	static final long JSON_WEB_TOKEN_EXPIRATION = 1800000 * 4; // 120 minutes in milliseconds
 
-	    // JWT Configuration
-    static final String JSON_WEB_TOKEN_SECRET = "YOUR_SUPER_LONG_AND_SECURE_SECRET_KEY"; // Load from env/config
-    static final long JSON_WEB_TOKEN_EXPIRATION = 1800000 * 4; // 120 minutes in milliseconds
-
-	public static String loginProfile(EventObserver observer, JsonObject jsonObject) {
-		String email = jsonObject.getString(HttpParamKey.EMAIL, "");
-		String password = jsonObject.getString(HttpParamKey.PASSWORD, "");
-
+	/**
+	 * @param observer
+	 * @param email
+	 * @param password
+	 * @return
+	 */
+	public static String loginProfile(EventObserver observer, String email, String password) {
 		Profile profile = ProfileDaoUtil.getByPrimaryEmail(email);
 
 		// Validate profile existence and password
@@ -1411,14 +1417,11 @@ public final class ProfileDataManagement {
 		}
 
 		// Generate JWT Token
-		String token = Jwts.builder()
-				.setSubject(profile.getPrimaryEmail())
-				.setIssuedAt(new Date())
-				.setExpiration(new Date(System.currentTimeMillis() + JSON_WEB_TOKEN_EXPIRATION))
-				.signWith(SignatureAlgorithm.HS256, JSON_WEB_TOKEN_SECRET.getBytes())
-				.compact();
+		SecretKey key = Keys.hmacShaKeyFor(JSON_WEB_TOKEN_SECRET.getBytes(StandardCharsets.UTF_8));
 
-		return token;
+		String loginToken = Jwts.builder().subject(profile.getPrimaryEmail()).issuedAt(new Date())
+				.expiration(new Date(System.currentTimeMillis() + JSON_WEB_TOKEN_EXPIRATION)).signWith(key).compact();
+		return loginToken;
 	}
 
 }

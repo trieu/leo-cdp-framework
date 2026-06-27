@@ -73,9 +73,6 @@ public final class UploaderHttpRouter extends BaseHttpRouter {
 
 		SystemUser loginUser = SecuredHttpDataHandler.initSystemUser(userSession, uri, req.params());
 
-		// CORS Header
-		BaseHttpRouter.setCorsHeaders(outHeaders, origin);
-
 		String httpMethod = req.rawMethod();
 
 		if (HTTP_METHOD_POST.equalsIgnoreCase(httpMethod)) {
@@ -95,8 +92,6 @@ public final class UploaderHttpRouter extends BaseHttpRouter {
 			outHeaders.set(BaseWebRouter.POWERED_BY, BaseWebRouter.SERVER_VERSION);
 			outHeaders.set(CONTENT_TYPE, BaseHttpHandler.CONTENT_TYPE_JSON);
 
-			// CORS Header
-			BaseHttpRouter.setCorsHeaders(outHeaders, origin);
 			if (HTTP_GET_OPTIONS.equalsIgnoreCase(httpMethod) || HTTP_METHOD_GET.equalsIgnoreCase(httpMethod)) {
 				resp.end("CDP Uploader_" + nodeInfo);
 			}

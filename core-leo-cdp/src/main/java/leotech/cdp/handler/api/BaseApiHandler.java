@@ -72,6 +72,8 @@ public abstract class BaseApiHandler {
 	public static final String EMAIL = "email";
 	public static final String PHONE = "phone";
 	
+	public static final String USER_AGENT = "User-Agent";
+	
 	public static JsonDataPayload notFoundHttpHandler(String uri) {
 		return JsonDataPayload.fail(uri + " is not valid URI, not found any API handler!");
 	}
