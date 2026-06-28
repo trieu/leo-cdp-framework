@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Maps;
 
 import leotech.system.util.LogUtil;
+import rfx.core.util.CommonUtil;
 import rfx.core.util.DateTimeUtil;
 import rfx.core.util.StringUtil;
 
@@ -47,7 +48,7 @@ public final class SystemMetaData {
 	public static final String LEO_CDP_LOGO_URL = "https://gcore.jsdelivr.net/gh/USPA-Technology/leo-cdp-static-files@latest/images/leo-cdp-logo.png";
 	public static final String LEOCDP_ADMIN = "leocdp-admin";
 	public static final String LEOCDP_LICENSE_URL = "https://storage.googleapis.com/leocdp-license/";
-	public static final String LEOCDP_METADATA_DEFAULT_VALUE = "leocdp-metadata.properties";
+	public static final String LEOCDP_METADATA_FILE_PATH = CommonUtil.getBaseDir() + "/leocdp-metadata.properties";
 	
 	private static Map<String, String> metaDataMap = new HashMap<>();
 	
@@ -100,24 +101,39 @@ public final class SystemMetaData {
 	 * load LEOCDP_METADATA_DEFAULT_VALUE
 	 */
 	private static void loadDefaultMetaDataMap() {
-		Properties props = new Properties();
-		try {
-			String currentRelativePath = Paths.get(".").toString();
-			String configPath = currentRelativePath + "/" + LEOCDP_METADATA_DEFAULT_VALUE;
-			props.load(new FileInputStream(configPath));
-		} catch (final Exception exception) {
-			exception.printStackTrace();
-		}
-		metaDataMap.putAll(Maps.newHashMap(Maps.fromProperties(props)));
-	}
+        Properties props = new Properties();
+        try {
+            // 1. Fetch the value from the system environment variable
+            String envConfigFileName = System.getenv("LEOCDP_METADATA_FILE_PATH");
+            
+            // 2. Check if the environment variable is not null and not empty.
+            // If valid, use it. If not, fall back to the LEOCDP_METADATA_FILE_PATH constant.
+            String configFileName = (envConfigFileName != null && !envConfigFileName.trim().isEmpty()) 
+                                    ? envConfigFileName 
+                                    : LEOCDP_METADATA_FILE_PATH;
+
+            // 3. Construct the final file path using the resolved file name
+            String currentRelativePath = Paths.get(".").toString();
+            String configPath = currentRelativePath + "/" + configFileName;
+            
+            // 4. Load the properties file from the determined path
+            props.load(new FileInputStream(configPath));
+        } catch (final Exception exception) {
+            // Note: In a production environment, consider using a logger (e.g., SLF4J) instead of printStackTrace
+            exception.printStackTrace();
+        }
+        
+        // 5. Populate the metadata map with the loaded properties
+        metaDataMap.putAll(Maps.newHashMap(Maps.fromProperties(props)));
+    }
 	
 	/**
-	 * save Meta Data Map to file LEOCDP_METADATA_DEFAULT_VALUE
+	 * save Meta Data Map to file LEOCDP_METADATA_FILE_PATH
 	 */
 	public static void saveMetaDataMapPreserveFormat() {
 	    String configPath = Paths.get(".").toString()
 	            + File.separator
-	            + LEOCDP_METADATA_DEFAULT_VALUE;
+	            + LEOCDP_METADATA_FILE_PATH;
 
 	    Path filePath = Paths.get(configPath);
 
@@ -275,7 +291,6 @@ public final class SystemMetaData {
 	public static final String DATABASE_BACKUP_PATH = metaDataMap.getOrDefault("databaseBackupPath","").trim();
 	
 	public static final boolean HAS_B2B_FEATURES = metaDataMap.getOrDefault("hasB2Bfeatures","false").trim().equalsIgnoreCase("true");
-	public static final boolean USE_LOCAL_STORAGE = metaDataMap.getOrDefault("useLocalStorage","true").trim().equalsIgnoreCase("true");
 	
 	// constants
 	public static final String AUTOMATION = "automation";

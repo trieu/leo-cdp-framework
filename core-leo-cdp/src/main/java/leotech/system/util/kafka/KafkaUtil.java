@@ -13,6 +13,8 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.common.TopicPartition;
 
+import rfx.core.util.CommonUtil;
+
 /**
  * Apache Kafka Util class to build instance of Producer and Consumer
  * 
@@ -22,8 +24,8 @@ import org.apache.kafka.common.TopicPartition;
  */
 public final class KafkaUtil {
 
-	public static final String KAFKA_PRODUCER_CONFIGS = "./configs/kafka-producer.properties";
-	public static final String KAFKA_CONSUMER_CONFIGS = "./configs/kafka-consumer.properties";
+	public static final String KAFKA_PRODUCER_CONFIGS = CommonUtil.getBaseDir() + "/configs/kafka-producer.properties";
+	public static final String KAFKA_CONSUMER_CONFIGS = CommonUtil.getBaseDir() + "/configs/kafka-consumer.properties";
 
 	/**
 	 * build an instance of KafkaProducer

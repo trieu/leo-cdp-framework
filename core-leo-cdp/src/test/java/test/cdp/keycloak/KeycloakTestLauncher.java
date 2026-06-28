@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 
 import io.vertx.core.Vertx;
 import leotech.system.util.keycloak.KeycloakVerticle;
+import rfx.core.util.CommonUtil;
 
 public class KeycloakTestLauncher {
 	private static final Logger logger = LoggerFactory.getLogger(KeycloakTestLauncher.class);
@@ -15,7 +16,7 @@ public class KeycloakTestLauncher {
 	private static final int HTTP_PORT = 9079;
 
 	public static void main(String[] args) {
-		String configPath = "./configs/log4j.xml"; // your custom path
+		String configPath = CommonUtil.getBaseDir() + "/configs/log4j.xml"; // your custom path
 
 		System.out.println("Loading Log4j2 config from: " + configPath);
 		Configurator.initialize(null, configPath);

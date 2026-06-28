@@ -10,6 +10,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import leotech.system.model.AppMetadata;
+import rfx.core.util.CommonUtil;
 import rfx.core.util.FileUtils;
 
 /**
@@ -21,7 +22,7 @@ import rfx.core.util.FileUtils;
  */
 public final class AppMetadataUtil {
 
-	private static final String CONFIGS_JSON = "./configs/app-metadata-configs.json";
+	private static final String CONFIGS_JSON = CommonUtil.getBaseConfig() + "app-metadata-configs.json";
 
 	// TODO add shared redis cache here, load MediaNetwork from database
 

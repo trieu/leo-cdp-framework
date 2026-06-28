@@ -31,7 +31,7 @@ public class DatabaseConfigs implements Serializable {
 	private static final long serialVersionUID = 6185084071488833500L;
 
 	public static final String SYSTEM_ENV_VARS = "SYSTEM_ENV_VARS";
-	
+
 	public static final int MAX_CONNECTIONS = 100;
 	public static final int MIN_CONNECTIONS = 2;
 	public static final long MAX_WAIT = 15000;
@@ -77,12 +77,24 @@ public class DatabaseConfigs implements Serializable {
 	static final Map<String, Driver> driversCache = new HashMap<String, Driver>();
 	static String dbConfigsJson = null;
 
+	/**
+	 * Load database configs from the file database-configs.json
+	 * 
+	 * @param dbId
+	 * @return DatabaseConfigs
+	 */	
 	public static DatabaseConfigs load(String dbId) {
 		String databaseConfigFile = CommonUtil.getDatabaseConfigFile();
-		if(StringUtil.isNotEmpty(SystemMetaData.RUNTIME_ENVIRONMENT)) {
-			String replacement = "/"+SystemMetaData.RUNTIME_ENVIRONMENT +"-";
-			databaseConfigFile = databaseConfigFile.replace("/", replacement);
+		if (StringUtil.isNotEmpty(SystemMetaData.RUNTIME_ENVIRONMENT)) {
+			String env = SystemMetaData.RUNTIME_ENVIRONMENT.trim().toUpperCase();
+			int lastSlash = databaseConfigFile.lastIndexOf('/');
+			if (lastSlash >= 0) {
+				String directory = databaseConfigFile.substring(0, lastSlash + 1);
+				String fileName = databaseConfigFile.substring(lastSlash + 1);
+				databaseConfigFile = directory + env + "-" + fileName;
+			}
 		}
+		System.out.println("DatabaseConfigs.load() - databaseConfigFile: " + databaseConfigFile);
 		return loadFromFile(databaseConfigFile, dbId.trim());
 	}
 
@@ -126,17 +138,18 @@ public class DatabaseConfigs implements Serializable {
 					e.printStackTrace();
 				}
 			}
-			
-			// 
-			if(DatabaseConfigs.SYSTEM_ENV_VARS.equalsIgnoreCase(dbId)) {
-				String username = System.getenv().getOrDefault(ArangoDbUtil.ENV_ARANGO_USERNAME, DEFAULT_ARANGO_USERNAME);
-		        String password = System.getenv().getOrDefault(ENV_ARANGO_PASSWORD, DEFAULT_ARANGO_PASSWORD);
-		        String database = System.getenv().getOrDefault(ENV_ARANGO_DATABASE, DEFAULT_ARANGO_DATABASE);
-		        String host     = System.getenv().getOrDefault(ENV_ARANGO_HOST, DEFAULT_ARANGO_HOST);
-		        int port = StringUtil.safeParseInt(System.getenv().getOrDefault(ENV_ARANGO_PORT, DEFAULT_ARANGO_PORT));
-		        configs = new DatabaseConfigs(username, password, database, host, port);
+
+			//
+			if (DatabaseConfigs.SYSTEM_ENV_VARS.equalsIgnoreCase(dbId)) {
+				String username = System.getenv().getOrDefault(ArangoDbUtil.ENV_ARANGO_USERNAME,
+						DEFAULT_ARANGO_USERNAME);
+				String password = System.getenv().getOrDefault(ENV_ARANGO_PASSWORD, DEFAULT_ARANGO_PASSWORD);
+				String database = System.getenv().getOrDefault(ENV_ARANGO_DATABASE, DEFAULT_ARANGO_DATABASE);
+				String host = System.getenv().getOrDefault(ENV_ARANGO_HOST, DEFAULT_ARANGO_HOST);
+				int port = StringUtil.safeParseInt(System.getenv().getOrDefault(ENV_ARANGO_PORT, DEFAULT_ARANGO_PORT));
+				configs = new DatabaseConfigs(username, password, database, host, port);
 			}
-			
+
 			if (configs == null) {
 				throw new IllegalArgumentException("CAN NOT LOAD DatabaseConfigs dbId " + dbId + " from " + filePath);
 			}
@@ -149,41 +162,37 @@ public class DatabaseConfigs implements Serializable {
 	public String getConnectionUrl() {
 		StringBuilder url = new StringBuilder();
 		if (MY_SQL.equals(this.getDbdriver())) {
-			
+
 			url.append("jdbc:").append(MY_SQL).append("://");
 			url.append(this.getHost());
 			url.append(":").append(getPort()).append("/");
 			url.append(this.getDatabase());
 			url.append("?autoReconnect=true&useUnicode=true&characterEncoding=UTF-8&noAccessToProcedureBodies=true");
-			
-		} 
-		else if (SQL_SERVER.equals(this.getDbdriver())) {
-			
+
+		} else if (SQL_SERVER.equals(this.getDbdriver())) {
+
 			url.append("jdbc:").append(SQL_SERVER).append("://");
 			url.append(this.getHost());
 			url.append(";databaseName=");
 			url.append(this.getDatabase());
-			
-		} 
-		else if (ORACLE.equals(this.getDbdriver())) {
-			
+
+		} else if (ORACLE.equals(this.getDbdriver())) {
+
 			System.setProperty("java.security.egd", "file:///dev/urandom");
 			// "jdbc:oracle:thin:@IP:PORT:ORADEV1"
 			url.append("jdbc:").append(ORACLE).append(":thin:@");
 			url.append(this.getHost());
 			url.append(":").append(this.getPort()).append(":");
 			url.append(this.getDatabase());
-			
-		} 
-		else if (CLICKHOUSE.equals(this.getDbdriver())) {
-			
+
+		} else if (CLICKHOUSE.equals(this.getDbdriver())) {
+
 			// "jdbc:clickhouse://127.0.0.1:8123"
 			url.append("jdbc:").append(CLICKHOUSE);
 			url.append(this.getHost());
 			url.append(":").append(this.getPort());
-			
-		} 
-		else {
+
+		} else {
 			throw new IllegalArgumentException(
 					"Currently, only support JDBC driver for MySQL, MSSQL Server and Oracle!");
 		}
@@ -192,7 +201,7 @@ public class DatabaseConfigs implements Serializable {
 
 	public DatabaseConfigs() {
 	}
-	
+
 	public DatabaseConfigs(String username, String password, String database, String host, int port) {
 		super();
 		this.username = username;
@@ -200,20 +209,19 @@ public class DatabaseConfigs implements Serializable {
 		this.database = database;
 		this.host = host;
 		this.port = port;
-		
+
 		if (StringUtil.isEmpty(username) || StringUtil.isEmpty(password)
-		  || StringUtil.isEmpty(database) || StringUtil.isEmpty(host) || port <= 0) {
-		    throw new IllegalArgumentException(
-	            "Invalid ArangoDB configuration. Required env variables: "
-	            + ArangoDbUtil.ENV_ARANGO_USERNAME + ", "
-	            + ArangoDbUtil.ENV_ARANGO_PASSWORD + ", "
-	            + ArangoDbUtil.ENV_ARANGO_DATABASE + ", "
-	            + ArangoDbUtil. ENV_ARANGO_HOST + ", "
-	            + ArangoDbUtil.ENV_ARANGO_PORT
-	            + ". Check your environment setup."
-	        );
+				|| StringUtil.isEmpty(database) || StringUtil.isEmpty(host) || port <= 0) {
+			throw new IllegalArgumentException(
+					"Invalid ArangoDB configuration. Required env variables: "
+							+ ArangoDbUtil.ENV_ARANGO_USERNAME + ", "
+							+ ArangoDbUtil.ENV_ARANGO_PASSWORD + ", "
+							+ ArangoDbUtil.ENV_ARANGO_DATABASE + ", "
+							+ ArangoDbUtil.ENV_ARANGO_HOST + ", "
+							+ ArangoDbUtil.ENV_ARANGO_PORT
+							+ ". Check your environment setup.");
 		}
-		
+
 		this.dbId = SYSTEM_ENV_VARS;
 		this.dbdriver = ARANGODB;
 		this.dbdriverclasspath = ArangoDbUtil.ARANGO_JAVA_DRIVER;
@@ -292,11 +300,9 @@ public class DatabaseConfigs implements Serializable {
 	public void setEnabled(boolean enabled) {
 		this.enabled = enabled;
 	}
-	
-	
 
 	public Map<String, Long> getPartitionMap() {
-		if(this.partitionMap == null) {
+		if (this.partitionMap == null) {
 			this.partitionMap = new HashMap<>(0);
 		}
 		return partitionMap;

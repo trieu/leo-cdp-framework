@@ -1,0 +1,36 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "DataObserverStarter",
+      "request": "launch",
+      "mainClass": "leotech.starter.DataObserverStarter",
+      "projectName": "LeoTech-Core-System",
+      "env": {
+        "APP_BASE_CONFIG_DIR": "core-leo-cdp/configs/",
+        "APP_BASE_DIR": "core-leo-cdp/",
+        "APP_ENV": "development"
+      }
+    },
+    {
+      "type": "java",
+      "name": "MainHttpStarter",
+      "request": "launch",
+      "mainClass": "leotech.starter.MainHttpStarter",
+      "projectName": "LeoTech-Core-System",
+      "env": {
+        "APP_BASE_CONFIG_DIR": "core-leo-cdp/configs/",
+        "APP_BASE_DIR": "core-leo-cdp/",
+        "APP_ENV": "development"
+      }
+    }
+  ],
+  "compounds": [
+    {
+      // This compound configuration launches both at the same time
+      "name": "Run Java & Python Together",
+      "configurations": ["MainHttpStarter", "DataObserverStarter"]
+    }
+  ]
+}

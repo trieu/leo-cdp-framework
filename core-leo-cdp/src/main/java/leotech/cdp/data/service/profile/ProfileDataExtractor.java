@@ -6,6 +6,7 @@ import com.google.gson.JsonArray;
 
 import leotech.cdp.data.DataExtractor;
 import leotech.cdp.data.DataFieldProcessor;
+import rfx.core.util.CommonUtil;
 
 /**
  * @author tantrieuf31
@@ -15,10 +16,10 @@ import leotech.cdp.data.DataFieldProcessor;
 public class ProfileDataExtractor extends DataExtractor {
 
 	private static final String PROFILE_SINGLE_VIEW = "ProfileSingleView";
-	private static final String FILE_PROFILE_DATA_MAPPER_JSON = "./configs/data-mapper/profile-data-mapper.json";
+	private static final String FILE_PROFILE_DATA_MAPPER_JSON = CommonUtil.getBaseDir() + "/configs/data-mapper/profile-data-mapper.json";
 
 	public ProfileDataExtractor() {
-
+		// TODO Auto-generated constructor stub
 	}
 
 	@Override

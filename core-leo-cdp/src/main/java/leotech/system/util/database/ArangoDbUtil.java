@@ -63,7 +63,7 @@ public final class ArangoDbUtil {
 			dbConfigs = DatabaseConfigs.load(mainDatabaseConfig);
 			if(dbConfigs == null) {
 				Utils.exitSystemAfterTimeout(2000);
-				throw new IllegalArgumentException(mainDatabaseConfig + " in ./configs/database-configs.json is not found ! ");
+				throw new IllegalArgumentException(mainDatabaseConfig + " in database-configs.json is not found ! ");
 			}
 			
 		}

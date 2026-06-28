@@ -5,6 +5,7 @@ import java.util.HashMap;
 import com.google.gson.Gson;
 
 import leotech.system.version.SystemMetaData;
+import rfx.core.util.CommonUtil;
 import rfx.core.util.FileUtils;
 
 /**
@@ -15,7 +16,7 @@ import rfx.core.util.FileUtils;
  */
 public final class HttpRoutingConfigs {
 
-	public static final String FILE_HTTP_ROUTING_CONFIGS_JSON = "./configs/http-routing-configs.json";
+	public static final String FILE_HTTP_ROUTING_CONFIGS_JSON =  CommonUtil.getBaseConfig() + "/http-routing-configs.json";
 
 	String name;
 	String host;
@@ -46,7 +47,7 @@ public final class HttpRoutingConfigs {
 	static HttpRoutingConfigsMap map = null;
 
 	/**
-	 * get http configs by key in the file configs/http-routing-configs.json
+	 * get http configs by key in the file http-routing-configs.json
 	 * 
 	 * @param configKey
 	 * @return

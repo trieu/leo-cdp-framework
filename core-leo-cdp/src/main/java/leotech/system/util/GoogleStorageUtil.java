@@ -25,6 +25,8 @@ import com.google.cloud.storage.Storage.BucketListOption;
 import com.google.cloud.storage.StorageOptions;
 import com.google.cloud.storage.StorageRoles;
 
+import rfx.core.util.CommonUtil;
+
 /**
  * Google Cloud Storage Util class
  * 
@@ -39,7 +41,7 @@ public final class GoogleStorageUtil {
 
 	private static final String UTF_8 = "utf-8";
 	private static final String PROJECT_ID = "leocdp";
-	private static final String GOOGLE_API_CREDENTIALS = "./configs/google-api-credentials.json";
+	private static final String GOOGLE_API_CREDENTIALS = CommonUtil.getBaseDir() + "/configs/google-api-credentials.json";
 
 	public static String uploadPublicFile(String contentType, String bucketName, String objectName,
 			String baseLicenseFolder, String prefixPublicUrl) {

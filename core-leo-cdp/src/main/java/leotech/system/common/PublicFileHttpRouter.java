@@ -11,6 +11,7 @@ import io.vertx.core.http.HttpServerResponse;
 import leotech.system.model.SystemUser;
 import leotech.system.template.TemplateUtil;
 import leotech.system.util.HttpWebParamUtil;
+import rfx.core.util.CommonUtil;
 
 /**
  * the handler for exported files
@@ -44,7 +45,7 @@ public final class PublicFileHttpRouter {
 				
 				
 				if (loginUser != null) {
-					String pathname = "." + path.replaceAll("%20", " ");
+					String pathname = CommonUtil.getBaseDir() + path.replaceAll("%20", " ");
 					File file = new File(pathname);
 					if (file.isFile()) {
 						resp.sendFile(pathname);
@@ -57,8 +58,7 @@ public final class PublicFileHttpRouter {
 				}
 			} 
 			else {
-				String pathname = "." + path.replaceAll("%20", " ");
-				
+				String pathname = CommonUtil.getBaseDir() + path.replaceAll("%20", " ");
 				File file = new File(pathname);
 				if (file.isFile()) {
 					outHeaders.set(HttpHeaderNames.CACHE_CONTROL, MAX_AGE_CACHING_PUBLIC);

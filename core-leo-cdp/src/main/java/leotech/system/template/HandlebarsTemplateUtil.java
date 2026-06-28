@@ -16,6 +16,7 @@ import com.github.jknack.handlebars.io.FileTemplateLoader;
 import com.github.jknack.handlebars.io.TemplateLoader;
 import com.github.mustachejava.MustacheException;
 
+import rfx.core.util.CommonUtil;
 import rfx.core.util.StringPool;
 
 /**
@@ -28,7 +29,7 @@ import rfx.core.util.StringPool;
 public final class HandlebarsTemplateUtil {
 
 	final static Map<String, Template> mustacheMap = new ConcurrentHashMap<>();// for hot deployment & update template
-	final static String BASE_TEMPLATE_PATH = "resources/app-templates/";
+	final static String BASE_TEMPLATE_PATH = CommonUtil.getBaseDir() + "/resources/app-templates/";
 	final static String TEMPLATE_SUFFIX = ".html";
 
 	final static TemplateLoader loader = new FileTemplateLoader(BASE_TEMPLATE_PATH, TEMPLATE_SUFFIX);

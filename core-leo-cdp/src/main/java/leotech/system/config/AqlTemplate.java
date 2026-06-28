@@ -7,17 +7,21 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import leotech.system.util.LogUtil;
+import rfx.core.util.CommonUtil;
 import rfx.core.util.StringUtil;
 import rfx.core.util.Utils;
 
 public class AqlTemplate {
 	static String baseFolderPath = "";
-	static final String STRING_QUERY_TEMPLATE_FILE = "./resources/database/database-query-template.aql";
+	static final String STRING_QUERY_TEMPLATE_FILE =  CommonUtil.getBaseDir() + "/resources/database/database-query-template.aql";
 
 	static Map<String, String> mapQueryTpl = new HashMap<>();
 
 	static {
 		try {
+			LogUtil.println("--- STRING_QUERY_TEMPLATE_FILE: " + STRING_QUERY_TEMPLATE_FILE );
+
 			String str = readFileAsString(STRING_QUERY_TEMPLATE_FILE);
 			String[] sqlStrTokens = str.split(";");
 			for (String sqlStrToken : sqlStrTokens) {
