@@ -567,6 +567,7 @@ div.primary_field {
 .delete-item-btn {
 	min-width: 40px;
 	color: red;
+    font-size: 1.2em;
 }
 .delete-item-btn:hover {
 	color: blue;

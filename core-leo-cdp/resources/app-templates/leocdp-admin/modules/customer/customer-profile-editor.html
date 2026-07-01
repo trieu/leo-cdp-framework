@@ -3,9 +3,7 @@
 	ol.profile_ext_data {
 		margin-left: 28px;
 	}
-	div.delete-item-btn {
-		font-size: 1.2em;
-	}	
+	
 </style>
 
 <div class="row" id="data_model_controller" >
@@ -93,6 +91,7 @@
       			<a href="javascript:" data-target-tab="panel_personal_info" > <i class="fa fa-user-circle-o" aria-hidden="true"></i> Personal Info </a>
       		</li>	
          	<li ><a href="javascript:" data-target-tab="panel_profile_contact" > <i class="fa fa-address-card-o" aria-hidden="true"></i> ID & Contact</a></li>
+			<li ><a href="javascript:" data-target-tab="panel_profile_security" > <i class="fa fa-lock" aria-hidden="true"></i> Security Settings</a></li>
          	<li ><a href="javascript:" data-target-tab="panel_profile_taxonomy" > <i class="fa fa-tags" aria-hidden="true"></i> Taxonomy</a></li>
          	<li ><a href="javascript:" data-target-tab="panel_profile_location" > <i class="fa fa-map-marker" aria-hidden="true"></i> Location</a></li>
          	<li ><a href="javascript:" data-target-tab="panel_profile_education" > <i class="fa fa-graduation-cap" aria-hidden="true"></i> Education </a></li>
@@ -100,7 +99,7 @@
          	<li ><a href="javascript:" data-target-tab="panel_profile_marketing" > <i class="fa fa-info-circle" aria-hidden="true"></i> Marketing </a></li>
          	<li ><a href="javascript:" data-target-tab="panel_profile_salesources" > <i class="fa fa-info-circle" aria-hidden="true"></i> Sales Source</a></li>
          	<li ><a href="javascript:" data-target-tab="panel_profile_custom" > <i class="fa fa-table" aria-hidden="true"></i> Custom Field</a></li>
-         	<li ><a href="javascript:" data-target-tab="panel_profile_data_authorization" > <i class="fa fa-lock" aria-hidden="true"></i> Authorization</a></li>
+         	
    </ul>
 
    <!-- Tab Contents  -->
@@ -657,8 +656,93 @@
 		</div>
 		
 		<!-- tab 10 User Authorization  -->
-		<div class="tab-pane" id="panel_profile_data_authorization" >
+		<div class="tab-pane" id="panel_profile_security" >
+
+			<h4 class="highlight_text">
+				<i class="fa fa-lock" aria-hidden="true"></i>
+				Set / Change Password
+			</h4>
+
+			<p class="text-muted">
+				<i class="fa fa-info-circle" aria-hidden="true"></i>
+				Enable password protection for this profile. When enabled, users must enter the password before accessing the profile.
+			</p>
+
+			<div class="form-horizontal">
+
+				<!-- Enable Password -->
+				<div class="form-group">
+					<label class="control-label col-sm-3">
+						Password Protection
+					</label>
+
+					<div class="col-sm-9">
+						<div class="checkbox" style="margin-top:7px;">
+							<label>
+								<input
+									type="checkbox"
+									id="profile_password_enabled"
+									name="profile_password_enabled">
+								Enable profile password
+							</label>
+						</div>
+					</div>
+				</div>
+
+				<!-- New Password -->
+				<div class="form-group">
+					<label class="control-label col-sm-3" for="profile_password1">
+						New Password
+					</label>
+
+					<div class="col-sm-9">
+						<div class="input-group">
+							<span class="input-group-addon">
+								<i class="fa fa-key"></i>
+							</span>
+
+							<input
+								id="profile_password1"
+								class="form-control"
+								type="text"
+								placeholder="Enter a new password"
+								autocomplete="new-password">
+						</div>
+					</div>
+				</div>
+
+				<!-- Confirm Password -->
+				<div class="form-group">
+					<label class="control-label col-sm-3" for="profile_password2">
+						Confirm Password
+					</label>
+
+					<div class="col-sm-9">
+						<div class="input-group">
+							<span class="input-group-addon">
+								<i class="fa fa-check"></i>
+							</span>
+
+							<input
+								id="profile_password2"
+								class="form-control"
+								type="text"
+								placeholder="Re-enter the new password"
+								autocomplete="new-password">
+						</div>
+					</div>
+				</div>
+
+			</div>
+			
+
 			<h4 class="highlight_text" > <i class="fa fa-lock" aria-hidden="true"></i> User Authorization (Only system user with admin role could update the authorization) </h4>
+		
+			<p class="text-muted">
+				<i class="fa fa-info-circle" aria-hidden="true"></i>
+				Manage which users have access to this profile's data.
+			</p>
+			
 			<div class="form-group row"  >
 				<label class="control-label col-sm-3" for="authorizedProfileViewers">Authorized users can view data</label>
 				<div class="col-sm-9" >

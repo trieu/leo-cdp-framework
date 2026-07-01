@@ -1907,35 +1907,40 @@ function loadProfile360Analytics(profileId, crmRefId, visitorId) {
 /////////////////////// JS for  profile-editor //////////////////////////
 
 var saveProfileHandler = function () {
-    iziToast.info({
-    	title: 'Profile Editor',
-	    message: 'System is processing ...',
-	    timeout: 2000,
-	});
-	
-	$('#data_model_holder').hide();
-    $('#profile_editor_loader').show();
-	$('#data_model_controller').find('button').attr('disabled','disabled')
-	
-	var callback = function(rs){
-		if(rs != null){
-			location.hash = "calljs-leoCdpRouter('Customer_Profile_Info','" + rs + "')";
-			notifySavedOK('Profile');
-		}
-		else {
-			console.error('saveProfileHandler ', rs)
-		}
-	};
+    
 	var data = buildUpdateProfileModel();
-	console.log("buildUpdateProfileModel: ", data)
-	var params = {'objectJson' : JSON.stringify(data) };
-	LeoAdminApiUtil.callPostAdminApi('/cdp/profile/update', params, function (json) {
-        if (json.httpCode === 0 && json.data !== '') {
-			callback(json.data);
-        } else {
-            LeoAdminApiUtil.logErrorPayload(json);
-        }
-   	});
+
+	if(typeof data === "object" && data !== null){
+		iziToast.info({
+			title: 'Profile Editor',
+			message: 'System is processing ...',
+			timeout: 2000,
+		});
+		
+		$('#data_model_holder').hide();
+		$('#profile_editor_loader').show();
+		$('#data_model_controller').find('button').attr('disabled','disabled')
+		
+		var callback = function(rs){
+			if(rs != null){
+				location.hash = "calljs-leoCdpRouter('Customer_Profile_Info','" + rs + "')";
+				notifySavedOK('Profile');
+			}
+			else {
+				console.error('saveProfileHandler ', rs)
+			}
+		};
+
+		console.log("buildUpdateProfileModel: ", data)
+		var params = {'objectJson' : JSON.stringify(data) };
+		LeoAdminApiUtil.callPostAdminApi('/cdp/profile/update', params, function (json) {
+			if (json.httpCode === 0 && json.data !== '') {
+				callback(json.data);
+			} else {
+				LeoAdminApiUtil.logErrorPayload(json);
+			}
+		});
+	}
 }
 
 var formatSelectionList = function(selector) {
@@ -2019,6 +2024,35 @@ var loadProfileData = function (profileId) {
 		 }
 		 loadSystemUsersForDataAuthorization(editable, editedProfileModel, $('#authorizedProfileViewers'), $('#authorizedProfileEditors'));
      });
+}
+
+/**
+ * Get hashed password string from the password form.
+ *
+ * @returns {string|null} Hashed password, or null if no password update.
+ */
+function getPasswordInHashedStr() {
+    var password1 = $.trim($('#profile_password1').val());
+    var password2 = $.trim($('#profile_password2').val());
+
+    // User is not changing the password
+    if (password1 === '' && password2 === '') {
+        return null;
+    }
+
+    // One field is missing
+    if (password1 === '' || password2 === '') {
+		notifyErrorMessage('Please enter and confirm the new password.')
+        return null;
+    }
+
+    // Passwords do not match
+    if (password1 !== password2) {
+        notifyErrorMessage('The passwords do not match.');
+        return null;
+    }
+
+    return CryptoJS.SHA256(password1).toString();
 }
 
 var buildUpdateProfileModel = function() {
@@ -2137,6 +2171,19 @@ var buildUpdateProfileModel = function() {
 		// data authorization
 		editedProfileModel.authorizedViewers = $('#authorizedProfileViewers').val() || [];
 		editedProfileModel.authorizedEditors = $('#authorizedProfileEditors').val() || [];
+		
+		// password
+		if($('#profile_password_enabled').is(':checked')){
+			var hashedPassword = getPasswordInHashedStr();
+			if(hashedPassword !== null){
+				editedProfileModel.password = hashedPassword;
+			}
+			else {
+				notifyErrorMessage('Password update failed. Please check the password fields.');
+				return null;
+			}
+		}
+		
 	}
 	return editedProfileModel;
 }
