@@ -31,14 +31,10 @@ core-leo-cdp/configs/PRO-database-configs.json
 core-leo-cdp/sample-trading-data/*
 
 
-# Airflow 
-./airflow-ai-env/airflow-venv
-**/airflow-venv
 
 **/__pycache__/*
 **/logs/*
-airflow-ai-agent/.env
-
 
 # linux APT keys
 **.gpg
+ai-agent-pools/.env

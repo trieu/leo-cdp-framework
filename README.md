@@ -57,7 +57,7 @@ Activate customer segments instantly across marketing, sales, customer service, 
 
 ### 7. Event-Driven Data Processing & Orchestration
 
-Support real-time and batch data pipelines using event-driven architecture. Integrate with Apache Airflow for data ingestion, transformation, workflow orchestration, and automation.
+Support real-time and batch data pipelines using event-driven architecture. Integrate with Dagster for data ingestion, transformation, workflow orchestration, and automation.
 
 ### 8. Omnichannel Personalization with Agentic AI & LLMs
 
@@ -147,7 +147,7 @@ Want to contribute? [Join the community](https://www.facebook.com/groups/bigdata
 - **Backend**: Java 11 (Amazon Corretto), Python 3.10 or Python 3.12
 - **Database**: ArangoDB 3.11 (Multi-model: Document + Graph + Search)
 - **Monitoring**: Prometheus 2 + Grafana 8
-- **Data Pipeline**: Apache Airflow
+- **Data Pipeline**: Dagster
 - **Analytics & ML**: Jupyter Notebook / Google Colab
 - **Messaging**: Redis 8, OneSignal, Firebase
 - **Deployment**: Ubuntu 22 LTS, Docker, On-Prem / Cloud

@@ -1,7 +1,9 @@
 /__pycache__/
 /logs/
-/airflow-output
+/output
 *.cfg
 *.pid
 *.db
 webserver_config.py
+*.csv
+.env
