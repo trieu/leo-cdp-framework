@@ -8,6 +8,8 @@ Unlike traditional ETL pipelines, AI Agent Pools treats every event as an opport
 
 # Architecture
 
+![Architecture](flow.jpeg)
+
 ```
                 +---------------------+
                 |   Mobile / Web App  |
@@ -23,7 +25,7 @@ Unlike traditional ETL pipelines, AI Agent Pools treats every event as an opport
                            |
           +----------------+----------------+
           |                                 |
-          |        Dagster Orchestrator     |
+          |        AI Agent Orchestrator     |
           |                                 |
           +----------------+----------------+
                            |
