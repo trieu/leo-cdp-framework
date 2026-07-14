@@ -37,4 +37,10 @@ core-leo-cdp/sample-trading-data/*
 
 # linux APT keys
 **.gpg
+
+# Ignore environment files
 ai-agent-pools/.env
+
+# Ignore build files and dev data 
+core-leo-cdp/BUILD
+core-leo-cdp/data

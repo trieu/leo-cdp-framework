@@ -1,0 +1,63 @@
+version: "3.9"
+
+services:
+  arangodb:
+    image: arangodb:3.11.14
+    container_name: ArangoDB311
+    restart: unless-stopped
+
+    hostname: leocdp.database
+
+    environment:
+      ARANGO_ROOT_PASSWORD: 123456
+
+    ports:
+      - "8529:8529"
+
+    volumes:
+      - ./data/arangodb:/var/lib/arangodb3
+      - ./data/arangodb-apps:/var/lib/arangodb3-apps
+
+    networks:
+      leocdp-network:
+        aliases:
+          - leocdp.database
+
+    healthcheck:
+      test: ["CMD", "arangosh", "--server.username", "root", "--server.password", "123456", "--javascript.execute-string", "db._version()"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  redis:
+    image: redis:8
+    container_name: Redis8
+    restart: unless-stopped
+
+    hostname: leocdp.redis
+
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+
+    ports:
+      - "127.0.0.1:6480:6379"
+
+    volumes:
+      - ./data/redis:/data
+
+    networks:
+      leocdp-network:
+        aliases:
+          - leocdp.redis
+
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+
+networks:
+  leocdp-network:
+    driver: bridge
