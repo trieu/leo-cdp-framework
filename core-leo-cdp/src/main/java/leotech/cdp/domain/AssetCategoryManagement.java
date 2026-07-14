@@ -21,6 +21,7 @@ import leotech.cdp.model.asset.ContentType;
 import leotech.system.model.AppMetadata;
 import leotech.system.model.SystemUser;
 import leotech.system.util.JsonFileImporter;
+import rfx.core.util.CommonUtil;
 import rfx.core.util.FileUtils;
 
 /**
@@ -32,7 +33,7 @@ import rfx.core.util.FileUtils;
  */
 public final class AssetCategoryManagement {
 	
-	private static final String CONFIGS_INIT_FEEDBACK_FORMS_JSON = "./resources/data-for-new-setup/init-feedback-forms.json";
+	private static final String CONFIGS_INIT_FEEDBACK_FORMS_JSON =  CommonUtil.getBaseDir() + "/resources/data-for-new-setup/init-feedback-forms.json";
 	
 	static Map<String, AssetCategory> assetCategoryMap = new HashMap<String, AssetCategory>(20);
 	static Map<Integer, AssetCategory> categoryMapByAssetType = new HashMap<Integer, AssetCategory>(20);
@@ -76,7 +77,7 @@ public final class AssetCategoryManagement {
 			group.setDefaultGroup(true);
 			String groupId = AssetGroupDaoUtil.save(group);
 			
-			String mediaHtml = FileUtils.readFileAsString("./resources/content-templates/introduction-to-leocdp.html");
+			String mediaHtml = FileUtils.readFileAsString( CommonUtil.getBaseDir() +"/resources/content-templates/introduction-to-leocdp.html");
 			AssetContent content = new AssetContent();
 			content.initNewItem(categoryId, groupId, "Introduction to CDP", mediaHtml, type, rootUserId);
 			AssetContentDaoUtil.save(content);
@@ -160,7 +161,7 @@ public final class AssetCategoryManagement {
 			group.setMergeDataIntoTemplates(true);
 			String groupId = AssetGroupDaoUtil.save(group);
 			
-			String tpl1 = FileUtils.readFileAsString("./resources/content-templates/email-thanks-for-submit-info.html");
+			String tpl1 = FileUtils.readFileAsString( CommonUtil.getBaseDir() + "/resources/content-templates/email-thanks-for-submit-info.html");
 			AssetTemplate template1  = new AssetTemplate(categoryId, groupId, "email-thanks", assetType,  rootUserId, "Email Template - Thank you for your information", tpl1);
 			template1.setSystemAsset(true);
 			template1.setAssetType(assetType);
@@ -168,7 +169,7 @@ public final class AssetCategoryManagement {
 			template1.setContentClass(AssetTemplate.BASIC_EMAIL_CONTENT);
 			AssetTemplateDaoUtil.save(template1);
 			
-			String tpl2 = FileUtils.readFileAsString("./resources/content-templates/email-product-recommendation.html");
+			String tpl2 = FileUtils.readFileAsString( CommonUtil.getBaseDir() + "/resources/content-templates/email-product-recommendation.html");
 			AssetTemplate template2  = new AssetTemplate(categoryId, groupId, "email-product-recommendation", assetType, rootUserId, "Email Template - Product Recommendation", tpl2);
 			template2.setSystemAsset(true);
 			template2.setAssetType(assetType);

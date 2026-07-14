@@ -20,8 +20,7 @@ import rfx.core.util.DateTimeUtil;
 import rfx.core.util.StringUtil;
 
 /**
- * FeedbackEvent is the data model for
- * ./resources/app-templates/web-form/template-survey-form.html
+ * FeedbackEvent is the data model for template-survey-form.html
  * 
  * @author tantrieuf31
  * @since 2021

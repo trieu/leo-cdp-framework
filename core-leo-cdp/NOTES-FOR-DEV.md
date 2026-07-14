@@ -56,8 +56,11 @@ C:\Windows\System32\drivers\etc\hosts
 Append:
 
 ```text
+# hosts for leocdp dev
 127.0.0.1   leocdp.database
 127.0.0.1   leocdp.redis
+127.0.0.1   leocdp.example.com obs.example.com
+127.0.0.1   cdpsys.admin cdpsys.observer
 ```
 
 Verify:

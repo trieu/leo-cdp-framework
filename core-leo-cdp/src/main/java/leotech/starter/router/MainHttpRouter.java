@@ -35,6 +35,7 @@ import leotech.system.util.HttpTrackingUtil;
 import leotech.system.util.LogUtil;
 import leotech.system.version.SystemMetaData;
 import leotech.web.model.WebData;
+import rfx.core.util.CommonUtil;
 import rfx.core.util.StringUtil;
 
 /**
@@ -46,7 +47,7 @@ import rfx.core.util.StringUtil;
  */
 public final class MainHttpRouter extends BaseHttpRouter {
 
-	private static final String RESOURCES_APP_TEMPLATES = "./resources/app-templates";
+	private static final String RESOURCES_APP_TEMPLATES =  CommonUtil.getBaseDir() + "/resources/app-templates";
 	private static final String _1 = "1";
 
 	private static final String MIME_TYPE_HTML = ContentType.TEXT_HTML.getMimeType();

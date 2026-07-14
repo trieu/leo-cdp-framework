@@ -149,7 +149,7 @@ public final class ZaloDataService extends DataServiceJob {
 		// https://developers.zalo.me/docs/official-account/quan-ly/quan-ly-thong-tin-nguoi-dung/lay-danh-sach-khach-hang-quan-tam-oa
 		String url = "https://zalo-apps.bigdatavietnam.org/send_message_promotion";
 		try {
-			//String json = FileUtils.readFileAsString("./resources/content-templates/zalo-promotion.json");
+	
 			AssetTemplate tpl = AssetTemplateDaoUtil.getById(assetTemplateId);
 			Handlebars handlebars = new Handlebars();
 	        Template template = handlebars.compileInline(tpl.getJsonMetadata());

@@ -44,3 +44,4 @@ ai-agent-pools/.env
 # Ignore build files and dev data 
 core-leo-cdp/BUILD
 core-leo-cdp/data
+public

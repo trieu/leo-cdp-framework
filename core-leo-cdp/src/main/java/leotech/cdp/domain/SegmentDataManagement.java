@@ -29,6 +29,7 @@ import leotech.system.model.SystemUser;
 import leotech.system.util.JsonFileImporter;
 import leotech.system.util.LogUtil;
 import leotech.system.util.TaskRunner;
+import rfx.core.util.CommonUtil;
 import rfx.core.util.StringPool;
 import rfx.core.util.StringUtil;
 import rfx.core.util.Utils;
@@ -46,7 +47,7 @@ public final class SegmentDataManagement {
 	final static int SLEEP_AFTER_REFRESH_SEGMENT = 10000;
 	final private static int CACHE_TIME = 30;
 	
-	private static final String SEGMENTATION_INIT_CONFIG_JSON = "./resources/data-for-new-setup/init-segment-list.json";
+	private static final String SEGMENTATION_INIT_CONFIG_JSON =  CommonUtil.getBaseDir() + "/resources/data-for-new-setup/init-segment-list.json";
 	/**clearAllCacheSegments
 	 * init for new setup 
 	 */

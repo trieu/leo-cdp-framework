@@ -6,7 +6,6 @@ server {
 	listen [::]:80 default_server;
 
 	root /var/www/html;
-
 	# Add index.php to the list if you are using PHP
 	index index.html index.htm index.nginx-debian.html;
 
@@ -17,7 +16,6 @@ server {
 		# as directory, then fall back to displaying a 404.
 		try_files $uri $uri/ =404;
 	}
-
 }
 
 # DEV
@@ -33,8 +31,12 @@ server {
              access_log off;
              add_header Cache-Control "public";
     }
-    listen [::]:443 ssl http2; 
-    listen 443 ssl http2; 
+    
+    # Updated HTTP/2 syntax for modern Nginx versions
+    listen [::]:443 ssl;
+    listen 443 ssl; 
+    http2 on;
+
     ssl_certificate /home/thomas/0-uspa/localhost-ssl/example.com+5.pem;
     ssl_certificate_key /home/thomas/0-uspa/localhost-ssl/example.com+5-key.pem;
 }
@@ -48,8 +50,6 @@ server {
     server_name example.com;
     return 404;
 }
-
-
 
 # LEO CDP admin
 upstream backend_admin_cdp {
@@ -79,7 +79,6 @@ server {
     # 3. Caching and Compression settings
     add_header Cache-Control "public, max-age=2592000";
     expires 30d;
-
     gzip on;
     gzip_comp_level 6;
     gzip_min_length 1024;
@@ -117,12 +116,14 @@ server {
     access_log off;
   }
 
-  listen [::]:443 ssl http2;
-  listen 443 ssl http2;
+  # Updated HTTP/2 syntax for modern Nginx versions
+  listen [::]:443 ssl;
+  listen 443 ssl;
+  http2 on;
+
   ssl_certificate /home/thomas/0-uspa/localhost-ssl/example.com+5.pem;
   ssl_certificate_key /home/thomas/0-uspa/localhost-ssl/example.com+5-key.pem;
 }
-
 
 # LEO Data Observer
 server {
@@ -137,11 +138,16 @@ server {
              access_log off;
              add_header Cache-Control "public";
     }
-    listen [::]:443 ssl http2;
-    listen 443 ssl http2;
+
+    # Updated HTTP/2 syntax for modern Nginx versions
+    listen [::]:443 ssl;
+    listen 443 ssl;
+    http2 on;
+
     ssl_certificate /home/thomas/0-uspa/localhost-ssl/example.com+5.pem;
     ssl_certificate_key /home/thomas/0-uspa/localhost-ssl/example.com+5-key.pem;
 }
+
 server {
     if ($host = obs.example.com) {
         return 301 https://$host$request_uri;
@@ -165,11 +171,16 @@ server {
              access_log off;
              add_header Cache-Control "public";
     }
-    listen [::]:443 ssl http2;
-    listen 443 ssl http2;
+
+    # Updated HTTP/2 syntax for modern Nginx versions
+    listen [::]:443 ssl;
+    listen 443 ssl;
+    http2 on;
+
     ssl_certificate /home/thomas/0-uspa/localhost-ssl/example.com+5.pem;
     ssl_certificate_key /home/thomas/0-uspa/localhost-ssl/example.com+5-key.pem;
 }
+
 server {
     if ($host = leobot.example.com) {
         return 301 https://$host$request_uri;
@@ -193,11 +204,16 @@ server {
              access_log off;
              add_header Cache-Control "public";
     }
-    listen [::]:443 ssl http2;
-    listen 443 ssl http2;
+
+    # Updated HTTP/2 syntax for modern Nginx versions
+    listen [::]:443 ssl;
+    listen 443 ssl;
+    http2 on;
+
     ssl_certificate /home/thomas/0-uspa/localhost-ssl/example.com+5.pem;
     ssl_certificate_key /home/thomas/0-uspa/localhost-ssl/example.com+5-key.pem;
 }
+
 server {
     if ($host = leoid.example.com) {
         return 301 https://$host$request_uri;

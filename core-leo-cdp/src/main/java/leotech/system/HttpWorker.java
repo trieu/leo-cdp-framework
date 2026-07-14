@@ -63,15 +63,19 @@ public final class HttpWorker extends BaseWorker {
 	protected HttpWorker(String workerName) {
 		super(workerName);
 		httpRoutingConfigs = HttpRoutingConfigs.load(workerName);
-		defaultDbConfig = httpRoutingConfigs.getDefaultDbConfig();
-		logger.info("HttpWorker.defaultDbConfig " + defaultDbConfig);
-		// check to make sure httpRoutingConfigs is not null
-		if (httpRoutingConfigs == null) {
-			String errorMsg = workerName + " is not existed in in " + HttpRoutingConfigs.FILE_HTTP_ROUTING_CONFIGS_JSON;
-			throw new IllegalArgumentException(errorMsg);
-		} else {
-			LogUtil.logInfo(HttpWorker.class, "loaded config " + new Gson().toJson(httpRoutingConfigs));
+		if(httpRoutingConfigs == null) {
+			// check to make sure httpRoutingConfigs is not null
+			throw new IllegalArgumentException(workerName + " is not existed in in " + HttpRoutingConfigs.FILE_HTTP_ROUTING_CONFIGS_JSON);
 		}
+
+		defaultDbConfig = httpRoutingConfigs.getDefaultDbConfig();
+		if(defaultDbConfig == null) {
+			// check to make sure defaultDbConfig is not null
+			throw new IllegalArgumentException("defaultDbConfig is not defined in " + HttpRoutingConfigs.FILE_HTTP_ROUTING_CONFIGS_JSON);
+		}
+
+		logger.info("HttpWorker.defaultDbConfig " + defaultDbConfig);
+		LogUtil.logInfo(HttpWorker.class, "loaded config " + new Gson().toJson(httpRoutingConfigs));
 	}
 
 	/**

@@ -13,6 +13,7 @@ import leotech.cdp.query.filters.CampaignFilter;
 import leotech.system.model.JsonDataTablePayload;
 import leotech.system.util.LogUtil;
 import leotech.system.util.TaskRunner;
+import rfx.core.util.CommonUtil;
 import rfx.core.util.FileUtils;
 
 /**
@@ -55,7 +56,7 @@ public class CampaignManagement {
 	public static Campaign newCampaign() {
 		Campaign campaign = new Campaign();
 		try {
-			String json = FileUtils.readFileAsString("./resources/marketing-flow-templates/default-flow-template.json");
+			String json = FileUtils.readFileAsString( CommonUtil.getBaseDir() + "/resources/marketing-flow-templates/default-flow-template.json");
 			campaign.setAutomatedFlowJson(json);
 		} catch (IOException e) {
 			e.printStackTrace();

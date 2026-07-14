@@ -23,6 +23,7 @@ import leotech.system.dao.SystemServiceDaoUtil;
 import leotech.system.model.AttributeMetaData;
 import leotech.system.model.SystemService;
 import leotech.system.version.SystemMetaData;
+import rfx.core.util.CommonUtil;
 import rfx.core.util.FileUtils;
 
 /**
@@ -38,7 +39,7 @@ public final class SystemConfigsManagement {
 	static final int CACHE_SIZE = 200;
 	static final long CACHE_TIME = 15;
 
-	public static final String SYSTEM_INIT_CONFIG_JSON = "./resources/data-for-new-setup/init-system-services.json";
+	public static final String SYSTEM_INIT_CONFIG_JSON =  CommonUtil.getBaseDir() + "/resources/data-for-new-setup/init-system-services.json";
 	public static final int DEFAULT_ITEM_FOR_PROFILE = 30;
 	public static final String CDP_RECOMMENDER = "cdp_recommender";
 	public static final String LEO_CDP_METADATA = "leo_cdp_metadata";

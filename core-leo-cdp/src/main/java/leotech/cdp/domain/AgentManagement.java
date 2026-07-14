@@ -14,6 +14,7 @@ import leotech.cdp.model.activation.Agent;
 import leotech.cdp.model.customer.Segment;
 import leotech.system.exception.InvalidDataException;
 import leotech.system.model.SystemUser;
+import rfx.core.util.CommonUtil;
 import rfx.core.util.FileUtils;
 import rfx.core.util.StringUtil;
 import rfx.core.util.Utils;
@@ -27,7 +28,7 @@ import rfx.core.util.Utils;
  */
 public final class AgentManagement {
 
-	public static final String INIT_DATA_SERVICE_JSON = "./resources/data-for-new-setup/init-agent-configs.json";
+	public static final String INIT_DATA_SERVICE_JSON = CommonUtil.getBaseDir() + "/resources/data-for-new-setup/init-agent-configs.json";
 
 	/**
 	 * @return List<DataService> from file

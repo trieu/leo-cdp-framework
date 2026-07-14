@@ -52,6 +52,7 @@ public final class MainHttpStarter {
             initializeSystemEnvironment();
             dispatchCommand(args);
         } catch (Exception e) {
+            e.printStackTrace();
             LOGGER.error("Fatal error during system startup: {}", e.getMessage(), e);
             System.exit(1);
         }
@@ -76,6 +77,7 @@ public final class MainHttpStarter {
      */
     private static void dispatchCommand(String[] args) throws Exception {
         int argCount = args.length;
+        System.out.println("Total arguments received: " + argCount);
 
         // Case 0: No arguments provided. Default Startup.
         if (argCount == 0) {
