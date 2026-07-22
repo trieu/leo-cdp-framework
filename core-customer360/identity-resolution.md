@@ -41,13 +41,13 @@ Giải pháp bao gồm các thành phần chính sau:
 * **Bảng Metadata (`cdp_profile_attributes`):** Định nghĩa cấu trúc và thuộc tính của các trường dữ liệu profile, bao gồm cả cấu hình cho nhận dạng danh tính (thuộc tính nào dùng để ghép nối, quy tắc ghép nối, cách tổng hợp dữ liệu).
 * **Bảng Master Profiles (`cdp_master_profiles`):** Lưu trữ các hồ sơ khách hàng "vàng" đã được giải quyết.
 * **Bảng Profile Links (`cdp_profile_links`):** Lưu trữ mối quan hệ liên kết giữa các bản ghi thô và hồ sơ master.
-* **Stored Procedure (`resolve_customer_identities_dynamic`):** Chứa toàn bộ logic nhận dạng danh tính, đọc cấu hình từ `cdp_profile_attributes` và xử lý dữ liệu trong bảng staging.
+* ** Python code (`resolve_customer_identities_dynamic`):** Chứa toàn bộ logic nhận dạng danh tính, đọc cấu hình từ `cdp_profile_attributes` và xử lý dữ liệu trong bảng staging.
 * **Extensions:** `citext`, `fuzzystrmatch`, `pg_trgm` hỗ trợ so sánh chuỗi và fuzzy matching.
 
 
 * **Real-time Trigger (`cdp_trigger_process_new_raw_profiles`):** Một trigger trên bảng `cdp_raw_profiles_stage` để kích hoạt xử lý ngay khi có dữ liệu mới đến.
 * **Trigger Function (`process_new_raw_profiles_trigger_func`):** Hàm được gọi bởi real-time trigger, có nhiệm vụ gọi stored procedure chính.
-* **Lịch Trình Hàng Ngày (External Scheduler / pg_cron):** Một quy trình bên ngoài hoặc tiện ích nội bộ được lên lịch chạy định kỳ để đảm bảo quét toàn bộ bảng staging và quản lý trạng thái của real-time trigger.
+* **Lịch trình mỗi giờ  (External Scheduler):** Một quy trình bên ngoài hoặc tiện ích nội bộ được lên lịch chạy định kỳ để đảm bảo quét toàn bộ bảng staging và quản lý trạng thái của real-time trigger.
 
 ## Flow chính
 
@@ -61,7 +61,7 @@ graph TD
     subgraph "Cơ Chế  Trigger"
         direction TB
         T{{Real-time Trigger<br>cdp_trigger_process_new_raw_profiles}}
-        S["Lịch Trình Hàng Ngày<br>(Airflow / pg_cron / Script)"]
+        S["Lịch Trình mỗi giờ <br>(Airflow / Script)"]
         Status["Bảng IR Status<br>cdp_id_resolution_status"] 
     end
 
@@ -69,7 +69,7 @@ graph TD
     T -- "Kiểm tra & Cập nhật<br>Thời gian chạy" --> Status;
     Status -- "Được đọc bởi" --> T; 
 
-    T -- "Kích hoạt" --> D{{Stored Procedure<br>resolve_customer_identities_dynamic}}
+    T -- "Kích hoạt" --> D{{Python function<br>resolve_customer_identities_dynamic}}
     S -- "Kích hoạt<br>(Lúc 2AM)" --> D
 
     S -- "Vô hiệu hóa Trigger" --> T
@@ -325,7 +325,7 @@ ALTER TABLE cdp_profile_links ADD CONSTRAINT uk_profile_links_raw_id UNIQUE (raw
 
 ## Cơ chế "Real-time" Trigger
 
-Để xử lý dữ liệu mới đến theo thời gian thực, chúng ta tạo một trigger trên bảng `cdp_raw_profiles_stage`. Trigger này gọi hàm stored procedure chính (`resolve_customer_identities_dynamic`).
+Để xử lý dữ liệu mới đến theo thời gian thực, chúng ta tạo một trigger trên bảng `cdp_raw_profiles_stage`. Trigger này gọi hàm Python function chính (`resolve_customer_identities_dynamic`).
 
 **Để tránh quá tải database khi stream dữ liệu với tần suất cao**, hàm trigger sẽ kiểm tra thời gian chạy gần nhất trong bảng trạng thái (`cdp_id_resolution_status`).
 
@@ -347,49 +347,152 @@ INSERT INTO cdp_id_resolution_status (id, last_executed_at) VALUES (TRUE, NULL) 
 
 **2. Tạo hoặc sửa đổi hàm trigger:**
 
-```sql
--- Hàm kiểm tra tần suất và chỉ gọi SP chính nếu đủ điều kiện (Throttle)
-CREATE OR REPLACE FUNCTION process_new_raw_profiles_trigger_func()
-RETURNS TRIGGER AS $$
-DECLARE
-    min_interval INTERVAL := '5 seconds'; -- Giới hạn chạy tối đa 5 giây 1 lần
-    last_exec_time TIMESTAMP WITH TIME ZONE;
-    current_time TIMESTAMP WITH TIME ZONE := NOW();
-BEGIN
-    BEGIN
-        -- Khóa bản ghi trạng thái để tránh đụng độ (Race condition)
-        PERFORM 1 FROM cdp_id_resolution_status WHERE id = TRUE FOR UPDATE;
-        SELECT last_executed_at INTO last_exec_time FROM cdp_id_resolution_status WHERE id = TRUE;
+```python 
 
-        -- Kiểm tra khoảng thời gian
-        IF last_exec_time IS NULL OR current_time - last_exec_time >= min_interval THEN
-            UPDATE cdp_id_resolution_status SET last_executed_at = current_time WHERE id = TRUE;
-            
-            -- Thực thi tiến trình ghép nối
-            PERFORM resolve_customer_identities_dynamic();
-        END IF;
+import logging
+import time
+from datetime import datetime
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
-    EXCEPTION
-        WHEN OTHERS THEN
-            RAISE WARNING 'Lỗi trong hàm trigger process_new_raw_profiles_trigger_func: %', SQLERRM;
-            -- Bỏ qua lỗi trigger để không block tiến trình INSERT của Data Worker
-            RETURN NULL; 
-    END;
+# Assuming the CustomerIdentityResolver class from the previous step is available
+# from cdp_resolution import CustomerIdentityResolver
 
-    RETURN NULL; 
-END;
-$$ LANGUAGE plpgsql;
+# Set up logging
+logger = logging.getLogger(__name__)
 
-```
+class IdentityResolutionTrigger:
+    """
+    Replicates the PostgreSQL trigger 'cdp_trigger_process_new_raw_profiles' 
+    and the throttle function 'process_new_raw_profiles_trigger_func'.
+    
+    This controller uses distributed row-level locking (FOR UPDATE NOWAIT) 
+    to ensure that identity resolution is throttled across multiple concurrent 
+    Python workers.
+    """
 
-**3. Tạo trigger:**
+    def __init__(self, db_connection, schema: str = "customer360", throttle_seconds: int = 5):
+        """
+        Args:
+            db_connection: A psycopg2 connection object.
+            schema: The database schema containing the CDP tables.
+            throttle_seconds: Minimum time (in seconds) between resolution runs.
+        """
+        self.conn = db_connection
+        self.schema = schema
+        self.throttle_seconds = throttle_seconds
 
-```sql
--- FOR EACH STATEMENT: Chạy 1 lần cho mỗi lô INSERT/UPDATE thay vì chạy cho từng dòng
-CREATE TRIGGER cdp_trigger_process_new_raw_profiles
-AFTER INSERT OR UPDATE ON cdp_raw_profiles_stage
-FOR EACH STATEMENT
-EXECUTE FUNCTION process_new_raw_profiles_trigger_func();
+    def attempt_trigger(self) -> bool:
+        """
+        Checks the throttle status and executes the resolution logic if the 
+        minimum interval has passed. 
+        
+        It catches exceptions to mimic the original SQL trigger's behavior 
+        of not blocking the main ingestion flow.
+        
+        Returns:
+            bool: True if the resolution logic was triggered, False if throttled or skipped.
+        """
+        executed = False
+        
+        try:
+            with self.conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                # 1. Acquire a row-level lock to prevent race conditions
+                # NOWAIT ensures that if another worker holds the lock, this process 
+                # skips immediately instead of waiting, behaving like a fast throttle.
+                lock_query = f"""
+                    SELECT last_executed_at 
+                    FROM {self.schema}.cdp_id_resolution_status 
+                    WHERE id = TRUE 
+                    FOR UPDATE NOWAIT;
+                """
+                
+                try:
+                    cursor.execute(lock_query)
+                    status_row = cursor.fetchone()
+                except psycopg2.errors.LockNotAvailable:
+                    logger.debug("Lock not available: Another worker is currently processing the trigger.")
+                    self.conn.rollback()
+                    return False
+
+                if not status_row:
+                    logger.warning("Status row missing. Please initialize 'cdp_id_resolution_status'.")
+                    self.conn.rollback()
+                    return False
+
+                last_exec_time = status_row['last_executed_at']
+                
+                # Use timezone-aware current time if the database returned a timezone-aware datetime
+                tz_info = last_exec_time.tzinfo if last_exec_time else None
+                current_time = datetime.now(tz_info)
+
+                # 2. Check the time interval limit (Throttle logic)
+                should_run = False
+                if last_exec_time is None:
+                    should_run = True
+                else:
+                    time_elapsed = (current_time - last_exec_time).total_seconds()
+                    if time_elapsed >= self.throttle_seconds:
+                        should_run = True
+
+                # 3. Execute logic if condition is met
+                if should_run:
+                    logger.info("Throttle interval passed. Executing Customer Identity Resolution...")
+                    
+                    # Update the execution timestamp immediately
+                    update_query = f"""
+                        UPDATE {self.schema}.cdp_id_resolution_status 
+                        SET last_executed_at = NOW() 
+                        WHERE id = TRUE;
+                    """
+                    cursor.execute(update_query)
+                    
+                    # Initialize and run the main OOP resolver logic
+                    resolver = CustomerIdentityResolver(
+                        db_connection=self.conn, 
+                        schema=self.schema
+                    )
+                    # Note: run_resolution_batch() should handle its own commits.
+                    resolver.run_resolution_batch()
+                    
+                    executed = True
+                else:
+                    logger.debug(f"Throttled: Only {time_elapsed}s elapsed (limit {self.throttle_seconds}s).")
+                    self.conn.rollback() # Release the lock
+
+        except Exception as e:
+            # Equivalent to the EXCEPTION WHEN OTHERS block in PL/pgSQL
+            # Ensures we don't crash the data ingestion worker if resolution fails
+            logger.warning(f"Error in python trigger controller: {e}")
+            self.conn.rollback()
+        
+        return executed
+
+# ==========================================
+# Example Usage in a Data Ingestion Worker
+# ==========================================
+if __name__ == "__main__":
+    # In a real setup, you would use a connection pool (e.g., psycopg2.pool)
+    conn = psycopg2.connect("dbname=cdp user=postgres password=secret")
+    
+    # Instantiate the trigger controller
+    trigger_controller = IdentityResolutionTrigger(
+        db_connection=conn, 
+        schema="customer360",
+        throttle_seconds=5
+    )
+    
+    # Simulating a Data Worker loop (like reading from Kafka or RabbitMQ)
+    while True:
+        # 1. Ingest raw profile here...
+        # insert_raw_profile_to_db(...)
+        
+        # 2. Call the trigger method after inserting data.
+        # It will only actually run the resolution if 5 seconds have passed.
+        trigger_controller.attempt_trigger()
+        
+        # Sleep to simulate message stream delay
+        time.sleep(1)
 
 ```
 
@@ -456,180 +559,293 @@ if __name__ == "__main__":
 
 ```
 
-### Daily Trigger using PostgreSQL pg_cron
+## OOP Python Implementation for Customer Identity Resolution
 
-#### 🧩 Bước 1: Tạo hàm PostgreSQL
+Đây là code  xử lý trung tâm, đọc rule từ MetaData và xây dựng câu lệnh SQL Dynamic.
 
-```sql
-CREATE OR REPLACE FUNCTION run_daily_identity_resolution()
-RETURNS void AS $$
-BEGIN
-    RAISE NOTICE '[%] Vô hiệu hóa trigger real-time...', clock_timestamp();
-    EXECUTE format('ALTER TABLE %I DISABLE TRIGGER %I', 'cdp_raw_profiles_stage', 'cdp_trigger_process_new_raw_profiles');
+```python
 
-    PERFORM pg_sleep(5);
+import logging
+from dataclasses import dataclass
+from typing import List, Optional, Dict, Any
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
-    RAISE NOTICE '[%] Gọi stored procedure...', clock_timestamp();
-    PERFORM resolve_customer_identities_dynamic();
+# Set up logging for pipeline observability
+logger = logging.getLogger(__name__)
 
-    RAISE NOTICE '[%] Kích hoạt lại trigger real-time...', clock_timestamp();
-    EXECUTE format('ALTER TABLE %I ENABLE TRIGGER %I', 'cdp_raw_profiles_stage', 'cdp_trigger_process_new_raw_profiles');
+@dataclass
+class IdentityRule:
+    """Represents a matching rule from the metadata configuration."""
+    attribute_code: str
+    match_rule: str
+    threshold: Optional[float] = None
 
-EXCEPTION
-    WHEN OTHERS THEN
-        RAISE WARNING '[%] Lỗi: %', clock_timestamp(), SQLERRM;
-        BEGIN
-            EXECUTE format('ALTER TABLE %I ENABLE TRIGGER %I', 'cdp_raw_profiles_stage', 'cdp_trigger_process_new_raw_profiles');
-        EXCEPTION WHEN OTHERS THEN NULL;
-        END;
-END;
-$$ LANGUAGE plpgsql;
+class CustomerIdentityResolver:
+    """
+    Handles Customer Identity Resolution (CIR) by linking raw profiles to master profiles 
+    using dynamically configured matching rules[cite: 1].
+    """
 
-```
+    def __init__(self, db_connection, schema: str = "customer360", batch_size: int = 1000):
+        """
+        Initializes the resolver with an injected database connection for easy unit testing.
+        
+        Args:
+            db_connection: A psycopg2 connection object (or a connection pool).
+            schema: The database schema containing the CDP tables[cite: 2].
+            batch_size: Number of records to process in memory per run[cite: 1].
+        """
+        self.conn = db_connection
+        self.schema = schema
+        self.batch_size = batch_size
 
-#### 🕑 Bước 2: Đăng ký job pg_cron
+    def _get_active_rules(self, cursor) -> List[IdentityRule]:
+        """Fetches active identity resolution rules from the metadata table[cite: 1]."""
+        query = f"""
+            SELECT attribute_internal_code, matching_rule, matching_threshold
+            FROM {self.schema}.cdp_profile_attributes
+            WHERE is_identity_resolution = TRUE 
+              AND status = 'ACTIVE'
+              AND matching_rule IS NOT NULL 
+              AND matching_rule != 'none';
+        """
+        cursor.execute(query)
+        rules = []
+        for row in cursor.fetchall():
+            rules.append(IdentityRule(
+                attribute_code=row['attribute_internal_code'],
+                match_rule=row['matching_rule'],
+                threshold=row['matching_threshold']
+            ))
+        return rules
 
-```sql
--- Chạy lúc 2:00 AM mỗi ngày
-SELECT cron.schedule(
-    'daily_identity_resolution',
-    '0 2 * * *', 
-    $$SELECT run_daily_identity_resolution();$$
-);
+    def _fetch_unprocessed_profiles(self, cursor) -> List[Dict[str, Any]]:
+        """Fetches a batch of raw profiles that have not been processed yet (status_code = 1)[cite: 2]."""
+        query = f"""
+            SELECT raw_profile_id, tenant_id, source_system, full_name, email, phone_number
+            FROM {self.schema}.cdp_raw_profiles_stage
+            WHERE status_code = 1
+            LIMIT %s;
+        """
+        cursor.execute(query, (self.batch_size,))
+        return cursor.fetchall()
 
-```
+    def _find_master_profile(self, cursor, raw_profile: Dict[str, Any], rules: List[IdentityRule]) -> Optional[str]:
+        """
+        Dynamically builds and executes a query to find a matching master profile 
+        based on active metadata rules[cite: 1].
+        """
+        conditions = []
+        params = []
 
-## Quá Trình Nhận Dạng Danh Tính (Stored Procedure - SQL)
+        for rule in rules:
+            raw_value = raw_profile.get(rule.attribute_code)
+            if not raw_value:
+                continue
 
-Đây là thủ tục xử lý trung tâm, đọc rule từ MetaData và xây dựng câu lệnh SQL Dynamic.
+            col_name = rule.attribute_code
+            
+            # Construct parameterized conditions based on the match rule[cite: 1]
+            if rule.match_rule == 'exact':
+                conditions.append(f"{col_name} = %s")
+                params.append(raw_value)
+            elif rule.match_rule == 'fuzzy_trgm':
+                conditions.append(f"similarity({col_name}, %s) >= %s")
+                params.extend([raw_value, rule.threshold])
+            elif rule.match_rule == 'fuzzy_dmetaphone':
+                conditions.append(f"dmetaphone({col_name}) = dmetaphone(%s)")
+                params.append(raw_value)
 
-```sql
--- 1. Tạo TYPE lưu trữ cấu hình an toàn (Xử lý duplicate nếu chạy lại script)
-DO $$ BEGIN
-    CREATE TYPE identity_config_type AS (
-        id INT, attr_code VARCHAR, data_type VARCHAR, match_rule VARCHAR, threshold DECIMAL, cons_rule VARCHAR
-    );
-EXCEPTION
-    WHEN duplicate_object THEN NULL;
-END $$;
+        if not conditions:
+            return None
 
--- 2. Hàm chính (Sử dụng batch_size để tối ưu bộ nhớ)
-CREATE OR REPLACE FUNCTION resolve_customer_identities_dynamic(batch_size INT DEFAULT 1000)
-RETURNS VOID AS $$
-DECLARE
-    r_profile cdp_raw_profiles_stage%ROWTYPE; 
-    matched_master_id UUID; 
-    identity_configs_array identity_config_type[]; 
-    v_where_conditions TEXT[] := '{}'; 
-    v_condition_text TEXT;
-    v_identity_config_rec identity_config_type; 
-    v_raw_value_text TEXT;
-    v_master_col_name TEXT;
-    v_dynamic_select_query TEXT;
-BEGIN
-    -- 1. Lấy Metadata cấu hình Active
-    SELECT array_agg(ROW(id, attribute_internal_code, data_type, matching_rule, matching_threshold, consolidation_rule)::identity_config_type)
-    INTO identity_configs_array
-    FROM cdp_profile_attributes
-    WHERE is_identity_resolution = TRUE AND status = 'ACTIVE'
-    AND matching_rule IS NOT NULL AND matching_rule != 'none';
+        where_clause = " OR ".join(f"({c})" for c in conditions)
+        query = f"""
+            SELECT master_profile_id 
+            FROM {self.schema}.cdp_master_profiles 
+            WHERE tenant_id = %s AND ({where_clause})
+            LIMIT 1;
+        """
+        
+        # Prepend tenant_id to params for the WHERE clause
+        query_params = [raw_profile['tenant_id']] + params
+        cursor.execute(query, tuple(query_params))
+        result = cursor.fetchone()
+        
+        return result['master_profile_id'] if result else None
 
-    IF identity_configs_array IS NULL THEN RETURN; END IF;
+    def _link_and_update(self, cursor, raw_profile: Dict[str, Any], master_id: str):
+        """Updates an existing master profile and creates a link to the raw profile[cite: 1, 2]."""
+        # Create the relationship link[cite: 2]
+        link_query = f"""
+            INSERT INTO {self.schema}.cdp_profile_links 
+            (tenant_id, raw_profile_id, master_profile_id, match_method)
+            VALUES (%s, %s, %s, %s)
+            ON CONFLICT (tenant_id, raw_profile_id) DO NOTHING;
+        """
+        cursor.execute(link_query, (
+            raw_profile['tenant_id'], 
+            raw_profile['raw_profile_id'], 
+            master_id, 
+            'DynamicMatch'
+        ))
 
-    -- 2. Quét lô bản ghi chưa xử lý
-    FOR r_profile IN
-        SELECT * FROM cdp_raw_profiles_stage WHERE processed_at IS NULL LIMIT batch_size
-    LOOP
-        matched_master_id := NULL;
-        v_where_conditions := '{}';
-
-        -- 3. Xây dựng mệnh đề WHERE động dựa theo Metadata
-        FOREACH v_identity_config_rec IN ARRAY identity_configs_array LOOP
-            v_raw_value_text := NULL;
-
-            -- Mapping giá trị thực tế
-            CASE v_identity_config_rec.attr_code
-                WHEN 'first_name' THEN v_raw_value_text := r_profile.first_name::TEXT;
-                WHEN 'last_name' THEN v_raw_value_text := r_profile.last_name::TEXT;
-                WHEN 'email' THEN v_raw_value_text := r_profile.email::TEXT;
-                WHEN 'phone_number' THEN v_raw_value_text := r_profile.phone_number::TEXT;
-                WHEN 'address_line1' THEN v_raw_value_text := r_profile.address_line1::TEXT;
-                ELSE CONTINUE;
-            END CASE;
-
-            IF v_raw_value_text IS NOT NULL AND v_raw_value_text != '' THEN
-                v_master_col_name := v_identity_config_rec.attr_code;
-                v_condition_text := '';
-
-                CASE v_identity_config_rec.match_rule
-                    WHEN 'exact' THEN
-                        v_condition_text := format('mp.%I = %L', v_master_col_name, v_raw_value_text);
-                    WHEN 'fuzzy_trgm' THEN
-                        v_condition_text := format('similarity(mp.%I, %L) >= %s', v_master_col_name, v_raw_value_text, v_identity_config_rec.threshold);
-                    WHEN 'fuzzy_dmetaphone' THEN
-                        v_condition_text := format('dmetaphone(mp.%I) = dmetaphone(%L)', v_master_col_name, v_raw_value_text);
-                    ELSE CONTINUE;
-                END CASE;
-
-                IF v_condition_text != '' THEN
-                    v_where_conditions := array_append(v_where_conditions, '(' || v_condition_text || ')');
-                END IF;
-            END IF;
-        END LOOP;
-
-        -- 4. Tìm kiếm Profile Master
-        IF array_length(v_where_conditions, 1) IS NOT NULL THEN
-            v_dynamic_select_query := 'SELECT master_profile_id FROM cdp_master_profiles mp WHERE ' || array_to_string(v_where_conditions, ' OR ') || ' LIMIT 1';
-            BEGIN
-                EXECUTE v_dynamic_select_query INTO matched_master_id;
-            EXCEPTION WHEN OTHERS THEN matched_master_id := NULL; END;
-        END IF;
-
-        -- 5. Xử lý Link / Merge Data
-        IF matched_master_id IS NOT NULL THEN
-            BEGIN
-                INSERT INTO cdp_profile_links (raw_profile_id, master_profile_id, match_rule)
-                VALUES (r_profile.raw_profile_id, matched_master_id, 'DynamicMatch');
-            EXCEPTION WHEN unique_violation THEN CONTINUE; END;
-
-            -- Cập nhật thông tin Master Profile
-            UPDATE cdp_master_profiles mp
-            SET
-                first_name = COALESCE(mp.first_name, r_profile.first_name),
-                email = COALESCE(mp.email, r_profile.email),
-                phone_number = COALESCE(mp.phone_number, r_profile.phone_number),
-                address_line1 = COALESCE(mp.address_line1, r_profile.address_line1),
-                city = COALESCE(mp.city, r_profile.city),
-                state = COALESCE(mp.state, r_profile.state),
-                zip_code = COALESCE(mp.zip_code, r_profile.zip_code),
-                source_systems = array_append(mp.source_systems, r_profile.source_system),
+        # Coalesce data to preserve existing master profile data while filling gaps[cite: 1]
+        update_query = f"""
+            UPDATE {self.schema}.cdp_master_profiles
+            SET 
+                full_name = COALESCE(full_name, %s),
+                email = COALESCE(email, %s),
+                phone_number = COALESCE(phone_number, %s),
                 updated_at = NOW()
-            WHERE mp.master_profile_id = matched_master_id;
+            WHERE master_profile_id = %s;
+        """
+        cursor.execute(update_query, (
+            raw_profile.get('full_name'),
+            raw_profile.get('email'),
+            raw_profile.get('phone_number'),
+            master_id
+        ))
 
-        ELSE
-            -- Không tìm thấy Master => Tạo mới
-            INSERT INTO cdp_master_profiles (first_name, last_name, email, phone_number, address_line1, city, state, zip_code, source_systems, first_seen_raw_profile_id)
-            VALUES (
-                r_profile.first_name, r_profile.last_name, r_profile.email, r_profile.phone_number, 
-                r_profile.address_line1, r_profile.city, r_profile.state, r_profile.zip_code, 
-                ARRAY[r_profile.source_system], r_profile.raw_profile_id
+    def _create_master_and_link(self, cursor, raw_profile: Dict[str, Any]):
+        """Creates a brand new master profile when no matches are found[cite: 1, 2]."""
+        insert_master_query = f"""
+            INSERT INTO {self.schema}.cdp_master_profiles 
+            (tenant_id, full_name, email, phone_number)
+            VALUES (%s, %s, %s, %s)
+            RETURNING master_profile_id;
+        """
+        cursor.execute(insert_master_query, (
+            raw_profile['tenant_id'],
+            raw_profile.get('full_name'),
+            raw_profile.get('email'),
+            raw_profile.get('phone_number')
+        ))
+        new_master_id = cursor.fetchone()['master_profile_id']
+
+        link_query = f"""
+            INSERT INTO {self.schema}.cdp_profile_links 
+            (tenant_id, raw_profile_id, master_profile_id, match_method)
+            VALUES (%s, %s, %s, %s);
+        """
+        cursor.execute(link_query, (
+            raw_profile['tenant_id'],
+            raw_profile['raw_profile_id'],
+            new_master_id,
+            'NewMaster'
+        ))
+
+    def _mark_as_processed(self, cursor, raw_profile_id: str):
+        """Updates the status of the raw profile to processed (status_code = 3)[cite: 2]."""
+        query = f"""
+            UPDATE {self.schema}.cdp_raw_profiles_stage
+            SET status_code = 3 
+            WHERE raw_profile_id = %s;
+        """
+        cursor.execute(query, (raw_profile_id,))
+
+    def run_resolution_batch(self):
+        """
+        Main orchestration method for a single batch run. 
+        Designed to be idempotent and safe for workflow retries.
+        """
+        try:
+            with self.conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                rules = self._get_active_rules(cursor)
+                if not rules:
+                    logger.warning("No active identity resolution rules found. Aborting.")
+                    return
+
+                raw_profiles = self._fetch_unprocessed_profiles(cursor)
+                if not raw_profiles:
+                    logger.info("No unprocessed profiles found in staging.")
+                    return
+
+                logger.info(f"Processing batch of {len(raw_profiles)} profiles.")
+
+                for profile in raw_profiles:
+                    matched_id = self._find_master_profile(cursor, profile, rules)
+                    
+                    if matched_id:
+                        self._link_and_update(cursor, profile, matched_id)
+                    else:
+                        self._create_master_and_link(cursor, profile)
+                        
+                    self._mark_as_processed(cursor, profile['raw_profile_id'])
+
+                # Commit the entire batch transaction
+                self.conn.commit()
+                logger.info("Batch processed and committed successfully.")
+
+        except Exception as e:
+            self.conn.rollback()
+            logger.error(f"Error during identity resolution: {e}")
+            raise
+
+
+```
+
+## Integration with Data Pipeline Frameworks
+
+### Apache Airflow 3 Example
+
+```python
+from airflow.decorators import dag, task
+from airflow.providers.postgres.hooks.postgres import PostgresHook
+from pendulum import datetime
+
+@dag(schedule="@hourly", start_date=datetime(2026, 1, 1), catchup=False)
+def cdp_identity_resolution_pipeline():
+
+    @task()
+    def resolve_identities():
+        # Utilize Airflow's connection management
+        pg_hook = PostgresHook(postgres_conn_id="cdp_postgres_db")
+        conn = pg_hook.get_conn()
+        
+        try:
+            # Instantiate the OOP resolver
+            resolver = CustomerIdentityResolver(
+                db_connection=conn, 
+                schema="customer360", 
+                batch_size=5000 # Configured for memory optimization[cite: 1]
             )
-            RETURNING master_profile_id INTO matched_master_id;
+            resolver.run_resolution_batch()
+        finally:
+            conn.close()
 
-            BEGIN
-                INSERT INTO cdp_profile_links (raw_profile_id, master_profile_id, match_rule)
-                VALUES (r_profile.raw_profile_id, matched_master_id, 'NewMaster');
-            EXCEPTION WHEN unique_violation THEN CONTINUE; END;
-        END IF;
+    resolve_identities()
 
-        -- 6. Đánh dấu đã hoàn thành
-        UPDATE cdp_raw_profiles_stage
-        SET processed_at = NOW()
-        WHERE raw_profile_id = r_profile.raw_profile_id;
+cdp_identity_resolution_pipeline()
 
-    END LOOP;
-END;
-$$ LANGUAGE plpgsql;
+```
+
+### Dagster Example
+
+```python
+from dagster import asset, ConfigurableResource
+import psycopg2
+
+class PostgresResource(ConfigurableResource):
+    conn_uri: str
+
+    def get_connection(self):
+        return psycopg2.connect(self.conn_uri)
+
+@asset(compute_kind="python", group_name="cdp_core")
+def resolve_customer_identities(pg_db: PostgresResource):
+    """Runs the identity resolution process on staged raw profiles."""
+    conn = pg_db.get_connection()
+    
+    try:
+        resolver = CustomerIdentityResolver(
+            db_connection=conn, 
+            batch_size=2000
+        )
+        resolver.run_resolution_batch()
+    finally:
+        conn.close()
 
 ```
 
