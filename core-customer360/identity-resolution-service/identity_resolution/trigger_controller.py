@@ -26,7 +26,7 @@ class IdentityResolutionTrigger:
     ``cdp_id_resolution_status`` to coordinate across concurrent workers.
     """
 
-    def __init__(self, db_connection, schema: str = "public", throttle_seconds: int = 5):
+    def __init__(self, db_connection, schema: str = "customer360", throttle_seconds: int = 5):
         """
         Args:
             db_connection: A psycopg2 connection object.

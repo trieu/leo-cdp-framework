@@ -24,7 +24,7 @@ DB_NAME = os.environ.get("DB_NAME", "cdp")
 DB_USER = os.environ.get("DB_USER", "postgres")
 DB_PASSWORD = os.environ.get("DB_PASSWORD", "postgres")
 DB_PORT = os.environ.get("DB_PORT", "5432")
-DB_SCHEMA = os.environ.get("DB_SCHEMA", "public")
+DB_SCHEMA = os.environ.get("DB_SCHEMA", "customer360")
 BATCH_SIZE = int(os.environ.get("CIR_BATCH_SIZE", "5000"))
 
 

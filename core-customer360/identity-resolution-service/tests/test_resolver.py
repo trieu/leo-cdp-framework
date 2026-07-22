@@ -9,7 +9,7 @@ from identity_resolution.resolver import CustomerIdentityResolver
 
 
 def make_resolver(mock_conn, **kwargs):
-    return CustomerIdentityResolver(mock_conn, schema="public", **kwargs)
+    return CustomerIdentityResolver(mock_conn, schema="customer360", **kwargs)
 
 
 class TestGetActiveRules:
@@ -17,7 +17,7 @@ class TestGetActiveRules:
         mock_cursor.fetchall.return_value = [
             {"attribute_internal_code": "email", "matching_rule": "exact", "matching_threshold": None},
             {
-                "attribute_internal_code": "last_name",
+                "attribute_internal_code": "full_name",
                 "matching_rule": "fuzzy_trgm",
                 "matching_threshold": 0.7,
             },
@@ -28,7 +28,7 @@ class TestGetActiveRules:
 
         assert rules == [
             IdentityRule("email", "exact", None),
-            IdentityRule("last_name", "fuzzy_trgm", 0.7),
+            IdentityRule("full_name", "fuzzy_trgm", 0.7),
         ]
         query = mock_cursor.execute.call_args[0][0]
         assert "is_identity_resolution = TRUE" in query
@@ -42,7 +42,7 @@ class TestGetActiveRules:
 
 
 class TestFetchUnprocessedProfiles:
-    def test_uses_batch_size_and_processed_at_filter(self, mock_cursor, mock_conn):
+    def test_uses_batch_size_and_status_code_filter(self, mock_cursor, mock_conn):
         mock_cursor.fetchall.return_value = [{"raw_profile_id": "r1"}]
         resolver = make_resolver(mock_conn, batch_size=42)
 
@@ -50,37 +50,54 @@ class TestFetchUnprocessedProfiles:
 
         assert result == [{"raw_profile_id": "r1"}]
         query, params = mock_cursor.execute.call_args[0]
-        assert "processed_at IS NULL" in query
+        assert "status_code = 1" in query
         assert params == (42,)
 
 
 class TestFindMasterProfile:
-    def test_exact_match_found(self, mock_cursor, mock_conn):
+    def test_exact_scalar_match_found(self, mock_cursor, mock_conn):
         mock_cursor.fetchone.return_value = {"master_profile_id": "master-1"}
         resolver = make_resolver(mock_conn)
-        raw_profile = {"raw_profile_id": "r1", "email": "john@example.com"}
+        raw_profile = {
+            "raw_profile_id": "r1",
+            "tenant_id": "t1",
+            "domain": "banking",
+            "email": "john@example.com",
+        }
         rules = [IdentityRule("email", "exact")]
 
         result = resolver._find_master_profile(mock_cursor, raw_profile, rules)
 
         assert result == "master-1"
         query, params = mock_cursor.execute.call_args[0]
+        assert "tenant_id = %s AND domain = %s" in query
         assert "email = %s" in query
-        assert params == ("john@example.com",)
+        assert params == ("t1", "banking", "john@example.com")
 
     def test_no_match_returns_none(self, mock_cursor, mock_conn):
         mock_cursor.fetchone.return_value = None
         resolver = make_resolver(mock_conn)
-        raw_profile = {"raw_profile_id": "r1", "email": "unknown@example.com"}
+        raw_profile = {"raw_profile_id": "r1", "tenant_id": "t1", "email": "unknown@example.com"}
         rules = [IdentityRule("email", "exact")]
 
         result = resolver._find_master_profile(mock_cursor, raw_profile, rules)
 
         assert result is None
 
+    def test_defaults_domain_to_retail_when_missing(self, mock_cursor, mock_conn):
+        mock_cursor.fetchone.return_value = None
+        resolver = make_resolver(mock_conn)
+        raw_profile = {"raw_profile_id": "r1", "tenant_id": "t1", "email": "a@b.com"}
+        rules = [IdentityRule("email", "exact")]
+
+        resolver._find_master_profile(mock_cursor, raw_profile, rules)
+
+        _, params = mock_cursor.execute.call_args[0]
+        assert params == ("t1", "retail", "a@b.com")
+
     def test_skips_rules_when_raw_value_missing(self, mock_cursor, mock_conn):
         resolver = make_resolver(mock_conn)
-        raw_profile = {"raw_profile_id": "r1", "email": None}
+        raw_profile = {"raw_profile_id": "r1", "tenant_id": "t1", "email": None}
         rules = [IdentityRule("email", "exact")]
 
         result = resolver._find_master_profile(mock_cursor, raw_profile, rules)
@@ -88,45 +105,91 @@ class TestFindMasterProfile:
         assert result is None
         mock_cursor.execute.assert_not_called()
 
-    def test_fuzzy_trgm_uses_threshold(self, mock_cursor, mock_conn):
+    def test_array_identity_field_device_id(self, mock_cursor, mock_conn):
         mock_cursor.fetchone.return_value = {"master_profile_id": "master-2"}
         resolver = make_resolver(mock_conn)
-        raw_profile = {"raw_profile_id": "r1", "last_name": "Smyth"}
-        rules = [IdentityRule("last_name", "fuzzy_trgm", threshold=0.65)]
+        raw_profile = {"raw_profile_id": "r1", "tenant_id": "t1", "domain": "retail", "device_id": "dev-123"}
+        rules = [IdentityRule("device_id", "exact")]
 
-        resolver._find_master_profile(mock_cursor, raw_profile, rules)
+        result = resolver._find_master_profile(mock_cursor, raw_profile, rules)
 
+        assert result == "master-2"
         query, params = mock_cursor.execute.call_args[0]
-        assert "similarity(last_name, %s) >= %s" in query
-        assert params == ("Smyth", 0.65)
+        assert "%s = ANY(device_ids)" in query
+        assert params == ("t1", "retail", "dev-123")
 
-    def test_fuzzy_trgm_defaults_threshold_when_missing(self, mock_cursor, mock_conn):
-        mock_cursor.fetchone.return_value = None
-        resolver = make_resolver(mock_conn)
-        raw_profile = {"raw_profile_id": "r1", "last_name": "Smyth"}
-        rules = [IdentityRule("last_name", "fuzzy_trgm", threshold=None)]
-
-        resolver._find_master_profile(mock_cursor, raw_profile, rules)
-
-        _, params = mock_cursor.execute.call_args[0]
-        assert params == ("Smyth", 0.7)
-
-    def test_fuzzy_dmetaphone_rule(self, mock_cursor, mock_conn):
+    def test_jsonb_keyed_external_customer_id_requires_source_system(self, mock_cursor, mock_conn):
         mock_cursor.fetchone.return_value = {"master_profile_id": "master-3"}
         resolver = make_resolver(mock_conn)
-        raw_profile = {"raw_profile_id": "r1", "first_name": "Jon"}
-        rules = [IdentityRule("first_name", "fuzzy_dmetaphone")]
+        raw_profile = {
+            "raw_profile_id": "r1",
+            "tenant_id": "t1",
+            "domain": "retail",
+            "source_system": "MoEngage",
+            "external_customer_id": "moe-999",
+        }
+        rules = [IdentityRule("external_customer_id", "exact")]
 
         result = resolver._find_master_profile(mock_cursor, raw_profile, rules)
 
         assert result == "master-3"
         query, params = mock_cursor.execute.call_args[0]
-        assert "dmetaphone(first_name) = dmetaphone(%s)" in query
-        assert params == ("Jon",)
+        assert "external_ids @> jsonb_build_object(%s::text, %s::text)" in query
+        assert params == ("t1", "retail", "MoEngage", "moe-999")
+
+    def test_jsonb_keyed_field_skipped_without_source_system(self, mock_cursor, mock_conn):
+        resolver = make_resolver(mock_conn)
+        raw_profile = {
+            "raw_profile_id": "r1",
+            "tenant_id": "t1",
+            "external_customer_id": "moe-999",
+        }
+        rules = [IdentityRule("external_customer_id", "exact")]
+
+        result = resolver._find_master_profile(mock_cursor, raw_profile, rules)
+
+        assert result is None
+        mock_cursor.execute.assert_not_called()
+
+    def test_fuzzy_trgm_uses_threshold(self, mock_cursor, mock_conn):
+        mock_cursor.fetchone.return_value = {"master_profile_id": "master-4"}
+        resolver = make_resolver(mock_conn)
+        raw_profile = {"raw_profile_id": "r1", "tenant_id": "t1", "full_name": "Nguyen Van A"}
+        rules = [IdentityRule("full_name", "fuzzy_trgm", threshold=0.65)]
+
+        resolver._find_master_profile(mock_cursor, raw_profile, rules)
+
+        query, params = mock_cursor.execute.call_args[0]
+        assert "similarity(full_name, %s) >= %s" in query
+        assert params == ("t1", "retail", "Nguyen Van A", 0.65)
+
+    def test_fuzzy_trgm_defaults_threshold_when_missing(self, mock_cursor, mock_conn):
+        mock_cursor.fetchone.return_value = None
+        resolver = make_resolver(mock_conn)
+        raw_profile = {"raw_profile_id": "r1", "tenant_id": "t1", "full_name": "Nguyen Van A"}
+        rules = [IdentityRule("full_name", "fuzzy_trgm", threshold=None)]
+
+        resolver._find_master_profile(mock_cursor, raw_profile, rules)
+
+        _, params = mock_cursor.execute.call_args[0]
+        assert params == ("t1", "retail", "Nguyen Van A", 0.7)
+
+    def test_fuzzy_dmetaphone_rule(self, mock_cursor, mock_conn):
+        mock_cursor.fetchone.return_value = {"master_profile_id": "master-5"}
+        resolver = make_resolver(mock_conn)
+        raw_profile = {"raw_profile_id": "r1", "tenant_id": "t1", "full_name": "Jon Smyth"}
+        rules = [IdentityRule("full_name", "fuzzy_dmetaphone")]
+
+        result = resolver._find_master_profile(mock_cursor, raw_profile, rules)
+
+        assert result == "master-5"
+        query, params = mock_cursor.execute.call_args[0]
+        assert "dmetaphone(full_name) = dmetaphone(%s)" in query
+        assert params == ("t1", "retail", "Jon Smyth")
 
     def test_unknown_rule_is_skipped(self, mock_cursor, mock_conn):
         resolver = make_resolver(mock_conn)
-        raw_profile = {"raw_profile_id": "r1", "email": "a@b.com"}
+        raw_profile = {"raw_profile_id": "r1", "tenant_id": "t1", "email": "a@b.com"}
         rules = [IdentityRule("email", "some_unknown_rule")]
 
         result = resolver._find_master_profile(mock_cursor, raw_profile, rules)
@@ -140,29 +203,57 @@ class TestLinkAndUpdate:
         resolver = make_resolver(mock_conn)
         raw_profile = {
             "raw_profile_id": "r1",
-            "first_name": "Jon",
-            "last_name": "Smyth",
-            "email": "john@example.com",
+            "tenant_id": "t1",
+            "domain": "banking",
+            "full_name": "Nguyen Van A",
+            "email": "a@example.com",
             "phone_number": None,
-            "address_line1": "123 Elm Street",
-            "city": "New York",
-            "state": "NY",
-            "zip_code": "10001",
-            "source_system": "SystemB",
+            "national_id": "079123456789",
+            "device_id": "dev-1",
+            "advertising_id": "adv-1",
+            "cookie_id": None,
+            "external_customer_id": "af-1",
+            "push_token": "push-token-1",
+            "source_system": "AppsFlyer",
         }
 
         resolver._link_and_update(mock_cursor, raw_profile, "master-1")
 
         assert mock_cursor.execute.call_count == 2
         link_query, link_params = mock_cursor.execute.call_args_list[0][0]
-        assert "INSERT INTO public.cdp_profile_links" in link_query
-        assert "ON CONFLICT (raw_profile_id) DO NOTHING" in link_query
-        assert link_params == ("r1", "master-1", "DynamicMatch")
+        assert "INSERT INTO customer360.cdp_profile_links" in link_query
+        assert "ON CONFLICT (tenant_id, raw_profile_id) DO NOTHING" in link_query
+        assert link_params == ("t1", "r1", "master-1", 1.0, "DynamicMatch")
 
         update_query, update_params = mock_cursor.execute.call_args_list[1][0]
-        assert "UPDATE public.cdp_master_profiles" in update_query
-        assert "COALESCE(first_name, %s)" in update_query
-        assert update_params[-2] == "master-1"
+        assert "UPDATE customer360.cdp_master_profiles" in update_query
+        assert "COALESCE(full_name, %s)" in update_query
+        assert "device_ids = CASE WHEN %s = ANY(COALESCE(device_ids, ARRAY[]::TEXT[]))" in update_query
+        assert "external_ids = COALESCE(external_ids, '{}'::JSONB)" in update_query
+        assert "push_tokens = COALESCE(push_tokens, '{}'::JSONB)" in update_query
+        assert "source_systems = CASE WHEN %s = ANY" in update_query
+        assert update_query.strip().endswith(
+            "WHERE master_profile_id = %s AND tenant_id = %s;"
+        )
+        assert update_params[-2:] == ("master-1", "t1")
+
+    def test_skips_identity_graph_merges_without_source_system(self, mock_cursor, mock_conn):
+        resolver = make_resolver(mock_conn)
+        raw_profile = {
+            "raw_profile_id": "r1",
+            "tenant_id": "t1",
+            "full_name": "Nguyen Van A",
+            "email": None,
+            "phone_number": None,
+            "national_id": None,
+        }
+
+        resolver._link_and_update(mock_cursor, raw_profile, "master-1")
+
+        update_query, _ = mock_cursor.execute.call_args_list[1][0]
+        assert "external_ids" not in update_query
+        assert "push_tokens" not in update_query
+        assert "source_systems" not in update_query
 
 
 class TestCreateMasterAndLink:
@@ -171,38 +262,51 @@ class TestCreateMasterAndLink:
         resolver = make_resolver(mock_conn)
         raw_profile = {
             "raw_profile_id": "r2",
-            "first_name": "Jane",
-            "last_name": "Doe",
-            "email": "jane.d@example.com",
+            "tenant_id": "t1",
+            "domain": "retail",
+            "full_name": "Tran Thi B",
+            "email": "b@example.com",
             "phone_number": "5551234567",
-            "address_line1": "456 Oak Ave",
-            "city": "Los Angeles",
-            "state": "CA",
-            "zip_code": "90001",
-            "source_system": "SystemA",
+            "national_id": None,
+            "device_id": "dev-2",
+            "advertising_id": "adv-2",
+            "cookie_id": "cookie-2",
+            "external_customer_id": "moe-2",
+            "push_token": "push-2",
+            "source_system": "MoEngage",
         }
 
         new_id = resolver._create_master_and_link(mock_cursor, raw_profile)
 
         assert new_id == "new-master-1"
         assert mock_cursor.execute.call_count == 2
-        insert_query, _ = mock_cursor.execute.call_args_list[0][0]
-        assert "INSERT INTO public.cdp_master_profiles" in insert_query
+
+        insert_query, insert_params = mock_cursor.execute.call_args_list[0][0]
+        assert "INSERT INTO customer360.cdp_master_profiles" in insert_query
         assert "RETURNING master_profile_id" in insert_query
+        assert insert_params[0] == "t1"
+        assert insert_params[1] == "retail"
+        assert insert_params[6].adapted == {"MoEngage": "moe-2"}  # external_ids
+        assert insert_params[7] == ["dev-2"]  # device_ids
+        assert insert_params[8] == ["adv-2"]  # advertising_ids
+        assert insert_params[9] == ["cookie-2"]  # cookie_ids
+        assert insert_params[10].adapted == {"MoEngage": "push-2"}  # push_tokens
+        assert insert_params[11] == ["MoEngage"]  # source_systems
+        assert insert_params[12] == "r2"  # first_seen_raw_profile_id
 
         link_query, link_params = mock_cursor.execute.call_args_list[1][0]
-        assert "INSERT INTO public.cdp_profile_links" in link_query
-        assert link_params == ("r2", "new-master-1", "NewMaster")
+        assert "INSERT INTO customer360.cdp_profile_links" in link_query
+        assert link_params == ("t1", "r2", "new-master-1", 1.0, "NewMaster")
 
 
 class TestMarkAsProcessed:
-    def test_sets_processed_at(self, mock_cursor, mock_conn):
+    def test_sets_status_code_and_processed_at(self, mock_cursor, mock_conn):
         resolver = make_resolver(mock_conn)
 
         resolver._mark_as_processed(mock_cursor, "r1")
 
         query, params = mock_cursor.execute.call_args[0]
-        assert "SET processed_at = NOW()" in query
+        assert "SET status_code = 3, processed_at = NOW()" in query
         assert params == ("r1",)
 
 
@@ -233,27 +337,33 @@ class TestRunResolutionBatch:
         profiles = [
             {
                 "raw_profile_id": "r1",
-                "first_name": "Jon",
-                "last_name": "Smyth",
-                "email": "john@example.com",
+                "tenant_id": "t1",
+                "domain": "retail",
+                "source_system": "WebTracking",
+                "full_name": "Nguyen Van A",
+                "email": "a@example.com",
                 "phone_number": None,
-                "address_line1": "123 Elm Street",
-                "city": "New York",
-                "state": "NY",
-                "zip_code": "10001",
-                "source_system": "SystemB",
+                "national_id": None,
+                "device_id": None,
+                "advertising_id": None,
+                "cookie_id": "cookie-1",
+                "external_customer_id": None,
+                "push_token": None,
             },
             {
                 "raw_profile_id": "r2",
-                "first_name": "Jane",
-                "last_name": "Doe",
-                "email": "jane.d@example.com",
+                "tenant_id": "t1",
+                "domain": "retail",
+                "source_system": "AppsFlyer",
+                "full_name": "Tran Thi B",
+                "email": "b@example.com",
                 "phone_number": "5551234567",
-                "address_line1": "456 Oak Ave",
-                "city": "Los Angeles",
-                "state": "CA",
-                "zip_code": "90001",
-                "source_system": "SystemA",
+                "national_id": None,
+                "device_id": "dev-2",
+                "advertising_id": "adv-2",
+                "cookie_id": None,
+                "external_customer_id": None,
+                "push_token": None,
             },
         ]
         mock_cursor.fetchall.side_effect = [rules, profiles]
@@ -283,3 +393,4 @@ class TestRunResolutionBatch:
 
         mock_conn.rollback.assert_called_once()
         mock_conn.commit.assert_not_called()
+
