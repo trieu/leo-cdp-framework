@@ -325,9 +325,9 @@ ALTER TABLE cdp_profile_links ADD CONSTRAINT uk_profile_links_raw_id UNIQUE (raw
 
 ## Cơ chế "Real-time" Trigger
 
-Để xử lý dữ liệu mới đến theo thời gian thực, chúng ta tạo một trigger trên bảng `cdp_raw_profiles_stage`. Trigger này gọi hàm Python function chính (`resolve_customer_identities_dynamic`).
+Vì logic xử lý chính đã được chuyển hoàn toàn sang Python (không còn là PL/pgSQL stored procedure), "trigger real-time" ở đây **không phải là một DB trigger thật sự** (Postgres trigger không thể gọi trực tiếp Python). Thay vào đó, Data Ingestion Worker (nơi ghi dữ liệu vào `cdp_raw_profiles_stage`) sẽ chủ động gọi `IdentityResolutionTrigger.attempt_trigger()` ngay sau mỗi lần insert.
 
-**Để tránh quá tải database khi stream dữ liệu với tần suất cao**, hàm trigger sẽ kiểm tra thời gian chạy gần nhất trong bảng trạng thái (`cdp_id_resolution_status`).
+**Để tránh quá tải database khi stream dữ liệu với tần suất cao**, `attempt_trigger()` sẽ kiểm tra thời gian chạy gần nhất trong bảng trạng thái (`cdp_id_resolution_status`), dùng `SELECT ... FOR UPDATE NOWAIT` để khoá theo hàng (row-level lock) và phối hợp an toàn giữa nhiều worker chạy song song.
 
 **1. Tạo bảng trạng thái:**
 
@@ -345,9 +345,9 @@ INSERT INTO cdp_id_resolution_status (id, last_executed_at) VALUES (TRUE, NULL) 
 
 ```
 
-**2. Tạo hoặc sửa đổi hàm trigger:**
+**2. Python throttle controller (`identity_resolution/trigger_controller.py`):**
 
-```python 
+```python
 
 import logging
 import time
@@ -355,8 +355,7 @@ from datetime import datetime
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
-# Assuming the CustomerIdentityResolver class from the previous step is available
-# from cdp_resolution import CustomerIdentityResolver
+from identity_resolution.resolver import CustomerIdentityResolver
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -371,7 +370,7 @@ class IdentityResolutionTrigger:
     Python workers.
     """
 
-    def __init__(self, db_connection, schema: str = "customer360", throttle_seconds: int = 5):
+    def __init__(self, db_connection, schema: str = "public", throttle_seconds: int = 5):
         """
         Args:
             db_connection: A psycopg2 connection object.
@@ -449,10 +448,11 @@ class IdentityResolutionTrigger:
                     
                     # Initialize and run the main OOP resolver logic
                     resolver = CustomerIdentityResolver(
-                        db_connection=self.conn, 
+                        db_connection=self.conn,
                         schema=self.schema
                     )
-                    # Note: run_resolution_batch() should handle its own commits.
+                    # run_resolution_batch() commits internally, which also commits
+                    # the last_executed_at update above (same connection/transaction).
                     resolver.run_resolution_batch()
                     
                     executed = True
@@ -477,8 +477,8 @@ if __name__ == "__main__":
     
     # Instantiate the trigger controller
     trigger_controller = IdentityResolutionTrigger(
-        db_connection=conn, 
-        schema="customer360",
+        db_connection=conn,
+        schema="public",
         throttle_seconds=5
     )
     
@@ -498,61 +498,60 @@ if __name__ == "__main__":
 
 ## Cơ chế Lịch Trình Hàng Ngày (Daily Trigger)
 
-Quy trình bên ngoài (Python, Node.js, Airflow...) sẽ chạy hàng ngày để dọn dẹp các bản ghi chưa được xử lý. Để tránh xung đột, phải vô hiệu hóa trigger real-time trước khi chạy.
+Quy trình bên ngoài (Python, Node.js, Airflow...) sẽ chạy hàng ngày để dọn dẹp toàn bộ các bản ghi chưa được xử lý (`processed_at IS NULL`), phòng trường hợp `IdentityResolutionTrigger` real-time bị throttle hoặc bỏ lỡ một số bản ghi. Vì không còn DB trigger thật (xem phần trên), job này chỉ cần lặp lại `CustomerIdentityResolver.run_resolution_batch()` cho đến khi bảng staging được xử lý hết — không cần disable/enable trigger nào.
 
-### Daily Trigger using Python code
+### Daily Trigger using Python code (`identity_resolution/daily_job.py`)
 
 ```python
-import psycopg2
+import logging
 import os
-import time
 from datetime import datetime
 
+import psycopg2
+
+from identity_resolution.resolver import CustomerIdentityResolver
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 # Lấy cấu hình DB từ biến môi trường của hệ thống Cloud
-DB_HOST = os.environ.get("DB_HOST", "your_db_endpoint")
-DB_NAME = os.environ.get("DB_NAME", "your_database_name")
-DB_USER = os.environ.get("DB_USER", "your_database_user")
-DB_PASSWORD = os.environ.get("DB_PASSWORD", "your_database_password")
+DB_HOST = os.environ.get("DB_HOST", "localhost")
+DB_NAME = os.environ.get("DB_NAME", "cdp")
+DB_USER = os.environ.get("DB_USER", "postgres")
+DB_PASSWORD = os.environ.get("DB_PASSWORD", "postgres")
 DB_PORT = os.environ.get("DB_PORT", "5432")
+DB_SCHEMA = os.environ.get("DB_SCHEMA", "public")
+BATCH_SIZE = int(os.environ.get("CIR_BATCH_SIZE", "5000"))
 
-RAW_STAGE_TABLE = "cdp_raw_profiles_stage"
-REALTIME_TRIGGER_NAME = "cdp_trigger_process_new_raw_profiles"
-RESOLUTION_SP_NAME = "resolve_customer_identities_dynamic"
 
-def run_daily_identity_resolution():
-    conn = None
+def run_daily_identity_resolution() -> int:
+    """Connects to Postgres and drains the staging table until empty.
+
+    Returns the total number of raw profiles processed across all batches.
+    """
+    conn = psycopg2.connect(
+        host=DB_HOST, dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD, port=DB_PORT
+    )
+    total_processed = 0
     try:
-        conn = psycopg2.connect(
-            host=DB_HOST, database=DB_NAME, user=DB_USER, password=DB_PASSWORD, port=DB_PORT
+        resolver = CustomerIdentityResolver(conn, schema=DB_SCHEMA, batch_size=BATCH_SIZE)
+        logger.info("[%s] Starting daily identity resolution run.", datetime.now())
+
+        while True:
+            processed = resolver.run_resolution_batch()
+            total_processed += processed
+            if processed < BATCH_SIZE:
+                break  # staging table drained
+
+        logger.info(
+            "[%s] Daily run complete. Total profiles processed: %d",
+            datetime.now(), total_processed,
         )
-        conn.autocommit = True 
-
-        with conn.cursor() as cur:
-            print(f"[{datetime.now()}] Bắt đầu quá trình lịch trình hàng ngày.")
-
-            # 1. Vô hiệu hóa trigger real-time
-            cur.execute(f"ALTER TABLE {RAW_STAGE_TABLE} DISABLE TRIGGER {REALTIME_TRIGGER_NAME};")
-            time.sleep(5) 
-
-            # 2. Gọi Stored Procedure chính
-            cur.execute(f"SELECT {RESOLUTION_SP_NAME}();") 
-            print(f"[{datetime.now()}] Stored procedure đã hoàn thành.")
-
-            # 3. Kích hoạt lại trigger
-            cur.execute(f"ALTER TABLE {RAW_STAGE_TABLE} ENABLE TRIGGER {REALTIME_TRIGGER_NAME};")
-            print(f"[{datetime.now()}] Quá trình hoàn tất.")
-
-    except Exception as e:
-        print(f"[{datetime.now()}] Lỗi trong quá trình thực thi: {e}")
-        if conn:
-             try:
-                 with conn.cursor() as cur:
-                     cur.execute(f"ALTER TABLE {RAW_STAGE_TABLE} ENABLE TRIGGER {REALTIME_TRIGGER_NAME};")
-             except Exception as rollback_e:
-                 print(f"[{datetime.now()}] Lỗi khi bật lại trigger: {rollback_e}")
     finally:
-        if conn:
-            conn.close()
+        conn.close()
+
+    return total_processed
+
 
 if __name__ == "__main__":
     run_daily_identity_resolution()
@@ -561,71 +560,87 @@ if __name__ == "__main__":
 
 ## OOP Python Implementation for Customer Identity Resolution
 
-Đây là code  xử lý trung tâm, đọc rule từ MetaData và xây dựng câu lệnh SQL Dynamic.
+Đây là code xử lý trung tâm, đọc rule từ MetaData và xây dựng câu lệnh SQL Dynamic. Code đầy đủ, có thể chạy được và có unit test đi kèm nằm tại
+[core-customer360/identity-resolution-service/](identity-resolution-service/) (package `identity_resolution`). Các cột dùng bên dưới khớp đúng với DDL đã định nghĩa ở phần *Thiết lập Database Schema* phía trên (`cdp_raw_profiles_stage`, `cdp_master_profiles`, `cdp_profile_links`, `cdp_profile_attributes`) — không có cột `tenant_id`/`full_name`/`status_code` vì các bảng này không phải multi-tenant và dùng `first_name`/`last_name` riêng biệt cùng `processed_at` để đánh dấu trạng thái xử lý.
 
 ```python
-
-import logging
+# identity-resolution-service/identity_resolution/models.py
 from dataclasses import dataclass
-from typing import List, Optional, Dict, Any
-import psycopg2
-from psycopg2.extras import RealDictCursor
-
-# Set up logging for pipeline observability
-logger = logging.getLogger(__name__)
+from typing import Optional
 
 @dataclass
 class IdentityRule:
-    """Represents a matching rule from the metadata configuration."""
+    """Represents one active matching rule read from cdp_profile_attributes."""
     attribute_code: str
     match_rule: str
     threshold: Optional[float] = None
+```
+
+```python
+# identity-resolution-service/identity_resolution/resolver.py
+import logging
+from typing import Any, Dict, List, Optional
+from psycopg2.extras import RealDictCursor
+from .models import IdentityRule
+
+logger = logging.getLogger(__name__)
+
+# Columns shared by cdp_raw_profiles_stage and cdp_master_profiles that get
+# merged (COALESCE'd) into the master record.
+MERGEABLE_FIELDS = (
+    "first_name", "last_name", "email", "phone_number",
+    "address_line1", "city", "state", "zip_code",
+)
 
 class CustomerIdentityResolver:
     """
-    Handles Customer Identity Resolution (CIR) by linking raw profiles to master profiles 
-    using dynamically configured matching rules[cite: 1].
+    Handles Customer Identity Resolution (CIR) by linking raw profiles to master profiles
+    using dynamically configured matching rules.
     """
 
-    def __init__(self, db_connection, schema: str = "customer360", batch_size: int = 1000):
+    def __init__(self, db_connection, schema: str = "public", batch_size: int = 1000):
         """
         Initializes the resolver with an injected database connection for easy unit testing.
-        
+
         Args:
             db_connection: A psycopg2 connection object (or a connection pool).
-            schema: The database schema containing the CDP tables[cite: 2].
-            batch_size: Number of records to process in memory per run[cite: 1].
+            schema: The database schema containing the CDP tables.
+            batch_size: Number of records to process in memory per run.
         """
         self.conn = db_connection
         self.schema = schema
         self.batch_size = batch_size
 
+    def _table(self, name: str) -> str:
+        return f"{self.schema}.{name}" if self.schema else name
+
     def _get_active_rules(self, cursor) -> List[IdentityRule]:
-        """Fetches active identity resolution rules from the metadata table[cite: 1]."""
+        """Fetches active identity resolution rules from the metadata table."""
         query = f"""
             SELECT attribute_internal_code, matching_rule, matching_threshold
-            FROM {self.schema}.cdp_profile_attributes
-            WHERE is_identity_resolution = TRUE 
+            FROM {self._table('cdp_profile_attributes')}
+            WHERE is_identity_resolution = TRUE
               AND status = 'ACTIVE'
-              AND matching_rule IS NOT NULL 
+              AND matching_rule IS NOT NULL
               AND matching_rule != 'none';
         """
         cursor.execute(query)
-        rules = []
-        for row in cursor.fetchall():
-            rules.append(IdentityRule(
+        return [
+            IdentityRule(
                 attribute_code=row['attribute_internal_code'],
                 match_rule=row['matching_rule'],
-                threshold=row['matching_threshold']
-            ))
-        return rules
+                threshold=row['matching_threshold'],
+            )
+            for row in cursor.fetchall()
+        ]
 
     def _fetch_unprocessed_profiles(self, cursor) -> List[Dict[str, Any]]:
-        """Fetches a batch of raw profiles that have not been processed yet (status_code = 1)[cite: 2]."""
+        """Fetches a batch of raw profiles not yet processed (processed_at IS NULL)."""
         query = f"""
-            SELECT raw_profile_id, tenant_id, source_system, full_name, email, phone_number
-            FROM {self.schema}.cdp_raw_profiles_stage
-            WHERE status_code = 1
+            SELECT raw_profile_id, first_name, last_name, email, phone_number,
+                   address_line1, city, state, zip_code, source_system
+            FROM {self._table('cdp_raw_profiles_stage')}
+            WHERE processed_at IS NULL
             LIMIT %s;
         """
         cursor.execute(query, (self.batch_size,))
@@ -633,8 +648,8 @@ class CustomerIdentityResolver:
 
     def _find_master_profile(self, cursor, raw_profile: Dict[str, Any], rules: List[IdentityRule]) -> Optional[str]:
         """
-        Dynamically builds and executes a query to find a matching master profile 
-        based on active metadata rules[cite: 1].
+        Dynamically builds and executes a query to find a matching master profile
+        based on active metadata rules.
         """
         conditions = []
         params = []
@@ -645,14 +660,15 @@ class CustomerIdentityResolver:
                 continue
 
             col_name = rule.attribute_code
-            
-            # Construct parameterized conditions based on the match rule[cite: 1]
+
+            # Construct parameterized conditions based on the match rule
             if rule.match_rule == 'exact':
                 conditions.append(f"{col_name} = %s")
                 params.append(raw_value)
             elif rule.match_rule == 'fuzzy_trgm':
+                threshold = rule.threshold if rule.threshold is not None else 0.7
                 conditions.append(f"similarity({col_name}, %s) >= %s")
-                params.extend([raw_value, rule.threshold])
+                params.extend([raw_value, threshold])
             elif rule.match_rule == 'fuzzy_dmetaphone':
                 conditions.append(f"dmetaphone({col_name}) = dmetaphone(%s)")
                 params.append(raw_value)
@@ -662,128 +678,118 @@ class CustomerIdentityResolver:
 
         where_clause = " OR ".join(f"({c})" for c in conditions)
         query = f"""
-            SELECT master_profile_id 
-            FROM {self.schema}.cdp_master_profiles 
-            WHERE tenant_id = %s AND ({where_clause})
+            SELECT master_profile_id
+            FROM {self._table('cdp_master_profiles')}
+            WHERE {where_clause}
             LIMIT 1;
         """
-        
-        # Prepend tenant_id to params for the WHERE clause
-        query_params = [raw_profile['tenant_id']] + params
-        cursor.execute(query, tuple(query_params))
+        cursor.execute(query, tuple(params))
         result = cursor.fetchone()
-        
+
         return result['master_profile_id'] if result else None
 
-    def _link_and_update(self, cursor, raw_profile: Dict[str, Any], master_id: str):
-        """Updates an existing master profile and creates a link to the raw profile[cite: 1, 2]."""
-        # Create the relationship link[cite: 2]
+    def _link_and_update(self, cursor, raw_profile: Dict[str, Any], master_id: str, match_rule: str = 'DynamicMatch'):
+        """Links the raw profile to an existing master profile and fills any gaps (COALESCE)."""
+        # Create the relationship link. Unique constraint uk_profile_links_raw_id
+        # guarantees one raw profile links to a single master profile.
         link_query = f"""
-            INSERT INTO {self.schema}.cdp_profile_links 
-            (tenant_id, raw_profile_id, master_profile_id, match_method)
-            VALUES (%s, %s, %s, %s)
-            ON CONFLICT (tenant_id, raw_profile_id) DO NOTHING;
+            INSERT INTO {self._table('cdp_profile_links')}
+                (raw_profile_id, master_profile_id, match_rule)
+            VALUES (%s, %s, %s)
+            ON CONFLICT (raw_profile_id) DO NOTHING;
         """
-        cursor.execute(link_query, (
-            raw_profile['tenant_id'], 
-            raw_profile['raw_profile_id'], 
-            master_id, 
-            'DynamicMatch'
-        ))
+        cursor.execute(link_query, (raw_profile['raw_profile_id'], master_id, match_rule))
 
-        # Coalesce data to preserve existing master profile data while filling gaps[cite: 1]
+        # Coalesce data to preserve existing master profile data while filling gaps,
+        # and track every source system that contributed to this master profile.
+        set_clause = ", ".join(f"{f} = COALESCE({f}, %s)" for f in MERGEABLE_FIELDS)
         update_query = f"""
-            UPDATE {self.schema}.cdp_master_profiles
-            SET 
-                full_name = COALESCE(full_name, %s),
-                email = COALESCE(email, %s),
-                phone_number = COALESCE(phone_number, %s),
+            UPDATE {self._table('cdp_master_profiles')}
+            SET {set_clause},
+                source_systems = array_append(
+                    COALESCE(source_systems, ARRAY[]::TEXT[]), %s::TEXT
+                ),
                 updated_at = NOW()
-            WHERE master_profile_id = %s;
+            WHERE master_profile_id = %s
+              AND NOT (%s = ANY(COALESCE(source_systems, ARRAY[]::TEXT[])));
         """
-        cursor.execute(update_query, (
-            raw_profile.get('full_name'),
-            raw_profile.get('email'),
-            raw_profile.get('phone_number'),
-            master_id
-        ))
+        source_system = raw_profile.get('source_system')
+        params = tuple(raw_profile.get(f) for f in MERGEABLE_FIELDS) + (
+            source_system, master_id, source_system,
+        )
+        cursor.execute(update_query, params)
 
-    def _create_master_and_link(self, cursor, raw_profile: Dict[str, Any]):
-        """Creates a brand new master profile when no matches are found[cite: 1, 2]."""
+    def _create_master_and_link(self, cursor, raw_profile: Dict[str, Any]) -> str:
+        """Creates a brand new master profile when no matches are found."""
         insert_master_query = f"""
-            INSERT INTO {self.schema}.cdp_master_profiles 
-            (tenant_id, full_name, email, phone_number)
-            VALUES (%s, %s, %s, %s)
+            INSERT INTO {self._table('cdp_master_profiles')}
+                (first_name, last_name, email, phone_number, address_line1,
+                 city, state, zip_code, first_seen_raw_profile_id, source_systems)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, ARRAY[%s]::TEXT[])
             RETURNING master_profile_id;
         """
-        cursor.execute(insert_master_query, (
-            raw_profile['tenant_id'],
-            raw_profile.get('full_name'),
-            raw_profile.get('email'),
-            raw_profile.get('phone_number')
-        ))
+        params = tuple(raw_profile.get(f) for f in MERGEABLE_FIELDS) + (
+            raw_profile['raw_profile_id'], raw_profile.get('source_system'),
+        )
+        cursor.execute(insert_master_query, params)
         new_master_id = cursor.fetchone()['master_profile_id']
 
         link_query = f"""
-            INSERT INTO {self.schema}.cdp_profile_links 
-            (tenant_id, raw_profile_id, master_profile_id, match_method)
-            VALUES (%s, %s, %s, %s);
+            INSERT INTO {self._table('cdp_profile_links')}
+                (raw_profile_id, master_profile_id, match_rule)
+            VALUES (%s, %s, %s);
         """
-        cursor.execute(link_query, (
-            raw_profile['tenant_id'],
-            raw_profile['raw_profile_id'],
-            new_master_id,
-            'NewMaster'
-        ))
+        cursor.execute(link_query, (raw_profile['raw_profile_id'], new_master_id, 'NewMaster'))
+        return new_master_id
 
     def _mark_as_processed(self, cursor, raw_profile_id: str):
-        """Updates the status of the raw profile to processed (status_code = 3)[cite: 2]."""
+        """Marks a raw profile as processed by stamping processed_at."""
         query = f"""
-            UPDATE {self.schema}.cdp_raw_profiles_stage
-            SET status_code = 3 
+            UPDATE {self._table('cdp_raw_profiles_stage')}
+            SET processed_at = NOW()
             WHERE raw_profile_id = %s;
         """
         cursor.execute(query, (raw_profile_id,))
 
-    def run_resolution_batch(self):
+    def run_resolution_batch(self) -> int:
         """
-        Main orchestration method for a single batch run. 
+        Main orchestration method for a single batch run.
         Designed to be idempotent and safe for workflow retries.
+        Returns the number of raw profiles processed in this batch.
         """
         try:
             with self.conn.cursor(cursor_factory=RealDictCursor) as cursor:
                 rules = self._get_active_rules(cursor)
                 if not rules:
                     logger.warning("No active identity resolution rules found. Aborting.")
-                    return
+                    return 0
 
                 raw_profiles = self._fetch_unprocessed_profiles(cursor)
                 if not raw_profiles:
                     logger.info("No unprocessed profiles found in staging.")
-                    return
+                    return 0
 
                 logger.info(f"Processing batch of {len(raw_profiles)} profiles.")
 
                 for profile in raw_profiles:
                     matched_id = self._find_master_profile(cursor, profile, rules)
-                    
+
                     if matched_id:
                         self._link_and_update(cursor, profile, matched_id)
                     else:
                         self._create_master_and_link(cursor, profile)
-                        
+
                     self._mark_as_processed(cursor, profile['raw_profile_id'])
 
                 # Commit the entire batch transaction
                 self.conn.commit()
                 logger.info("Batch processed and committed successfully.")
+                return len(raw_profiles)
 
-        except Exception as e:
+        except Exception:
             self.conn.rollback()
-            logger.error(f"Error during identity resolution: {e}")
+            logger.exception("Error during identity resolution.")
             raise
-
-
 ```
 
 ## Integration with Data Pipeline Frameworks
@@ -794,6 +800,8 @@ class CustomerIdentityResolver:
 from airflow.decorators import dag, task
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from pendulum import datetime
+
+from identity_resolution.resolver import CustomerIdentityResolver
 
 @dag(schedule="@hourly", start_date=datetime(2026, 1, 1), catchup=False)
 def cdp_identity_resolution_pipeline():
@@ -808,8 +816,8 @@ def cdp_identity_resolution_pipeline():
             # Instantiate the OOP resolver
             resolver = CustomerIdentityResolver(
                 db_connection=conn, 
-                schema="customer360", 
-                batch_size=5000 # Configured for memory optimization[cite: 1]
+                schema="public", 
+                batch_size=5000 # Configured for memory optimization
             )
             resolver.run_resolution_batch()
         finally:
@@ -827,6 +835,8 @@ cdp_identity_resolution_pipeline()
 from dagster import asset, ConfigurableResource
 import psycopg2
 
+from identity_resolution.resolver import CustomerIdentityResolver
+
 class PostgresResource(ConfigurableResource):
     conn_uri: str
 
@@ -841,6 +851,7 @@ def resolve_customer_identities(pg_db: PostgresResource):
     try:
         resolver = CustomerIdentityResolver(
             db_connection=conn, 
+            schema="public",
             batch_size=2000
         )
         resolver.run_resolution_batch()
@@ -850,6 +861,17 @@ def resolve_customer_identities(pg_db: PostgresResource):
 ```
 
 ## UNIT TESTS
+
+Bộ unit test đầy đủ (mock hoàn toàn `psycopg2`, không cần DB thật) nằm tại [core-customer360/identity-resolution-service/tests/](identity-resolution-service/tests/). Cách chạy:
+
+```bash
+cd core-customer360/identity-resolution-service
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+pytest -v
+```
+
+Dữ liệu SQL mẫu bên dưới dùng để test thủ công / tích hợp trên một DB Postgres thật (áp cùng schema đã tạo ở phần trên):
 
 ```sql
 -- Xóa data cũ

@@ -9,7 +9,7 @@ TARGET_DB="customer360"
 HOST_PORT=5432
 DATA_VOLUME="pgdata_vector"
 SCHEMA_VERSION=1   # Increment this whenever you change schema.sql
-SCHEMA_FILE="c360-analytics/database-schema.sql"
+SCHEMA_FILE="database-schema.sql"
 
 # --- Function to check PostgreSQL readiness ---
 wait_for_postgres() {
