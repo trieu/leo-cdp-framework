@@ -5,14 +5,23 @@ Connects to the PostgreSQL database configured via environment variables /
 
 1. Ensures the ``pg_trgm`` / ``fuzzystrmatch`` extensions are enabled (needed
    for the ``fuzzy_dmetaphone`` matching rule used by other attributes).
-2. Ensures the ``cdp_profile_attributes`` (matching-rule metadata) and
-   ``cdp_id_resolution_status`` (real-time throttle state) tables exist --
-   these are CIR runtime tables, not part of ``core-customer360/database-schema.sql``.
-3. Seeds a set of active identity-resolution matching rules.
+2. Ensures the ``cdp_profile_attributes`` (full attribute catalog + CIR
+   matching-rule metadata, now part of ``core-customer360/database-schema.sql``)
+   and ``cdp_id_resolution_status`` (real-time throttle state, still a CIR
+   runtime-only table) exist. The ``CREATE TABLE IF NOT EXISTS`` here is only
+   a defensive fallback for databases where ``database-schema.sql`` has not
+   been (re)applied yet; it is a no-op once that schema has been migrated in.
+3. Seeds/upserts the active identity-resolution matching rules (only the
+   matching-rule-specific columns -- the full attribute metadata is owned by
+   ``database-schema.sql``'s seed data).
 4. Clears any previous demo data (scoped to ``DEMO_TENANT_ID`` only, so it
-   never touches other tenants) and inserts sample raw profiles simulating
-   AppsFlyer (mobile attribution), MoEngage (engagement) and Web Tracking
-   (GA4-style) events for both the banking and retail domains.
+   never touches other tenants) and inserts 1,000 generated raw profiles
+   simulating AppsFlyer mobile attribution across multiple acquisition
+   channels (Facebook Ads, TikTok Ads, Google Ads, Grab Ads, FPT Play Ads,
+   and offline PR events at shopping malls), for both the banking and
+   retail domains. ~30% of the rows are deliberate duplicates (a later
+   touch on a device that already appears earlier in the batch) for
+   identity resolution to merge back together -- see generate_raw_profiles().
 
 No Personal Data (PII) is ever written to the database: ``full_name``,
 ``email``, ``phone_number`` and ``national_id`` are one-way SHA-256 hashed
@@ -28,6 +37,8 @@ Safe to re-run: every step is idempotent / scoped to ``DEMO_TENANT_ID``.
 import hashlib
 import logging
 import os
+import random
+from datetime import datetime, timedelta
 
 import psycopg2
 from dotenv import load_dotenv
@@ -81,95 +92,168 @@ def hash_pii(value):
     normalized = str(value).strip().lower()
     return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
 
-# Sample raw profiles: two banking (AppsFlyer x2 + CoreBanking) rows that
-# should resolve into ONE banking master profile (chained via device_id then
-# phone_number), and three retail rows (MoEngage + WebTracking + a second,
-# unrelated MoEngage customer) that should resolve into TWO retail master
-# profiles (one merged via shared email, one standalone).
+
+# --- Synthetic AppsFlyer data generation ------------------------------------
 #
-# NOTE: full_name/email/phone_number/national_id below are plaintext ONLY in
-# this source file (for readability); seed_raw_profiles() SHA-256 hashes them
-# via hash_pii() before anything is written to the database.
-RAW_PROFILES = [
-    {
-        "domain": "banking",
-        "source_system": "AppsFlyer",
-        "channel": "mobile_app",
-        "full_name": None,
-        "email": None,
-        "phone_number": None,
-        "national_id": None,
-        "device_id": "device-bank-0001",
-        "advertising_id": "af-idfa-0001",
-        "platform": "ios",
-        "app_version": "3.4.2",
-        "media_source": "Facebook Ads",
-        "campaign": "vn_bank123_credit_card_acquisition_q4",
-        "event_name": "install",
-    },
-    {
-        "domain": "banking",
-        "source_system": "AppsFlyer",
-        "channel": "mobile_app",
-        "full_name": None,
-        "email": None,
-        "phone_number": "0901234567",
-        "national_id": None,
-        "device_id": "device-bank-0001",  # same device as the install event above
-        "advertising_id": "af-idfa-0001",
-        "external_customer_id": "bank123_cust_9001",
-        "platform": "ios",
-        "app_version": "3.4.2",
-        "event_name": "login",
-    },
-    {
-        "domain": "banking",
-        "source_system": "CoreBanking",
-        "channel": "call_center",
-        "full_name": "Nguyen Van A",
-        "email": "nguyenvana@example.com",
-        "phone_number": "0901234567",  # links to the AppsFlyer login row above
-        "national_id": "079123456789",
-        "event_name": "kyc_completed",
-    },
-    {
-        "domain": "retail",
-        "source_system": "MoEngage",
-        "channel": "mobile_app",
-        "full_name": "Tran Thi B",
-        "email": "tranthib@example.com",
-        "phone_number": None,
-        "external_customer_id": "moe_cust_5002",
-        "push_token": "fcm-push-token-5002",
-        "platform": "android",
-        "event_name": "app_open",
-    },
-    {
-        "domain": "retail",
-        "source_system": "WebTracking",
-        "channel": "web",
-        "full_name": None,
-        "email": "tranthib@example.com",  # same email as the MoEngage row above
-        "cookie_id": "web-cookie-5002",
-        "ga_client_id": "GA1.2.111111.222222",
-        "session_id": "sess-abc-123",
-        "utm_source": "google",
-        "utm_medium": "cpc",
-        "utm_campaign": "retail_summer_sale",
-        "event_name": "page_view",
-    },
-    {
-        "domain": "retail",
-        "source_system": "MoEngage",
-        "channel": "mobile_app",
-        "full_name": "Le Van C",
-        "email": "levanc@example.com",  # unrelated customer -> its own master profile
-        "external_customer_id": "moe_cust_5003",
-        "push_token": "fcm-push-token-5003",
-        "platform": "android",
-        "event_name": "app_open",
-    },
+# AppsFlyer channel/media_source configuration: Facebook Ads, TikTok Ads,
+# Google Ads, Grab Ads, FPT Play Ads (video/OTT), and offline PR events
+# (e.g. roadshows / registration booths at shopping malls) that still get
+# attributed back into the app via AppsFlyer OneLink QR codes.
+APPSFLYER_CHANNELS = [
+    {"media_source": "Facebook Ads", "campaigns": ["vn_retail_fb_flash_sale", "vn_bank123_creditcard_fb_q4"]},
+    {"media_source": "TikTok Ads", "campaigns": ["vn_tiktok_genz_promo", "vn_tiktok_livestream_sale"]},
+    {"media_source": "Google Ads", "campaigns": ["vn_google_search_brand", "vn_google_display_retargeting"]},
+    {"media_source": "Grab Ads", "campaigns": ["vn_grab_inapp_banner", "vn_grab_loyalty_crosspromo"]},
+    {"media_source": "FPT Play Ads", "campaigns": ["vn_fptplay_video_preroll", "vn_fptplay_channel_sponsorship"]},
+    {"media_source": "Offline PR Event", "campaigns": ["hcmc_shopping_mall_roadshow", "hanoi_mall_activation_day"]},
 ]
+
+VIETNAMESE_FAMILY_NAMES = (
+    "Nguyen", "Tran", "Le", "Pham", "Hoang", "Huynh", "Phan", "Vu", "Vo", "Dang", "Bui", "Do", "Ho", "Ngo", "Duong",
+)
+VIETNAMESE_MIDDLE_NAMES = ("Van", "Thi", "Huu", "Minh", "Ngoc", "Thanh", "Quang", "Xuan")
+VIETNAMESE_GIVEN_NAMES = (
+    "An", "Binh", "Chi", "Dung", "Giang", "Ha", "Hoa", "Huong", "Khanh", "Lan", "Linh",
+    "Long", "Mai", "Nam", "Nga", "Phuong", "Quan", "Son", "Thao", "Thu", "Trang", "Tuan", "Yen",
+)
+
+RETAIL_TOUCH_EVENTS = ("login", "app_open", "purchase")
+BANKING_TOUCH_EVENTS = ("login", "kyc_completed", "loan_application")
+
+# Share of synthetic customers whose app belongs to the banking domain
+# (the rest are retail). Tune here if you want a different domain mix.
+BANKING_DOMAIN_SHARE = 0.4
+
+
+def _random_full_name(rng: random.Random) -> str:
+    return " ".join(
+        [rng.choice(VIETNAMESE_FAMILY_NAMES), rng.choice(VIETNAMESE_MIDDLE_NAMES), rng.choice(VIETNAMESE_GIVEN_NAMES)]
+    )
+
+
+def _build_customer(rng: random.Random, index: int, used_names: set, used_phones: set) -> dict:
+    """Creates one synthetic person's stable identity (device + PII), shared
+    across every raw-profile row generated for that person.
+
+    full_name and phone_number are regenerated on collision so two different
+    synthetic customers never accidentally share one -- both are active
+    matching rules, so a coincidental collision would make identity
+    resolution incorrectly merge two distinct people into one profile.
+    """
+    domain = "banking" if rng.random() < BANKING_DOMAIN_SHARE else "retail"
+    platform = "ios" if rng.random() < 0.5 else "android"
+    channel = rng.choice(APPSFLYER_CHANNELS)
+
+    full_name = _random_full_name(rng)
+    while full_name in used_names:
+        full_name = _random_full_name(rng)
+    used_names.add(full_name)
+
+    phone_number = f"09{rng.randint(10000000, 99999999)}"
+    while phone_number in used_phones:
+        phone_number = f"09{rng.randint(10000000, 99999999)}"
+    used_phones.add(phone_number)
+
+    email_slug = full_name.lower().replace(" ", ".")
+
+    return {
+        "domain": domain,
+        "platform": platform,
+        "media_source": channel["media_source"],
+        "campaign": rng.choice(channel["campaigns"]),
+        "device_id": f"device-{index:05d}-{rng.randint(1000, 9999)}",
+        "advertising_id": f"af-{'idfa' if platform == 'ios' else 'gaid'}-{index:05d}",
+        "external_customer_id": f"appsflyer_cust_{index:05d}",
+        "full_name": full_name,
+        "email": f"{email_slug}{index}@example.com",
+        "phone_number": phone_number,
+        "national_id": (
+            f"{rng.randint(10, 99)}{rng.randint(1000000000, 9999999999)}" if domain == "banking" else None
+        ),
+    }
+
+
+def _install_event(customer: dict, event_time: datetime) -> dict:
+    """First AppsFlyer touch: an anonymous install -- no PII revealed yet,
+    only the device/advertising id and acquisition channel."""
+    return {
+        "domain": customer["domain"],
+        "source_system": "AppsFlyer",
+        "channel": "mobile_app",
+        "device_id": customer["device_id"],
+        "advertising_id": customer["advertising_id"],
+        "platform": customer["platform"],
+        "app_version": "3.4.2",
+        "media_source": customer["media_source"],
+        "campaign": customer["campaign"],
+        "event_name": "install",
+        "event_time": event_time,
+    }
+
+
+def _touch_event(rng: random.Random, customer: dict, event_time: datetime) -> dict:
+    """A later AppsFlyer touch (login/purchase/kyc/...) on the SAME device
+    that reveals the customer's PII. This is the duplicate row identity
+    resolution is expected to merge back into the install event's profile
+    (matched via the shared device_id/advertising_id)."""
+    events = BANKING_TOUCH_EVENTS if customer["domain"] == "banking" else RETAIL_TOUCH_EVENTS
+    return {
+        "domain": customer["domain"],
+        "source_system": "AppsFlyer",
+        "channel": "mobile_app",
+        "external_customer_id": customer["external_customer_id"],
+        "full_name": customer["full_name"],
+        "email": customer["email"],
+        "phone_number": customer["phone_number"],
+        "national_id": customer["national_id"],
+        "device_id": customer["device_id"],
+        "advertising_id": customer["advertising_id"],
+        "platform": customer["platform"],
+        "app_version": "3.4.2",
+        "media_source": customer["media_source"],
+        "campaign": customer["campaign"],
+        "event_name": rng.choice(events),
+        "event_time": event_time,
+    }
+
+
+def generate_raw_profiles(count: int = 1000, duplicate_rate: float = 0.3, seed: int = 42) -> list[dict]:
+    """Generates ``count`` synthetic AppsFlyer raw-profile events spread
+    across Facebook Ads, TikTok Ads, Google Ads, Grab Ads, FPT Play Ads and
+    offline PR events at shopping malls, for both the retail and banking
+    domains.
+
+    ~``duplicate_rate`` of the rows are a second (or third, ...) touch on a
+    device that already appears earlier in the batch (same device_id /
+    advertising_id, revealing full_name/email/phone_number/national_id) --
+    real duplicate profiles that identity resolution is expected to merge
+    back into a single master profile.
+
+    Uses a fixed ``seed`` so re-running this script produces the exact same
+    dataset (consistent with the rest of this script being idempotent).
+    """
+    rng = random.Random(seed)
+    num_unique = max(1, round(count * (1 - duplicate_rate)))
+    num_duplicates = count - num_unique
+
+    base_time = datetime.now() - timedelta(days=60)
+    used_names: set = set()
+    used_phones: set = set()
+    customers = [_build_customer(rng, i, used_names, used_phones) for i in range(num_unique)]
+    profiles = [_install_event(customer, base_time + timedelta(minutes=i)) for i, customer in enumerate(customers)]
+
+    for _ in range(num_duplicates):
+        customer = rng.choice(customers)
+        touch_time = base_time + timedelta(days=rng.randint(1, 45), hours=rng.randint(0, 23), minutes=rng.randint(0, 59))
+        profiles.append(_touch_event(rng, customer, touch_time))
+
+    rng.shuffle(profiles)
+    logger.info(
+        "Generated %d raw profiles (%d unique customers, %d duplicate touches, ~%.0f%% duplicate rate).",
+        len(profiles), num_unique, num_duplicates, duplicate_rate * 100,
+    )
+    return profiles
+
 
 RAW_COLUMNS = (
     "tenant_id", "domain", "source_system", "channel", "external_customer_id",
@@ -193,23 +277,43 @@ def ensure_extensions(cursor) -> None:
 def ensure_cir_metadata_tables(cursor) -> None:
     """Creates the CIR runtime tables if they don't already exist.
 
-    These are additive/idempotent (CREATE TABLE IF NOT EXISTS) and safe to
-    run against a database already populated from
-    core-customer360/database-schema.sql.
+    ``cdp_profile_attributes`` is now defined canonically in
+    core-customer360/database-schema.sql (full attribute catalog: identity /
+    demographic / retail / banking / marketing / lineage columns plus Lead /
+    Churn / CLV / CX / Data Quality scoring-model metadata). The
+    ``CREATE TABLE IF NOT EXISTS`` below only matters as a fallback for a
+    database where that schema file has not been applied yet -- it mirrors
+    the same full column set so this script keeps working standalone; it is
+    a no-op once database-schema.sql has created the table.
     """
     logger.info("Ensuring cdp_profile_attributes table exists...")
     cursor.execute(f"""
         CREATE TABLE IF NOT EXISTS {_table('cdp_profile_attributes')} (
             id BIGSERIAL PRIMARY KEY,
             attribute_internal_code VARCHAR(100) UNIQUE NOT NULL,
+            master_profile_column VARCHAR(100),
             name VARCHAR(255) NOT NULL,
-            status VARCHAR(50) DEFAULT 'ACTIVE',
+            description TEXT,
+            attribute_group VARCHAR(50) NOT NULL DEFAULT 'GENERAL',
+            source_table VARCHAR(150) NOT NULL DEFAULT 'cdp_master_profiles',
             data_type VARCHAR(50) NOT NULL DEFAULT 'TEXT',
-            is_identity_resolution BOOLEAN DEFAULT FALSE,
+            domain_scope VARCHAR(20) NOT NULL DEFAULT 'all',
+            is_pii BOOLEAN NOT NULL DEFAULT FALSE,
+            status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',
+            is_identity_resolution BOOLEAN NOT NULL DEFAULT FALSE,
             matching_rule VARCHAR(50) NULL,
             matching_threshold DECIMAL(5, 4) NULL,
             consolidation_rule VARCHAR(50) NULL,
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+            is_scoring_model BOOLEAN NOT NULL DEFAULT FALSE,
+            scoring_model_name VARCHAR(100),
+            scoring_model_version VARCHAR(20),
+            value_type VARCHAR(50),
+            value_min NUMERIC,
+            value_max NUMERIC,
+            refresh_frequency VARCHAR(50),
+            display_order INT NOT NULL DEFAULT 0,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
         );
     """)
 
@@ -263,18 +367,18 @@ def reset_demo_data(cursor) -> None:
     )
 
 
-def seed_raw_profiles(cursor) -> None:
+def seed_raw_profiles(cursor, raw_profiles: list[dict]) -> None:
     """Inserts the sample raw profiles, SHA-256 hashing every PII field
     (see HASHED_PII_FIELDS) so no plaintext name/email/phone/national_id is
     ever written to the database."""
-    logger.info("Inserting %d sample raw profiles (AppsFlyer/MoEngage/WebTracking)...", len(RAW_PROFILES))
+    logger.info("Inserting %d sample raw profiles (AppsFlyer)...", len(raw_profiles))
     columns = ", ".join(RAW_COLUMNS)
     placeholders = ", ".join(["%s"] * len(RAW_COLUMNS))
     insert_query = f"""
         INSERT INTO {_table('cdp_raw_profiles_stage')} ({columns})
         VALUES ({placeholders});
     """
-    for profile in RAW_PROFILES:
+    for profile in raw_profiles:
         values = []
         for col in RAW_COLUMNS[1:]:
             value = profile.get(col)
@@ -290,16 +394,17 @@ def main() -> None:
         host=DB_HOST, dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD, port=DB_PORT
     )
     try:
+        raw_profiles = generate_raw_profiles(count=1000, duplicate_rate=0.3)
         with conn.cursor() as cursor:
             ensure_extensions(cursor)
             ensure_cir_metadata_tables(cursor)
             seed_matching_rules(cursor)
             reset_demo_data(cursor)
-            seed_raw_profiles(cursor)
+            seed_raw_profiles(cursor, raw_profiles)
         conn.commit()
         logger.info(
             "Sample data ready: %d raw profiles staged with status_code=1 for tenant_id=%s.",
-            len(RAW_PROFILES),
+            len(raw_profiles),
             DEMO_TENANT_ID,
         )
     except Exception:

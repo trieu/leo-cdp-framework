@@ -20,6 +20,8 @@ class MasterProfileBase(BaseModel):
     last_name: Optional[str] = None
     email: Optional[str] = None
     phone_number: Optional[str] = None
+    secondary_emails: Optional[list[dict]] = None
+    secondary_phones: Optional[list[dict]] = None
     date_of_birth: Optional[date] = None
     gender: Optional[str] = None
     address: Optional[dict] = None
@@ -47,6 +49,23 @@ class MasterProfileBase(BaseModel):
     source_systems: Optional[list[str]] = None
     first_seen_raw_profile_id: Optional[uuid.UUID] = None
 
+    # ML & Analytics scoring models (Lead, Churn, CLV, CX, Data Quality).
+    lead_conversion_probability: Optional[Decimal] = None
+    lead_grade: Optional[str] = None
+    churn_probability: Optional[Decimal] = None
+    churn_risk_tier: Optional[str] = Field(default=None, pattern="^(low|medium|high|critical)$")
+    historical_clv: Optional[Decimal] = None
+    predictive_clv: Optional[Decimal] = None
+    clv_segment: Optional[str] = None
+    engagement_score: Optional[Decimal] = None
+    latest_nps_score: Optional[int] = Field(default=None, ge=0, le=10)
+    average_csat: Optional[Decimal] = None
+    overall_sentiment_score: Optional[Decimal] = None
+    profile_completeness_score: Optional[Decimal] = None
+    identity_confidence_score: Optional[Decimal] = None
+    model_versions: Optional[dict] = None
+    scores_updated_at: Optional[datetime] = None
+
 
 class MasterProfileCreate(MasterProfileBase):
     pass
@@ -59,6 +78,8 @@ class MasterProfileUpdate(BaseModel):
     last_name: Optional[str] = None
     email: Optional[str] = None
     phone_number: Optional[str] = None
+    secondary_emails: Optional[list[dict]] = None
+    secondary_phones: Optional[list[dict]] = None
     date_of_birth: Optional[date] = None
     gender: Optional[str] = None
     address: Optional[dict] = None
@@ -80,6 +101,21 @@ class MasterProfileUpdate(BaseModel):
     segmentation_tags: Optional[list[str]] = None
     attributes: Optional[dict] = None
     source_systems: Optional[list[str]] = None
+    lead_conversion_probability: Optional[Decimal] = None
+    lead_grade: Optional[str] = None
+    churn_probability: Optional[Decimal] = None
+    churn_risk_tier: Optional[str] = Field(default=None, pattern="^(low|medium|high|critical)$")
+    historical_clv: Optional[Decimal] = None
+    predictive_clv: Optional[Decimal] = None
+    clv_segment: Optional[str] = None
+    engagement_score: Optional[Decimal] = None
+    latest_nps_score: Optional[int] = Field(default=None, ge=0, le=10)
+    average_csat: Optional[Decimal] = None
+    overall_sentiment_score: Optional[Decimal] = None
+    profile_completeness_score: Optional[Decimal] = None
+    identity_confidence_score: Optional[Decimal] = None
+    model_versions: Optional[dict] = None
+    scores_updated_at: Optional[datetime] = None
 
 
 class MasterProfileRead(MasterProfileBase):
@@ -183,13 +219,29 @@ class ProfileLinkRead(ProfileLinkBase):
 
 class ProfileAttributeBase(BaseModel):
     attribute_internal_code: str
+    master_profile_column: Optional[str] = None
     name: str
+    description: Optional[str] = None
+    attribute_group: str = "GENERAL"
+    source_table: str = "cdp_master_profiles"
     status: str = "ACTIVE"
     data_type: str = "TEXT"
+    domain_scope: str = Field(default="all", pattern="^(all|retail|banking)$")
+    is_pii: bool = False
+
     is_identity_resolution: bool = False
     matching_rule: Optional[str] = Field(default=None, pattern="^(exact|fuzzy_trgm|fuzzy_dmetaphone|none)$")
     matching_threshold: Optional[Decimal] = None
     consolidation_rule: Optional[str] = None
+
+    is_scoring_model: bool = False
+    scoring_model_name: Optional[str] = None
+    scoring_model_version: Optional[str] = None
+    value_type: Optional[str] = None
+    value_min: Optional[Decimal] = None
+    value_max: Optional[Decimal] = None
+    refresh_frequency: Optional[str] = None
+    display_order: int = 0
 
 
 class ProfileAttributeCreate(ProfileAttributeBase):
@@ -197,19 +249,34 @@ class ProfileAttributeCreate(ProfileAttributeBase):
 
 
 class ProfileAttributeUpdate(BaseModel):
+    master_profile_column: Optional[str] = None
     name: Optional[str] = None
+    description: Optional[str] = None
+    attribute_group: Optional[str] = None
+    source_table: Optional[str] = None
     status: Optional[str] = None
     data_type: Optional[str] = None
+    domain_scope: Optional[str] = Field(default=None, pattern="^(all|retail|banking)$")
+    is_pii: Optional[bool] = None
     is_identity_resolution: Optional[bool] = None
     matching_rule: Optional[str] = Field(default=None, pattern="^(exact|fuzzy_trgm|fuzzy_dmetaphone|none)$")
     matching_threshold: Optional[Decimal] = None
     consolidation_rule: Optional[str] = None
+    is_scoring_model: Optional[bool] = None
+    scoring_model_name: Optional[str] = None
+    scoring_model_version: Optional[str] = None
+    value_type: Optional[str] = None
+    value_min: Optional[Decimal] = None
+    value_max: Optional[Decimal] = None
+    refresh_frequency: Optional[str] = None
+    display_order: Optional[int] = None
 
 
 class ProfileAttributeRead(ProfileAttributeBase):
     model_config = ConfigDict(from_attributes=True)
     id: int
     created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
 
 class IdResolutionStatusRead(BaseModel):
