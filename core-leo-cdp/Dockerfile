@@ -33,6 +33,9 @@ COPY --from=test /test-results /
 
 # ---- runtime stage ----
 FROM amazoncorretto:11
+RUN yum update-minimal -y --security && \
+    yum clean all && \
+    rm -rf /var/cache/yum
 WORKDIR /app
 COPY --from=build /dist /app
 # 9070 = admin MainHttpRouter, 9080 = ObserverHttpRouter (see configs/http-routing-configs.json)
