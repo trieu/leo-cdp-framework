@@ -76,7 +76,7 @@ Mỗi bảng đều có `description`, `keywords TEXT[]`, `embedding vector(1536
 | Bảng | Mục đích |
 |---|---|
 | `cdp_raw_profiles_stage` | Bảng staging — mỗi dòng là 1 event/bản ghi thô từ 1 nguồn (`source_system`: AppsFlyer, MoEngage, WebTracking, CoreBanking, POS…), gồm định danh PII (`full_name`, `email`, `phone_number`, `national_id`), định danh thiết bị/marketing (`device_id`, `advertising_id`, `cookie_id`, `ga_client_id`), thuộc tính UTM/attribution, `event_name/event_time/event_payload`, và `status_code` điều khiển hàng đợi xử lý (1=mới, 2=đang xử lý, 3=đã xử lý, 0=inactive, -1=xoá). |
-| `cdp_master_profiles` | **Golden record** — hồ sơ khách hàng đã hợp nhất. Gồm 7 nhóm cột: (1) định danh & demographic (PII), (2) identity graph đa kênh (`external_ids` JSONB, `device_ids`/`advertising_ids`/`cookie_ids` TEXT[], `push_tokens`), (3) thuộc tính riêng **retail** (`loyalty_id`, `membership_tier`, `preferred_store_code`), (4) thuộc tính riêng **banking** (`national_id`, `cif_number`, `account_numbers`, `kyc_status`, `risk_segment`), (5) marketing/engagement (`acquisition_source/campaign`, `persona_embedding vector(768)`, `segmentation_tags`, `attributes JSONB`), (6) lineage (`source_systems`, `first_seen_raw_profile_id`), (7) **ML scoring** (xem 4.2.1). |
+| `cdp_master_profiles` | **Golden record** — hồ sơ khách hàng đã hợp nhất. Gồm 7 nhóm cột: (1) định danh & demographic (PII, gồm `is_hashed` — đánh dấu PII đã bị hash SHA-256 hay chưa — và `persona_name` — nhãn dễ đọc, không phải PII, **bắt buộc phải có khi `is_hashed = TRUE`**, do tầng ứng dụng tự sinh, xem 4.2.2), (2) identity graph đa kênh (`external_ids` JSONB, `device_ids`/`advertising_ids`/`cookie_ids` TEXT[], `push_tokens`), (3) thuộc tính riêng **retail** (`loyalty_id`, `membership_tier`, `preferred_store_code`), (4) thuộc tính riêng **banking** (`national_id`, `cif_number`, `account_numbers`, `kyc_status`, `risk_segment`), (5) marketing/engagement (`acquisition_source/campaign`, `persona_name`, `persona_embedding vector(768)`, `segmentation_tags`, `attributes JSONB`), (6) lineage (`source_systems`, `first_seen_raw_profile_id`), (7) **ML scoring** (xem 4.2.1). |
 | `cdp_profile_links` | Bảng liên kết N–1: mỗi `raw_profile_id` (unique theo tenant) trỏ tới đúng 1 `master_profile_id`, kèm `match_score`, `match_method`. Dùng để truy vết & audit việc hợp nhất. |
 | `cdp_profile_attributes` | **Metadata catalog** (54 dòng seed) — định nghĩa toàn bộ thuộc tính có thể xuất hiện trên `cdp_master_profiles` (tên, nhóm, kiểu dữ liệu, PII hay không) **và** cấu hình động cho CIR: `is_identity_resolution`, `matching_rule` (`exact`/`fuzzy_trgm`/`fuzzy_dmetaphone`/`none`), `matching_threshold`, `consolidation_rule`, `master_profile_column`. Đây là cơ chế "metadata-driven" cho phép thêm/sửa quy tắc khớp **không cần sửa code**. |
 | `cdp_id_resolution_status` | Bảng trạng thái/throttle cho tiến trình xử lý real-time (không phải trigger DB thật — được gọi tường minh bởi ingestion worker). |
@@ -90,6 +90,14 @@ Mỗi bảng đều có `description`, `keywords TEXT[]`, `embedding vector(1536
 - **Data Quality**: `profile_completeness_score`, `identity_confidence_score`.
 
 > ⚠️ Các cột ML scoring hiện là **chỗ chứa dữ liệu** (schema đã sẵn sàng) — logic tính toán (model huấn luyện, batch job) **chưa có trong repo này**; xem mục 9 (Hạn chế).
+
+**4.2.2. `is_hashed` / `persona_name` — nhãn thay thế khi PII đã bị hash:**
+
+- `is_hashed BOOLEAN` đánh dấu `full_name`/`email`/`phone_number`/`national_id` của hồ sơ đã bị **SHA-256 hash** (không còn đọc được) hay chưa.
+- **Ràng buộc nghiệp vụ**: khi `is_hashed = TRUE` thì `persona_name` **bắt buộc phải khác NULL** — được ép ở **2 tầng**: (1) CHECK constraint `chk_cdp_mp_hashed_requires_persona_name` trên bảng `cdp_master_profiles`, và (2) tầng ứng dụng — `identity-resolution-service/identity_resolution/persona.py` tự phát hiện PII trông giống hash (regex 64 ký tự hex) và **tự sinh `persona_name`** (nhãn dễ đọc, không PII, ví dụ `"Savvy Retail Shopper (TikTok Ads) #4f2a9c"`) một cách **xác định (deterministic)** dựa trên `domain` + kênh acquisition + một định danh không-PII ổn định (`device_id`/`advertising_id`/…), *không bao giờ* dùng lại/giải mã giá trị PII gốc.
+- Lý do: một khi PII đã hash, `full_name` không còn giá trị hiển thị/tìm kiếm ngữ nghĩa (semantic search/admin UI) — `persona_name` lấp khoảng trống đó.
+- `resolver.py` gọi lại logic này ở **cả 2 nơi** tạo/cập nhật master profile (`_create_master_and_link` và `_link_and_update`), nên `persona_name` luôn được điền ngay khi có bất kỳ raw profile nào mang PII trông giống hash được hợp nhất vào.
+- **Tùy chọn Google Gemini**: nếu `GOOGLE_GENAI_API_KEY` được cấu hình (`.env`), `persona.py` gọi Gemini (`google-genai` SDK) để sinh nhãn sáng tạo hơn, chỉ gửi `domain` + kênh acquisition trong prompt (không bao giờ gửi PII/hash giá trị thật). Nếu không cấu hình key, không cài SDK, hoặc gọi API lỗi/timeout (giới hạn `GOOGLE_GENAI_TIMEOUT_MS`, mặc định 8s) — hàm tự động chuyển sang bộ sinh nhãn **offline, xác định (deterministic)**, không bao giờ raise exception hay chặn batch CIR.
 
 ### 4.3. Quan hệ & Tương tác (Relations & Events)
 
@@ -113,7 +121,7 @@ Mỗi bảng đều có `description`, `keywords TEXT[]`, `embedding vector(1536
 - **Quy tắc khớp cấu hình động** qua `cdp_profile_attributes` (không hard-code trong Python): khớp chính xác (exact) trên `email`/`phone_number`/`national_id`/`full_name` (đã hash SHA-256 để bảo vệ PII), khớp qua **identity graph đa kênh** (`device_id`→`device_ids`, `advertising_id`→`advertising_ids`, `cookie_id`→`cookie_ids` dạng TEXT[]; `external_customer_id`→`external_ids` dạng JSONB theo từng `source_system`).
 - Phân vùng theo `tenant_id` (đa khách hàng SaaS) và `domain` (`retail`/`banking`) — một khách hàng banking và một khách hàng retail không thể vô tình bị khớp chéo.
 - Cơ chế throttle/trigger real-time (`cdp_id_resolution_status`) + job batch hằng ngày (`daily_job.py`) — mô phỏng kiến trúc production (Kafka/PubSub → staging → resolver → 2AM batch sweep), chi tiết luồng xem [identity-resolution.md](identity-resolution.md).
-- PII được **hash trước khi lưu** (full_name/email/phone_number/national_id qua SHA-256 chuẩn hoá) trong dữ liệu demo — giảm rủi ro lộ dữ liệu nhạy cảm khi test.
+- PII được **hash trước khi lưu** (full_name/email/phone_number/national_id qua SHA-256 chuẩn hoá) trong dữ liệu demo — giảm rủi ro lộ dữ liệu nhạy cảm khi test. Khi đó `is_hashed = TRUE` và `persona_name` được **tự động sinh** (xem 4.2.2) để hồ sơ vẫn có nhãn dễ đọc phục vụ tìm kiếm/segmentation.
 
 ### 5.2. CRM & Customer Journey (B2B)
 - Mô hình hành trình đa giai đoạn: Lead → Campaign Member → Contact → Opportunity, gắn với Account/Industry.
@@ -289,7 +297,6 @@ Test tự động cho engine CIR: `identity-resolution-service/run_tests.sh` (py
 
 ## 9. Hạn Chế Hiện Tại & Định Hướng Tiếp Theo
 
-- **`ROADMAP.md` hiện đang trống** (`# TODO`) — chưa có roadmap chính thức được công bố trong repo; các định hướng dưới đây được suy ra từ hạ tầng đã sẵn sàng nhưng chưa có logic đi kèm.
 - **Không có authentication/authorization** trên `customer360-api` — hiện là API nội bộ, cần bổ sung xác thực (API key/OAuth2) và kiểm soát theo `tenant_id` trước khi expose ra ngoài môi trường dev.
 - **Chưa có pipeline ML thật** cho các cột scoring (churn, CLV, lead, CX) — schema và metadata đã sẵn sàng, nhưng việc huấn luyện/suy luận mô hình chưa được triển khai trong repo này (khả năng tích hợp với `airflow-ai-agent/`).
 - **Chưa có bước sinh embedding tự động** (persona/CRM/graph) — cột `vector` tồn tại nhưng cần một job/consumer riêng gọi LLM embedding API để điền dữ liệu.

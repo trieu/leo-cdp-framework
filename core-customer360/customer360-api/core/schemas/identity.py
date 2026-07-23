@@ -18,6 +18,7 @@ class MasterProfileBase(BaseModel):
     full_name: Optional[str] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
+    is_hashed: Optional[bool] = None
     email: Optional[str] = None
     phone_number: Optional[str] = None
     secondary_emails: Optional[list[dict]] = None
@@ -44,6 +45,7 @@ class MasterProfileBase(BaseModel):
 
     acquisition_source: Optional[str] = None
     acquisition_campaign: Optional[str] = None
+    persona_name: Optional[str] = None
     segmentation_tags: Optional[list[str]] = None
     attributes: Optional[dict] = None
     source_systems: Optional[list[str]] = None
@@ -76,6 +78,7 @@ class MasterProfileUpdate(BaseModel):
     full_name: Optional[str] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
+    is_hashed: Optional[bool] = None
     email: Optional[str] = None
     phone_number: Optional[str] = None
     secondary_emails: Optional[list[dict]] = None
@@ -98,6 +101,7 @@ class MasterProfileUpdate(BaseModel):
     risk_segment: Optional[str] = None
     acquisition_source: Optional[str] = None
     acquisition_campaign: Optional[str] = None
+    persona_name: Optional[str] = None
     segmentation_tags: Optional[list[str]] = None
     attributes: Optional[dict] = None
     source_systems: Optional[list[str]] = None
@@ -116,11 +120,13 @@ class MasterProfileUpdate(BaseModel):
     identity_confidence_score: Optional[Decimal] = None
     model_versions: Optional[dict] = None
     scores_updated_at: Optional[datetime] = None
+    status_code: Optional[int] = None
 
 
 class MasterProfileRead(MasterProfileBase):
     model_config = ConfigDict(from_attributes=True)
     master_profile_id: uuid.UUID
+    status_code: int
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 

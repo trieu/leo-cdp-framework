@@ -7,6 +7,7 @@
 - Schema PostgreSQL 16 + pgvector cho CRM Journey Graph (8 vertex / 14 edge) và Customer Identity Resolution (CIR).
 - Engine CIR (`identity-resolution-service/`) với quy tắc khớp **metadata-driven** (`cdp_profile_attributes`), hỗ trợ đa tenant + đa domain (`retail`/`banking`).
 - Hash PII (SHA-256) trước khi lưu cho dữ liệu demo.
+- **`is_hashed`/`persona_name`**: khi PII đã hash, `identity_resolution/persona.py` tự sinh nhãn `persona_name` dễ đọc, không phải PII (deterministic, không đảo ngược hash) — ràng buộc bởi CHECK constraint DB + logic Python trong `resolver.py`.
 - REST API đầy đủ (`customer360-api/`, FastAPI + SQLAlchemy 2) — CRUD cho toàn bộ bảng + endpoint reporting (`/summary`, `/master-profiles/duplicates`, `/identity-graph/coverage`).
 - Script sinh dữ liệu mẫu quy mô lớn (`init_sample_data.py`, 1000 raw profiles, tỷ lệ trùng lặp có kiểm soát) + demo end-to-end (`run-demo.sh`).
 

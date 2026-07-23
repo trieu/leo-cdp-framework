@@ -6,7 +6,7 @@ size: 16:9
 style: |
   section {
     font-family: "Inter", "Segoe UI", Roboto, Arial, sans-serif;
-    font-size: 25px;
+    font-size: 24px;
   }
 
   h1, h2, h3 {
@@ -49,7 +49,7 @@ Một khách hàng thực tế "chạm" vào doanh nghiệp qua **nhiều hệ t
 
 - **AppsFlyer** – attribution quảng cáo mobile (Facebook/TikTok/Google/Grab Ads…)
 - **MoEngage** – engagement / marketing automation
-- **Web Tracking** – cookie trên website
+- **Web Tracking** – cookie trên website và Google Analytics 4 (GA4)
 - **Core Banking / KYC** – hệ thống lõi ngân hàng (retail & banking domain)
 - **QR Code & Landing Page** - sự kiện offline (PR event, tại điểm bán…)
 
@@ -62,7 +62,7 @@ Một khách hàng thực tế "chạm" vào doanh nghiệp qua **nhiều hệ t
 > **CIR** là quá trình **liên kết (link)** các bản ghi hồ sơ thô (raw profile) từ nhiều nguồn khác nhau, xác định chúng có **cùng thuộc về một khách hàng thực** hay không, và **hợp nhất (merge)** thành **một hồ sơ "vàng" duy nhất** (Golden/Master Profile).
 
 **Mục tiêu trong Customer 360:**
-- Một khách hàng = **một `master_profile_id`** duy nhất, xuyên suốt mọi kênh, mọi domain (retail/banking)
+- Một khách hàng = **một `master_profile_id`** duy nhất, xuyên suốt mọi kênh, mọi domain (retail/banking/travel)
 - Nền tảng cho: personalization, chấm điểm (lead/churn/CLV), segmentation, báo cáo
 
 ---
@@ -206,8 +206,12 @@ Cho mỗi batch (tối đa `batch_size` bản ghi, `status_code = 1`):
 
 - PII (`email`, `phone`, `national_id`, `full_name`) được **hash bằng SHA-256** trước khi lưu trữ.
 - Chuẩn hóa dữ liệu (lowercase, trim, E.164...) **trước khi hash** để tăng tỷ lệ match.
+- Cột `is_hashed BOOLEAN` trên `cdp_master_profiles` đánh dấu hồ sơ có PII đã hash.
+- **Ràng buộc:** `is_hashed = TRUE` ⇒ `persona_name` **bắt buộc khác NULL** (CHECK constraint DB + tự sinh ở tầng Python — `persona.py`) — nhãn dễ đọc, không phải PII, thay thế `full_name` (giờ chỉ còn là hash) cho mục đích duyệt/tìm kiếm ngữ nghĩa. Ví dụ: `"Savvy Retail Shopper (TikTok Ads) #4f2a9c"`.
 
-### Quy tắc ghép nối
+---
+
+## Quy tắc ghép nối
 
 | Loại dữ liệu | Phương pháp |
 | --- | --- |
@@ -222,10 +226,8 @@ Cho mỗi batch (tối đa `batch_size` bản ghi, `status_code = 1`):
 
 **Reference**
 
-- Google Customer Match  
-  https://support.google.com/displayvideo/answer/9539301
-- Google Enhanced Conversions  
-  https://support.google.com/adspolicy/answer/9755941
+- Google Customer Match  https://support.google.com/displayvideo/answer/9539301
+- Google Enhanced Conversions https://support.google.com/adspolicy/answer/9755941
 
 ---
 
@@ -288,8 +290,8 @@ Cho mỗi batch (tối đa `batch_size` bản ghi, `status_code = 1`):
 ## Kiểm tra kết quả bằng SQL
 
 ```sql
--- Master profile theo domain (PII hiển thị là hash, không phải giá trị thật)
-SELECT master_profile_id, domain, full_name, email, phone_number, source_systems
+-- Master profile theo domain (PII hiển thị là hash, persona_name là nhãn dễ đọc thay thế)
+SELECT master_profile_id, domain, full_name, email, phone_number, is_hashed, persona_name, source_systems
 FROM customer360.cdp_master_profiles
 WHERE tenant_id = '11111111-1111-1111-1111-111111111111'
 ORDER BY domain;

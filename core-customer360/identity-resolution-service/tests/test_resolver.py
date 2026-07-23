@@ -4,7 +4,10 @@ No real database is used: psycopg2 connection/cursor objects are mocked via
 the `mock_conn` / `mock_cursor` fixtures in conftest.py.
 """
 
+import hashlib
+
 from identity_resolution.models import IdentityRule
+from identity_resolution.persona import generate_persona_name
 from identity_resolution.resolver import CustomerIdentityResolver
 
 
@@ -232,10 +235,13 @@ class TestLinkAndUpdate:
         assert "external_ids = COALESCE(external_ids, '{}'::JSONB)" in update_query
         assert "push_tokens = COALESCE(push_tokens, '{}'::JSONB)" in update_query
         assert "source_systems = CASE WHEN %s = ANY" in update_query
+        assert "is_hashed = is_hashed OR %s" in update_query
+        assert "persona_name = COALESCE(persona_name, %s)" in update_query
         assert update_query.strip().endswith(
             "WHERE master_profile_id = %s AND tenant_id = %s;"
         )
-        assert update_params[-2:] == ("master-1", "t1")
+        # Plaintext full_name here (not a SHA-256 hex digest) -> not flagged hashed, no persona_name.
+        assert update_params[-4:] == (False, None, "master-1", "t1")
 
     def test_skips_identity_graph_merges_without_source_system(self, mock_cursor, mock_conn):
         resolver = make_resolver(mock_conn)
@@ -254,6 +260,27 @@ class TestLinkAndUpdate:
         assert "external_ids" not in update_query
         assert "push_tokens" not in update_query
         assert "source_systems" not in update_query
+
+    def test_sets_is_hashed_and_persona_name_when_pii_looks_hashed(self, mock_cursor, mock_conn):
+        resolver = make_resolver(mock_conn)
+        hashed_full_name = hashlib.sha256(b"nguyen van a").hexdigest()
+        raw_profile = {
+            "raw_profile_id": "r1",
+            "tenant_id": "t1",
+            "domain": "retail",
+            "full_name": hashed_full_name,
+            "email": None,
+            "phone_number": None,
+            "national_id": None,
+            "device_id": "dev-1",
+            "media_source": "TikTok Ads",
+        }
+
+        resolver._link_and_update(mock_cursor, raw_profile, "master-1")
+
+        _, update_params = mock_cursor.execute.call_args_list[1][0]
+        expected_persona_name = generate_persona_name(raw_profile)
+        assert update_params[-4:] == (True, expected_persona_name, "master-1", "t1")
 
 
 class TestCreateMasterAndLink:
@@ -293,10 +320,35 @@ class TestCreateMasterAndLink:
         assert insert_params[10].adapted == {"MoEngage": "push-2"}  # push_tokens
         assert insert_params[11] == ["MoEngage"]  # source_systems
         assert insert_params[12] == "r2"  # first_seen_raw_profile_id
+        # Plaintext full_name here (not a SHA-256 hex digest) -> not flagged hashed, no persona_name.
+        assert insert_params[13] is False  # is_hashed
+        assert insert_params[14] is None  # persona_name
 
         link_query, link_params = mock_cursor.execute.call_args_list[1][0]
         assert "INSERT INTO customer360.cdp_profile_links" in link_query
         assert link_params == ("t1", "r2", "new-master-1", 1.0, "NewMaster")
+
+    def test_sets_is_hashed_and_persona_name_when_pii_looks_hashed(self, mock_cursor, mock_conn):
+        mock_cursor.fetchone.return_value = {"master_profile_id": "new-master-2"}
+        resolver = make_resolver(mock_conn)
+        raw_profile = {
+            "raw_profile_id": "r3",
+            "tenant_id": "t1",
+            "domain": "banking",
+            "full_name": hashlib.sha256(b"tran thi b").hexdigest(),
+            "email": hashlib.sha256(b"b@example.com").hexdigest(),
+            "phone_number": None,
+            "national_id": None,
+            "device_id": "dev-3",
+            "media_source": "Facebook Ads",
+            "source_system": "AppsFlyer",
+        }
+
+        resolver._create_master_and_link(mock_cursor, raw_profile)
+
+        _, insert_params = mock_cursor.execute.call_args_list[0][0]
+        assert insert_params[13] is True  # is_hashed
+        assert insert_params[14] == generate_persona_name(raw_profile)  # persona_name
 
 
 class TestMarkAsProcessed:

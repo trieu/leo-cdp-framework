@@ -44,6 +44,10 @@ class CdpMasterProfile(Base):
     full_name: Mapped[Optional[str]] = mapped_column(Text)
     first_name: Mapped[Optional[str]] = mapped_column(Text)
     last_name: Mapped[Optional[str]] = mapped_column(Text)
+    # True if full_name/email/phone_number/national_id are SHA-256 hashed. Whenever TRUE,
+    # persona_name must be populated (enforced by a DB CHECK constraint + identity-resolution-
+    # service's persona.py, which auto-generates persona_name for hashed profiles).
+    is_hashed: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     email: Mapped[Optional[str]] = mapped_column(Text)
     phone_number: Mapped[Optional[str]] = mapped_column(Text)
     secondary_emails: Mapped[Optional[list]] = mapped_column(JSONB, server_default=text("'[]'::jsonb"))
@@ -70,6 +74,8 @@ class CdpMasterProfile(Base):
 
     acquisition_source: Mapped[Optional[str]] = mapped_column(Text)
     acquisition_campaign: Mapped[Optional[str]] = mapped_column(Text)
+    # Human-readable, non-PII label required whenever is_hashed = TRUE (see persona.py).
+    persona_name: Mapped[Optional[str]] = mapped_column(Text)
     persona_embedding: Mapped[Optional[list[float]]] = mapped_column(Vector(768))
     segmentation_tags: Mapped[Optional[list[str]]] = mapped_column(ARRAY(Text))
     attributes: Mapped[Optional[dict]] = mapped_column(JSONB, server_default=text("'{}'::jsonb"))
@@ -102,6 +108,8 @@ class CdpMasterProfile(Base):
 
     created_at: Mapped[Optional[datetime]] = mapped_column(server_default=text("now()"))
     updated_at: Mapped[Optional[datetime]] = mapped_column(server_default=text("now()"))
+    # 1: active, 0: inactive, -1: delete
+    status_code: Mapped[int] = mapped_column(SmallInteger, server_default="1")
 
 
 class CdpRawProfileStage(Base):

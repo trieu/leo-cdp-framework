@@ -98,6 +98,8 @@ def list_duplicate_master_profiles(
             CdpMasterProfile.master_profile_id,
             CdpMasterProfile.domain,
             CdpMasterProfile.full_name,
+            CdpMasterProfile.is_hashed,
+            CdpMasterProfile.persona_name,
             CdpMasterProfile.source_systems,
             link_count_subq.c.link_count,
         )
@@ -114,6 +116,8 @@ def list_duplicate_master_profiles(
             "master_profile_id": row.master_profile_id,
             "domain": row.domain,
             "full_name": row.full_name,
+            "is_hashed": row.is_hashed,
+            "persona_name": row.persona_name,
             "linked_raw_profile_count": row.link_count,
             "source_systems": row.source_systems,
         }

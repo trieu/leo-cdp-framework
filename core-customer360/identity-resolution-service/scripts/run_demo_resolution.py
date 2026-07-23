@@ -55,7 +55,7 @@ def print_summary(cursor) -> None:
         f"""
         SELECT master_profile_id, domain, full_name, email, phone_number,
                national_id, device_ids, advertising_ids, cookie_ids,
-               external_ids, source_systems
+               external_ids, source_systems, status_code, is_hashed, persona_name
         FROM {_table('cdp_master_profiles')}
         WHERE tenant_id = %s
         ORDER BY domain, created_at;
@@ -66,9 +66,11 @@ def print_summary(cursor) -> None:
 
     print(f"\n=== {len(masters)} master profile(s) resolved for tenant {DEMO_TENANT_ID} ===")
     print("(full_name/email/phone_number/national_id are SHA-256 hashes -- no plaintext PII is stored)")
+    print("(persona_name is the readable, non-PII stand-in required whenever is_hashed = TRUE)")
     for m in masters:
         print(
-            f"- [{m['domain']}] {m['master_profile_id']}\n"
+            f"- [{m['domain']}] {m['master_profile_id']} (status_code={m['status_code']})\n"
+            f"    is_hashed={m['is_hashed']} persona_name={m['persona_name']!r}\n"
             f"    full_name={_short_hash(m['full_name'])!r} email={_short_hash(m['email'])!r} "
             f"phone={_short_hash(m['phone_number'])!r} national_id={_short_hash(m['national_id'])!r}\n"
             f"    device_ids={m['device_ids']} advertising_ids={m['advertising_ids']} "

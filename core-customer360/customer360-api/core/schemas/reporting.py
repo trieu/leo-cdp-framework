@@ -42,6 +42,9 @@ class DuplicateMasterProfile(BaseModel):
     master_profile_id: uuid.UUID
     domain: str
     full_name: Optional[str] = None
+    is_hashed: Optional[bool] = None
+    # Readable, non-PII stand-in for full_name when is_hashed = TRUE.
+    persona_name: Optional[str] = None
     linked_raw_profile_count: int
     source_systems: Optional[list[str]] = None
 

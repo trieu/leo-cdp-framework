@@ -563,6 +563,8 @@ if __name__ == "__main__":
 Đây là code xử lý trung tâm, đọc rule từ MetaData và xây dựng câu lệnh SQL Dynamic. Code đầy đủ, có thể chạy được và có unit test đi kèm nằm tại
 [core-customer360/identity-resolution-service/](identity-resolution-service/) (package `identity_resolution`). Các cột dùng bên dưới khớp đúng với DDL đã định nghĩa ở phần *Thiết lập Database Schema* phía trên (`cdp_raw_profiles_stage`, `cdp_master_profiles`, `cdp_profile_links`, `cdp_profile_attributes`) — không có cột `tenant_id`/`full_name`/`status_code` vì các bảng này không phải multi-tenant và dùng `first_name`/`last_name` riêng biệt cùng `processed_at` để đánh dấu trạng thái xử lý.
 
+> **`is_hashed` / `persona_name` (chỉ có trong schema thật `database-schema.sql`, không xuất hiện trong ví dụ code minh hoạ bên dưới):** khi PII (`full_name`/`email`/`phone_number`/`national_id`) đã bị **SHA-256 hash**, `cdp_master_profiles.is_hashed = TRUE` và bắt buộc phải có `persona_name` — một nhãn dễ đọc, **không phải PII**, dùng để duyệt/tìm kiếm hồ sơ khi PII gốc không còn đọc được. Ràng buộc này được ép ở cả DB (CHECK constraint `chk_cdp_mp_hashed_requires_persona_name`) và ở tầng ứng dụng: module `identity_resolution/persona.py` tự phát hiện PII trông giống hash (regex 64 ký tự hex) và tự sinh `persona_name` một cách xác định (deterministic) từ `domain` + kênh acquisition + một định danh không-PII ổn định (`device_id`/`advertising_id`/…), được gọi ở cả `_create_master_and_link()` và `_link_and_update()` trong `resolver.py` thật.
+
 ```python
 # identity-resolution-service/identity_resolution/models.py
 from dataclasses import dataclass

@@ -20,6 +20,7 @@ from typing import Any, Dict, List, Optional
 from psycopg2.extras import Json, RealDictCursor
 
 from .models import IdentityRule
+from .persona import generate_persona_name, profile_looks_hashed
 
 logger = logging.getLogger(__name__)
 
@@ -240,6 +241,17 @@ class CustomerIdentityResolver:
             )
             params.extend([source_system, source_system])
 
+        # is_hashed/persona_name: whenever this (or an earlier) contributing
+        # raw profile's PII looks SHA-256 hashed, the master profile is
+        # flagged as hashed and MUST carry a persona_name (readable label
+        # standing in for the now-unreadable PII) -- see persona.py and the
+        # cdp_master_profiles CHECK constraint in database-schema.sql.
+        looks_hashed = profile_looks_hashed(raw_profile)
+        set_clauses.append("is_hashed = is_hashed OR %s")
+        params.append(looks_hashed)
+        set_clauses.append("persona_name = COALESCE(persona_name, %s)")
+        params.append(generate_persona_name(raw_profile) if looks_hashed else None)
+
         set_clauses.append("updated_at = NOW()")
         params.extend([master_id, raw_profile["tenant_id"]])
 
@@ -268,12 +280,16 @@ class CustomerIdentityResolver:
         cookie_ids = [raw_profile["cookie_id"]] if raw_profile.get("cookie_id") else []
         source_systems = [source_system] if source_system else []
 
+        # is_hashed/persona_name: see the matching comment in _link_and_update.
+        looks_hashed = profile_looks_hashed(raw_profile)
+        persona_name = generate_persona_name(raw_profile) if looks_hashed else None
+
         insert_master_query = f"""
             INSERT INTO {self._table('cdp_master_profiles')}
                 (tenant_id, domain, full_name, email, phone_number, national_id,
                  external_ids, device_ids, advertising_ids, cookie_ids, push_tokens,
-                 source_systems, first_seen_raw_profile_id)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                 source_systems, first_seen_raw_profile_id, is_hashed, persona_name)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING master_profile_id;
         """
         cursor.execute(
@@ -292,6 +308,8 @@ class CustomerIdentityResolver:
                 Json(push_tokens),
                 source_systems,
                 raw_profile["raw_profile_id"],
+                looks_hashed,
+                persona_name,
             ),
         )
         new_master_id = cursor.fetchone()["master_profile_id"]
