@@ -4,5 +4,6 @@ SQLAlchemy>=2.0,<3
 psycopg2-binary>=2.9,<3
 pydantic>=2.6,<3
 pydantic-settings>=2.2,<3
+pydantic[email]
 python-dotenv>=1.0,<2
 pgvector>=0.3,<1
