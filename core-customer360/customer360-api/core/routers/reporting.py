@@ -10,6 +10,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
+from core.cache import cache_response
 from core.config import settings
 from core.crud import identity as identity_crud
 from core.database import get_db
@@ -19,6 +20,7 @@ router = APIRouter(prefix="/reporting", tags=["Identity Resolution - Reporting"]
 
 
 @router.get("/summary", response_model=CirSummary)
+@cache_response("reporting/summary", ttl=settings.cache_ttl_seconds)
 def get_cir_summary(tenant_id: Optional[uuid.UUID] = None, db: Session = Depends(get_db)):
     """One-shot overview: raw/master profile totals, processing funnel,
     domain/source breakdowns, and duplicate (merged) master profile count."""
@@ -40,6 +42,7 @@ def get_cir_summary(tenant_id: Optional[uuid.UUID] = None, db: Session = Depends
 
 
 @router.get("/master-profiles/duplicates", response_model=list[DuplicateMasterProfile])
+@cache_response("reporting/duplicates", ttl=settings.cache_ttl_seconds)
 def get_duplicate_master_profiles(
     tenant_id: Optional[uuid.UUID] = None,
     skip: int = 0,
@@ -52,6 +55,7 @@ def get_duplicate_master_profiles(
 
 
 @router.get("/identity-graph/coverage", response_model=IdentityGraphCoverage)
+@cache_response("reporting/coverage", ttl=settings.cache_ttl_seconds)
 def get_identity_graph_coverage(tenant_id: Optional[uuid.UUID] = None, db: Session = Depends(get_db)):
     """Adoption of each identity channel (email/phone/device/advertising/cookie/
     external id/national id) across all resolved master profiles."""

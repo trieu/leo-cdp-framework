@@ -7,3 +7,4 @@ pydantic-settings>=2.2,<3
 pydantic[email]
 python-dotenv>=1.0,<2
 pgvector>=0.3,<1
+redis>=5.0,<6

@@ -1,5 +1,7 @@
 """Application configuration, loaded from environment variables / .env."""
 
+from typing import Optional
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -21,6 +23,15 @@ class Settings(BaseSettings):
 
     api_default_page_size: int = 100
     api_max_page_size: int = 1000
+
+    # Redis response cache (see core/cache.py). Disconnected/misconfigured
+    # Redis never breaks the API -- it just disables caching (fail open).
+    redis_host: str = "localhost"
+    redis_port: int = 6379
+    redis_db: int = 0
+    redis_password: Optional[str] = None
+    cache_enabled: bool = True
+    cache_ttl_seconds: int = 60
 
     @property
     def database_url(self) -> str:

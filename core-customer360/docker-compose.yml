@@ -1,0 +1,179 @@
+name: customer360
+
+# =============================================================================
+# Customer 360 Platform - containerized microservice stack
+#
+#   docker compose up                 Production: postgres + redis + cir + api
+#   docker compose --profile dev up    Same 4 services, PLUS a one-shot
+#                                       `cir-demo-seed` job that seeds demo
+#                                       data (CIR sample profiles, resolution,
+#                                       full CRM/relations/events demo data).
+#
+# Config: copy .env.example -> .env in this directory before first run.
+# =============================================================================
+
+networks:
+  customer360-network:
+    name: customer360-network
+    driver: bridge
+
+volumes:
+  customer360-pgdata:
+    name: customer360-pgdata
+  customer360-redisdata:
+    name: customer360-redisdata
+
+services:
+  # ---------------------------------------------------------------------------
+  # 1) PostgreSQL 16 + PostGIS + pgvector + contrib, auto-provisioned with
+  #    database-schema.sql on first start.
+  # ---------------------------------------------------------------------------
+  postgres:
+    build:
+      context: .
+      dockerfile: postgres/Dockerfile
+    image: customer360-postgres:local
+    container_name: customer360-postgres
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+      POSTGRES_DB: ${DB_NAME:-customer360}
+    ports:
+      - "${POSTGRES_HOST_PORT:-5432}:5432"
+    volumes:
+      - customer360-pgdata:/var/lib/postgresql/data
+    networks:
+      - customer360-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-customer360}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ---------------------------------------------------------------------------
+  # 2) Redis 8 - API response cache (see customer360-api/core/cache.py).
+  # ---------------------------------------------------------------------------
+  redis:
+    build:
+      context: ./redis
+      dockerfile: Dockerfile
+    image: customer360-redis:local
+    container_name: customer360-redis
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-change_me_redis_password}
+    command: ["--requirepass", "${REDIS_PASSWORD:-change_me_redis_password}"]
+    ports:
+      - "${REDIS_HOST_PORT:-6379}:6379"
+    volumes:
+      - customer360-redisdata:/data
+    networks:
+      - customer360-network
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" --no-auth-warning ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ---------------------------------------------------------------------------
+  # 3) CIR - Customer Identity Resolution worker (identity-resolution-service).
+  #    Continuously drains cdp_raw_profiles_stage (see worker.py).
+  # ---------------------------------------------------------------------------
+  cir:
+    build:
+      context: ./identity-resolution-service
+      dockerfile: Dockerfile
+    image: customer360-cir:local
+    container_name: customer360-cir
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - customer360-network
+    healthcheck:
+      test: ["CMD", "python", "healthcheck.py"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+
+  # ---------------------------------------------------------------------------
+  # 4) Customer 360 API (FastAPI) - CRUD + reporting over the customer360
+  #    schema, Redis-cached reads (see customer360-api/core/cache.py).
+  # ---------------------------------------------------------------------------
+  api:
+    build:
+      context: ./customer360-api
+      dockerfile: Dockerfile
+    image: customer360-api:local
+    container_name: customer360-api
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "${API_HOST_PORT:-8000}:8000"
+    networks:
+      - customer360-network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # ---------------------------------------------------------------------------
+  # dev-only: one-shot demo data seeder (`docker compose --profile dev up`).
+  # Reuses the CIR image, overriding its command to run the seeding scripts
+  # instead of the continuous worker, then exits (restart: "no").
+  # ---------------------------------------------------------------------------
+  cir-demo-seed:
+    profiles: ["dev"]
+    build:
+      context: ./identity-resolution-service
+      dockerfile: Dockerfile
+    image: customer360-cir:local
+    container_name: customer360-cir-demo-seed
+    restart: "no"
+    env_file:
+      - .env
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - customer360-network
+    command: >
+      sh -c "python scripts/init_sample_data.py &&
+             python scripts/run_demo_resolution.py &&
+             python scripts/seed_full_demo_data.py"

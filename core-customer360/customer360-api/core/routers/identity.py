@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from core.cache import cache_response, invalidate_prefix
 from core.config import settings
 from core.crud.base import CRUDBase
 from core.database import get_db
@@ -43,6 +44,7 @@ _master_crud = CRUDBase(CdpMasterProfile)
 
 
 @master_profiles_router.get("/", response_model=list[MasterProfileRead])
+@cache_response("master_profiles/list", ttl=settings.cache_ttl_seconds)
 def list_master_profiles(
     tenant_id: Optional[uuid.UUID] = None,
     domain: Optional[str] = Query(default=None, pattern="^(retail|banking|real_estate|travel)$"),
@@ -54,6 +56,7 @@ def list_master_profiles(
 
 
 @master_profiles_router.get("/count")
+@cache_response("master_profiles/count", ttl=settings.cache_ttl_seconds)
 def count_master_profiles_endpoint(
     tenant_id: Optional[uuid.UUID] = None,
     domain: Optional[str] = Query(default=None, pattern="^(retail|banking|real_estate|travel)$"),
@@ -63,6 +66,7 @@ def count_master_profiles_endpoint(
 
 
 @master_profiles_router.get("/{master_profile_id}", response_model=MasterProfileRead)
+@cache_response("master_profiles/item", ttl=settings.cache_ttl_seconds)
 def get_master_profile(master_profile_id: uuid.UUID, db: Session = Depends(get_db)):
     obj = _master_crud.get(db, master_profile_id)
     if obj is None:
@@ -71,6 +75,7 @@ def get_master_profile(master_profile_id: uuid.UUID, db: Session = Depends(get_d
 
 
 @master_profiles_router.get("/{master_profile_id}/links", response_model=list[ProfileLinkRead])
+@cache_response("master_profiles/links", ttl=settings.cache_ttl_seconds)
 def get_master_profile_links(master_profile_id: uuid.UUID, db: Session = Depends(get_db)):
     """All raw profiles that were resolved/merged into this master profile."""
     stmt = select(CdpProfileLink).where(CdpProfileLink.master_profile_id == master_profile_id)
@@ -79,7 +84,9 @@ def get_master_profile_links(master_profile_id: uuid.UUID, db: Session = Depends
 
 @master_profiles_router.post("/", response_model=MasterProfileRead, status_code=201)
 def create_master_profile(payload: MasterProfileCreate, db: Session = Depends(get_db)):
-    return _master_crud.create(db, payload.model_dump())
+    obj = _master_crud.create(db, payload.model_dump())
+    invalidate_prefix("master_profiles")
+    return obj
 
 
 @master_profiles_router.patch("/{master_profile_id}", response_model=MasterProfileRead)
@@ -87,7 +94,9 @@ def update_master_profile(master_profile_id: uuid.UUID, payload: MasterProfileUp
     obj = _master_crud.get(db, master_profile_id)
     if obj is None:
         raise HTTPException(status_code=404, detail=f"CdpMasterProfile '{master_profile_id}' not found")
-    return _master_crud.update(db, obj, payload.model_dump(exclude_unset=True))
+    obj = _master_crud.update(db, obj, payload.model_dump(exclude_unset=True))
+    invalidate_prefix("master_profiles")
+    return obj
 
 
 @master_profiles_router.delete("/{master_profile_id}", status_code=204)
@@ -96,6 +105,7 @@ def delete_master_profile(master_profile_id: uuid.UUID, db: Session = Depends(ge
     if obj is None:
         raise HTTPException(status_code=404, detail=f"CdpMasterProfile '{master_profile_id}' not found")
     _master_crud.delete(db, obj)
+    invalidate_prefix("master_profiles")
 
 
 # --- Raw Profiles Stage -------------------------------------------------------
@@ -105,6 +115,7 @@ _raw_crud = CRUDBase(CdpRawProfileStage)
 
 
 @raw_profiles_router.get("/", response_model=list[RawProfileRead])
+@cache_response("raw_profiles/list", ttl=settings.cache_ttl_seconds)
 def list_raw_profiles(
     tenant_id: Optional[uuid.UUID] = None,
     domain: Optional[str] = Query(default=None, pattern="^(retail|banking|real_estate|travel)$"),
@@ -126,6 +137,7 @@ def list_raw_profiles(
 
 
 @raw_profiles_router.get("/count")
+@cache_response("raw_profiles/count", ttl=settings.cache_ttl_seconds)
 def count_raw_profiles_endpoint(
     tenant_id: Optional[uuid.UUID] = None,
     domain: Optional[str] = Query(default=None, pattern="^(retail|banking|real_estate|travel)$"),
@@ -141,6 +153,7 @@ def count_raw_profiles_endpoint(
 
 
 @raw_profiles_router.get("/{raw_profile_id}", response_model=RawProfileRead)
+@cache_response("raw_profiles/item", ttl=settings.cache_ttl_seconds)
 def get_raw_profile(raw_profile_id: uuid.UUID, db: Session = Depends(get_db)):
     obj = _raw_crud.get(db, raw_profile_id)
     if obj is None:
@@ -152,7 +165,9 @@ def get_raw_profile(raw_profile_id: uuid.UUID, db: Session = Depends(get_db)):
 def create_raw_profile(payload: RawProfileCreate, db: Session = Depends(get_db)):
     """Ingests a raw profile event (status_code defaults to 1 = new/unprocessed,
     ready to be picked up by identity-resolution-service)."""
-    return _raw_crud.create(db, payload.model_dump())
+    obj = _raw_crud.create(db, payload.model_dump())
+    invalidate_prefix("raw_profiles")
+    return obj
 
 
 @raw_profiles_router.patch("/{raw_profile_id}", response_model=RawProfileRead)
@@ -160,7 +175,9 @@ def update_raw_profile(raw_profile_id: uuid.UUID, payload: RawProfileUpdate, db:
     obj = _raw_crud.get(db, raw_profile_id)
     if obj is None:
         raise HTTPException(status_code=404, detail=f"CdpRawProfileStage '{raw_profile_id}' not found")
-    return _raw_crud.update(db, obj, payload.model_dump(exclude_unset=True))
+    obj = _raw_crud.update(db, obj, payload.model_dump(exclude_unset=True))
+    invalidate_prefix("raw_profiles")
+    return obj
 
 
 @raw_profiles_router.delete("/{raw_profile_id}", status_code=204)
@@ -169,6 +186,7 @@ def delete_raw_profile(raw_profile_id: uuid.UUID, db: Session = Depends(get_db))
     if obj is None:
         raise HTTPException(status_code=404, detail=f"CdpRawProfileStage '{raw_profile_id}' not found")
     _raw_crud.delete(db, obj)
+    invalidate_prefix("raw_profiles")
 
 
 # --- Profile Links -------------------------------------------------------------
@@ -178,6 +196,7 @@ _link_crud = CRUDBase(CdpProfileLink)
 
 
 @profile_links_router.get("/", response_model=list[ProfileLinkRead])
+@cache_response("profile_links/list", ttl=settings.cache_ttl_seconds)
 def list_profile_links(
     tenant_id: Optional[uuid.UUID] = None,
     raw_profile_id: Optional[uuid.UUID] = None,
@@ -197,6 +216,7 @@ def list_profile_links(
 
 
 @profile_links_router.get("/{link_id}", response_model=ProfileLinkRead)
+@cache_response("profile_links/item", ttl=settings.cache_ttl_seconds)
 def get_profile_link(link_id: uuid.UUID, db: Session = Depends(get_db)):
     obj = _link_crud.get(db, link_id)
     if obj is None:
@@ -206,7 +226,9 @@ def get_profile_link(link_id: uuid.UUID, db: Session = Depends(get_db)):
 
 @profile_links_router.post("/", response_model=ProfileLinkRead, status_code=201)
 def create_profile_link(payload: ProfileLinkCreate, db: Session = Depends(get_db)):
-    return _link_crud.create(db, payload.model_dump())
+    obj = _link_crud.create(db, payload.model_dump())
+    invalidate_prefix("profile_links")
+    return obj
 
 
 @profile_links_router.delete("/{link_id}", status_code=204)
@@ -215,6 +237,7 @@ def delete_profile_link(link_id: uuid.UUID, db: Session = Depends(get_db)):
     if obj is None:
         raise HTTPException(status_code=404, detail=f"CdpProfileLink '{link_id}' not found")
     _link_crud.delete(db, obj)
+    invalidate_prefix("profile_links")
 
 
 # --- Profile Attributes (matching-rule metadata) --------------------------------
