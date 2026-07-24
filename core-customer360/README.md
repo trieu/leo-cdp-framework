@@ -1,9 +1,19 @@
 
-# Customer 360
+# Customer 360 for Composable CDP
 
-Customer 360 is the **golden-record / identity-resolution layer** of LEO CDP: a PostgreSQL 16 schema (`customer360`) that consolidates customer identity and behavior across channels — AppsFlyer (mobile attribution), MoEngage (engagement), Web Tracking/GA4, POS, and Core Banking — plus a B2B **CRM journey graph** (Lead → Contact → Opportunity), a partitioned **behavioral event fact table**, and two runnable Python services that operate on the schema.
+## What is a Composable CDP?
 
-![](graph-flow.png)
+A composable CDP is an approach to building customer data platform capabilities by assembling modular, best-of-breed components — each handling a different stage of the Customer Intelligence Loop (collect → resolve identity → segment → activate) — instead of buying one single, bundled, black-box platform. Most composable CDPs are **warehouse-native**: they run on the cloud data warehouse you already operate (Snowflake, BigQuery, Databricks, or in this case plain PostgreSQL) and add specialized, swappable components on top for identity resolution, segmentation, and activation.
+
+For a **CIO**, that composability is the point: customer data stays inside infrastructure you own and audit, instead of being copied into a third-party SaaS vendor's cloud. For a **CTO**, it means every component — including this one — is inspectable, open-source, and replaceable, so architecture decisions aren't locked in by a vendor's roadmap. For **marketing/growth teams**, it still needs to deliver the same outcome a bundled CDP promises: one trustworthy view of each customer that segmentation and campaign tools can activate against.
+
+![](composable-cdp.png)
+
+## What is Customer 360?
+
+Customer 360 is the **identity-resolution and golden-record component** of that composable stack for LEO CDP: a self-hosted PostgreSQL 16 schema (`customer360`) that consolidates customer identity and behavior across channels — AppsFlyer (mobile attribution), MoEngage (engagement), Web Tracking/GA4, POS, and Core Banking — plus a B2B **CRM journey graph** (Lead → Contact → Opportunity), a partitioned **behavioral event fact table**, and two runnable Python services that operate on the schema. It is the piece that would otherwise be an expensive, closed-source SaaS subscription (Segment/mParticle/Amperity-style identity resolution) — here it's transparent SQL and Python you can read, extend, and run on commodity infrastructure.
+
+![](./ui-wireframes/customer-360-profile-details.png)
 
 It ships as three independently runnable pieces:
 
@@ -17,9 +27,19 @@ It ships as three independently runnable pieces:
 
 ---
 
+## Why it matters, by role
+
+The same schema and pipeline answer a different question depending on who's asking — and each answer reinforces the others:
+
+- **CIO — governance & compliance**: PII (`email`, `phone_number`, `full_name`, `national_id`) is SHA-256 hashed before it's ever matched or stored (see [PII & persona handling](#1-golden-record--identity-resolution-cir) below), aligned with data-protection regulation (e.g. Vietnam's Decree 13/2023/NĐ-CP) and with the hashed-match pattern used by Google/Meta ad platforms. `tenant_id` isolation on every table means the same deployment can safely serve multiple business units or clients without data bleed.
+- **CTO — architecture & total cost of ownership**: nothing here requires proprietary infrastructure — just PostgreSQL 16 with three open-source extensions (`pgvector`, `postgis`, `pgcrypto`). Matching logic is **metadata-driven** (`cdp_profile_attributes`), so new identifiers or matching rules are a SQL `UPDATE`, not a code deploy. `cdp_raw_events` is partitioned for horizontal scale, and the FastAPI layer means any team (web, mobile, data science, BI) can integrate through one REST contract instead of querying Postgres directly.
+- **Marketing — one activatable customer view**: every install, login, purchase, loan application, or booking — regardless of source system or domain (retail/banking/travel/real estate) — resolves to a single `cdp_master_profiles` record with a readable `persona_name`, so segmentation and campaigns target *people*, not disconnected device IDs or cookies. The ML scoring block (churn, CLV, lead conversion, engagement/NPS) and `persona_embedding`/`graph_edges.embedding` vectors are already on that record, ready for lookalike audiences and natural-language segment building.
+
+---
+
 ## Why a graph + golden-record schema?
 
-Two problems are solved on the same schema:
+This identity-resolution layer earns its place in a composable stack by solving two problems on one schema:
 
 1. **Fragmented identity** — a real customer touches AppsFlyer (install), MoEngage (push), Web Tracking (cookie), and Core Banking (KYC) as *separate, disconnected raw records*. **Identity Resolution (CIR)** links and merges these into one `cdp_master_profiles` row per real person.
 2. **Multi-stage B2B journey** — the same person can appear as a **Lead**, a **Campaign Member**, later a **Contact**, and eventually be tied to an **Opportunity**. The **CRM journey graph** models that progression so you can query across touchpoints.
