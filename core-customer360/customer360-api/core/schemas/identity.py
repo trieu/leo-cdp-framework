@@ -51,6 +51,15 @@ class MasterProfileBase(BaseModel):
     source_systems: Optional[list[str]] = None
     first_seen_raw_profile_id: Optional[uuid.UUID] = None
 
+    # Customer lifecycle & engagement tracking (prospect -> lead -> customer).
+    customer_since: Optional[date] = None
+    last_activity_at: Optional[datetime] = None
+    preferred_channel: Optional[str] = None
+    lifecycle_stage: Optional[str] = Field(
+        default=None, pattern="^(prospect|lead|customer|vip|dormant|churn_risk)$"
+    )
+    persona_summary: Optional[str] = None
+
     # ML & Analytics scoring models (Lead, Churn, CLV, CX, Data Quality).
     lead_conversion_probability: Optional[Decimal] = None
     lead_grade: Optional[str] = None
@@ -105,6 +114,13 @@ class MasterProfileUpdate(BaseModel):
     segmentation_tags: Optional[list[str]] = None
     attributes: Optional[dict] = None
     source_systems: Optional[list[str]] = None
+    customer_since: Optional[date] = None
+    last_activity_at: Optional[datetime] = None
+    preferred_channel: Optional[str] = None
+    lifecycle_stage: Optional[str] = Field(
+        default=None, pattern="^(prospect|lead|customer|vip|dormant|churn_risk)$"
+    )
+    persona_summary: Optional[str] = None
     lead_conversion_probability: Optional[Decimal] = None
     lead_grade: Optional[str] = None
     churn_probability: Optional[Decimal] = None

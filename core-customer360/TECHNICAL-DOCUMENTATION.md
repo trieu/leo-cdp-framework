@@ -54,20 +54,20 @@ graph TD
 
 ## 4. Mô Hình Dữ Liệu (`database-schema.sql`)
 
-Toàn bộ bảng nằm trong schema `customer360`. Có thể nhóm thành 4 khối:
+Toàn bộ bảng nằm trong schema `customer360`. Quy ước đặt tên: **`cdp_*`** = lõi identity-resolution/golden-record (Customer Identity Resolution), **`crm_*`** = lớp CRM/journey-graph xây trên lõi đó (đây là **schema dùng chung cho cả CDP và CRM**). Có thể nhóm thành 4 khối:
 
-### 4.1. CRM / Customer Journey Graph (8 vertex)
+### 4.1. CRM / Customer Journey Graph (8 vertex, bảng `crm_*`)
 
 | Bảng | Mục đích | Khóa chính |
 |---|---|---|
-| `campaign` | Chiến dịch marketing | `campaign_id` |
-| `campaign_member` | Người phản hồi một chiến dịch | `campaign_member_id` |
-| `lead` | Khách hàng tiềm năng (chưa gắn Opportunity) | `lead_id` |
-| `lead_source` | Kênh mà Lead đến từ đó | `lead_source_id` |
-| `contact` | Lead đã gắn với Account/Opportunity | `contact_id` |
-| `account` | Tổ chức mà Contact thuộc về | `account_id` |
-| `opportunity` | Giao dịch bán hàng tiềm năng (có giá trị tiền) | `opportunity_id` |
-| `industry` | Ngành nghề của Account | `industry_id` |
+| `crm_campaign` | Chiến dịch marketing | `campaign_id` |
+| `crm_campaign_member` | Người phản hồi một chiến dịch | `campaign_member_id` |
+| `crm_lead` | Khách hàng tiềm năng (chưa gắn Opportunity) | `lead_id` |
+| `crm_lead_source` | Kênh mà Lead đến từ đó | `lead_source_id` |
+| `crm_contact` | Lead đã gắn với Account/Opportunity | `contact_id` |
+| `crm_account` | Tổ chức mà Contact thuộc về | `account_id` |
+| `crm_opportunity` | Giao dịch bán hàng tiềm năng (có giá trị tiền) | `opportunity_id` |
+| `crm_industry` | Ngành nghề của Account | `industry_id` |
 
 Mỗi bảng đều có `description`, `keywords TEXT[]`, `embedding vector(1536)`, `metadata JSONB` — chuẩn hoá cho semantic search / gắn thẻ AI trên toàn bộ CRM graph.
 
@@ -78,7 +78,7 @@ Mỗi bảng đều có `description`, `keywords TEXT[]`, `embedding vector(1536
 | `cdp_raw_profiles_stage` | Bảng staging — mỗi dòng là 1 event/bản ghi thô từ 1 nguồn (`source_system`: AppsFlyer, MoEngage, WebTracking, CoreBanking, POS…), gồm định danh PII (`full_name`, `email`, `phone_number`, `national_id`), định danh thiết bị/marketing (`device_id`, `advertising_id`, `cookie_id`, `ga_client_id`), thuộc tính UTM/attribution, `event_name/event_time/event_payload`, và `status_code` điều khiển hàng đợi xử lý (1=mới, 2=đang xử lý, 3=đã xử lý, 0=inactive, -1=xoá). |
 | `cdp_master_profiles` | **Golden record** — hồ sơ khách hàng đã hợp nhất. Gồm 7 nhóm cột: (1) định danh & demographic (PII, gồm `is_hashed` — đánh dấu PII đã bị hash SHA-256 hay chưa — và `persona_name` — nhãn dễ đọc, không phải PII, **bắt buộc phải có khi `is_hashed = TRUE`**, do tầng ứng dụng tự sinh, xem 4.2.2), (2) identity graph đa kênh (`external_ids` JSONB, `device_ids`/`advertising_ids`/`cookie_ids` TEXT[], `push_tokens`), (3) thuộc tính riêng **retail** (`loyalty_id`, `membership_tier`, `preferred_store_code`), (4) thuộc tính riêng **banking** (`national_id`, `cif_number`, `account_numbers`, `kyc_status`, `risk_segment`), (5) marketing/engagement (`acquisition_source/campaign`, `persona_name`, `persona_embedding vector(768)`, `segmentation_tags`, `attributes JSONB`), (6) lineage (`source_systems`, `first_seen_raw_profile_id`), (7) **ML scoring** (xem 4.2.1). |
 | `cdp_profile_links` | Bảng liên kết N–1: mỗi `raw_profile_id` (unique theo tenant) trỏ tới đúng 1 `master_profile_id`, kèm `match_score`, `match_method`. Dùng để truy vết & audit việc hợp nhất. |
-| `cdp_profile_attributes` | **Metadata catalog** (54 dòng seed) — định nghĩa toàn bộ thuộc tính có thể xuất hiện trên `cdp_master_profiles` (tên, nhóm, kiểu dữ liệu, PII hay không) **và** cấu hình động cho CIR: `is_identity_resolution`, `matching_rule` (`exact`/`fuzzy_trgm`/`fuzzy_dmetaphone`/`none`), `matching_threshold`, `consolidation_rule`, `master_profile_column`. Đây là cơ chế "metadata-driven" cho phép thêm/sửa quy tắc khớp **không cần sửa code**. |
+| `cdp_profile_attributes` | **Metadata catalog** (61 dòng seed) — định nghĩa toàn bộ thuộc tính có thể xuất hiện trên `cdp_master_profiles` (tên, nhóm, kiểu dữ liệu, PII hay không) **và** cấu hình động cho CIR: `is_identity_resolution`, `matching_rule` (`exact`/`fuzzy_trgm`/`fuzzy_dmetaphone`/`none`), `matching_threshold`, `consolidation_rule`, `master_profile_column`. Đây là cơ chế "metadata-driven" cho phép thêm/sửa quy tắc khớp **không cần sửa code**. |
 | `cdp_id_resolution_status` | Bảng trạng thái/throttle cho tiến trình xử lý real-time (không phải trigger DB thật — được gọi tường minh bởi ingestion worker). |
 
 **4.2.1. Nhóm cột ML Scoring trên `cdp_master_profiles`** (do pipeline/ML tính bất đồng bộ, ghi vào `model_versions` + `scores_updated_at`):
@@ -90,6 +90,14 @@ Mỗi bảng đều có `description`, `keywords TEXT[]`, `embedding vector(1536
 - **Data Quality**: `profile_completeness_score`, `identity_confidence_score`.
 
 > ⚠️ Các cột ML scoring hiện là **chỗ chứa dữ liệu** (schema đã sẵn sàng) — logic tính toán (model huấn luyện, batch job) **chưa có trong repo này**; xem mục 9 (Hạn chế).
+
+**4.2.1b. Nhóm cột Lifecycle & Engagement Tracking trên `cdp_master_profiles`** (hành trình lead → customer có thể kéo dài hàng tháng):
+
+- `customer_since DATE` — ngày hồ sơ chuyển từ lead/prospect thành khách hàng thực.
+- `last_activity_at TIMESTAMP` — cập nhật liên tục bởi streaming pipeline (không phải batch).
+- `preferred_channel TEXT` — kênh khách hàng tương tác nhiều nhất (`Mobile App`, `Website`, `Internet Banking App`…), phục vụ recommendation/next-best-action.
+- `lifecycle_stage TEXT` — giai đoạn hiện tại (`prospect`/`lead`/`customer`/`vip`/`dormant`/`churn_risk`), CHECK constraint ở DB.
+- `persona_summary TEXT` — tóm tắt tường thuật dài hơn `persona_name`, thường do LLM/segmentation pipeline sinh ra.
 
 **4.2.2. `is_hashed` / `persona_name` — nhãn thay thế khi PII đã bị hash:**
 
@@ -103,10 +111,10 @@ Mỗi bảng đều có `description`, `keywords TEXT[]`, `embedding vector(1536
 
 | Bảng | Mục đích |
 |---|---|
-| `relation_types` | Danh mục loại quan hệ giữa 2 master profile (`friend`, `colleague`, `family`, `customer-contact`…) |
+| `cdp_relation_types` | Danh mục loại quan hệ giữa 2 master profile (`friend`, `colleague`, `family`, `customer-contact`…) |
 | `cdp_relations` | Quan hệ N–N giữa 2 `cdp_master_profiles` (ví dụ: liên kết thành viên gia đình trong hộ gia đình ngân hàng) |
-| `customer_contacts` | Log tương tác (CS, call center, email…) gắn với 1 master profile |
-| `purchases` | Log giao dịch mua hàng gắn với 1 master profile |
+| `crm_customer_contacts` | Log tương tác (CS, call center, email…) gắn với 1 master profile |
+| `crm_transactions` | Bảng giao dịch tổng quát, đa nguồn (bán hàng POS, chuyển khoản ngân hàng, đặt chỗ du lịch…). `master_profile_id` **nullable** và được backfill bất đồng bộ bởi CIR (cùng cơ chế với `cdp_raw_events`), nên việc nạp dữ liệu từ POS/core-banking/booking không bị chặn bởi bước hợp nhất định danh. |
 
 ### 4.4. Graph Edges (đồ thị tổng quát, có partition)
 
@@ -224,10 +232,10 @@ Mỗi prefix có đủ 6 endpoint chuẩn: `GET /`, `GET /count`, `GET /{id}`, `
 
 | Prefix | Entity |
 |---|---|
-| `/relation-types` | RelationType (danh mục loại quan hệ) |
+| `/relation-types` | RelationType (danh mục loại quan hệ, bảng `cdp_relation_types`) |
 | `/relations` | CdpRelation (quan hệ N–N giữa 2 master profile) |
-| `/customer-contacts` | CustomerContact (log tương tác CS) |
-| `/purchases` | Purchase (log giao dịch mua hàng) |
+| `/customer-contacts` | CustomerContact (log tương tác CS, bảng `crm_customer_contacts`) |
+| `/transactions` | Transaction (giao dịch đa nguồn, bảng `crm_transactions`, thay thế `Purchase`/`/purchases` cũ) |
 
 Cùng chuẩn CRUD 6 endpoint như trên.
 
@@ -252,7 +260,7 @@ Một người dùng cài app từ quảng cáo Facebook/TikTok/Google (AppsFlye
 Khách hàng banking tương tác qua app (AppsFlyer) rồi hoàn tất KYC qua Core Banking (event `kyc_completed` có `national_id`). CIR khớp theo chuỗi `device_id` → `phone_number` để nối 2 nguồn, cập nhật `kyc_status`, `cif_number`, `account_numbers`, `risk_segment` lên cùng 1 golden record — phục vụ **AML/risk scoring** và cá nhân hoá dịch vụ ngân hàng số mà không cần đối chiếu thủ công giữa các hệ thống lõi.
 
 ### UC3 — Marketing attribution & Customer Journey B2B
-Dùng schema CRM Graph để trả lời câu hỏi kiểu: *"Tất cả Contact ngành Tài chính (Finance) từng bị ảnh hưởng bởi Campaign X, đã convert từ Lead nào, và hiện gắn với Opportunity nào"* — join `lead → campaign_member → campaign`, `contact → account → industry`, `contact → opportunity` (ví dụ SQL trong [README.md](README.md)).
+Dùng schema CRM Graph để trả lời câu hỏi kiểu: *"Tất cả Contact ngành Tài chính (Finance) từng bị ảnh hưởng bởi Campaign X, đã convert từ Lead nào, và hiện gắn với Opportunity nào"* — join `crm_lead → crm_campaign_member → crm_campaign`, `crm_contact → crm_account → crm_industry`, `crm_contact → crm_opportunity` (ví dụ SQL trong [README.md](README.md)).
 
 ### UC4 — Dashboard vận hành Identity Resolution (Data/BI team)
 Gọi `GET /api/v1/reporting/summary` để dựng dashboard real-time: có bao nhiêu raw profile đang chờ xử lý (`pending`), bao nhiêu đã hợp nhất, tỷ lệ trùng lặp theo `source_system`/`domain` — giúp phát hiện sớm sự cố pipeline (ví dụ raw profile bị kẹt ở `status_code=1` quá lâu) hoặc chất lượng dữ liệu kém (matching rule quá lỏng/quá chặt).

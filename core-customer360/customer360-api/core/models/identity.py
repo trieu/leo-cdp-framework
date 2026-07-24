@@ -83,6 +83,18 @@ class CdpMasterProfile(Base):
     first_seen_raw_profile_id: Mapped[Optional[uuid.UUID]] = mapped_column(PG_UUID(as_uuid=True))
 
     # ------------------------------------------------------------------
+    # Customer lifecycle & engagement tracking (prospect -> lead -> customer).
+    # ------------------------------------------------------------------
+    customer_since: Mapped[Optional[date]] = mapped_column(Date)
+    # Updated continuously by the streaming/event pipeline (not batch).
+    last_activity_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=False))
+    preferred_channel: Mapped[Optional[str]] = mapped_column(Text)
+    # 'prospect' | 'lead' | 'customer' | 'vip' | 'dormant' | 'churn_risk'
+    lifecycle_stage: Mapped[Optional[str]] = mapped_column(Text)
+    # Longer narrative summary, usually LLM/segmentation-pipeline generated (complements persona_name).
+    persona_summary: Mapped[Optional[str]] = mapped_column(Text)
+
+    # ------------------------------------------------------------------
     # ML & Analytics scoring models (Lead, Churn, CLV, CX, Data Quality).
     # ------------------------------------------------------------------
     lead_conversion_probability: Mapped[Optional[Decimal]] = mapped_column(Numeric(5, 4))

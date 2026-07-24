@@ -20,7 +20,7 @@ from core.models.identity import (
     CdpProfileLink,
     CdpRawProfileStage,
 )
-from core.models.relations import CdpRelation, CustomerContact, Purchase, RelationType
+from core.models.relations import CdpRelation, CustomerContact, RelationType, Transaction
 
 __all__ = [
     "Base",
@@ -40,6 +40,6 @@ __all__ = [
     "CdpRawProfileStage",
     "CdpRelation",
     "CustomerContact",
-    "Purchase",
+    "Transaction",
     "RelationType",
 ]

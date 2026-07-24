@@ -1,4 +1,4 @@
-"""Pydantic schemas for RelationType, CdpRelation, CustomerContact, Purchase."""
+"""Pydantic schemas for RelationType, CdpRelation, CustomerContact, Transaction."""
 
 import uuid
 from datetime import datetime
@@ -72,29 +72,63 @@ class CustomerContactRead(CustomerContactBase):
     contact_date: Optional[datetime] = None
 
 
-class PurchaseBase(BaseModel):
+class TransactionBase(BaseModel):
     tenant_id: uuid.UUID
-    master_profile_id: uuid.UUID
-    product_id: Optional[uuid.UUID] = None
-    product_name: Optional[str] = None
+    master_profile_id: Optional[uuid.UUID] = None
+    source_system: Optional[str] = None
+    source_transaction_id: Optional[str] = None
+    transaction_type: Optional[str] = None
+    transaction_status: Optional[str] = None
+    entity_type: Optional[str] = None
+    entity_id: Optional[str] = None
+    entity_name: Optional[str] = None
+    quantity: Optional[Decimal] = None
     amount: Optional[Decimal] = None
-    currency: str = "USD"
-    purchase_date: datetime
+    currency: Optional[str] = None
+    channel: Optional[str] = None
+    merchant_id: Optional[str] = None
+    merchant_name: Optional[str] = None
+    location_id: Optional[str] = None
+    location_name: Optional[str] = None
+    campaign_id: Optional[str] = None
+    campaign_name: Optional[str] = None
+    staff_id: Optional[str] = None
+    staff_name: Optional[str] = None
+    transaction_time: Optional[datetime] = None
+    attributes: Optional[dict] = None
 
 
-class PurchaseCreate(PurchaseBase):
+class TransactionCreate(TransactionBase):
     pass
 
 
-class PurchaseUpdate(BaseModel):
-    product_id: Optional[uuid.UUID] = None
-    product_name: Optional[str] = None
+class TransactionUpdate(BaseModel):
+    master_profile_id: Optional[uuid.UUID] = None
+    source_system: Optional[str] = None
+    source_transaction_id: Optional[str] = None
+    transaction_type: Optional[str] = None
+    transaction_status: Optional[str] = None
+    entity_type: Optional[str] = None
+    entity_id: Optional[str] = None
+    entity_name: Optional[str] = None
+    quantity: Optional[Decimal] = None
     amount: Optional[Decimal] = None
     currency: Optional[str] = None
-    purchase_date: Optional[datetime] = None
+    channel: Optional[str] = None
+    merchant_id: Optional[str] = None
+    merchant_name: Optional[str] = None
+    location_id: Optional[str] = None
+    location_name: Optional[str] = None
+    campaign_id: Optional[str] = None
+    campaign_name: Optional[str] = None
+    staff_id: Optional[str] = None
+    staff_name: Optional[str] = None
+    transaction_time: Optional[datetime] = None
+    attributes: Optional[dict] = None
 
 
-class PurchaseRead(PurchaseBase):
+class TransactionRead(TransactionBase):
     model_config = ConfigDict(from_attributes=True)
-    purchase_id: uuid.UUID
+    transaction_id: uuid.UUID
+    imported_at: Optional[datetime] = None
     created_at: Optional[datetime] = None

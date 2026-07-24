@@ -1,11 +1,11 @@
-"""Routers for RelationType, CdpRelation, CustomerContact, Purchase --
+"""Routers for RelationType, CdpRelation, CustomerContact, Transaction --
 supporting entities around a resolved master profile (interactions,
 transactions, and the profile-to-profile relationship graph).
 """
 
 import uuid
 
-from core.models.relations import CdpRelation, CustomerContact, Purchase, RelationType
+from core.models.relations import CdpRelation, CustomerContact, RelationType, Transaction
 from core.routers._generic import build_crud_router
 from core.schemas.relations import (
     CdpRelationCreate,
@@ -14,12 +14,12 @@ from core.schemas.relations import (
     CustomerContactCreate,
     CustomerContactRead,
     CustomerContactUpdate,
-    PurchaseCreate,
-    PurchaseRead,
-    PurchaseUpdate,
     RelationTypeCreate,
     RelationTypeRead,
     RelationTypeUpdate,
+    TransactionCreate,
+    TransactionRead,
+    TransactionUpdate,
 )
 
 relation_types_router = build_crud_router(
@@ -55,14 +55,14 @@ customer_contacts_router = build_crud_router(
     tags=["Customer Interactions"],
 )
 
-purchases_router = build_crud_router(
-    model=Purchase,
-    pk_field="purchase_id",
+transactions_router = build_crud_router(
+    model=Transaction,
+    pk_field="transaction_id",
     pk_type=uuid.UUID,
-    create_schema=PurchaseCreate,
-    update_schema=PurchaseUpdate,
-    read_schema=PurchaseRead,
-    prefix="/purchases",
+    create_schema=TransactionCreate,
+    update_schema=TransactionUpdate,
+    read_schema=TransactionRead,
+    prefix="/transactions",
     tags=["Customer Interactions"],
 )
 
@@ -70,5 +70,5 @@ all_relations_routers = [
     relation_types_router,
     cdp_relations_router,
     customer_contacts_router,
-    purchases_router,
+    transactions_router,
 ]

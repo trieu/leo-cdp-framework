@@ -55,11 +55,14 @@ Both are multi-tenant (`tenant_id` on every table) and multi-domain (`domain`: `
 | Table | Purpose |
 |---|---|
 | `cdp_raw_profiles_stage` | Landing zone for every inbound source (AppsFlyer/MoEngage/WebTracking/CoreBanking/POS/...). Carries per-source identity (`external_customer_id`, `device_id`, `advertising_id`, `cookie_id`, `ga_client_id`, `national_id`, ...) plus marketing attribution (`media_source`, `utm_*`) and a processing-queue `status_code` (1 new → 3 processed). |
-| `cdp_master_profiles` | The **golden/resolved profile**: demographics, consolidated identity graph (`external_ids` JSONB, `device_ids`/`advertising_ids`/`cookie_ids` arrays, `push_tokens`), retail attrs (`loyalty_id`, `membership_tier`), banking attrs (`national_id`, `cif_number`, `account_numbers`, `kyc_status`, `risk_segment`), marketing/persona fields, lineage (`source_systems`, `first_seen_raw_profile_id`), and a full **ML scoring block** (see below). `status_code`: 1 active / 0 inactive / -1 deleted. |
+| `cdp_master_profiles` | The **golden/resolved profile**: demographics, consolidated identity graph (`external_ids` JSONB, `device_ids`/`advertising_ids`/`cookie_ids` arrays, `push_tokens`), retail attrs (`loyalty_id`, `membership_tier`), banking attrs (`national_id`, `cif_number`, `account_numbers`, `kyc_status`, `risk_segment`), marketing/persona fields, lineage (`source_systems`, `first_seen_raw_profile_id`), lifecycle tracking (`customer_since`, `last_activity_at`, `preferred_channel`, `lifecycle_stage`, `persona_summary`), and a full **ML scoring block** (see below). `status_code`: 1 active / 0 inactive / -1 deleted. |
 | `cdp_profile_links` | Join table recording every `raw_profile_id → master_profile_id` link with `match_score`/`match_method`; unique per `(tenant_id, raw_profile_id)`. |
-| `cdp_profile_attributes` | **Metadata-driven attribute catalog** (56 rows) — one row per `cdp_master_profiles` column plus the raw-stage matching keys, grouped by `attribute_group` (SYSTEM/IDENTITY/IDENTITY_GRAPH/RETAIL/BANKING/MARKETING/LINEAGE/*_SCORING/DATA_QUALITY). Drives CIR matching rules (`is_identity_resolution`, `matching_rule`: `exact`/`fuzzy_trgm`/`fuzzy_dmetaphone`/`none`, `matching_threshold`, `consolidation_rule`) *without hard-coding rules in application code*. |
+| `cdp_profile_attributes` | **Metadata-driven attribute catalog** (61 rows) — one row per `cdp_master_profiles` column plus the raw-stage matching keys, grouped by `attribute_group` (SYSTEM/IDENTITY/IDENTITY_GRAPH/RETAIL/BANKING/MARKETING/LINEAGE/LIFECYCLE/*_SCORING/DATA_QUALITY). Drives CIR matching rules (`is_identity_resolution`, `matching_rule`: `exact`/`fuzzy_trgm`/`fuzzy_dmetaphone`/`none`, `matching_threshold`, `consolidation_rule`) *without hard-coding rules in application code*. |
 
 **ML scoring columns on `cdp_master_profiles`** (schema-ready, filled by external pipelines): Lead & Conversion (`lead_conversion_probability`, `lead_grade`), Churn (`churn_probability`, `churn_risk_tier`), Customer Lifetime Value (`historical_clv`, `predictive_clv`, `clv_segment`), Customer Experience (`engagement_score`, `latest_nps_score`, `average_csat`, `overall_sentiment_score`), and Data Quality (`profile_completeness_score`, `identity_confidence_score`, `model_versions`, `scores_updated_at`).
+
+**Lifecycle & engagement tracking on `cdp_master_profiles`**: `customer_since` (date first converted from lead/prospect to customer — the lead-to-customer journey can span months, so this anchors tenure), `last_activity_at` (updated continuously by the streaming pipeline — freshness signal for reporting/reactivation), `preferred_channel` (e.g. Mobile App / Website / Internet Banking App — drives recommendation/next-best-action), `lifecycle_stage` (`prospect`/`lead`/`customer`/`vip`/`dormant`/`churn_risk`), and `persona_summary` (a longer narrative complementing the short `persona_name` label, usually LLM- or segmentation-pipeline-generated).
+
 
 **PII & persona handling**: `email`/`phone_number`/`full_name`/`national_id` are matched by CIR as **SHA-256 hashed** values (Google Customer Match / Enhanced Conversions pattern) — see `is_hashed BOOLEAN`. Whenever `is_hashed = TRUE`, a human-readable, non-PII `persona_name` (e.g. *"Savvy Retail Shopper (TikTok Ads) #4f2a9c"*) is auto-generated (optionally via Google GenAI/Gemini, with an offline deterministic fallback) and is **required** by a DB `CHECK` constraint (`chk_cdp_mp_hashed_requires_persona_name`).
 
@@ -72,23 +75,23 @@ Both are multi-tenant (`tenant_id` on every table) and multi-domain (`domain`: `
 
 ### 3. CRM journey graph (B2B)
 
-8 vertex types and their relationships model the prospect-to-buyer journey:
+8 vertex types and their relationships model the prospect-to-buyer journey. Tables are prefixed `crm_` (this is a **shared schema**: `cdp_*` tables are the identity-resolution/golden-record core, `crm_*` tables are the CRM/journey-graph layer built on top of it):
 
-* **Lead** — a potential buyer not yet tied to an Opportunity, sourced via **LeadSource**
-* **Campaign** / **CampaignMember** — a marketing initiative and the people who respond to it
-* **Contact** — a Lead engaged seriously by sales, belonging to an **Account**
-* **Account** — an organization, classified by **Industry**
-* **Opportunity** — a potential sales transaction with a monetary `value`/`stage`/`close_date`
+* **Lead** (`crm_lead`) — a potential buyer not yet tied to an Opportunity, sourced via **LeadSource** (`crm_lead_source`)
+* **Campaign** / **CampaignMember** (`crm_campaign` / `crm_campaign_member`) — a marketing initiative and the people who respond to it
+* **Contact** (`crm_contact`) — a Lead engaged seriously by sales, belonging to an **Account** (`crm_account`)
+* **Account** — an organization, classified by **Industry** (`crm_industry`)
+* **Opportunity** (`crm_opportunity`) — a potential sales transaction with a monetary `value`/`stage`/`close_date`
 
 Every entity carries `description`/`keywords`/`embedding vector(1536)` for semantic search/segmentation.
 
-### 4. Relations, interactions & general graph edges
+### 4. Relations, interactions, transactions & general graph edges
 
 | Table | Purpose |
 |---|---|
-| `relation_types` / `cdp_relations` | Typed relationships between two master profiles (e.g. `friend`, `family`, `customer-contact`). |
-| `customer_contacts` | Interaction log (contact type/channel/content/date) per master profile. |
-| `purchases` | Simple purchase fact per master profile (product, amount, currency, date). |
+| `cdp_relation_types` / `cdp_relations` | Typed relationships between two master profiles (e.g. `friend`, `family`, `customer-contact`). |
+| `crm_customer_contacts` | Interaction log (contact type/channel/content/date) per master profile. |
+| `crm_transactions` | Source-agnostic transaction fact (retail purchase, banking transfer, travel booking, ...) — `master_profile_id` is nullable and backfilled asynchronously by CIR, the same pattern as `cdp_raw_events`, so ingestion from POS/core-banking/booking systems is never blocked waiting for identity resolution. |
 | `graph_edges` | General-purpose graph edge table, **list-partitioned by `relation`** (e.g. `belongs_to`, `converted`, `follows`, `has_role`, `is_connected_to`, ... plus a catch-all `DEFAULT` partition), with its own `embedding vector(1536)` for relationship-aware semantic search. |
 
 ---
@@ -154,16 +157,16 @@ ORDER BY domain;
 
 -- Contacts in the Finance industry sourced from Campaign X
 SELECT c.contact_id, c.first_name, c.last_name
-FROM customer360.contact c
-JOIN customer360.account a ON c.account_id = a.account_id
-JOIN customer360.industry i ON a.industry_id = i.industry_id
-JOIN customer360.campaign_member cm ON cm.contact_id = c.contact_id
-JOIN customer360.campaign ca ON cm.campaign_id = ca.campaign_id
+FROM customer360.crm_contact c
+JOIN customer360.crm_account a ON c.account_id = a.account_id
+JOIN customer360.crm_industry i ON a.industry_id = i.industry_id
+JOIN customer360.crm_campaign_member cm ON cm.contact_id = c.contact_id
+JOIN customer360.crm_campaign ca ON cm.campaign_id = ca.campaign_id
 WHERE i.name = 'Finance' AND ca.name = 'Campaign X';
 
 -- Semantic search: contacts similar to a free-text query embedding
 SELECT contact_id, first_name, last_name
-FROM customer360.contact
+FROM customer360.crm_contact
 ORDER BY embedding <-> '[...]'::vector
 LIMIT 10;
 ```

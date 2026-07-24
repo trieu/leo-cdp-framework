@@ -20,7 +20,7 @@ from core.models.base import Base
 
 
 class Campaign(Base):
-    __tablename__ = "campaign"
+    __tablename__ = "crm_campaign"
 
     campaign_id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
@@ -37,13 +37,13 @@ class Campaign(Base):
 
 
 class CampaignMember(Base):
-    __tablename__ = "campaign_member"
+    __tablename__ = "crm_campaign_member"
 
     campaign_member_id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
     )
     campaign_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("campaign.campaign_id")
+        PG_UUID(as_uuid=True), ForeignKey("crm_campaign.campaign_id")
     )
     contact_id: Mapped[Optional[uuid.UUID]] = mapped_column(PG_UUID(as_uuid=True))
     status: Mapped[Optional[str]] = mapped_column(Text)
@@ -56,7 +56,7 @@ class CampaignMember(Base):
 
 
 class Lead(Base):
-    __tablename__ = "lead"
+    __tablename__ = "crm_lead"
 
     lead_id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
@@ -74,7 +74,7 @@ class Lead(Base):
 
 
 class LeadSource(Base):
-    __tablename__ = "lead_source"
+    __tablename__ = "crm_lead_source"
 
     lead_source_id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
@@ -88,7 +88,7 @@ class LeadSource(Base):
 
 
 class Contact(Base):
-    __tablename__ = "contact"
+    __tablename__ = "crm_contact"
 
     contact_id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
@@ -107,7 +107,7 @@ class Contact(Base):
 
 
 class Account(Base):
-    __tablename__ = "account"
+    __tablename__ = "crm_account"
 
     account_id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
@@ -123,13 +123,13 @@ class Account(Base):
 
 
 class Opportunity(Base):
-    __tablename__ = "opportunity"
+    __tablename__ = "crm_opportunity"
 
     opportunity_id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
     )
     account_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("account.account_id")
+        PG_UUID(as_uuid=True), ForeignKey("crm_account.account_id")
     )
     name: Mapped[Optional[str]] = mapped_column(Text)
     value: Mapped[Optional[float]] = mapped_column(Numeric)
@@ -144,7 +144,7 @@ class Opportunity(Base):
 
 
 class Industry(Base):
-    __tablename__ = "industry"
+    __tablename__ = "crm_industry"
 
     industry_id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
