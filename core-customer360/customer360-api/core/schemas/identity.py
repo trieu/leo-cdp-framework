@@ -13,7 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class MasterProfileBase(BaseModel):
     tenant_id: uuid.UUID
-    domain: str = Field(default="retail", pattern="^(retail|banking)$")
+    domain: str = Field(default="retail", pattern="^(retail|banking|real_estate|travel)$")
 
     full_name: Optional[str] = None
     first_name: Optional[str] = None
@@ -74,7 +74,7 @@ class MasterProfileCreate(MasterProfileBase):
 
 
 class MasterProfileUpdate(BaseModel):
-    domain: Optional[str] = Field(default=None, pattern="^(retail|banking)$")
+    domain: Optional[str] = Field(default=None, pattern="^(retail|banking|real_estate|travel)$")
     full_name: Optional[str] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
@@ -133,7 +133,7 @@ class MasterProfileRead(MasterProfileBase):
 
 class RawProfileBase(BaseModel):
     tenant_id: uuid.UUID
-    domain: str = Field(default="retail", pattern="^(retail|banking)$")
+    domain: str = Field(default="retail", pattern="^(retail|banking|real_estate|travel)$")
     source_system: str
     channel: Optional[str] = None
 
@@ -232,7 +232,7 @@ class ProfileAttributeBase(BaseModel):
     source_table: str = "cdp_master_profiles"
     status: str = "ACTIVE"
     data_type: str = "TEXT"
-    domain_scope: str = Field(default="all", pattern="^(all|retail|banking)$")
+    domain_scope: str = Field(default="all", pattern="^(all|retail|banking|real_estate|travel)$")
     is_pii: bool = False
 
     is_identity_resolution: bool = False
@@ -262,7 +262,7 @@ class ProfileAttributeUpdate(BaseModel):
     source_table: Optional[str] = None
     status: Optional[str] = None
     data_type: Optional[str] = None
-    domain_scope: Optional[str] = Field(default=None, pattern="^(all|retail|banking)$")
+    domain_scope: Optional[str] = Field(default=None, pattern="^(all|retail|banking|real_estate|travel)$")
     is_pii: Optional[bool] = None
     is_identity_resolution: Optional[bool] = None
     matching_rule: Optional[str] = Field(default=None, pattern="^(exact|fuzzy_trgm|fuzzy_dmetaphone|none)$")

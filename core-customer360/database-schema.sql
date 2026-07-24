@@ -4,6 +4,10 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 CREATE EXTENSION IF NOT EXISTS vector;
+-- Geo support for domain events that need location (real estate listings,
+-- retail store/POS locations, travel destinations, bank branches). Already
+-- present in the dev image (postgis/postgis:16-3.5, see dev-start-pgsql.sh).
+CREATE EXTENSION IF NOT EXISTS postgis;
 
 -- =========================================================
 -- Schema
@@ -144,7 +148,7 @@ CREATE TABLE customer360.cdp_master_profiles (
     -- Multi-tenancy support. Ensures data isolation between different workspaces.
     tenant_id UUID NOT NULL,
     -- Business context of the profile to drive domain-specific UI and activation logic.
-    domain TEXT NOT NULL DEFAULT 'retail' CHECK (domain IN ('retail', 'banking')),
+    domain TEXT NOT NULL DEFAULT 'retail' CHECK (domain IN ('retail', 'banking', 'real_estate', 'travel')),
 
     -- ------------------------------------------------------------------------
     -- CORE IDENTITY (PII & DEMOGRAPHICS)
@@ -315,7 +319,7 @@ CREATE TABLE customer360.cdp_master_profiles (
 CREATE TABLE customer360.cdp_raw_profiles_stage (
     raw_profile_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL,
-    domain TEXT NOT NULL DEFAULT 'retail' CHECK (domain IN ('retail', 'banking')),
+    domain TEXT NOT NULL DEFAULT 'retail' CHECK (domain IN ('retail', 'banking', 'real_estate', 'travel')),
     source_system TEXT NOT NULL,        -- 'AppsFlyer' | 'MoEngage' | 'WebTracking' | 'CoreBanking' | 'POS' | ...
     channel TEXT,                       -- 'mobile_app' | 'web' | 'pos' | 'call_center' | ...
 
@@ -367,6 +371,240 @@ CREATE TABLE customer360.cdp_profile_links (
     UNIQUE(tenant_id, raw_profile_id)
 );
 
+-- ============================================================================
+-- cdp_raw_events: high-volume behavioral/transactional event fact table
+-- ============================================================================
+-- Range-partitioned by event_time (monthly) so a single tenant's event volume
+-- can scale to billions of rows without one giant table/index: writes only
+-- touch the current month's partition, old partitions can be compressed/
+-- archived/dropped independently, and queries that filter on event_time get
+-- automatic partition pruning.
+--
+-- event_category values mirror leotech.cdp.domain.schema.BehavioralEvent's
+-- inner classes (General/Education/Commerce/Feedback/Finance/StockTrading/
+-- Travel/RealEstate/ServiceIndustry -> upper-snake here) in core-leo-cdp, so
+-- the same event vocabulary is used whether an event lands in ArangoDB
+-- (cdp_trackingevent, via leo.observer.js) or here in the Postgres golden-
+-- record/analytics store. See cdp_event_catalog below for the seeded core
+-- event names per domain (banking, retail, real_estate, travel).
+--
+-- Identity columns (device_id/advertising_id/cookie_id/external_customer_id/
+-- session_id) are carried directly on the event row -- NOT only reachable via
+-- master_profile_id/raw_profile_id -- so high-throughput ingestion never
+-- blocks waiting for Customer Identity Resolution (CIR) to link the event to
+-- a resolved profile first. master_profile_id/raw_profile_id are expected to
+-- be backfilled asynchronously once CIR resolves the identity.
+-- ============================================================================
+CREATE TABLE customer360.cdp_raw_events (
+    event_id UUID NOT NULL DEFAULT gen_random_uuid(),
+    tenant_id UUID NOT NULL,
+    -- Business vertical this event belongs to (drives which cdp_event_catalog
+    -- rows/entity_type values are relevant).
+    domain TEXT NOT NULL DEFAULT 'retail' CHECK (domain IN ('retail', 'banking', 'real_estate', 'travel')),
+
+    -- Lineage to resolved/staged profiles. Nullable + backfilled -- see note above.
+    master_profile_id UUID REFERENCES customer360.cdp_master_profiles(master_profile_id),
+    raw_profile_id UUID REFERENCES customer360.cdp_raw_profiles_stage(raw_profile_id),
+
+    -- Direct identity carry, available at ingest time even before/without CIR.
+    external_customer_id TEXT,
+    device_id TEXT,
+    advertising_id TEXT,
+    cookie_id TEXT,
+    session_id TEXT,
+
+    -- Source & channel of the event.
+    source_system TEXT NOT NULL,        -- 'AppsFlyer' | 'MoEngage' | 'WebTracking' | 'CoreBanking' | 'POS' | 'PMS' | 'GDS' | ...
+    channel TEXT,                       -- 'mobile_app' | 'web' | 'pos' | 'call_center' | 'branch' | 'agent' | 'ivr' | ...
+    platform TEXT,                      -- ios | android | web
+    ip_address INET,
+    user_agent TEXT,
+
+    -- Event taxonomy (see cdp_event_catalog for the governed event_name list per category).
+    event_category TEXT NOT NULL DEFAULT 'GENERAL' CHECK (event_category IN (
+        'GENERAL', 'EDUCATION', 'COMMERCE', 'FEEDBACK', 'FINANCE', 'STOCK_TRADING',
+        'TRAVEL', 'REAL_ESTATE', 'SERVICE_INDUSTRY'
+    )),
+    event_name TEXT NOT NULL,           -- e.g. page-view, purchase, apply-loan, booking, view-property
+    is_conversion BOOLEAN NOT NULL DEFAULT FALSE,
+
+    -- Generic entity reference (product/account/loan/property/booking/course/...).
+    -- Keeps this table free of dozens of per-domain columns while staying indexable.
+    entity_type TEXT,                   -- 'product' | 'account' | 'loan' | 'property' | 'booking' | 'course' | ...
+    entity_id TEXT,
+
+    -- Monetary value, generic across domains (purchase amount, loan amount,
+    -- booking value, transfer amount, trade amount, ...). See cdp_event_catalog.value_field.
+    event_value NUMERIC(15,2),
+    currency TEXT DEFAULT 'USD',
+
+    -- Transaction linkage (purchase/booking/loan/trade confirmation, etc.)
+    transaction_id TEXT,
+    transaction_status TEXT,
+
+    -- Geo (optional). Useful for real-estate listing location, retail POS/store
+    -- location, travel destinations, and bank-branch visits.
+    geo_location GEOGRAPHY(POINT, 4326),
+    location_code TEXT,
+    location_name TEXT,
+
+    event_time TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),  -- when the event actually happened
+    event_payload JSONB,                -- full raw source payload / domain-specific attributes
+
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),           -- when the row was ingested (may lag event_time for batch/late data)
+
+    PRIMARY KEY (event_id, event_time)
+) PARTITION BY RANGE (event_time);
+
+-- Creates (idempotently) the monthly partition covering for_date, e.g.
+-- customer360.cdp_raw_events_2026_07 for FOR VALUES FROM ('2026-07-01') TO ('2026-08-01').
+-- Call this from a scheduled job (cron/Airflow) a month or two ahead of need;
+-- the DEFAULT partition below acts as a safety net if that job falls behind.
+CREATE OR REPLACE FUNCTION customer360.ensure_cdp_raw_events_partition(for_date DATE)
+RETURNS void AS $$
+DECLARE
+    part_start DATE := date_trunc('month', for_date);
+    part_end DATE := part_start + INTERVAL '1 month';
+    part_name TEXT := 'cdp_raw_events_' || to_char(part_start, 'YYYY_MM');
+BEGIN
+    EXECUTE format(
+        'CREATE TABLE IF NOT EXISTS customer360.%I PARTITION OF customer360.cdp_raw_events FOR VALUES FROM (%L) TO (%L);',
+        part_name, part_start, part_end
+    );
+END;
+$$ LANGUAGE plpgsql;
+
+-- Bootstrap a rolling window of monthly partitions (3 months back .. 12 months
+-- forward from today) so ingestion works immediately after a fresh install.
+DO $$
+DECLARE
+    i INT;
+BEGIN
+    FOR i IN -3..12 LOOP
+        PERFORM customer360.ensure_cdp_raw_events_partition((CURRENT_DATE + (i || ' months')::INTERVAL)::DATE);
+    END LOOP;
+END;
+$$;
+
+-- Catch-all so ingestion never fails for a month outside the bootstrapped
+-- window while partition maintenance catches up.
+CREATE TABLE IF NOT EXISTS customer360.cdp_raw_events_default
+    PARTITION OF customer360.cdp_raw_events DEFAULT;
+
+---------------------------------------------------
+-- EVENT CATALOG (governed cross-domain event vocabulary)
+---------------------------------------------------
+
+-- ============================================================================
+-- cdp_event_catalog: the governed list of event_category/event_name pairs
+-- that may be written to cdp_raw_events (and, by convention, to ArangoDB's
+-- cdp_trackingevent via core-leo-cdp's BehavioralEvent constants). Mirrors
+-- the same "attribute catalog" pattern already used by cdp_profile_attributes
+-- above. Deliberately NOT enforced via a hard FK from cdp_raw_events.event_name
+-- (event_name stays free TEXT) so high-throughput ingestion is never blocked
+-- by a missing catalog row for a brand-new event; the catalog exists for
+-- discoverability/admin-UI dropdowns/analytics governance instead.
+-- ============================================================================
+CREATE TABLE customer360.cdp_event_catalog (
+    id BIGSERIAL PRIMARY KEY,
+    event_name TEXT UNIQUE NOT NULL,
+    event_category TEXT NOT NULL CHECK (event_category IN (
+        'GENERAL', 'EDUCATION', 'COMMERCE', 'FEEDBACK', 'FINANCE', 'STOCK_TRADING',
+        'TRAVEL', 'REAL_ESTATE', 'SERVICE_INDUSTRY'
+    )),
+    domain_scope TEXT NOT NULL DEFAULT 'all' CHECK (domain_scope IN ('all', 'retail', 'banking', 'real_estate', 'travel')),
+    description TEXT,
+    is_conversion_default BOOLEAN NOT NULL DEFAULT FALSE,
+    -- Conceptual name of the event_payload key that should be mirrored into
+    -- cdp_raw_events.event_value for this event (documentation aid only).
+    value_field TEXT,
+    display_order INT NOT NULL DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'ACTIVE',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+-- Core event vocabulary seed: GENERAL/FEEDBACK (cross-domain) plus the 4
+-- requested verticals (retail via COMMERCE, banking via FINANCE/STOCK_TRADING,
+-- real_estate via REAL_ESTATE, travel via TRAVEL). EDUCATION/SERVICE_INDUSTRY
+-- categories are allowed (they exist in BehavioralEvent) but left unseeded
+-- for future use. Idempotent: safe to re-run.
+INSERT INTO customer360.cdp_event_catalog (
+    event_name, event_category, domain_scope, description, is_conversion_default, value_field, display_order
+) VALUES
+-- GENERAL
+('page-view', 'GENERAL', 'all', 'User viewed a web page or app screen.', FALSE, NULL, 10),
+('search', 'GENERAL', 'all', 'User performed a search query.', FALSE, NULL, 20),
+('content-view', 'GENERAL', 'all', 'User viewed a content asset (article, video, listing).', FALSE, NULL, 30),
+('item-view', 'GENERAL', 'all', 'User viewed a generic catalog item.', FALSE, NULL, 40),
+('user-login', 'GENERAL', 'all', 'User authenticated into the app/site.', FALSE, NULL, 50),
+('file-download', 'GENERAL', 'all', 'User downloaded a file/document.', FALSE, NULL, 60),
+('social-sharing', 'GENERAL', 'all', 'User shared content to a social network.', FALSE, NULL, 70),
+('submit-contact', 'GENERAL', 'all', 'User submitted a contact-us form.', FALSE, NULL, 80),
+('ad-impression', 'GENERAL', 'all', 'An ad was rendered/served to the user.', FALSE, NULL, 90),
+
+-- FEEDBACK (cross-domain)
+('submit-nps-form', 'FEEDBACK', 'all', 'User submitted an NPS survey.', FALSE, 'nps_score', 100),
+('submit-csat-form', 'FEEDBACK', 'all', 'User submitted a CSAT survey.', FALSE, 'csat_score', 110),
+('product-review', 'FEEDBACK', 'all', 'User submitted a product/service review.', FALSE, NULL, 120),
+('negative-feedback', 'FEEDBACK', 'all', 'Negative feedback/sentiment recorded.', FALSE, NULL, 130),
+('positive-feedback', 'FEEDBACK', 'all', 'Positive feedback/sentiment recorded.', FALSE, NULL, 140),
+
+-- COMMERCE (retail)
+('add-to-cart', 'COMMERCE', 'retail', 'User added an item to their cart.', FALSE, NULL, 150),
+('remove-from-cart', 'COMMERCE', 'retail', 'User removed an item from their cart.', FALSE, NULL, 160),
+('order-checkout', 'COMMERCE', 'retail', 'User started/completed checkout.', FALSE, 'order_total', 170),
+('purchase', 'COMMERCE', 'retail', 'User completed a purchase.', TRUE, 'order_total', 180),
+('first-purchase', 'COMMERCE', 'retail', 'User''s first-ever purchase.', TRUE, 'order_total', 190),
+('made-payment', 'COMMERCE', 'retail', 'Payment was successfully captured.', TRUE, 'amount', 200),
+('subscribe', 'COMMERCE', 'retail', 'User subscribed to a recurring plan.', TRUE, 'plan_value', 210),
+('add-wishlist', 'COMMERCE', 'retail', 'User added an item to their wishlist.', FALSE, NULL, 220),
+
+-- FINANCE (banking)
+('apply-loan', 'FINANCE', 'banking', 'User submitted a loan application.', FALSE, 'loan_amount', 230),
+('approve-loan', 'FINANCE', 'banking', 'A loan application was approved.', TRUE, 'loan_amount', 240),
+('loan-repayment', 'FINANCE', 'banking', 'User made a loan repayment.', FALSE, 'repayment_amount', 250),
+('open-bank-account', 'FINANCE', 'banking', 'User opened a new bank account.', TRUE, NULL, 260),
+('transfer-money', 'FINANCE', 'banking', 'User transferred money between accounts.', FALSE, 'transfer_amount', 270),
+('pay-bill', 'FINANCE', 'banking', 'User paid a bill via the banking app.', FALSE, 'bill_amount', 280),
+('credit-score-check', 'FINANCE', 'banking', 'User checked their credit score.', FALSE, NULL, 290),
+('kyc-completed', 'FINANCE', 'banking', 'User completed KYC/eKYC verification.', FALSE, NULL, 300),
+
+-- STOCK_TRADING (banking/wealth)
+('view-stock', 'STOCK_TRADING', 'banking', 'User viewed a stock/security detail page.', FALSE, NULL, 310),
+('buy-stock', 'STOCK_TRADING', 'banking', 'User bought a stock/security.', TRUE, 'trade_amount', 320),
+('sell-stock', 'STOCK_TRADING', 'banking', 'User sold a stock/security.', FALSE, 'trade_amount', 330),
+('view-portfolio', 'STOCK_TRADING', 'banking', 'User viewed their investment portfolio.', FALSE, NULL, 340),
+
+-- TRAVEL
+('search-flight', 'TRAVEL', 'travel', 'User searched for flights.', FALSE, NULL, 350),
+('search-hotel', 'TRAVEL', 'travel', 'User searched for hotels.', FALSE, NULL, 360),
+('view-destination', 'TRAVEL', 'travel', 'User viewed a destination/listing page.', FALSE, NULL, 370),
+('booking', 'TRAVEL', 'travel', 'User completed a travel booking.', TRUE, 'booking_value', 380),
+('check-in', 'TRAVEL', 'travel', 'User checked in for a flight/hotel stay.', FALSE, NULL, 390),
+('check-out', 'TRAVEL', 'travel', 'User checked out of a flight/hotel stay.', FALSE, NULL, 400),
+('cancel-booking', 'TRAVEL', 'travel', 'User cancelled a travel booking.', FALSE, 'booking_value', 410),
+('add-travel-wishlist', 'TRAVEL', 'travel', 'User added a destination/trip to their wishlist.', FALSE, NULL, 420),
+
+-- REAL_ESTATE
+('view-property', 'REAL_ESTATE', 'real_estate', 'User viewed a property listing.', FALSE, NULL, 430),
+('property-favorite', 'REAL_ESTATE', 'real_estate', 'User favorited a property listing.', FALSE, NULL, 440),
+('request-property-tour', 'REAL_ESTATE', 'real_estate', 'User requested a property tour.', FALSE, NULL, 450),
+('schedule-property-tour', 'REAL_ESTATE', 'real_estate', 'A property tour was scheduled.', FALSE, NULL, 460),
+('contact-agent', 'REAL_ESTATE', 'real_estate', 'User contacted a real-estate agent.', FALSE, NULL, 470),
+('submit-mortgage-form', 'REAL_ESTATE', 'real_estate', 'User submitted a mortgage inquiry form.', FALSE, 'loan_amount', 480),
+('mortgage-pre-approval', 'REAL_ESTATE', 'real_estate', 'User received mortgage pre-approval.', FALSE, 'loan_amount', 490),
+('submit-property-offer', 'REAL_ESTATE', 'real_estate', 'User submitted an offer on a property.', TRUE, 'offer_amount', 500)
+
+ON CONFLICT (event_name) DO UPDATE SET
+    event_category = EXCLUDED.event_category,
+    domain_scope = EXCLUDED.domain_scope,
+    description = EXCLUDED.description,
+    is_conversion_default = EXCLUDED.is_conversion_default,
+    value_field = EXCLUDED.value_field,
+    display_order = EXCLUDED.display_order,
+    updated_at = now();
+
 ---------------------------------------------------
 -- PROFILE ATTRIBUTE METADATA REGISTRY
 ---------------------------------------------------
@@ -413,7 +651,7 @@ CREATE TABLE IF NOT EXISTS customer360.cdp_profile_attributes (
     -- Physical table(s) this attribute lives on.
     source_table VARCHAR(150) NOT NULL DEFAULT 'cdp_master_profiles',
     data_type VARCHAR(50) NOT NULL DEFAULT 'TEXT',
-    domain_scope VARCHAR(20) NOT NULL DEFAULT 'all' CHECK (domain_scope IN ('all', 'retail', 'banking')),
+    domain_scope VARCHAR(20) NOT NULL DEFAULT 'all' CHECK (domain_scope IN ('all', 'retail', 'banking', 'real_estate', 'travel')),
     is_pii BOOLEAN NOT NULL DEFAULT FALSE,
     status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',
 
@@ -695,6 +933,38 @@ CREATE INDEX idx_contacts_date ON customer360.customer_contacts(contact_date);
 CREATE INDEX IF NOT EXISTS idx_cdp_pa_group ON customer360.cdp_profile_attributes (attribute_group);
 CREATE INDEX IF NOT EXISTS idx_cdp_pa_identity_resolution ON customer360.cdp_profile_attributes (attribute_internal_code) WHERE is_identity_resolution = TRUE AND status = 'ACTIVE';
 CREATE INDEX IF NOT EXISTS idx_cdp_pa_scoring_model ON customer360.cdp_profile_attributes (scoring_model_name) WHERE is_scoring_model = TRUE;
+
+-- cdp_raw_events indexes: created on the partitioned parent, Postgres
+-- propagates each of these automatically to every monthly partition (current
+-- + future ones created via ensure_cdp_raw_events_partition()).
+-- Tenant timeline queries (most common access pattern for a Customer 360 view).
+CREATE INDEX idx_cdp_raw_events_tenant_time ON customer360.cdp_raw_events (tenant_id, event_time DESC);
+-- Event taxonomy / funnel analysis per tenant+domain.
+CREATE INDEX idx_cdp_raw_events_taxonomy ON customer360.cdp_raw_events (tenant_id, domain, event_category, event_name, event_time DESC);
+-- Resolved-profile timeline (Customer 360 activity feed).
+CREATE INDEX idx_cdp_raw_events_master_profile ON customer360.cdp_raw_events (master_profile_id, event_time DESC) WHERE master_profile_id IS NOT NULL;
+-- Backfill lookups from cdp_raw_profiles_stage.
+CREATE INDEX idx_cdp_raw_events_raw_profile ON customer360.cdp_raw_events (raw_profile_id) WHERE raw_profile_id IS NOT NULL;
+-- Pre-resolution identity lookups (event arrives before/without CIR linking).
+CREATE INDEX idx_cdp_raw_events_device_id ON customer360.cdp_raw_events (device_id) WHERE device_id IS NOT NULL;
+CREATE INDEX idx_cdp_raw_events_advertising_id ON customer360.cdp_raw_events (advertising_id) WHERE advertising_id IS NOT NULL;
+CREATE INDEX idx_cdp_raw_events_cookie_id ON customer360.cdp_raw_events (cookie_id) WHERE cookie_id IS NOT NULL;
+CREATE INDEX idx_cdp_raw_events_external_customer_id ON customer360.cdp_raw_events (external_customer_id) WHERE external_customer_id IS NOT NULL;
+CREATE INDEX idx_cdp_raw_events_session_id ON customer360.cdp_raw_events (session_id) WHERE session_id IS NOT NULL;
+-- Generic entity lookups (all events about a given product/property/booking/...).
+CREATE INDEX idx_cdp_raw_events_entity ON customer360.cdp_raw_events (entity_type, entity_id) WHERE entity_id IS NOT NULL;
+-- Conversion funnel / revenue reporting.
+CREATE INDEX idx_cdp_raw_events_conversion ON customer360.cdp_raw_events (tenant_id, event_time DESC) WHERE is_conversion = TRUE;
+-- Point lookup by event_id alone (without needing event_time for partition pruning).
+CREATE INDEX idx_cdp_raw_events_event_id ON customer360.cdp_raw_events (event_id);
+-- Ad-hoc querying of the raw source payload.
+CREATE INDEX idx_cdp_raw_events_payload ON customer360.cdp_raw_events USING GIN (event_payload);
+-- Geo-proximity queries (property/store/destination location search).
+CREATE INDEX idx_cdp_raw_events_geo ON customer360.cdp_raw_events USING GIST (geo_location) WHERE geo_location IS NOT NULL;
+
+-- Event catalog: browsing by category/domain and fast active-event lookup.
+CREATE INDEX idx_cdp_event_catalog_category ON customer360.cdp_event_catalog (event_category);
+CREATE INDEX idx_cdp_event_catalog_domain_scope ON customer360.cdp_event_catalog (domain_scope) WHERE status = 'ACTIVE';
 
 -- Graph edges indexes
 CREATE INDEX ON customer360.graph_edges_belongs_to (from_id, to_id);
