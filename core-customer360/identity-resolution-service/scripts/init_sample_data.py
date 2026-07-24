@@ -354,8 +354,29 @@ def seed_matching_rules(cursor) -> None:
 
 
 def reset_demo_data(cursor) -> None:
-    """Deletes any previous demo data, scoped strictly to DEMO_TENANT_ID."""
+    """Deletes any previous demo data, scoped strictly to DEMO_TENANT_ID.
+
+    Also clears every OTHER table that FK-references cdp_master_profiles /
+    cdp_raw_profiles_stage and gets populated by
+    scripts/seed_full_demo_data.py (cdp_raw_events, crm_transactions,
+    crm_customer_contacts, cdp_relations) -- those must be deleted BEFORE
+    cdp_master_profiles/cdp_raw_profiles_stage or re-running this script
+    after seed_full_demo_data.py has run raises a ForeignKeyViolation (the
+    old master profiles are still referenced from those tables).
+    """
     logger.info("Resetting previous demo data for tenant_id=%s...", DEMO_TENANT_ID)
+    cursor.execute(
+        f"DELETE FROM {_table('cdp_raw_events')} WHERE tenant_id = %s;", (DEMO_TENANT_ID,)
+    )
+    cursor.execute(
+        f"DELETE FROM {_table('crm_transactions')} WHERE tenant_id = %s;", (DEMO_TENANT_ID,)
+    )
+    cursor.execute(
+        f"DELETE FROM {_table('crm_customer_contacts')} WHERE tenant_id = %s;", (DEMO_TENANT_ID,)
+    )
+    cursor.execute(
+        f"DELETE FROM {_table('cdp_relations')} WHERE tenant_id = %s;", (DEMO_TENANT_ID,)
+    )
     cursor.execute(
         f"DELETE FROM {_table('cdp_profile_links')} WHERE tenant_id = %s;", (DEMO_TENANT_ID,)
     )

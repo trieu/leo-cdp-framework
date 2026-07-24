@@ -41,6 +41,9 @@ python scripts/init_sample_data.py
 echo "⚙️  Running Customer Identity Resolution..."
 python scripts/run_demo_resolution.py
 
+echo "🌐 Seeding full demo data (CRM journey graph, relations, transactions, behavioral events, master-profile enrichment)..."
+python scripts/seed_full_demo_data.py
+
 DEMO_TENANT_ID="11111111-1111-1111-1111-111111111111"
 PG_CONTAINER="${PG_CONTAINER:-pgsql16_vector}"
 DB_NAME="${DB_NAME:-customer360}"
@@ -58,6 +61,15 @@ cat <<EOF
 
   docker exec -it -u postgres ${PG_CONTAINER} psql -d ${DB_NAME} -c \\
     "SELECT * FROM ${DB_SCHEMA}.cdp_profile_links WHERE tenant_id = '${DEMO_TENANT_ID}';"
+
+  docker exec -it -u postgres ${PG_CONTAINER} psql -d ${DB_NAME} -c \\
+    "SELECT lifecycle_stage, churn_risk_tier, clv_segment, engagement_score, preferred_channel FROM ${DB_SCHEMA}.cdp_master_profiles WHERE tenant_id = '${DEMO_TENANT_ID}' LIMIT 10;"
+
+  docker exec -it -u postgres ${PG_CONTAINER} psql -d ${DB_NAME} -c \\
+    "SELECT domain, event_category, event_name, COUNT(*) FROM ${DB_SCHEMA}.cdp_raw_events WHERE tenant_id = '${DEMO_TENANT_ID}' GROUP BY 1,2,3 ORDER BY 1,2,3;"
+
+  docker exec -it -u postgres ${PG_CONTAINER} psql -d ${DB_NAME} -c \\
+    "SELECT name, stage, value FROM ${DB_SCHEMA}.crm_opportunity ORDER BY value DESC;"
 
 Or open an interactive shell:
   docker exec -it -u postgres ${PG_CONTAINER} psql -d ${DB_NAME}

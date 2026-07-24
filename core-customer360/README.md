@@ -116,7 +116,7 @@ graph TD
 4. **Mark processed** (`status_code = 3`) and commit — idempotent/safe to retry via the unique `(tenant_id, raw_profile_id)` constraint.
 5. Runs both **throttled real-time** (`IdentityResolutionTrigger`, called explicitly by the ingestion worker, not a real DB trigger) and as a **daily drain-loop batch** (`daily_job.py`) so nothing is missed if real-time was throttled.
 
-Run the end-to-end demo (seeds 1,000 synthetic AppsFlyer-driven raw profiles across 6 ad channels/retail+banking domains with a controlled ~30% duplicate rate, then resolves them):
+Run the end-to-end demo (seeds 1,000 synthetic AppsFlyer-driven raw profiles across 6 ad channels/retail+banking domains with a controlled ~30% duplicate rate, resolves them, then runs [`scripts/seed_full_demo_data.py`](identity-resolution-service/scripts/seed_full_demo_data.py) to populate **every other table and column** in the schema — CRM journey graph, `cdp_relations`, `crm_customer_contacts`, `crm_transactions` (incl. not-yet-resolved rows), `cdp_raw_events` across every event category/domain, `graph_edges`, and the full lifecycle/ML-scoring/retail-banking enrichment on `cdp_master_profiles`):
 
 ```bash
 cd identity-resolution-service
