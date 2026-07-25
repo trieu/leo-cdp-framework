@@ -16,28 +16,33 @@ containerized deployment.
 | Service | Image (built locally) | Role | Port (host) |
 |---|---|---|---|
 | `postgres` | `customer360-postgres:local` (postgis/postgis:16-3.5 + pgvector) | Primary datastore, auto-provisioned with [`database-schema.sql`](database-schema.sql) | `${POSTGRES_HOST_PORT:-5432}` → 5432 |
-| `redis` | `customer360-redis:local` (redis:8-alpine) | Response cache for customer360-api | `${REDIS_HOST_PORT:-6379}` → 6379 |
+| `redis` | `customer360-redis:local` (redis:8-alpine) | Response cache **and Keycloak token cache** for customer360-api (see [`core/cache.py`](customer360-api/core/cache.py) / [`core/auth.py`](customer360-api/core/auth.py)) | `${REDIS_HOST_PORT:-6379}` → 6379 |
+| `keycloak-db-init` | reuses `customer360-postgres:local` | **One-shot** job that creates the dedicated `db_keycloak` database on the shared `postgres` instance, then exits | none |
+| `keycloak` | `keycloak/keycloak:latest` | Local SSO/identity provider — issues + introspects the access tokens customer360-api requires on every endpoint except `/health` | `${KEYCLOAK_HOST_PORT:-8080}` → 8080 |
 | `cir` | `customer360-cir:local` (Python 3.11-slim) | Customer Identity Resolution worker — continuously drains `cdp_raw_profiles_stage` | none (background worker, no HTTP) |
-| `api` | `customer360-api:local` (Python 3.11-slim) | Customer 360 / CIR REST API (FastAPI) | `${API_HOST_PORT:-8000}` → 8000 |
+| `api` | `customer360-api:local` (Python 3.11-slim) | Customer 360 / CIR REST API (FastAPI), Keycloak-secured | `${API_HOST_PORT:-8000}` → 8000 |
 | `cir-demo-seed` | reuses `customer360-cir:local` | **Dev only** one-shot job that seeds demo data, then exits | none |
 
 All services share one bridge network, `customer360-network`, and are isolated
 from other Docker workloads on the host. Two named volumes persist state
-across restarts: `customer360-pgdata` (Postgres data directory) and
-`customer360-redisdata` (Redis AOF file).
+across restarts: `customer360-pgdata` (Postgres data directory, also backs
+`db_keycloak`) and `customer360-redisdata` (Redis AOF file).
 
 ```mermaid
 flowchart LR
     subgraph customer360-network
         PG[(postgres)]
         RD[(redis)]
+        KC[keycloak]
         CIR[cir worker]
         API[api]
     end
     CIR -->|psycopg2| PG
     API -->|SQLAlchemy| PG
-    API -->|redis-py| RD
-    Client -->|HTTP :8000| API
+    API -->|redis-py: cache + token cache| RD
+    API -->|introspect Bearer token| KC
+    KC -->|db_keycloak| PG
+    Client -->|HTTP :8000 + Authorization: Bearer| API
     Seed[cir-demo-seed\nprofile: dev] -.->|one-shot| PG
 ```
 
@@ -66,6 +71,10 @@ Edit `.env` and set real values for at least:
 - `DB_PASSWORD` — Postgres password (used both to bootstrap the `postgres`
   container and by `api`/`cir` to connect).
 - `REDIS_PASSWORD` — Redis `requirepass`, applied at container start.
+- `KEYCLOAK_ADMIN_PASSWORD` — admin console password for the local `keycloak`
+  container.
+- `KEYCLOAK_CLIENT_SECRET` — secret of the confidential client customer360-api
+  uses to introspect tokens (see §10 below to create it).
 - `GOOGLE_GENAI_API_KEY` — optional; leave the `YOUR_...` placeholder to keep
   CIR's persona-name generation fully offline/deterministic (see
   [identity-resolution.md](identity-resolution.md)).
@@ -174,6 +183,7 @@ curl -s http://localhost:${API_HOST_PORT:-8000}/health
 |---|---|
 | `postgres` | `pg_isready -U $DB_USER -d $DB_NAME` |
 | `redis` | `redis-cli -a $REDIS_PASSWORD ping` |
+| `keycloak` | `GET /health/ready` (`KC_HEALTH_ENABLED=true`) |
 | `cir` | `python healthcheck.py` — raw psycopg2 connection test (no HTTP surface on this worker) |
 | `api` | `python -c "urllib.request.urlopen('http://localhost:8000/health')"` |
 
@@ -236,6 +246,13 @@ tune per environment (dev/staging/prod). Highlights:
 | `CIR_POLL_INTERVAL_SECONDS` | `30` | How often the `cir` worker polls `cdp_raw_profiles_stage` for unresolved rows. |
 | `CIR_BATCH_SIZE` | `5000` | Rows per resolution batch. |
 | `DB_POOL_SIZE` / `DB_MAX_OVERFLOW` | `10` / `20` | customer360-api SQLAlchemy pool sizing — tune with expected concurrent request volume. |
+| `SSO_LOGIN` | `true` | Master switch read by the API's auth middleware config (kept `true` in every environment — customer360-api has no "open" mode besides `/health`). |
+| `SSO_LOGIN_URL` | `http://localhost:8080` | Base Keycloak URL. **Overridden to `http://keycloak:8080` for the `api` container** by `docker-compose.yml` (in-network service name), same pattern as `DB_HOST`/`REDIS_HOST`. |
+| `KEYCLOAK_REALM` | `leocdp` | Realm customer360-api validates tokens against — must exist in Keycloak (see §10). |
+| `KEYCLOAK_CLIENT_ID` / `KEYCLOAK_CLIENT_SECRET` | `leocdp` / placeholder | Confidential client customer360-api uses to call Keycloak's token introspection endpoint. **Change the secret in every real environment.** |
+| `KEYCLOAK_VERIFY_SSL` | `false` | Set `true` once Keycloak is behind real TLS (self-signed/dev certs will fail introspection otherwise). |
+| `KEYCLOAK_ADMIN` / `KEYCLOAK_ADMIN_PASSWORD` | `admin` / placeholder | Bootstrap admin console credentials for the local `keycloak` container (`start-dev` mode only). **Change in every real environment.** |
+| `KEYCLOAK_HOST_PORT` | `8080` | Host-published port for the Keycloak admin console / API. |
 | `GOOGLE_GENAI_API_KEY` | placeholder | Leave as `YOUR_...` to keep CIR persona-name generation offline (see `identity_resolution/persona.py`). |
 
 ---
@@ -285,10 +302,61 @@ volume — see above.)
 | `NOAUTH Authentication required` from Redis | `REDIS_PASSWORD` mismatch between `.env` and what `api`/`redis` were started with — restart both after changing it (`docker compose up -d --force-recreate redis api`). |
 | Reporting numbers look stale right after a write | Expected — reporting endpoints are TTL-cached only (no write-invalidation), bounded by `CACHE_TTL_SECONDS`. Also: the `cir` worker writes to Postgres directly (bypasses the API), so its writes never invalidate the API's cache either — same TTL bound applies. |
 | Demo data missing after `docker compose up` (no `--profile dev`) | Expected — demo seeding only runs under the `dev` profile. Run `docker compose --profile dev up cir-demo-seed`. |
+| `customer360-postgres` logs `FATAL: database "db_keycloak" does not exist` | `keycloak` started before `keycloak-db-init` finished. Confirm `keycloak` depends on `keycloak-db-init: condition: service_completed_successfully` in `docker-compose.yml`, then `docker compose up -d keycloak-db-init keycloak`. |
+| Every API call returns `401 {"detail": "Authentication required"}` | No `Authorization: Bearer <token>` header sent, or it's malformed. Only `/health` is exempt — see §9. |
+| Every API call returns `401 {"detail": "Invalid or expired token"}` | Token expired, wrong realm/client, or `KEYCLOAK_CLIENT_SECRET` doesn't match the confidential client in Keycloak. Re-fetch a token (§9) and re-check `.env` against the admin console. |
+| API container logs `Keycloak introspection request failed` | Inside `docker compose`, `SSO_LOGIN_URL` must be `http://keycloak:8080` (in-network name), not `localhost` — already overridden for the `api` service in `docker-compose.yml`; don't remove that override. |
 
 ---
 
-## 9. Relationship to the non-Docker local dev workflow
+## 9. Keycloak setup (realm, client, first token)
+
+The `keycloak` container runs in `start-dev` mode (dev-friendly, not for
+production) against the dedicated `db_keycloak` database. On first start it
+only has the built-in `master` realm — create the `leocdp` realm and a
+confidential client before `customer360-api` can validate any token.
+
+### 9.1 Create the realm + client
+
+1. Open the admin console at `http://localhost:${KEYCLOAK_HOST_PORT:-8080}`
+   and log in with `KEYCLOAK_ADMIN` / `KEYCLOAK_ADMIN_PASSWORD` from `.env`.
+2. **Create realm** → name it `leocdp` (must match `KEYCLOAK_REALM`).
+3. In the `leocdp` realm, **Clients → Create client**:
+   - Client ID: `leocdp` (must match `KEYCLOAK_CLIENT_ID`).
+   - Client authentication: **On** — this makes it a confidential client with
+     a secret, required for the introspection call in
+     [`core/auth.py`](customer360-api/core/auth.py).
+   - Enable **Direct access grants** if you want to fetch test tokens via the
+     `password` grant.
+4. **Clients → leocdp → Credentials** tab → copy the client secret into
+   `KEYCLOAK_CLIENT_SECRET` in `.env`, then run
+   `docker compose up -d --force-recreate api`.
+5. **Users → Add user** → create a test user and set a password under
+   **Credentials** (turn off "Temporary").
+
+### 9.2 Get an access token and call the API
+
+```bash
+TOKEN=$(curl -s -X POST \
+  "http://localhost:${KEYCLOAK_HOST_PORT:-8080}/realms/leocdp/protocol/openid-connect/token" \
+  -d "client_id=leocdp" \
+  -d "client_secret=$KEYCLOAK_CLIENT_SECRET" \
+  -d "grant_type=password" \
+  -d "username=<test-user>" \
+  -d "password=<test-user-password>" | python3 -c "import sys,json;print(json.load(sys.stdin)['access_token'])")
+
+curl -s http://localhost:${API_HOST_PORT:-8000}/api/v1/reporting/summary \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+`/health` never requires a token; every other route does (see
+`EXEMPT_PATHS` in [`core/auth.py`](customer360-api/core/auth.py)). Valid
+tokens are cached in Redis under `auth:token:<token>` (TTL = token `exp`), so
+repeat calls with the same token skip Keycloak entirely until it expires.
+
+---
+
+## 10. Relationship to the non-Docker local dev workflow
 
 This Compose stack is independent of, and safe to run alongside, the existing
 non-Docker dev scripts:

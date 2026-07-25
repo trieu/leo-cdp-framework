@@ -305,7 +305,7 @@ Test tự động cho engine CIR: `identity-resolution-service/run_tests.sh` (py
 
 ## 9. Hạn Chế Hiện Tại & Định Hướng Tiếp Theo
 
-- **Không có authentication/authorization** trên `customer360-api` — hiện là API nội bộ, cần bổ sung xác thực (API key/OAuth2) và kiểm soát theo `tenant_id` trước khi expose ra ngoài môi trường dev.
+- **Đã có authentication trên `customer360-api`** (Keycloak token introspection + Redis token cache, xem `customer360-api/core/auth.py`) nhưng **chưa có authorization theo `tenant_id`** — mọi token hợp lệ hiện truy cập được toàn bộ dữ liệu, chưa giới hạn theo claim/role trong token.
 - **Chưa có pipeline ML thật** cho các cột scoring (churn, CLV, lead, CX) — schema và metadata đã sẵn sàng, nhưng việc huấn luyện/suy luận mô hình chưa được triển khai trong repo này (khả năng tích hợp với `airflow-ai-agent/`).
 - **Chưa có bước sinh embedding tự động** (persona/CRM/graph) — cột `vector` tồn tại nhưng cần một job/consumer riêng gọi LLM embedding API để điền dữ liệu.
 - **Ingestion layer (Kafka/PubSub) chưa có code thật trong `core-customer360`** — chỉ được mô tả kiến trúc trong [identity-resolution.md](identity-resolution.md); trong demo hiện tại, dữ liệu được nạp trực tiếp qua script (`init_sample_data.py`) hoặc qua `POST /api/v1/raw-profiles`.

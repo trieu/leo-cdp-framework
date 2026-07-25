@@ -16,6 +16,8 @@ import logging
 from fastapi import FastAPI
 from sqlalchemy import text
 
+from core.auth import auth_middleware
+from core.config import settings
 from core.database import engine
 from core.routers.crm import all_crm_routers
 from core.routers.graph import router as graph_router
@@ -37,6 +39,8 @@ app = FastAPI(
     ),
     version="1.0.0",
 )
+
+app.middleware("http")(auth_middleware)
 
 # CIR core models first (primary focus of this API), then supporting CRM /
 # relations / graph entities.
@@ -60,7 +64,7 @@ def health():
     """Verifies the pooled SQLAlchemy engine can actually reach PostgreSQL."""
     with engine.connect() as conn:
         conn.execute(text("SELECT 1"))
-    return {"status": "ok", "database": "reachable"}
+    return {"status": "ok", "database": "reachable", "sso_login": settings.sso_login}
 
 
 if __name__ == "__main__":

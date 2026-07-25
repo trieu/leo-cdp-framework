@@ -7,7 +7,7 @@ A composable CDP is an approach to building customer data platform capabilities 
 
 For a **CIO**, that composability is the point: customer data stays inside infrastructure you own and audit, instead of being copied into a third-party SaaS vendor's cloud. For a **CTO**, it means every component — including this one — is inspectable, open-source, and replaceable, so architecture decisions aren't locked in by a vendor's roadmap. For **marketing/growth teams**, it still needs to deliver the same outcome a bundled CDP promises: one trustworthy view of each customer that segmentation and campaign tools can activate against.
 
-![](composable-cdp.png)
+![](./docs/composable-cdp.png)
 
 ## What is Customer 360?
 
@@ -175,7 +175,7 @@ LIMIT 10;
 
 ## Roadmap
 
-See [ROADMAP.md](ROADMAP.md) for near/mid/long-term plans: API auth, a real ingestion layer (Kafka/PubSub), a true DB-trigger/event-driven real-time path, ML scoring pipelines for the scoring columns, automated embedding generation, an operational CIR dashboard, real fuzzy matching, and semantic/lookalike segmentation.
+See [ROADMAP.md](ROADMAP.md) for near/mid/long-term plans: tenant-scoped authorization on top of the existing Keycloak authentication, a real ingestion layer (Kafka/PubSub), a true DB-trigger/event-driven real-time path, ML scoring pipelines for the scoring columns, automated embedding generation, an operational CIR dashboard, real fuzzy matching, and semantic/lookalike segmentation.
 
 ## References
 

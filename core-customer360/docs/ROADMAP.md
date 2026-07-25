@@ -10,10 +10,11 @@
 - **`is_hashed`/`persona_name`**: khi PII đã hash, `identity_resolution/persona.py` tự sinh nhãn `persona_name` dễ đọc, không phải PII (deterministic, không đảo ngược hash) — ràng buộc bởi CHECK constraint DB + logic Python trong `resolver.py`.
 - REST API đầy đủ (`customer360-api/`, FastAPI + SQLAlchemy 2) — CRUD cho toàn bộ bảng + endpoint reporting (`/summary`, `/master-profiles/duplicates`, `/identity-graph/coverage`).
 - Script sinh dữ liệu mẫu quy mô lớn (`init_sample_data.py`, 1000 raw profiles, tỷ lệ trùng lặp có kiểm soát) + demo end-to-end (`run-demo.sh`).
+- **Authentication cho `customer360-api`**: mọi endpoint (trừ `/health`) yêu cầu `Authorization: Bearer <token>` hợp lệ, xác thực qua Keycloak token introspection (`core/auth.py`) và cache kết quả trong Redis (`auth:token:<token>`, TTL = token `exp`) để giảm tải Keycloak. Local dev Keycloak chạy như một service riêng trong `docker-compose.yml` (`keycloak` + `keycloak-db-init`, dùng chung PostgreSQL với DB riêng `db_keycloak`).
 
 ## 🎯 Ưu tiên ngắn hạn
 
-- **Authentication/Authorization cho `customer360-api`**: hiện chưa có API key/OAuth2, chưa kiểm soát truy cập theo `tenant_id` — cần trước khi expose ra ngoài môi trường dev.
+- **Kiểm soát truy cập theo `tenant_id`**: hiện Keycloak token đã xác thực *ai* gọi API, nhưng chưa map claim/role trong token sang giới hạn truy cập theo `tenant_id` — cần trước khi expose ra ngoài môi trường dev.
 - **Ingestion layer thật (Kafka/PubSub/RabbitMQ → `cdp_raw_profiles_stage`)**: hiện dữ liệu chỉ được nạp qua script hoặc `POST /api/v1/raw-profiles`; cần worker ingestion thật như mô tả trong [identity-resolution.md](identity-resolution.md).
 - **Real-time trigger thật**: thay thế `IdentityResolutionTrigger` (gọi tường minh) bằng cơ chế trigger DB hoặc consumer event thật (`cdp_trigger_process_new_raw_profiles`).
 - **Lịch trình batch hằng ngày (2AM sweep)**: đóng gói `daily_job.py` thành cronjob/Airflow DAG chạy production thật, tích hợp với `airflow-ai-agent/`.
