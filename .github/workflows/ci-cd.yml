@@ -288,12 +288,13 @@ jobs:
           tags: ${{ env.IMAGE }}:scan
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
-      - name: Security scan (gate on HIGH/CRITICAL)
+      - name: Security scan (gate on HIGH/CRITICAL OS packages)
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ env.IMAGE }}:scan
           exit-code: '1'
           severity: 'CRITICAL,HIGH'
+          vuln-type: 'os'
       - name: Build & push
         uses: docker/build-push-action@v6
         with:

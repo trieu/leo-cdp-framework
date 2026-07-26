@@ -1,0 +1,302 @@
+name: customer360
+
+# =============================================================================
+# Customer 360 Platform - containerized microservice stack
+#
+#   docker compose up                 Production: postgres + redis + Keycloak + cir + api
+#   docker compose --profile dev up    Same 5 services, PLUS a one-shot
+#                                       `cir-demo-seed` job that seeds demo
+#                                       data (CIR sample profiles, resolution,
+#                                       full CRM/relations/events demo data).
+#
+# Config: copy .env.example -> .env in this directory before first run.
+#
+# Security/prod notes:
+#   - DB_PASSWORD / REDIS_PASSWORD / KEYCLOAK_ADMIN_PASSWORD are REQUIRED (no
+#     insecure fallback default) -- compose fails fast if unset in .env.
+#   - Host-published ports bind to 127.0.0.1 by default (see *_HOST_BIND vars
+#     in .env.example). Set to 0.0.0.0 only if this host's firewall/network
+#     is otherwise trusted, or put a reverse proxy in front instead.
+#   - `env_file: .env` is only attached to services that actually need the
+#     full app config (api, cir) to avoid leaking unrelated secrets
+#     (e.g. GOOGLE_GENAI_API_KEY, KEYCLOAK_CLIENT_SECRET) into postgres/redis/keycloak.
+# =============================================================================
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-hardening: &default-hardening
+  security_opt:
+    - no-new-privileges:true
+  logging: *default-logging
+
+networks:
+  customer360-network:
+    name: customer360-network
+    driver: bridge
+
+volumes:
+  customer360-pgdata:
+    name: customer360-pgdata
+  customer360-redisdata:
+    name: customer360-redisdata
+
+services:
+  # ---------------------------------------------------------------------------
+  # 1) PostgreSQL 16 + PostGIS + pgvector + contrib, auto-provisioned with
+  #    database-schema.sql on first start.
+  # ---------------------------------------------------------------------------
+  postgres:
+    build:
+      context: .
+      dockerfile: postgres/Dockerfile
+    image: customer360-postgres:local
+    container_name: customer360-postgres
+    restart: unless-stopped
+    <<: *default-hardening
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      POSTGRES_DB: ${DB_NAME:-customer360}
+    ports:
+      - "${POSTGRES_HOST_BIND:-127.0.0.1}:${POSTGRES_HOST_PORT:-5432}:5432"
+    volumes:
+      - customer360-pgdata:/var/lib/postgresql/data
+    networks:
+      - customer360-network
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 1g
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-customer360}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ---------------------------------------------------------------------------
+  # 2) Redis 8 - API response cache (see customer360-api/core/cache.py).
+  # ---------------------------------------------------------------------------
+  redis:
+    build:
+      context: ./redis
+      dockerfile: Dockerfile
+    image: customer360-redis:local
+    container_name: customer360-redis
+    restart: unless-stopped
+    <<: *default-hardening
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}
+    command: ["--requirepass", "${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}"]
+    ports:
+      - "${REDIS_HOST_BIND:-127.0.0.1}:${REDIS_HOST_PORT:-6379}:6379"
+    volumes:
+      - customer360-redisdata:/data
+    networks:
+      - customer360-network
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 256m
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" --no-auth-warning ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ---------------------------------------------------------------------------
+  # 3) Keycloak DB init - ensures the dedicated db_keycloak database exists
+  #    before Keycloak starts against the shared PostgreSQL instance.
+  # ---------------------------------------------------------------------------
+  keycloak-db-init:
+    image: customer360-postgres:local
+    container_name: customer360-keycloak-db-init
+    restart: "no"
+    <<: *default-hardening
+    environment:
+      PGPASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - customer360-network
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        until pg_isready -h postgres -U ${DB_USER:-postgres} -d ${DB_NAME:-customer360}; do
+          echo "Waiting for PostgreSQL..."
+          sleep 2
+        done
+        psql -h postgres -U ${DB_USER:-postgres} -d ${DB_NAME:-customer360} -tc "SELECT 1 FROM pg_database WHERE datname = 'db_keycloak'" | grep -q 1 || psql -h postgres -U ${DB_USER:-postgres} -d ${DB_NAME:-customer360} -c "CREATE DATABASE db_keycloak"
+
+  # ---------------------------------------------------------------------------
+  # 4) Keycloak - local SSO provider for Customer 360 API testing.
+  #    Uses the same PostgreSQL instance but a dedicated database named
+  #    db_keycloak.
+  # ---------------------------------------------------------------------------
+  keycloak:
+    # Pinned (not `:latest`) -- a floating tag can silently change behavior
+    # between minor versions (e.g. the health endpoint moving to port 9000),
+    # which breaks `depends_on: condition: service_healthy` for `api`.
+    image: keycloak/keycloak:${KEYCLOAK_VERSION:-26.7}
+    container_name: customer360-keycloak
+    restart: unless-stopped
+    init: true
+    <<: *default-hardening
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/db_keycloak
+      KC_DB_USERNAME: ${DB_USER:-postgres}
+      KC_DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      # Real deployments: set KEYCLOAK_HOSTNAME to the public domain in .env.
+      KC_HOSTNAME: ${KEYCLOAK_HOSTNAME:-localhost}
+      KC_HTTP_PORT: 8080
+      KC_HEALTH_ENABLED: "true"
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?Set KEYCLOAK_ADMIN_PASSWORD in .env}
+    # `start-dev` (default) is fine for local/testing SSO. For a real prod
+    # deployment behind TLS, set KEYCLOAK_COMMAND=start in .env and configure
+    # KC_HOSTNAME + a TLS-terminating reverse proxy (KC_PROXY_HEADERS, etc.).
+    command: ["${KEYCLOAK_COMMAND:-start-dev}"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak-db-init:
+        condition: service_completed_successfully
+    ports:
+      - "${KEYCLOAK_HOST_BIND:-127.0.0.1}:${KEYCLOAK_HOST_PORT:-8080}:8080"
+    networks:
+      - customer360-network
+    deploy:
+      resources:
+        limits:
+          cpus: "1.5"
+          memory: 768m
+    healthcheck:
+      # Keycloak 26 serves /health/* on the management port (9000), not the app port (8080).
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000 && echo -e 'GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 && cat <&3 | grep -q '200'" ]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+  # ---------------------------------------------------------------------------
+  # 5) CIR - Customer Identity Resolution worker (identity-resolution-service).
+  #    Continuously drains cdp_raw_profiles_stage (see worker.py).
+  # ---------------------------------------------------------------------------
+  cir:
+    build:
+      context: ./identity-resolution-service
+      dockerfile: Dockerfile
+    image: customer360-cir:local
+    container_name: customer360-cir
+    restart: unless-stopped
+    init: true
+    <<: *default-hardening
+    env_file:
+      - .env
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - customer360-network
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512m
+    healthcheck:
+      test: ["CMD", "python", "healthcheck.py"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+
+  # ---------------------------------------------------------------------------
+  # 6) Customer 360 API (FastAPI) - CRUD + reporting over the customer360
+  #    schema, Redis-cached reads (see customer360-api/core/cache.py).
+  # ---------------------------------------------------------------------------
+  api:
+    build:
+      context: ./customer360-api
+      dockerfile: Dockerfile
+    image: customer360-api:local
+    container_name: customer360-api
+    restart: unless-stopped
+    init: true
+    <<: *default-hardening
+    env_file:
+      - .env
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      SSO_LOGIN_URL: http://keycloak:8080
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    ports:
+      - "${API_HOST_BIND:-127.0.0.1}:${API_HOST_PORT:-8000}:8000"
+    networks:
+      - customer360-network
+    deploy:
+      resources:
+        limits:
+          cpus: "1.5"
+          memory: 512m
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # ---------------------------------------------------------------------------
+  # dev-only: one-shot demo data seeder (`docker compose --profile dev up`).
+  # Reuses the CIR image, overriding its command to run the seeding scripts
+  # instead of the continuous worker, then exits (restart: "no").
+  # ---------------------------------------------------------------------------
+  cir-demo-seed:
+    profiles: ["dev"]
+    build:
+      context: ./identity-resolution-service
+      dockerfile: Dockerfile
+    image: customer360-cir:local
+    container_name: customer360-cir-demo-seed
+    restart: "no"
+    <<: *default-hardening
+    env_file:
+      - .env
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - customer360-network
+    command: >
+      sh -c "python scripts/init_sample_data.py &&
+             python scripts/run_demo_resolution.py &&
+             python scripts/seed_full_demo_data.py"

@@ -2,5 +2,10 @@
   "java.compile.nullAnalysis.mode": "disabled",
   "java.configuration.updateBuildConfiguration": "interactive",
   "java.import.gradle.enabled": true,
-  "java.import.gradle.home": "/opt/gradle/gradle-6.9.4"
+  "java.import.gradle.home": "/opt/gradle/gradle-6.9.4",
+  "workbench.editorAssociations": {
+    "*.copilotmd": "vscode.markdown.preview.editor",
+    "*.json": "default",
+    "*.csv": "default"
+  }
 }
