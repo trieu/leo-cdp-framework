@@ -1,0 +1,18 @@
+{{#if hasItems}}
+  {{#each items}}
+  <div class="flex gap-3">
+    {{#if image_url}}<img src="{{image_url}}" class="w-16 h-16 rounded-lg object-cover flex-shrink-0" onerror="this.style.display='none'" />{{/if}}
+    <div class="flex-1 min-w-0">
+      <div class="text-xs text-slate-400 capitalize">{{item_type}}</div>
+      <div class="text-sm font-medium line-clamp-2">{{title}}</div>
+      <div class="text-xs text-slate-500 line-clamp-2">{{summary}}</div>
+      <div class="flex items-center justify-between mt-1">
+        <span class="text-xs text-slate-400">{{publishedLabel}}</span>
+        {{#if cta_url}}<a href="{{cta_url}}" target="_blank" rel="noopener" class="text-xs text-indigo-600 font-medium border border-indigo-200 rounded-full px-2 py-0.5">{{ctaLabelOrDefault}}</a>{{/if}}
+      </div>
+    </div>
+  </div>
+  {{/each}}
+{{else}}
+  <div class="text-sm text-slate-300">No personalized items available for this profile yet.</div>
+{{/if}}

@@ -7,11 +7,12 @@ import uuid
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from core.cache import cache_response, invalidate_prefix
 from core.config import settings
+from core.crud import profile360 as profile360_crud
 from core.crud.base import CRUDBase
 from core.database import get_db
 from core.models.identity import (
@@ -36,6 +37,7 @@ from core.schemas.identity import (
     RawProfileRead,
     RawProfileUpdate,
 )
+from core.schemas.profile360 import ChannelActivity, EngagementSummary, TimelineEntry, TopInterest
 
 # --- Master Profiles ---------------------------------------------------------
 
@@ -48,11 +50,36 @@ _master_crud = CRUDBase(CdpMasterProfile)
 def list_master_profiles(
     tenant_id: Optional[uuid.UUID] = None,
     domain: Optional[str] = Query(default=None, pattern="^(retail|banking|real_estate|travel)$"),
+    lifecycle_stage: Optional[str] = Query(
+        default=None, pattern="^(prospect|lead|customer|vip|dormant|churn_risk)$"
+    ),
+    q: Optional[str] = Query(default=None, description="Free-text search over full_name/persona_name/email"),
     skip: int = 0,
     limit: int = Query(default=settings.api_default_page_size, le=settings.api_max_page_size),
     db: Session = Depends(get_db),
 ):
-    return _master_crud.list(db, skip=skip, limit=limit, tenant_id=tenant_id, domain=domain)
+    if q:
+        stmt = select(CdpMasterProfile)
+        if tenant_id is not None:
+            stmt = stmt.where(CdpMasterProfile.tenant_id == tenant_id)
+        if domain is not None:
+            stmt = stmt.where(CdpMasterProfile.domain == domain)
+        if lifecycle_stage is not None:
+            stmt = stmt.where(CdpMasterProfile.lifecycle_stage == lifecycle_stage)
+        pattern = f"%{q}%"
+        stmt = stmt.where(
+            or_(
+                CdpMasterProfile.full_name.ilike(pattern),
+                CdpMasterProfile.persona_name.ilike(pattern),
+                CdpMasterProfile.email.ilike(pattern),
+                CdpMasterProfile.phone_number.ilike(pattern),
+            )
+        )
+        stmt = stmt.order_by(CdpMasterProfile.last_activity_at.desc().nullslast()).offset(skip).limit(limit)
+        return db.execute(stmt).scalars().all()
+
+    filters = {"tenant_id": tenant_id, "domain": domain, "lifecycle_stage": lifecycle_stage}
+    return _master_crud.list(db, skip=skip, limit=limit, **filters)
 
 
 @master_profiles_router.get("/count")
@@ -80,6 +107,55 @@ def get_master_profile_links(master_profile_id: uuid.UUID, db: Session = Depends
     """All raw profiles that were resolved/merged into this master profile."""
     stmt = select(CdpProfileLink).where(CdpProfileLink.master_profile_id == master_profile_id)
     return db.execute(stmt).scalars().all()
+
+
+@master_profiles_router.get("/{master_profile_id}/engagement-summary", response_model=EngagementSummary)
+@cache_response("master_profiles/engagement_summary", ttl=settings.cache_ttl_seconds)
+def get_master_profile_engagement_summary(
+    master_profile_id: uuid.UUID, days: int = Query(default=90, ge=1, le=365), db: Session = Depends(get_db)
+):
+    """Login/transaction counts, spend, and last-interaction timestamp for the
+    last ``days`` days, aggregated from cdp_raw_events + crm_transactions +
+    crm_customer_contacts."""
+    if _master_crud.get(db, master_profile_id) is None:
+        raise HTTPException(status_code=404, detail=f"CdpMasterProfile '{master_profile_id}' not found")
+    return profile360_crud.get_engagement_summary(db, master_profile_id, days=days)
+
+
+@master_profiles_router.get("/{master_profile_id}/channel-activity", response_model=ChannelActivity)
+@cache_response("master_profiles/channel_activity", ttl=settings.cache_ttl_seconds)
+def get_master_profile_channel_activity(
+    master_profile_id: uuid.UUID, days: int = Query(default=90, ge=1, le=365), db: Session = Depends(get_db)
+):
+    """Cross-channel activity counts (app/web sessions, customer service
+    contacts, transactions) for the last ``days`` days."""
+    if _master_crud.get(db, master_profile_id) is None:
+        raise HTTPException(status_code=404, detail=f"CdpMasterProfile '{master_profile_id}' not found")
+    return profile360_crud.get_channel_activity(db, master_profile_id, days=days)
+
+
+@master_profiles_router.get("/{master_profile_id}/top-interests", response_model=list[TopInterest])
+@cache_response("master_profiles/top_interests", ttl=settings.cache_ttl_seconds)
+def get_master_profile_top_interests(
+    master_profile_id: uuid.UUID, limit: int = Query(default=5, ge=1, le=20), db: Session = Depends(get_db)
+):
+    """Top behavioral-event categories for this profile (cdp_raw_events.event_category),
+    ranked by count and normalized to a percentage of the top category."""
+    if _master_crud.get(db, master_profile_id) is None:
+        raise HTTPException(status_code=404, detail=f"CdpMasterProfile '{master_profile_id}' not found")
+    return profile360_crud.get_top_interests(db, master_profile_id, limit=limit)
+
+
+@master_profiles_router.get("/{master_profile_id}/timeline", response_model=list[TimelineEntry])
+@cache_response("master_profiles/timeline", ttl=settings.cache_ttl_seconds)
+def get_master_profile_timeline(
+    master_profile_id: uuid.UUID, limit: int = Query(default=20, ge=1, le=100), db: Session = Depends(get_db)
+):
+    """Unified, most-recent-first activity feed merging behavioral events,
+    transactions, and logged customer service contacts."""
+    if _master_crud.get(db, master_profile_id) is None:
+        raise HTTPException(status_code=404, detail=f"CdpMasterProfile '{master_profile_id}' not found")
+    return profile360_crud.get_timeline(db, master_profile_id, limit=limit)
 
 
 @master_profiles_router.post("/", response_model=MasterProfileRead, status_code=201)

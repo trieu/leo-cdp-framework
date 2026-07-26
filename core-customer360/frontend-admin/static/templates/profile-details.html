@@ -1,0 +1,23 @@
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+
+  <!-- LEFT COLUMN -->
+  <div class="lg:col-span-3 space-y-4">
+    {{> identity}}
+    {{> channels}}
+  </div>
+
+  <!-- CENTER COLUMN -->
+  <div class="lg:col-span-6 space-y-4">
+    {{> overview}}
+    {{> segments}}
+    {{> engagement}}
+    {{> activity}}
+    {{> timeline}}
+  </div>
+
+  <!-- RIGHT COLUMN -->
+  <div class="lg:col-span-3 space-y-4">
+    {{> scoring}}
+    {{> [personalized-items]}}
+  </div>
+</div>

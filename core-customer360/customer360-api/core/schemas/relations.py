@@ -29,6 +29,7 @@ class RelationTypeRead(RelationTypeBase):
 
 class CdpRelationBase(BaseModel):
     tenant_id: uuid.UUID
+    user_id: Optional[uuid.UUID] = None
     source_master_id: uuid.UUID
     target_master_id: uuid.UUID
     relation_type_id: int
@@ -39,6 +40,7 @@ class CdpRelationCreate(CdpRelationBase):
 
 
 class CdpRelationUpdate(BaseModel):
+    user_id: Optional[uuid.UUID] = None
     relation_type_id: Optional[int] = None
 
 
@@ -50,6 +52,7 @@ class CdpRelationRead(CdpRelationBase):
 
 class CustomerContactBase(BaseModel):
     tenant_id: uuid.UUID
+    user_id: Optional[uuid.UUID] = None
     master_profile_id: uuid.UUID
     contact_type: Optional[str] = None
     contact_channel: Optional[str] = None
@@ -61,6 +64,7 @@ class CustomerContactCreate(CustomerContactBase):
 
 
 class CustomerContactUpdate(BaseModel):
+    user_id: Optional[uuid.UUID] = None
     contact_type: Optional[str] = None
     contact_channel: Optional[str] = None
     contact_content: Optional[str] = None
@@ -74,6 +78,7 @@ class CustomerContactRead(CustomerContactBase):
 
 class TransactionBase(BaseModel):
     tenant_id: uuid.UUID
+    user_id: Optional[uuid.UUID] = None
     master_profile_id: Optional[uuid.UUID] = None
     source_system: Optional[str] = None
     source_transaction_id: Optional[str] = None
@@ -103,6 +108,7 @@ class TransactionCreate(TransactionBase):
 
 
 class TransactionUpdate(BaseModel):
+    user_id: Optional[uuid.UUID] = None
     master_profile_id: Optional[uuid.UUID] = None
     source_system: Optional[str] = None
     source_transaction_id: Optional[str] = None

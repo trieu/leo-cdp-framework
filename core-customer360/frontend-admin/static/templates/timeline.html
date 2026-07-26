@@ -1,0 +1,22 @@
+<div class="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
+  <div class="flex items-center justify-between mb-3">
+    <h3 class="font-semibold">Timeline</h3>
+    <button id="btn-timeline-more" class="text-xs text-indigo-600 font-medium">Load more</button>
+  </div>
+  {{#if hasTimeline}}
+  <ol class="space-y-4">
+    {{#each timeline}}
+    <li class="flex gap-3">
+      <div class="w-2 h-2 mt-1.5 rounded-full bg-indigo-500 flex-shrink-0"></div>
+      <div class="flex-1 flex items-start justify-between gap-3">
+        <div>
+          <div class="text-sm font-medium">{{icon}} {{title}}</div>
+          <div class="text-xs text-slate-400">{{timeLabel}} &middot; {{channelLabel}}</div>
+        </div>
+        {{#if amountLabel}}<span class="text-xs bg-slate-100 rounded-full px-2 py-1 whitespace-nowrap">{{amountLabel}}</span>{{/if}}
+      </div>
+    </li>
+    {{/each}}
+  </ol>
+  {{else}}<div class="text-sm text-slate-300">No recent activity recorded for this profile</div>{{/if}}
+</div>

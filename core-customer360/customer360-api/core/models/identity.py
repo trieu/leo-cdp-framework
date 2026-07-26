@@ -38,7 +38,12 @@ class CdpMasterProfile(Base):
     master_profile_id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
     )
-    tenant_id: Mapped[uuid.UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("sys_tenant.tenant_id"), nullable=False
+    )
+    # Data owner: internal sys_user who created/manages this profile (nullable -- most
+    # profiles are created by ingestion pipelines, not an interactive admin user).
+    user_id: Mapped[Optional[uuid.UUID]] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("sys_user.user_id"))
     domain: Mapped[str] = mapped_column(Text, nullable=False, server_default="retail")
 
     full_name: Mapped[Optional[str]] = mapped_column(Text)
@@ -132,7 +137,12 @@ class CdpRawProfileStage(Base):
     raw_profile_id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
     )
-    tenant_id: Mapped[uuid.UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("sys_tenant.tenant_id"), nullable=False
+    )
+    # Data owner: internal sys_user who created/manages this row (nullable -- rows are
+    # normally landed by ingestion pipelines, not an interactive admin user).
+    user_id: Mapped[Optional[uuid.UUID]] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("sys_user.user_id"))
     domain: Mapped[str] = mapped_column(Text, nullable=False, server_default="retail")
     source_system: Mapped[str] = mapped_column(Text, nullable=False)
     channel: Mapped[Optional[str]] = mapped_column(Text)
@@ -181,7 +191,10 @@ class CdpProfileLink(Base):
     link_id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
     )
-    tenant_id: Mapped[uuid.UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("sys_tenant.tenant_id"), nullable=False
+    )
+    user_id: Mapped[Optional[uuid.UUID]] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("sys_user.user_id"))
     raw_profile_id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("cdp_raw_profiles_stage.raw_profile_id"), nullable=False
     )

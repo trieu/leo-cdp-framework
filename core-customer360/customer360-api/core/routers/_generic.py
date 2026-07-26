@@ -3,7 +3,8 @@ endpoints for a simple entity (single-column primary key) in one call, so
 CRM-style entities don't each need hand-written boilerplate endpoints.
 """
 
-from typing import Any, Callable
+import uuid
+from typing import Any, Callable, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
@@ -30,20 +31,33 @@ def build_crud_router(
     router = APIRouter(prefix=prefix, tags=tags)
     crud = CRUDBase(model)
     cache_prefix = model.__tablename__
+    # Most crm_*/cdp_* models carry a tenant_id column (see database-schema.sql's
+    # "ROW LEVEL SECURITY" section); when present, expose it as an optional
+    # list/count filter. Actual tenant isolation is enforced at the database
+    # layer by the tenant_policy RLS policies (via core/database.py's
+    # app.tenant_id session variable) regardless of this filter -- it's a
+    # convenience for narrowing results, not a security boundary by itself.
+    has_tenant = hasattr(model, "tenant_id")
 
     @router.get("/", response_model=list[read_schema])
     @cache_response(f"{cache_prefix}/list", ttl=settings.cache_ttl_seconds)
     def list_items(
         skip: int = 0,
         limit: int = Query(default=settings.api_default_page_size, le=settings.api_max_page_size),
+        tenant_id: Optional[uuid.UUID] = None,
         db: Session = Depends(get_db),
     ):
-        return crud.list(db, skip=skip, limit=limit)
+        filters = {"tenant_id": tenant_id} if has_tenant else {}
+        return crud.list(db, skip=skip, limit=limit, **filters)
 
     @router.get("/count")
     @cache_response(f"{cache_prefix}/count", ttl=settings.cache_ttl_seconds)
-    def count_items(db: Session = Depends(get_db)):
-        return {"count": crud.count(db)}
+    def count_items(
+        tenant_id: Optional[uuid.UUID] = None,
+        db: Session = Depends(get_db),
+    ):
+        filters = {"tenant_id": tenant_id} if has_tenant else {}
+        return {"count": crud.count(db, **filters)}
 
     @router.get("/{item_id}", response_model=read_schema)
     @cache_response(f"{cache_prefix}/item", ttl=settings.cache_ttl_seconds)

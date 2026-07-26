@@ -1,0 +1,44 @@
+<div class="bg-white border border-slate-200 rounded-xl shadow-sm">
+  <div class="p-4 border-b border-slate-200 flex flex-wrap items-center gap-3">
+    <h1 class="text-lg font-semibold flex-1">Master Profiles</h1>
+    <input id="search-input" type="search" placeholder="Search name, persona, email, phone…" class="text-sm border border-slate-300 rounded-lg px-3 py-1.5 w-64" />
+    <select id="domain-filter" class="text-sm border border-slate-300 rounded-lg px-2 py-1.5">
+      <option value="">All domains</option>
+      <option value="banking">Banking</option>
+      <option value="retail">Retail</option>
+    </select>
+    <select id="lifecycle-filter" class="text-sm border border-slate-300 rounded-lg px-2 py-1.5">
+      <option value="">All lifecycle stages</option>
+      <option value="prospect">Prospect</option>
+      <option value="lead">Lead</option>
+      <option value="customer">Customer</option>
+      <option value="vip">VIP</option>
+      <option value="dormant">Dormant</option>
+      <option value="churn_risk">Churn risk</option>
+    </select>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wide">
+        <tr>
+          <th class="text-left font-medium px-4 py-2">Profile</th>
+          <th class="text-left font-medium px-4 py-2">Domain</th>
+          <th class="text-left font-medium px-4 py-2">Tier</th>
+          <th class="text-left font-medium px-4 py-2">Lifecycle</th>
+          <th class="text-left font-medium px-4 py-2">Churn Risk</th>
+          <th class="text-left font-medium px-4 py-2">Predictive CLV</th>
+          <th class="text-left font-medium px-4 py-2">Engagement</th>
+          <th class="text-left font-medium px-4 py-2">Last Activity</th>
+          <th class="px-4 py-2"></th>
+        </tr>
+      </thead>
+      <tbody id="profiles-tbody"></tbody>
+    </table>
+  </div>
+  <div id="list-loading" class="p-6 flex justify-center"><div class="spinner"></div></div>
+  <div id="list-empty" class="hidden p-8 text-center text-sm text-slate-500">No profiles matched your filters.</div>
+  <div class="p-4 border-t border-slate-200 flex items-center justify-between text-sm text-slate-500">
+    <span id="list-count-label"></span>
+    <button id="btn-load-more" class="hidden border border-slate-300 rounded-lg px-3 py-1.5 hover:bg-slate-50">Load more</button>
+  </div>
+</div>

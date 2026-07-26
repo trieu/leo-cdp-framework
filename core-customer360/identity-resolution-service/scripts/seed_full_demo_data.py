@@ -210,11 +210,11 @@ def seed_crm_entities(cursor) -> dict:
         industry_id = demo_id(f"crm_industry:{name}")
         cursor.execute(
             f"""
-            INSERT INTO {_table('crm_industry')} (industry_id, name, description, keywords)
-            VALUES (%s, %s, %s, %s)
+            INSERT INTO {_table('crm_industry')} (industry_id, tenant_id, name, description, keywords)
+            VALUES (%s, %s, %s, %s, %s)
             ON CONFLICT (industry_id) DO UPDATE SET description = EXCLUDED.description;
             """,
-            (industry_id, name, description, [name.lower().replace(" & ", "_").replace(" ", "_")]),
+            (industry_id, DEMO_TENANT_ID, name, description, [name.lower().replace(" & ", "_").replace(" ", "_")]),
         )
         ids["industry"][name] = industry_id
 
@@ -222,11 +222,11 @@ def seed_crm_entities(cursor) -> dict:
         account_id = demo_id(f"crm_account:{name}")
         cursor.execute(
             f"""
-            INSERT INTO {_table('crm_account')} (account_id, name, industry_id, description, keywords)
-            VALUES (%s, %s, %s, %s, %s)
+            INSERT INTO {_table('crm_account')} (account_id, tenant_id, name, industry_id, description, keywords)
+            VALUES (%s, %s, %s, %s, %s, %s)
             ON CONFLICT (account_id) DO UPDATE SET industry_id = EXCLUDED.industry_id;
             """,
-            (account_id, name, ids["industry"][industry_name], f"Demo account in {industry_name}.", [industry_name]),
+            (account_id, DEMO_TENANT_ID, name, ids["industry"][industry_name], f"Demo account in {industry_name}.", [industry_name]),
         )
         ids["account"][name] = account_id
 
@@ -234,11 +234,11 @@ def seed_crm_entities(cursor) -> dict:
         lead_source_id = demo_id(f"crm_lead_source:{name}")
         cursor.execute(
             f"""
-            INSERT INTO {_table('crm_lead_source')} (lead_source_id, name, description)
-            VALUES (%s, %s, %s)
+            INSERT INTO {_table('crm_lead_source')} (lead_source_id, tenant_id, name, description)
+            VALUES (%s, %s, %s, %s)
             ON CONFLICT (lead_source_id) DO UPDATE SET description = EXCLUDED.description;
             """,
-            (lead_source_id, name, description),
+            (lead_source_id, DEMO_TENANT_ID, name, description),
         )
         ids["lead_source"][name] = lead_source_id
 
@@ -248,13 +248,13 @@ def seed_crm_entities(cursor) -> dict:
         cursor.execute(
             f"""
             INSERT INTO {_table('crm_campaign')}
-                (campaign_id, name, description, keywords, start_date, end_date, metadata)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
+                (campaign_id, tenant_id, name, description, keywords, start_date, end_date, metadata)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (campaign_id) DO UPDATE SET
                 start_date = EXCLUDED.start_date, end_date = EXCLUDED.end_date;
             """,
             (
-                campaign_id, name, f"Demo marketing campaign targeting the {domain} domain.",
+                campaign_id, DEMO_TENANT_ID, name, f"Demo marketing campaign targeting the {domain} domain.",
                 [domain], today + timedelta(days=start_offset), today + timedelta(days=end_offset),
                 Json({"domain": domain}),
             ),
@@ -271,12 +271,12 @@ def seed_crm_entities(cursor) -> dict:
         cursor.execute(
             f"""
             INSERT INTO {_table('crm_lead')}
-                (lead_id, first_name, last_name, email, phone, description, keywords, metadata)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                (lead_id, tenant_id, first_name, last_name, email, phone, description, keywords, metadata)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (lead_id) DO UPDATE SET description = EXCLUDED.description;
             """,
             (
-                lead_id, first_name, last_name,
+                lead_id, DEMO_TENANT_ID, first_name, last_name,
                 f"demo.lead{i}@example.com", f"09{rng.randint(10000000, 99999999)}",
                 f"Synthetic demo lead sourced via {source_name}.", [source_name],
                 Json({"lead_source": source_name, "synthetic": True}),
@@ -296,12 +296,12 @@ def seed_crm_entities(cursor) -> dict:
         cursor.execute(
             f"""
             INSERT INTO {_table('crm_contact')}
-                (contact_id, first_name, last_name, email, phone, account_id, description, metadata)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                (contact_id, tenant_id, first_name, last_name, email, phone, account_id, description, metadata)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (contact_id) DO UPDATE SET account_id = EXCLUDED.account_id;
             """,
             (
-                contact_id, first_name, last_name,
+                contact_id, DEMO_TENANT_ID, first_name, last_name,
                 f"{first_name.lower()}.{last_name.lower()}@{account_name.lower().split()[0]}.example.com",
                 f"09{rng.randint(10000000, 99999999)}", ids["account"][account_name],
                 f"Primary contact at {account_name}, converted from a demo lead.",
@@ -321,12 +321,12 @@ def seed_crm_entities(cursor) -> dict:
         cursor.execute(
             f"""
             INSERT INTO {_table('crm_opportunity')}
-                (opportunity_id, account_id, name, value, stage, close_date, description)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
+                (opportunity_id, tenant_id, account_id, name, value, stage, close_date, description)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (opportunity_id) DO UPDATE SET stage = EXCLUDED.stage, value = EXCLUDED.value;
             """,
             (
-                opportunity_id, ids["account"][account_name], opp_name, value, stage,
+                opportunity_id, DEMO_TENANT_ID, ids["account"][account_name], opp_name, value, stage,
                 datetime.now().date() + timedelta(days=close_offset),
                 f"Demo opportunity with {account_name}.",
             ),
@@ -341,12 +341,12 @@ def seed_crm_entities(cursor) -> dict:
         cursor.execute(
             f"""
             INSERT INTO {_table('crm_campaign_member')}
-                (campaign_member_id, campaign_id, contact_id, status, description)
-            VALUES (%s, %s, %s, %s, %s)
+                (campaign_member_id, tenant_id, campaign_id, contact_id, status, description)
+            VALUES (%s, %s, %s, %s, %s, %s)
             ON CONFLICT (campaign_member_id) DO UPDATE SET status = EXCLUDED.status;
             """,
             (
-                demo_id(f"crm_campaign_member:contact:{contact_id}"),
+                demo_id(f"crm_campaign_member:contact:{contact_id}"), DEMO_TENANT_ID,
                 ids["campaign"][campaign_names[i % len(campaign_names)]],
                 contact_id, "converted", "Already-converted contact who engaged with this campaign.",
             ),
@@ -355,12 +355,12 @@ def seed_crm_entities(cursor) -> dict:
         cursor.execute(
             f"""
             INSERT INTO {_table('crm_campaign_member')}
-                (campaign_member_id, campaign_id, contact_id, status, description, metadata)
-            VALUES (%s, %s, NULL, %s, %s, %s)
+                (campaign_member_id, tenant_id, campaign_id, contact_id, status, description, metadata)
+            VALUES (%s, %s, %s, NULL, %s, %s, %s)
             ON CONFLICT (campaign_member_id) DO UPDATE SET status = EXCLUDED.status;
             """,
             (
-                demo_id(f"crm_campaign_member:lead:{lead_id}"),
+                demo_id(f"crm_campaign_member:lead:{lead_id}"), DEMO_TENANT_ID,
                 ids["campaign"][campaign_names[i % len(campaign_names)]],
                 "responded", "Lead responded to campaign but has not converted to a Contact yet.",
                 Json({"lead_id": lead_id}),

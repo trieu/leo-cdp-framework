@@ -1,0 +1,19 @@
+<div class="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
+  <h3 class="font-semibold text-sm mb-3">Channels &amp; Identifiers</h3>
+  <ul class="space-y-2 text-sm">
+    {{#each channels}}
+    <li class="flex items-center justify-between">
+      <span>{{icon}} {{label}}</span>
+      <span class="text-xs text-slate-400">{{badge}}</span>
+    </li>
+    {{/each}}
+  </ul>
+  {{#if hasAttributes}}
+  <h3 class="font-semibold text-sm mt-4 mb-2">Other Attributes</h3>
+  <div class="flex flex-wrap gap-1.5">
+    {{#each attributeChips}}
+    <span class="text-xs bg-slate-100 rounded-full px-2 py-1">{{this}}</span>
+    {{/each}}
+  </div>
+  {{/if}}
+</div>

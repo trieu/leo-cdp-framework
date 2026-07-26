@@ -13,6 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class MasterProfileBase(BaseModel):
     tenant_id: uuid.UUID
+    user_id: Optional[uuid.UUID] = None
     domain: str = Field(default="retail", pattern="^(retail|banking|real_estate|travel)$")
 
     full_name: Optional[str] = None
@@ -83,6 +84,7 @@ class MasterProfileCreate(MasterProfileBase):
 
 
 class MasterProfileUpdate(BaseModel):
+    user_id: Optional[uuid.UUID] = None
     domain: Optional[str] = Field(default=None, pattern="^(retail|banking|real_estate|travel)$")
     full_name: Optional[str] = None
     first_name: Optional[str] = None
@@ -149,6 +151,7 @@ class MasterProfileRead(MasterProfileBase):
 
 class RawProfileBase(BaseModel):
     tenant_id: uuid.UUID
+    user_id: Optional[uuid.UUID] = None
     domain: str = Field(default="retail", pattern="^(retail|banking|real_estate|travel)$")
     source_system: str
     channel: Optional[str] = None
@@ -186,6 +189,7 @@ class RawProfileCreate(RawProfileBase):
 
 
 class RawProfileUpdate(BaseModel):
+    user_id: Optional[uuid.UUID] = None
     channel: Optional[str] = None
     external_customer_id: Optional[str] = None
     full_name: Optional[str] = None
@@ -223,6 +227,7 @@ class RawProfileRead(RawProfileBase):
 
 class ProfileLinkBase(BaseModel):
     tenant_id: uuid.UUID
+    user_id: Optional[uuid.UUID] = None
     raw_profile_id: uuid.UUID
     master_profile_id: uuid.UUID
     match_score: Optional[Decimal] = None

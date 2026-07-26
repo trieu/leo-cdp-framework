@@ -1,0 +1,13 @@
+<div id="settings-modal" class="hidden fixed inset-0 bg-slate-900/40 flex items-center justify-center z-50">
+  <div class="bg-white rounded-xl shadow-lg w-full max-w-md p-5">
+    <h2 class="text-base font-semibold mb-3">API Connection Settings</h2>
+    <label class="block text-xs text-slate-500 mb-1">API Base URL</label>
+    <input id="settings-api-base" type="text" class="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm mb-3" />
+    <label class="block text-xs text-slate-500 mb-1">Tenant ID (X-Tenant-Id header, dev RLS)</label>
+    <input id="settings-tenant-id" type="text" class="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm mb-4" />
+    <div class="flex justify-end gap-2">
+      <button id="btn-settings-cancel" class="text-sm px-3 py-1.5 rounded-lg border border-slate-300">Cancel</button>
+      <button id="btn-settings-save" class="text-sm px-3 py-1.5 rounded-lg bg-indigo-600 text-white">Save &amp; Reload</button>
+    </div>
+  </div>
+</div>

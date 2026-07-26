@@ -1,0 +1,1 @@
+# JS files for the frontend-admin app

@@ -1,0 +1,28 @@
+<div class="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
+  <h3 class="font-semibold mb-3">Attributes &amp; Segments</h3>
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div>
+      <div class="text-xs text-slate-400 uppercase tracking-wide mb-2">Segmentation Tags</div>
+      <div class="flex flex-wrap gap-2">
+        {{#if hasTags}}
+          {{#each segmentationTags}}
+          <span class="text-xs bg-indigo-50 text-indigo-700 rounded-full px-2 py-1">{{this}}</span>
+          {{/each}}
+        {{else}}<span class="text-sm text-slate-300">No tags</span>{{/if}}
+      </div>
+    </div>
+    <div>
+      <div class="text-xs text-slate-400 uppercase tracking-wide mb-2">Top Interests <span class="normal-case text-slate-300">(by behavioral event category)</span></div>
+      {{#if hasInterests}}
+      <div class="space-y-2">
+        {{#each topInterests}}
+        <div>
+          <div class="flex justify-between text-xs mb-1"><span>{{label}}</span><span class="text-slate-400">{{count}} events</span></div>
+          <div class="bar-track h-2"><div class="bar-fill bg-indigo-500" style="width:{{percentage}}%"></div></div>
+        </div>
+        {{/each}}
+      </div>
+      {{else}}<span class="text-sm text-slate-300">No behavioral events recorded yet</span>{{/if}}
+    </div>
+  </div>
+</div>
