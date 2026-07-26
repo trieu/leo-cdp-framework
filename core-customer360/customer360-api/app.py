@@ -20,6 +20,7 @@ from sqlalchemy import text
 from core.auth import auth_middleware
 from core.config import settings
 from core.database import engine
+from core.init_core_data import init_core_data
 from core.routers.content import all_content_routers
 from core.routers.crm import all_crm_routers
 from core.routers.events import all_events_routers
@@ -27,6 +28,7 @@ from core.routers.graph import router as graph_router
 from core.routers.identity import all_identity_routers
 from core.routers.relations import all_relations_routers
 from core.routers.reporting import router as reporting_router
+from core.routers.segment import all_segment_routers
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -70,6 +72,13 @@ for r in all_content_routers:
 app.include_router(graph_router, prefix="/api/v1")
 for r in all_crm_routers:
     app.include_router(r, prefix="/api/v1")
+for r in all_segment_routers:
+    app.include_router(r, prefix="/api/v1")
+
+
+@app.on_event("startup")
+def _seed_core_data_on_startup() -> None:
+    init_core_data()
 
 
 @app.get("/", tags=["Health"])

@@ -58,6 +58,7 @@ class FakeDBSession:
         self.script = list(script or [])
         self.raise_on_call = raise_on_call
         self.executed: list[tuple[str, Optional[dict[str, Any]]]] = []
+        self.added: list[Any] = []
         self.committed = False
         self.rolled_back = False
         self.closed = False
@@ -72,7 +73,19 @@ class FakeDBSession:
             return self.script.pop(0)
         return FakeQueryResult(None)
 
+    def add(self, obj: Any) -> None:
+        """Stands in for Session.add() -- used by ORM-style code (e.g.
+        core.init_core_data.seed_default_segments) that builds model
+        instances and adds them to the session instead of calling execute()
+        directly. commit()/rollback() below can be scripted to raise via
+        commit_side_effect to simulate IntegrityError races."""
+        self.added.append(obj)
+
     def commit(self) -> None:
+        if getattr(self, "commit_side_effect", None) is not None:
+            effect = self.commit_side_effect
+            self.commit_side_effect = None
+            raise effect
         self.committed = True
 
     def rollback(self) -> None:
