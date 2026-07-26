@@ -391,30 +391,30 @@ CREATE TABLE customer360.cdp_master_profiles (
     -- Business context of the profile to drive domain-specific UI and activation logic.
     domain TEXT NOT NULL DEFAULT 'retail' CHECK (domain IN ('retail', 'banking', 'real_estate', 'travel')),
 
--- ------------------------------------------------------------------------
--- CORE IDENTITY (PII & DEMOGRAPHICS)
--- Standard demographic data used for personalization and primary matching.
--- ------------------------------------------------------------------------
-full_name TEXT,
-first_name TEXT,
-last_name TEXT,
-profile_picture_url TEXT,
--- True if full_name/email/phone_number/national_id are SHA-256 hashed for privacy
--- (e.g. hashed-match ingestion a la Meta/Google Customer Match). Whenever TRUE,
--- persona_name (below) MUST be populated -- see the CHECK constraint at the end of
--- this table -- since hashed PII can no longer be used as a human-readable label for
--- browsing/semantic search. persona_name is computed by application code (see
--- identity-resolution-service/identity_resolution/persona.py), never by the DB.
-is_hashed BOOLEAN DEFAULT FALSE,
+    -- ------------------------------------------------------------------------
+    -- CORE IDENTITY (PII & DEMOGRAPHICS)
+    -- Standard demographic data used for personalization and primary matching.
+    -- ------------------------------------------------------------------------
+    full_name TEXT,
+    first_name TEXT,
+    last_name TEXT,
+    profile_picture_url TEXT,
+    -- True if full_name/email/phone_number/national_id are SHA-256 hashed for privacy
+    -- (e.g. hashed-match ingestion a la Meta/Google Customer Match). Whenever TRUE,
+    -- persona_name (below) MUST be populated -- see the CHECK constraint at the end of
+    -- this table -- since hashed PII can no longer be used as a human-readable label for
+    -- browsing/semantic search. persona_name is computed by application code (see
+    -- identity-resolution-service/identity_resolution/persona.py), never by the DB.
+    is_hashed BOOLEAN DEFAULT FALSE,
 
--- Primary contact info (used for primary identity stitching and marketing)
-email TEXT, phone_number TEXT,
+    -- Primary contact info (used for primary identity stitching and marketing)
+    email TEXT, phone_number TEXT,
 
--- Secondary contact info
--- Format: [{"email": "work@abc.com", "label": "work"}, {"email": "old@xyz.com", "label": "personal"}]
+    -- Secondary contact info
+    -- Format: [{"email": "work@abc.com", "label": "work"}, {"email": "old@xyz.com", "label": "personal"}]
 
 
-secondary_emails JSONB DEFAULT '[]'::JSONB,
+    secondary_emails JSONB DEFAULT '[]'::JSONB,
     -- Format: [{"phone": "+84901234567", "label": "home"}]
     secondary_phones JSONB DEFAULT '[]'::JSONB,
     
@@ -424,7 +424,7 @@ secondary_emails JSONB DEFAULT '[]'::JSONB,
     -- Format: {"street": "123 Le Loi", "city": "Ho Chi Minh", "country": "VN"}
     address JSONB,
 
--- ------------------------------------------------------------------------
+    -- ------------------------------------------------------------------------
     -- CROSS-CHANNEL IDENTITY GRAPH
     -- Identifiers resolved and merged from cdp_raw_profiles_stage.
     -- ------------------------------------------------------------------------
@@ -463,7 +463,7 @@ secondary_emails JSONB DEFAULT '[]'::JSONB,
     -- Risk categorization for AML or credit scoring.
     risk_segment TEXT,
 
--- ------------------------------------------------------------------------
+    -- ------------------------------------------------------------------------
     -- MARKETING & ENGAGEMENT
     -- Attribution data and computed fields used for audience building.
     -- ------------------------------------------------------------------------
