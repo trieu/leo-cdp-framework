@@ -14,7 +14,10 @@ Connects to the PostgreSQL database configured via environment variables /
 3. Seeds/upserts the active identity-resolution matching rules (only the
    matching-rule-specific columns -- the full attribute metadata is owned by
    ``database-schema.sql``'s seed data).
-4. Clears any previous demo data (scoped to ``DEMO_TENANT_ID`` only, so it
+4. Ensures a ``sys_tenant`` row exists for ``DEMO_TENANT_ID`` (idempotent
+   upsert-if-missing) -- ``database-schema.sql`` never seeds tenants, and
+   every tenant-scoped table has a NOT NULL FK to ``sys_tenant.tenant_id``.
+5. Clears any previous demo data (scoped to ``DEMO_TENANT_ID`` only, so it
    never touches other tenants) and inserts 1,000 generated raw profiles
    simulating AppsFlyer mobile attribution across multiple acquisition
    channels (Facebook Ads, TikTok Ads, Google Ads, Grab Ads, FPT Play Ads,
@@ -274,6 +277,29 @@ def ensure_extensions(cursor) -> None:
     cursor.execute("CREATE EXTENSION IF NOT EXISTS fuzzystrmatch;")
 
 
+def ensure_demo_tenant(cursor) -> None:
+    """Ensures the demo tenant row exists in sys_tenant.
+
+    database-schema.sql defines sys_tenant but never seeds any rows into it
+    (it's RBAC data, not reference/vocab data), and every tenant-scoped table
+    (cdp_raw_profiles_stage, cdp_master_profiles, ...) has a NOT NULL FK to
+    sys_tenant.tenant_id. Without this, a fresh/reset database has no row
+    for DEMO_TENANT_ID and seed_raw_profiles() below fails with
+    ForeignKeyViolation. Idempotent: ON CONFLICT DO NOTHING so re-running
+    this script never overwrites a customized demo tenant row.
+    """
+    logger.info("Ensuring demo tenant %s exists in sys_tenant...", DEMO_TENANT_ID)
+    cursor.execute(
+        f"""
+        INSERT INTO {_table('sys_tenant')}
+            (tenant_id, tenant_code, tenant_name, company_name, business_type, status)
+        VALUES (%s, 'demo', 'Demo Tenant', 'Demo Company', 'retail_banking', 'ACTIVE')
+        ON CONFLICT (tenant_id) DO NOTHING;
+        """,
+        (DEMO_TENANT_ID,),
+    )
+
+
 def ensure_cir_metadata_tables(cursor) -> None:
     """Creates the CIR runtime tables if they don't already exist.
 
@@ -419,6 +445,7 @@ def main() -> None:
         with conn.cursor() as cursor:
             ensure_extensions(cursor)
             ensure_cir_metadata_tables(cursor)
+            ensure_demo_tenant(cursor)
             seed_matching_rules(cursor)
             reset_demo_data(cursor)
             seed_raw_profiles(cursor, raw_profiles)

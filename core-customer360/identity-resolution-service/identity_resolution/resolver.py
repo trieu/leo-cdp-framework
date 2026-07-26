@@ -358,6 +358,18 @@ class CustomerIdentityResolver:
                 logger.info("Processing batch of %d profiles.", len(raw_profiles))
 
                 for profile in raw_profiles:
+                    # Scope this connection to the raw profile's tenant for the
+                    # duration of its processing. The reads/writes below are
+                    # already explicitly tenant-scoped in SQL, but this also
+                    # keeps this batch worker compatible with the tenant_policy
+                    # Row-Level Security policies (see database-schema.sql)
+                    # if/when this service's DB role is not BYPASSRLS/superuser
+                    # -- required since a single batch can span many tenants.
+                    cursor.execute(
+                        "SELECT set_config('app.tenant_id', %s, false);",
+                        (str(profile["tenant_id"]),),
+                    )
+
                     matched_id = self._find_master_profile(cursor, profile, rules)
 
                     if matched_id:

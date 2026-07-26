@@ -15,6 +15,8 @@ from pydantic import BaseModel, ConfigDict
 
 
 class CampaignBase(BaseModel):
+    tenant_id: uuid.UUID
+    user_id: Optional[uuid.UUID] = None
     name: str
     description: Optional[str] = None
     keywords: Optional[list[str]] = None
@@ -29,6 +31,7 @@ class CampaignCreate(CampaignBase):
 
 
 class CampaignUpdate(BaseModel):
+    user_id: Optional[uuid.UUID] = None
     name: Optional[str] = None
     description: Optional[str] = None
     keywords: Optional[list[str]] = None
@@ -45,6 +48,8 @@ class CampaignRead(CampaignBase):
 
 
 class CampaignMemberBase(BaseModel):
+    tenant_id: uuid.UUID
+    user_id: Optional[uuid.UUID] = None
     campaign_id: Optional[uuid.UUID] = None
     contact_id: Optional[uuid.UUID] = None
     status: Optional[str] = None
@@ -59,6 +64,7 @@ class CampaignMemberCreate(CampaignMemberBase):
 
 
 class CampaignMemberUpdate(BaseModel):
+    user_id: Optional[uuid.UUID] = None
     campaign_id: Optional[uuid.UUID] = None
     contact_id: Optional[uuid.UUID] = None
     status: Optional[str] = None
@@ -75,6 +81,8 @@ class CampaignMemberRead(CampaignMemberBase):
 
 
 class LeadBase(BaseModel):
+    tenant_id: uuid.UUID
+    user_id: Optional[uuid.UUID] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     email: Optional[str] = None
@@ -90,6 +98,7 @@ class LeadCreate(LeadBase):
 
 
 class LeadUpdate(BaseModel):
+    user_id: Optional[uuid.UUID] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     email: Optional[str] = None
@@ -107,6 +116,8 @@ class LeadRead(LeadBase):
 
 
 class LeadSourceBase(BaseModel):
+    tenant_id: uuid.UUID
+    user_id: Optional[uuid.UUID] = None
     name: str
     description: Optional[str] = None
     keywords: Optional[list[str]] = None
@@ -119,6 +130,7 @@ class LeadSourceCreate(LeadSourceBase):
 
 
 class LeadSourceUpdate(BaseModel):
+    user_id: Optional[uuid.UUID] = None
     name: Optional[str] = None
     description: Optional[str] = None
     keywords: Optional[list[str]] = None
@@ -132,6 +144,8 @@ class LeadSourceRead(LeadSourceBase):
 
 
 class ContactBase(BaseModel):
+    tenant_id: uuid.UUID
+    user_id: Optional[uuid.UUID] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     email: Optional[str] = None
@@ -148,6 +162,7 @@ class ContactCreate(ContactBase):
 
 
 class ContactUpdate(BaseModel):
+    user_id: Optional[uuid.UUID] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     email: Optional[str] = None
@@ -166,6 +181,8 @@ class ContactRead(ContactBase):
 
 
 class AccountBase(BaseModel):
+    tenant_id: uuid.UUID
+    user_id: Optional[uuid.UUID] = None
     name: str
     industry_id: Optional[uuid.UUID] = None
     description: Optional[str] = None
@@ -179,6 +196,7 @@ class AccountCreate(AccountBase):
 
 
 class AccountUpdate(BaseModel):
+    user_id: Optional[uuid.UUID] = None
     name: Optional[str] = None
     industry_id: Optional[uuid.UUID] = None
     description: Optional[str] = None
@@ -194,6 +212,8 @@ class AccountRead(AccountBase):
 
 
 class OpportunityBase(BaseModel):
+    tenant_id: uuid.UUID
+    user_id: Optional[uuid.UUID] = None
     account_id: Optional[uuid.UUID] = None
     name: Optional[str] = None
     value: Optional[float] = None
@@ -210,6 +230,7 @@ class OpportunityCreate(OpportunityBase):
 
 
 class OpportunityUpdate(BaseModel):
+    user_id: Optional[uuid.UUID] = None
     account_id: Optional[uuid.UUID] = None
     name: Optional[str] = None
     value: Optional[float] = None
@@ -228,6 +249,8 @@ class OpportunityRead(OpportunityBase):
 
 
 class IndustryBase(BaseModel):
+    tenant_id: uuid.UUID
+    user_id: Optional[uuid.UUID] = None
     name: str
     description: Optional[str] = None
     keywords: Optional[list[str]] = None
@@ -240,6 +263,7 @@ class IndustryCreate(IndustryBase):
 
 
 class IndustryUpdate(BaseModel):
+    user_id: Optional[uuid.UUID] = None
     name: Optional[str] = None
     description: Optional[str] = None
     keywords: Optional[list[str]] = None
