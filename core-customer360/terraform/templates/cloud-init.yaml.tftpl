@@ -1,0 +1,26 @@
+#cloud-config
+# App VM bootstrap for the Customer360 stack (api, cir, keycloak).
+# Files are delivered base64-encoded to avoid any YAML-indentation pitfalls.
+package_update: true
+packages:
+  - ca-certificates
+  - curl
+  - git
+  - postgresql-client
+
+write_files:
+  - path: /opt/customer360/app.env
+    encoding: b64
+    permissions: '0600'
+    content: ${env_b64}
+  - path: /opt/customer360/docker-compose.cloud.yml
+    encoding: b64
+    permissions: '0644'
+    content: ${compose_b64}
+  - path: /opt/customer360/bootstrap.sh
+    encoding: b64
+    permissions: '0755'
+    content: ${bootstrap_b64}
+
+runcmd:
+  - [ bash, /opt/customer360/bootstrap.sh ]

@@ -1,0 +1,71 @@
+# Copy to terraform.tfvars and fill in. terraform.tfvars is gitignored.
+# Values marked "VERIFY" MUST be checked against your GreenNode/VNG project
+# catalog (console or CLI) — flavor/image/package/volume-type names are
+# region-specific and change over time.
+
+# ----- Provider / account (REQUIRED) -----
+vng_client_id     = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+vng_client_secret = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+project_id        = "pro-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+
+# If your account/region isn't HCM03, override these + zone_id:
+# vng_token_url        = "https://iamapis.vngcloud.vn/accounts-api/v2/auth/token"
+# vng_vserver_base_url = "https://hcm-3.api.vngcloud.vn/vserver/vserver-gateway"
+# vng_vlb_base_url     = "https://hcm-3.api.vngcloud.vn/vserver/vlb-gateway"
+# vng_vdb_base_url     = "https://vdb-gateway.vngcloud.vn"
+zone_id = "HCM03-1A"
+
+# ----- Networking -----
+network_cidr = "10.76.0.0/16"
+subnet_cidr  = "10.76.1.0/24"
+# Lock these down to your own IP for anything real:
+allowed_ssh_cidr      = "0.0.0.0/0"
+allowed_api_cidr      = "0.0.0.0/0"
+allowed_keycloak_cidr = "0.0.0.0/0"
+
+# ----- App VM (REQUIRED: ssh_public_key) -----
+ssh_public_key = "ssh-ed25519 AAAA... you@host"
+# VERIFY these names against your project:
+flavor_zone_name      = "General v1 Instances"
+vm_flavor_name        = "dev.v1.small1x1" # too small for real use — pick >= 2 vCPU / 4 GB
+vm_image_name         = "Ubuntu 22.04"
+volume_type_zone_name = "SSD"
+root_volume_type_name = "SSD-IOPS3000"
+vm_root_disk_size     = 40
+
+# ----- Managed PostgreSQL (REQUIRED: pg_password) -----
+pg_engine_version = "16"
+pg_package_name   = "db.s-general-1x2"      # VERIFY
+pg_volume_type    = "Gen2-NVMe2-IOPS3000"   # VERIFY
+pg_volume_size    = 20
+pg_db_name        = "customer360"
+pg_username       = "customer360"
+pg_password       = "REPLACE_with_a_strong_password"
+
+# ----- Managed Redis (REQUIRED: redis_password) -----
+redis_engine_version = "7.0"                # VERIFY available versions
+redis_package_name   = "db.s-general-1x2"   # VERIFY
+redis_password       = "REPLACE_min_16_chars_password"
+
+# ----- Backups -----
+db_backup_retention_days = 7
+db_backup_time           = "18:00"
+
+# ----- Keycloak / app (REQUIRED: keycloak_admin_password, keycloak_client_secret) -----
+keycloak_admin          = "admin"
+keycloak_admin_password = "REPLACE_admin_password"
+keycloak_realm          = "leocdp"
+keycloak_client_id      = "leocdp"
+keycloak_client_secret  = "REPLACE_client_secret"
+keycloak_version        = "26.7"
+keycloak_command        = "start-dev" # use "start" + real hostname/TLS for prod
+keycloak_hostname       = "localhost" # set to the VM floating IP or your domain
+keycloak_callback_url   = "http://localhost:8000/auth/callback"
+
+google_genai_api_key = "" # optional
+
+# ----- Application source (REQUIRED: app_repo_url) -----
+# Must be reachable from the VM. For a private repo, embed a token
+# (https://<token>@host/org/repo.git) or switch to a deploy-key delivery.
+app_repo_url = "https://github.com/your-org/leo-cdp-framework.git"
+app_repo_ref = "main"

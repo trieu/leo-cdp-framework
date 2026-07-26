@@ -1,0 +1,107 @@
+# =============================================================================
+# Cloud variant of docker-compose.yml — the STATELESS services only.
+# postgres + redis are replaced by VNG Cloud managed vDB instances (see
+# terraform/database.tf); their endpoints/passwords arrive via .env.
+#
+# Delivered verbatim by Terraform (file()), so the ${...} below are resolved by
+# docker compose at runtime from .env — NOT by Terraform.
+# =============================================================================
+name: customer360
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-hardening: &default-hardening
+  security_opt:
+    - no-new-privileges:true
+  logging: *default-logging
+
+networks:
+  customer360-network:
+    name: customer360-network
+    driver: bridge
+
+services:
+  # Keycloak — SSO. Uses the managed PostgreSQL (dedicated db_keycloak database,
+  # created by bootstrap.sh) instead of an in-compose postgres service.
+  keycloak:
+    image: keycloak/keycloak:${KEYCLOAK_VERSION:-26.7}
+    container_name: customer360-keycloak
+    restart: unless-stopped
+    init: true
+    <<: *default-hardening
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://${DB_HOST}:${DB_PORT}/db_keycloak
+      KC_DB_USERNAME: ${DB_USER}
+      KC_DB_PASSWORD: ${DB_PASSWORD}
+      KC_HOSTNAME: ${KEYCLOAK_HOSTNAME:-localhost}
+      KC_HTTP_PORT: 8080
+      KC_HEALTH_ENABLED: "true"
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+    command: ["${KEYCLOAK_COMMAND:-start-dev}"]
+    ports:
+      - "0.0.0.0:8080:8080"
+    networks:
+      - customer360-network
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000 && echo -e 'GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 && cat <&3 | grep -q '200'"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+  # CIR — Customer Identity Resolution worker. Built from the repo. Reads the
+  # managed PostgreSQL endpoint from .env (DB_HOST/DB_PORT).
+  cir:
+    build:
+      context: ./identity-resolution-service
+      dockerfile: Dockerfile
+    image: customer360-cir:local
+    container_name: customer360-cir
+    restart: unless-stopped
+    init: true
+    <<: *default-hardening
+    env_file:
+      - .env
+    networks:
+      - customer360-network
+    healthcheck:
+      test: ["CMD", "python", "healthcheck.py"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+
+  # Customer 360 API (FastAPI). SSO_LOGIN_URL is overridden to the in-network
+  # keycloak service name (mirrors the original compose).
+  api:
+    build:
+      context: ./customer360-api
+      dockerfile: Dockerfile
+    image: customer360-api:local
+    container_name: customer360-api
+    restart: unless-stopped
+    init: true
+    <<: *default-hardening
+    env_file:
+      - .env
+    environment:
+      SSO_LOGIN_URL: http://keycloak:8080
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    ports:
+      - "0.0.0.0:8000:8000"
+    networks:
+      - customer360-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s

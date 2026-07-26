@@ -1,0 +1,17 @@
+# Local plugin/cache dir. The .terraform.lock.hcl (provider pins) SHOULD be
+# committed, so it is intentionally NOT ignored here.
+.terraform/
+
+# State (contains DB passwords) — never commit; use a remote backend
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+
+# Secrets / var files
+*.tfvars
+*.tfvars.json
+!terraform.tfvars.example
+
+# Plan outputs
+*.tfplan
