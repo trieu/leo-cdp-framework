@@ -1601,6 +1601,35 @@ CREATE TABLE customer360.crm_transactions (
 
 COMMENT ON TABLE customer360.crm_transactions IS 'Source-agnostic transaction fact (retail purchase, banking transfer, travel booking, ...). master_profile_id is nullable and backfilled asynchronously by CIR, the same pattern as cdp_raw_events, so ingestion is never blocked waiting for identity resolution.';
 
+-- ============================================================================
+-- cdp_content_items: personalized content library (news/video/product/article)
+-- ============================================================================
+-- Backs the Customer 360 profile dashboard's "Personalized Items" panel
+-- (core-customer360/frontend-admin). Items are ranked per master profile by
+-- segment_tags overlap with cdp_master_profiles.segmentation_tags -- see
+-- customer360-api's GET /api/v1/content-items/recommended.
+CREATE TABLE customer360.cdp_content_items (
+    content_item_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id UUID NOT NULL REFERENCES customer360.sys_tenant(tenant_id),
+    domain TEXT NOT NULL DEFAULT 'all' CHECK (domain IN ('all', 'retail', 'banking', 'real_estate', 'travel')),
+    item_type TEXT NOT NULL CHECK (item_type IN ('news', 'video', 'product', 'article')),
+    title TEXT NOT NULL,
+    summary TEXT,
+    image_url TEXT,
+    cta_label TEXT,
+    cta_url TEXT,
+    segment_tags TEXT[] DEFAULT ARRAY[]::text[],
+    published_at TIMESTAMPTZ DEFAULT now(),
+    status_code SMALLINT DEFAULT 1,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+COMMENT ON TABLE customer360.cdp_content_items IS 'Personalized content library (news/video/product/article) for the Customer 360 profile dashboard "Personalized Items" panel; ranked per profile by segment_tags overlap with cdp_master_profiles.segmentation_tags via /api/v1/content-items/recommended.';
+
+CREATE INDEX idx_cdp_content_items_domain_type ON customer360.cdp_content_items (domain, item_type);
+CREATE INDEX idx_cdp_content_items_tags ON customer360.cdp_content_items USING GIN (segment_tags);
+
 ---------------------------------------------------
 -- GRAPH EDGES (Partitioned by Relation)
 ---------------------------------------------------

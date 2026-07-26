@@ -14,12 +14,15 @@ or simply:
 import logging
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
 from core.auth import auth_middleware
 from core.config import settings
 from core.database import engine
+from core.routers.content import all_content_routers
 from core.routers.crm import all_crm_routers
+from core.routers.events import all_events_routers
 from core.routers.graph import router as graph_router
 from core.routers.identity import all_identity_routers
 from core.routers.relations import all_relations_routers
@@ -40,6 +43,17 @@ app = FastAPI(
     version="1.0.0",
 )
 
+# Permissive CORS for local dev so the static frontend-admin HTML (opened via
+# file:// or a plain dev static server on a different origin/port) can call
+# this API. Not used with credentials, so allow_origins="*" is safe here.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.middleware("http")(auth_middleware)
 
 # CIR core models first (primary focus of this API), then supporting CRM /
@@ -48,6 +62,10 @@ for r in all_identity_routers:
     app.include_router(r, prefix="/api/v1")
 app.include_router(reporting_router, prefix="/api/v1")
 for r in all_relations_routers:
+    app.include_router(r, prefix="/api/v1")
+for r in all_events_routers:
+    app.include_router(r, prefix="/api/v1")
+for r in all_content_routers:
     app.include_router(r, prefix="/api/v1")
 app.include_router(graph_router, prefix="/api/v1")
 for r in all_crm_routers:
