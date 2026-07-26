@@ -7,38 +7,71 @@ window.C360 = window.C360 || {};
 
   Handlebars.registerHelper("json", function (v) { return JSON.stringify(v); });
 
+  // Every nav tab is addressable via location.hash (e.g. #overview, #profiles)
+  // so the current view survives reloads/back-forward navigation.
+  var TAB_NAMES = ["overview", "profiles", "segments", "journeys", "scoring", "analytics", "datasources", "admin"];
+  var DEFAULT_TAB = "profiles";
+
+  function currentHashTab() {
+    var tab = (location.hash || "").replace(/^#/, "").split("/")[0];
+    return TAB_NAMES.indexOf(tab) !== -1 ? tab : DEFAULT_TAB;
+  }
+
   function setActiveTab(tab) {
     $(".tab-btn").removeClass("active");
     $(".tab-btn[data-tab='" + tab + "']").addClass("active");
   }
 
   function showListView() {
-    $("#view-detail, #view-placeholder").addClass("hidden");
+    $("#view-overview, #view-detail, #view-placeholder").addClass("hidden");
     $("#view-list").removeClass("hidden");
     setActiveTab("profiles");
   }
 
+  function showOverviewView() {
+    $("#view-list, #view-detail, #view-placeholder").addClass("hidden");
+    $("#view-overview").removeClass("hidden");
+    setActiveTab("overview");
+    C360.overviewView.load();
+  }
+
   function showDetailView(masterProfileId) {
-    $("#view-list, #view-placeholder").addClass("hidden");
+    $("#view-list, #view-overview, #view-placeholder").addClass("hidden");
     $("#view-detail").removeClass("hidden");
     setActiveTab("profiles");
     C360.detailView.load(masterProfileId);
   }
 
   function showPlaceholder(tab) {
-    $("#view-list, #view-detail").addClass("hidden");
+    $("#view-list, #view-overview, #view-detail").addClass("hidden");
     $("#view-placeholder").removeClass("hidden");
     $("#placeholder-title").text(C360.fmt.titleCase(tab));
     setActiveTab(tab);
   }
 
+  // Renders the view for a tab name without touching location.hash. Always
+  // reuses the cached partials already injected into the DOM from
+  // static/templates/ (see the $(function(){...}) bootstrap below) rather
+  // than re-fetching or rebuilding markup.
+  function routeToTab(tab) {
+    if (tab === "profiles") { showListView(); } else if (tab === "overview") { showOverviewView(); } else { showPlaceholder(tab); }
+  }
+
   function bindChrome() {
-    $("#btn-back-to-profiles").on("click", showListView);
+    $("#btn-back-to-profiles").on("click", function () { location.hash = DEFAULT_TAB; });
 
     $(".tab-btn").on("click", function () {
       var tab = $(this).data("tab");
-      if (tab === "profiles") { showListView(); } else { showPlaceholder(tab); }
+      var newHash = "#" + tab;
+      if (location.hash === newHash) {
+        // hashchange won't fire if the hash didn't actually change.
+        routeToTab(tab);
+      } else {
+        location.hash = tab;
+      }
     });
+
+    $(window).on("hashchange", function () { routeToTab(currentHashTab()); });
 
     $("#btn-export-pdf").on("click", function () { window.print(); });
 
@@ -71,7 +104,7 @@ window.C360 = window.C360 || {};
       C360.config.pingHealth();
       setInterval(C360.config.pingHealth, 30000);
 
-      showListView();
+      routeToTab(currentHashTab());
       C360.listView.load(false);
     }).fail(function () {
       $("#alert-banner").removeClass("hidden").text(

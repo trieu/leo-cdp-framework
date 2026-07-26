@@ -1,57 +1,80 @@
 <!DOCTYPE html>
 <html lang="en" class="h-full bg-slate-50">
+
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Customer 360 Platform</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Customer 360 Platform</title>
 
-<!-- Tailwind CSS (CDN, per project requirement) -->
-<script src="https://cdn.tailwindcss.com"></script>
-<!-- jQuery 3 (per project requirement) -->
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<!-- Handlebars templates (per project requirement) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.7.8/handlebars.min.js"></script>
+  <!-- Tailwind CSS (CDN, per project requirement) -->
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 
-<link rel="stylesheet" href="static/css/app.css" />
+  <!-- jQuery 3 (per project requirement) -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+  <!-- Handlebars templates (per project requirement) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.7.8/handlebars.min.js"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- app css -->
+  <link rel="stylesheet" href="static/css/app.css" />
 </head>
+
 <body class="h-full text-slate-800 antialiased">
-<div id="app" class="min-h-full flex flex-col">
+  <div id="app" class="min-h-full flex flex-col">
 
-  <!-- Populated from static/templates/tabs.html by static/js/main.js -->
-  <div id="app-header"></div>
+    <!-- Populated from static/templates/tabs.html by static/js/main.js -->
+    <div id="app-header"></div>
 
-  <main class="max-w-[1600px] w-full mx-auto px-4 py-4 flex-1">
+    <main class="max-w-[1600px] w-full mx-auto px-4 py-4 flex-1">
 
-    <div id="alert-banner" class="hidden mb-4 rounded-lg border border-red-200 bg-red-50 text-red-700 text-sm px-4 py-3"></div>
+      <div id="alert-banner"
+        class="hidden mb-4 rounded-lg border border-red-200 bg-red-50 text-red-700 text-sm px-4 py-3"></div>
 
-    <!-- Master Profiles list. Shell markup from static/templates/profiles-list.html,
+      <!-- Reporting overview dashboard (KPIs + Chart.js charts). Content rendered
+         from static/templates/overview-dashboard.html by static/js/overview-view.js -->
+      <section id="view-overview" class="hidden">
+        <div id="overview-loading" class="p-10 flex justify-center">
+          <div class="spinner"></div>
+        </div>
+        <div id="overview-content"></div>
+      </section>
+
+      <!-- Master Profiles list. Shell markup from static/templates/profiles-list.html,
          rows rendered from static/templates/profiles-rows.html by static/js/list-view.js -->
-    <section id="view-list"></section>
+      <section id="view-list"></section>
 
-    <!-- Profile detail dashboard. Content rendered from static/templates/profile-details.html
+      <!-- Profile detail dashboard. Content rendered from static/templates/profile-details.html
          (and its card partials) by static/js/detail-view.js -->
-    <section id="view-detail" class="hidden">
-      <button id="btn-back-to-profiles" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium mb-3">&larr; Back to profiles</button>
-      <div id="detail-loading" class="p-10 flex justify-center"><div class="spinner"></div></div>
-      <div id="detail-content"></div>
-    </section>
+      <section id="view-detail" class="hidden">
+        <button id="btn-back-to-profiles" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium mb-3">&larr;
+          Back to profiles</button>
+        <div id="detail-loading" class="p-10 flex justify-center">
+          <div class="spinner"></div>
+        </div>
+        <div id="detail-content"></div>
+      </section>
 
-    <!-- Populated from static/templates/placeholder.html for nav tabs that aren't implemented -->
-    <section id="view-placeholder" class="hidden"></section>
-  </main>
+      <!-- Populated from static/templates/placeholder.html for nav tabs that aren't implemented -->
+      <section id="view-placeholder" class="hidden"></section>
+    </main>
 
-  <footer class="border-t border-slate-200 py-3 text-center text-xs text-slate-400">
-    Customer 360 Admin &middot; data loaded live from <code id="footer-api-base"></code>
-  </footer>
-</div>
+    <footer class="border-t border-slate-200 py-3 text-center text-xs text-slate-400">
+      Customer 360 Admin &middot; data loaded live from <code id="footer-api-base"></code>
+    </footer>
+  </div>
 
-<!-- Settings modal is appended to <body> from static/templates/settings-modal.html by static/js/main.js -->
+  <!-- Settings modal is appended to <body> from static/templates/settings-modal.html by static/js/main.js -->
 
-<script src="static/js/config.js"></script>
-<script src="static/js/formatters.js"></script>
-<script src="static/js/templates.js"></script>
-<script src="static/js/list-view.js"></script>
-<script src="static/js/detail-view.js"></script>
-<script src="static/js/main.js"></script>
+  <script src="static/js/config.js"></script>
+  <script src="static/js/formatters.js"></script>
+  <script src="static/js/templates.js"></script>
+  <script src="static/js/list-view.js"></script>
+  <script src="static/js/detail-view.js"></script>
+  <script src="static/js/overview-view.js"></script>
+  <script src="static/js/main.js"></script>
 </body>
+
 </html>

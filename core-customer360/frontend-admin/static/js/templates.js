@@ -12,7 +12,7 @@ window.C360 = window.C360 || {};
   var BASE = "static/templates/";
 
   // Rendered directly (compiled Handlebars template functions).
-  var STANDALONE = ["profiles-rows", "profile-details", "content-items"];
+  var STANDALONE = ["profiles-rows", "profile-details", "content-items", "overview-dashboard"];
 
   // Injected as static HTML once (no Handlebars variables of their own).
   var STATIC_HTML = ["tabs", "settings-modal", "profiles-list", "placeholder"];

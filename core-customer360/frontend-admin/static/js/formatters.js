@@ -28,6 +28,14 @@ window.C360 = window.C360 || {};
 
   function shortId(id) { return id ? (id.substring(0, 8) + "…") : ""; }
 
+  function maskMiddle(text, headLen, tailLen) {
+    if (!text) return "";
+    headLen = headLen === undefined ? 5 : headLen;
+    tailLen = tailLen === undefined ? 3 : tailLen;
+    if (text.length <= headLen + tailLen) return text;
+    return text.substr(0, headLen) + "..." + text.substr(-tailLen);
+  }
+
   function titleCase(s) { return (s || "").replace(/_/g, " ").replace(/\b\w/g, function (c) { return c.toUpperCase(); }); }
 
   var DOMAIN_LABELS = { banking: "Retail Banking", retail: "Retail Commerce", real_estate: "Real Estate", travel: "Travel" };
@@ -56,6 +64,7 @@ window.C360 = window.C360 || {};
     dateTime: fmtDateTime,
     initials: initialsOf,
     shortId: shortId,
+    maskMiddle: maskMiddle,
     titleCase: titleCase,
     DOMAIN_LABELS: DOMAIN_LABELS,
     CHANNEL_ICONS: CHANNEL_ICONS,
