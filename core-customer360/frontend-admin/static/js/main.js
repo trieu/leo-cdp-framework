@@ -8,9 +8,13 @@ window.C360 = window.C360 || {};
   Handlebars.registerHelper("json", function (v) { return JSON.stringify(v); });
 
   // Every nav tab is addressable via location.hash (e.g. #overview, #profiles)
-  // so the current view survives reloads/back-forward navigation.
+  // so the current view survives reloads/back-forward navigation. A profile
+  // detail view is addressable as #master_profile-<id> (set by
+  // profile-detail-view.js when it loads).
   var TAB_NAMES = ["overview", "profiles", "segments", "journeys", "scoring", "analytics", "datasources", "admin"];
   var DEFAULT_TAB = "profiles";
+  var PROFILE_HASH_RE = /^master_profile-(.+)$/;
+  var lastRoutedProfileId = null;
 
   function currentHashTab() {
     var tab = (location.hash || "").replace(/^#/, "").split("/")[0];
@@ -23,27 +27,51 @@ window.C360 = window.C360 || {};
   }
 
   function showListView() {
-    $("#view-overview, #view-detail, #view-placeholder").addClass("hidden");
+    $("#view-overview, #view-detail, #view-placeholder, #view-segments").addClass("hidden");
     $("#view-list").removeClass("hidden");
     setActiveTab("profiles");
   }
 
   function showOverviewView() {
-    $("#view-list, #view-detail, #view-placeholder").addClass("hidden");
+    $("#view-list, #view-detail, #view-placeholder, #view-segments").addClass("hidden");
     $("#view-overview").removeClass("hidden");
     setActiveTab("overview");
     C360.overviewView.load();
   }
 
   function showDetailView(masterProfileId) {
-    $("#view-list, #view-overview, #view-placeholder").addClass("hidden");
+    $("#view-list, #view-overview, #view-placeholder, #view-segments").addClass("hidden");
     $("#view-detail").removeClass("hidden");
     setActiveTab("profiles");
+    lastRoutedProfileId = masterProfileId;
     C360.detailView.load(masterProfileId);
   }
 
+  // Dispatches on the current location.hash: routes to a profile detail view
+  // for #master_profile-<id>, otherwise falls back to tab-based routing.
+  // Skips re-loading the detail view if it's already showing that profile
+  // (e.g. when profile-detail-view.js itself set the hash after loading).
+  function route() {
+    var hash = (location.hash || "").replace(/^#/, "");
+    var profileMatch = hash.match(PROFILE_HASH_RE);
+    if (profileMatch) {
+      var masterProfileId = decodeURIComponent(profileMatch[1]);
+      if (masterProfileId !== lastRoutedProfileId) showDetailView(masterProfileId);
+      return;
+    }
+    lastRoutedProfileId = null;
+    routeToTab(currentHashTab());
+  }
+
+  function showSegmentsView() {
+    $("#view-list, #view-overview, #view-detail, #view-placeholder").addClass("hidden");
+    $("#view-segments").removeClass("hidden");
+    setActiveTab("segments");
+    C360.segmentsView.load();
+  }
+
   function showPlaceholder(tab) {
-    $("#view-list, #view-overview, #view-detail").addClass("hidden");
+    $("#view-list, #view-overview, #view-detail, #view-segments").addClass("hidden");
     $("#view-placeholder").removeClass("hidden");
     $("#placeholder-title").text(C360.fmt.titleCase(tab));
     setActiveTab(tab);
@@ -54,7 +82,7 @@ window.C360 = window.C360 || {};
   // static/templates/ (see the $(function(){...}) bootstrap below) rather
   // than re-fetching or rebuilding markup.
   function routeToTab(tab) {
-    if (tab === "profiles") { showListView(); } else if (tab === "overview") { showOverviewView(); } else { showPlaceholder(tab); }
+    if (tab === "profiles") { showListView(); } else if (tab === "overview") { showOverviewView(); } else if (tab === "segments") { showSegmentsView(); } else { showPlaceholder(tab); }
   }
 
   function bindChrome() {
@@ -71,7 +99,7 @@ window.C360 = window.C360 || {};
       }
     });
 
-    $(window).on("hashchange", function () { routeToTab(currentHashTab()); });
+    $(window).on("hashchange", route);
 
     $("#btn-export-pdf").on("click", function () { window.print(); });
 
@@ -93,6 +121,7 @@ window.C360 = window.C360 || {};
       $("#app-header").html(C360.templates.html("tabs"));
       $("#view-list").html(C360.templates.html("profiles-list"));
       $("#view-placeholder").html(C360.templates.html("placeholder"));
+      $("#segment-view-list").html(C360.templates.html("segments-list"));
       $("body").append(C360.templates.html("settings-modal"));
 
       $("#footer-api-base").text(C360.config.current.apiBase);
@@ -100,11 +129,12 @@ window.C360 = window.C360 || {};
       bindChrome();
       C360.listView.bindEvents(showDetailView);
       C360.detailView.bindEvents();
+      C360.segmentsView.bindEvents();
 
       C360.config.pingHealth();
       setInterval(C360.config.pingHealth, 30000);
 
-      routeToTab(currentHashTab());
+      route();
       C360.listView.load(false);
     }).fail(function () {
       $("#alert-banner").removeClass("hidden").text(

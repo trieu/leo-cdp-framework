@@ -17,7 +17,7 @@ static/js/config.js          API base/tenant config (localStorage) + ajax client
 static/js/formatters.js      display formatters, label maps, badge-class helpers
 static/js/templates.js       fetches + compiles every static/templates/*.html file
 static/js/list-view.js       Master Profiles list (search/filter/pagination)
-static/js/detail-view.js     Profile detail dashboard (view-model building + loads)
+static/js/profile-detail-view.js Profile detail dashboard (view-model building + loads)
 static/js/main.js            bootstraps templates, tab/view switching, settings modal
 static/templates/tabs.html               header + nav bar (static)
 static/templates/settings-modal.html     API base/tenant settings dialog (static)

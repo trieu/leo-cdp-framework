@@ -137,6 +137,9 @@ window.C360 = window.C360 || {};
     $("#detail-content").empty();
     $("#detail-loading").removeClass("hidden");
 
+    var profileHash = "#master_profile-" + masterProfileId;
+    if (location.hash !== profileHash) location.hash = profileHash;
+
     var days = periodDays();
     $.when(
       api("/master-profiles/" + masterProfileId),

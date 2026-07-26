@@ -64,5 +64,5 @@ window.C360 = window.C360 || {};
     $("#btn-load-more").on("click", function () { load(true); });
   }
 
-  C360.listView = { load: load, bindEvents: bindEvents };
+  C360.listView = { load: load, bindEvents: bindEvents, rowVm: rowVm };
 })(window.C360);

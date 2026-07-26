@@ -22,6 +22,19 @@
   <script src="https://cdn.jsdelivr.net/npm/jQuery-QueryBuilder@3.0.0/dist/js/query-builder.min.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jQuery-QueryBuilder@3.0.0/dist/css/query-builder.default.min.css">
 
+ <!-- notifications -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/js/iziToast.min.js" defer crossorigin="anonymous"
+    referrerpolicy="no-referrer"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/css/iziToast.min.css"
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <!-- lightbox -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lity/2.4.1/lity.min.js" ></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lity/2.4.1/lity.min.css"  />
+
+  <!-- lscache : emulates memcache functions using HTML5 localStorage -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lscache/1.3.2/lscache.min.js" ></script>
+
   <!-- App CSS -->
   <link rel="stylesheet" href="static/css/app.css" />
 </head>
@@ -51,7 +64,7 @@
       <section id="view-list"></section>
 
       <!-- Profile detail dashboard. Content rendered from static/templates/profile-details.html
-         (and its card partials) by static/js/detail-view.js -->
+         (and its card partials) by static/js/profile-detail-view.js -->
       <section id="view-detail" class="hidden">
         <button id="btn-back-to-profiles" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium mb-3">&larr;
           Back to profiles</button>
@@ -59,6 +72,21 @@
           <div class="spinner"></div>
         </div>
         <div id="detail-content"></div>
+      </section>
+
+      <!-- Segments (Audience Builder) tab: list + detail sub-views. List shell from
+         static/templates/segments-list.html, rows from segments-rows.html, detail
+         content from segment-details.html, all rendered by static/js/segments-view.js -->
+      <section id="view-segments" class="hidden">
+        <div id="segment-view-list"></div>
+        <div id="segment-view-detail" class="hidden">
+          <button id="btn-back-to-segments" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium mb-3">&larr;
+            Back to segments</button>
+          <div id="segment-detail-loading" class="p-10 flex justify-center">
+            <div class="spinner"></div>
+          </div>
+          <div id="segment-detail-content"></div>
+        </div>
       </section>
 
       <!-- Populated from static/templates/placeholder.html for nav tabs that aren't implemented -->
@@ -77,8 +105,9 @@
   <script src="static/js/formatters.js"></script>
   <script src="static/js/templates.js"></script>
   <script src="static/js/list-view.js"></script>
-  <script src="static/js/detail-view.js"></script>
+  <script src="static/js/profile-detail-view.js"></script>
   <script src="static/js/overview-view.js"></script>
+  <script src="static/js/segments-view.js"></script>
   <script src="static/js/main.js"></script>
 </body>
 

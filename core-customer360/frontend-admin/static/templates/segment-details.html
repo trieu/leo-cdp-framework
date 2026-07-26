@@ -1,0 +1,88 @@
+<div class="space-y-4">
+
+  <!-- Segment metadata -->
+  <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
+    <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+      <div>
+        <h1 class="text-lg font-semibold">{{segment_name}}</h1>
+        <div class="text-xs text-slate-400 mt-1">Tag: <code class="bg-slate-100 rounded px-1.5 py-0.5">{{segment_tag}}</code></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="px-2 py-0.5 rounded-full text-xs font-medium {{activeBadgeClass}}">{{activeLabel}}</span>
+        <span class="px-2 py-0.5 rounded-full text-xs font-medium {{processedByBadgeClass}}">{{processedByLabel}}</span>
+      </div>
+    </div>
+
+    {{#if description}}<p class="text-sm text-slate-600 mb-4">{{description}}</p>{{/if}}
+
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+      <div>
+        <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">Domain</div>
+        <div class="font-medium">{{domainLabel}}</div>
+      </div>
+      <div>
+        <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">Members (stored)</div>
+        <div class="font-medium">{{memberCountLabel}}</div>
+      </div>
+      <div>
+        <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">Last Computed</div>
+        <div class="font-medium">{{lastComputedLabel}}</div>
+      </div>
+      <div>
+        <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">Created</div>
+        <div class="font-medium">{{createdLabel}}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rules -->
+  <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
+    <h3 class="font-semibold mb-3">Rule Definition</h3>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div>
+        <div class="text-xs text-slate-400 uppercase tracking-wide mb-2">SQL Rules (WHERE clause)</div>
+        {{#if hasSqlRules}}
+        <pre class="text-xs bg-slate-900 text-slate-100 rounded-lg p-3 overflow-x-auto">{{sql_rules}}</pre>
+        {{else}}<span class="text-sm text-slate-300">No SQL rules defined</span>{{/if}}
+      </div>
+      <div>
+        <div class="text-xs text-slate-400 uppercase tracking-wide mb-2">jQuery QueryBuilder Rules (JSON)</div>
+        {{#if hasJsonRules}}
+        <pre class="text-xs bg-slate-50 border border-slate-200 rounded-lg p-3 overflow-x-auto">{{json json_rules}}</pre>
+        {{else}}<span class="text-sm text-slate-300">No structured rules defined</span>{{/if}}
+      </div>
+    </div>
+  </div>
+
+  <!-- Matched profiles -->
+  <div class="bg-white border border-slate-200 rounded-xl shadow-sm">
+    <div class="p-4 border-b border-slate-200">
+      <h3 class="font-semibold">Matched Profiles</h3>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wide">
+          <tr>
+            <th class="text-left font-medium px-4 py-2">Profile</th>
+            <th class="text-left font-medium px-4 py-2">Domain</th>
+            <th class="text-left font-medium px-4 py-2">Tier</th>
+            <th class="text-left font-medium px-4 py-2">Lifecycle</th>
+            <th class="text-left font-medium px-4 py-2">Churn Risk</th>
+            <th class="text-left font-medium px-4 py-2">Predictive CLV</th>
+            <th class="text-left font-medium px-4 py-2">Engagement</th>
+            <th class="text-left font-medium px-4 py-2">Last Activity</th>
+            <th class="px-4 py-2"></th>
+          </tr>
+        </thead>
+        <tbody id="segment-matched-tbody"></tbody>
+      </table>
+    </div>
+    <div id="segment-matched-loading" class="p-6 flex justify-center"><div class="spinner"></div></div>
+    <div id="segment-matched-empty" class="hidden p-8 text-center text-sm text-slate-500">No profiles currently match this segment's rules.</div>
+    <div class="p-4 border-t border-slate-200 flex items-center justify-between text-sm text-slate-500">
+      <span id="segment-matched-count-label"></span>
+      <button id="btn-segment-matched-load-more" class="hidden border border-slate-300 rounded-lg px-3 py-1.5 hover:bg-slate-50">Load more</button>
+    </div>
+  </div>
+
+</div>

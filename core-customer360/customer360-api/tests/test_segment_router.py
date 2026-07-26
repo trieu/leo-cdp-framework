@@ -226,5 +226,167 @@ class SegmentCrudTests(unittest.TestCase):
         self.assertEqual(response.status_code, 404)
 
 
+class _FakeRows:
+    """Stands in for a SQLAlchemy CursorResult supporting `.mappings().all()`."""
+
+    def __init__(self, rows: list[dict[str, Any]]):
+        self._rows = rows
+
+    def mappings(self):
+        return self
+
+    def all(self):
+        return self._rows
+
+
+class _FakeScalarOne:
+    """Stands in for a SQLAlchemy CursorResult supporting `.scalar_one()`."""
+
+    def __init__(self, value: Any):
+        self._value = value
+
+    def scalar_one(self):
+        return self._value
+
+
+class _FakeExecSession:
+    """Minimal Session double recording every execute() call, returning a
+    single canned result (this app-level test never issues more than one
+    query per request)."""
+
+    def __init__(self, result: Any = None):
+        self.result = result
+        self.executed: list[tuple[str, Optional[dict[str, Any]]]] = []
+
+    def execute(self, stmt: Any, params: Optional[dict[str, Any]] = None) -> Any:
+        self.executed.append((str(stmt), params))
+        return self.result
+
+
+class SegmentMatchedProfilesTests(unittest.TestCase):
+    """Tests the real core.routers.segment.segments_router (including the
+    hand-written matched-profiles endpoints, not just the generic CRUD
+    routes) with a faked CRUD lookup + faked DB session."""
+
+    def setUp(self):
+        import core.routers.segment as segment_router_module
+
+        self.segment_router_module = segment_router_module
+        self._cache_patcher = patch("core.cache.get_redis_client", return_value=None)
+        self._cache_patcher.start()
+        self.addCleanup(self._cache_patcher.stop)
+
+        self.app = FastAPI()
+        self.app.include_router(segment_router_module.segments_router)
+
+    def _client_for(self, fake_segment: Optional[SimpleNamespace], fake_session: _FakeExecSession) -> TestClient:
+        self.app.dependency_overrides[get_db] = lambda: fake_session
+        crud_patcher = patch.object(
+            self.segment_router_module, "_segment_crud", SimpleNamespace(get=lambda db, pk: fake_segment)
+        )
+        crud_patcher.start()
+        self.addCleanup(crud_patcher.stop)
+        return TestClient(self.app)
+
+    def test_matched_profiles_404_for_missing_segment(self):
+        client = self._client_for(None, _FakeExecSession())
+
+        response = client.get(f"/segments/{uuid.uuid4()}/matched-profiles")
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_matched_profiles_count_404_for_missing_segment(self):
+        client = self._client_for(None, _FakeExecSession())
+
+        response = client.get(f"/segments/{uuid.uuid4()}/matched-profiles/count")
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_matched_profiles_returns_empty_list_when_no_sql_rules(self):
+        segment = SimpleNamespace(segment_id=uuid.uuid4(), tenant_id=uuid.uuid4(), sql_rules=None)
+        client = self._client_for(segment, _FakeExecSession())
+
+        response = client.get(f"/segments/{segment.segment_id}/matched-profiles")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), [])
+
+    def test_matched_profiles_count_returns_zero_when_no_sql_rules(self):
+        segment = SimpleNamespace(segment_id=uuid.uuid4(), tenant_id=uuid.uuid4(), sql_rules=None)
+        client = self._client_for(segment, _FakeExecSession())
+
+        response = client.get(f"/segments/{segment.segment_id}/matched-profiles/count")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"count": 0})
+
+    def test_matched_profiles_count_executes_tenant_scoped_query(self):
+        tenant_id = uuid.uuid4()
+        segment = SimpleNamespace(
+            segment_id=uuid.uuid4(),
+            tenant_id=tenant_id,
+            sql_rules="churn_risk_tier IN ('high', 'critical')",
+        )
+        fake_session = _FakeExecSession(result=_FakeScalarOne(7))
+        client = self._client_for(segment, fake_session)
+
+        response = client.get(f"/segments/{segment.segment_id}/matched-profiles/count")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"count": 7})
+        sql, params = fake_session.executed[0]
+        self.assertIn("cdp_master_profiles", sql)
+        self.assertIn("churn_risk_tier IN ('high', 'critical')", sql)
+        self.assertEqual(params["tenant_id"], str(tenant_id))
+
+    def test_matched_profiles_returns_rows_from_query(self):
+        tenant_id = uuid.uuid4()
+        profile_id = str(uuid.uuid4())
+        segment = SimpleNamespace(segment_id=uuid.uuid4(), tenant_id=tenant_id, sql_rules="predictive_clv > 1000")
+        row = {
+            "master_profile_id": profile_id,
+            "tenant_id": str(tenant_id),
+            "domain": "retail",
+            "is_hashed": False,
+            "secondary_emails": [],
+            "secondary_phones": [],
+            "external_ids": {},
+            "device_ids": [],
+            "advertising_ids": [],
+            "cookie_ids": [],
+            "push_tokens": {},
+            "account_numbers": [],
+            "attributes": {},
+            "source_systems": [],
+            "model_versions": {},
+            "historical_clv": 0.0,
+            "status_code": 1,
+        }
+        fake_session = _FakeExecSession(result=_FakeRows([row]))
+        client = self._client_for(segment, fake_session)
+
+        response = client.get(f"/segments/{segment.segment_id}/matched-profiles")
+
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertEqual(len(body), 1)
+        self.assertEqual(body[0]["master_profile_id"], profile_id)
+
+    def test_matched_profiles_rejects_unsafe_sql_rules_at_execution_time(self):
+        """Defense-in-depth: even if unsafe sql_rules somehow ended up on a
+        row (e.g. seeded outside the API), execution-time validation must
+        still reject it with a clean 400 rather than running it."""
+        segment = SimpleNamespace(
+            segment_id=uuid.uuid4(),
+            tenant_id=uuid.uuid4(),
+            sql_rules="1=1; DROP TABLE cdp_master_profiles;",
+        )
+        client = self._client_for(segment, _FakeExecSession())
+
+        response = client.get(f"/segments/{segment.segment_id}/matched-profiles")
+
+        self.assertEqual(response.status_code, 400)
+
+
 if __name__ == "__main__":
     unittest.main()

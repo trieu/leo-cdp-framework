@@ -4,7 +4,9 @@ import uuid
 from datetime import datetime
 from typing import Any, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from core.utils.sql_safety import validate_readonly_sql_statement, validate_sql_where_fragment
 
 
 class SegmentBase(BaseModel):
@@ -19,6 +21,16 @@ class SegmentBase(BaseModel):
     final_generated_sql: Optional[str] = None
     processed_by: str = Field(default="human", pattern="^(human|ai_agent)$")
     is_active: bool = True
+
+    @field_validator("sql_rules")
+    @classmethod
+    def _validate_sql_rules(cls, v: Optional[str]) -> Optional[str]:
+        return validate_sql_where_fragment(v) if v else v
+
+    @field_validator("final_generated_sql")
+    @classmethod
+    def _validate_final_generated_sql(cls, v: Optional[str]) -> Optional[str]:
+        return validate_readonly_sql_statement(v) if v else v
 
 
 class SegmentCreate(SegmentBase):
@@ -39,6 +51,16 @@ class SegmentUpdate(BaseModel):
     member_count: Optional[int] = None
     last_computed_at: Optional[datetime] = None
     status_code: Optional[int] = None
+
+    @field_validator("sql_rules")
+    @classmethod
+    def _validate_sql_rules(cls, v: Optional[str]) -> Optional[str]:
+        return validate_sql_where_fragment(v) if v else v
+
+    @field_validator("final_generated_sql")
+    @classmethod
+    def _validate_final_generated_sql(cls, v: Optional[str]) -> Optional[str]:
+        return validate_readonly_sql_statement(v) if v else v
 
 
 class SegmentRead(SegmentBase):
