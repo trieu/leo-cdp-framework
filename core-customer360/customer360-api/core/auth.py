@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 EXEMPT_PATHS = {
     "/health",
 }
+SSO_LOGIN=settings.sso_login
 
 
 def _build_introspection_url() -> str:
@@ -110,7 +111,7 @@ async def auth_middleware(request: Request, call_next):
     if request.method == "OPTIONS":
         return await call_next(request)
 
-    if request.url.path in EXEMPT_PATHS:
+    if not SSO_LOGIN or request.url.path in EXEMPT_PATHS:
         return await call_next(request)
 
     authorization = request.headers.get("Authorization", "")
