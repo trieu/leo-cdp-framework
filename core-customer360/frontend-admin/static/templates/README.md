@@ -1,1 +1,0 @@
-# handlerbars templates for the frontend-admin app
