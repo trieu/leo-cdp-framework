@@ -7,7 +7,7 @@
 	if(typeof window.leoObserverBatchSize !== 'number') {
 		window.leoObserverBatchSize = 10;
 	}
-	var TIME_TO_ADD_PROXY_IFRAME = 888;
+	var TIME_TO_ADD_PROXY_IFRAME = 500; // 500ms delay to add proxy iframe to avoid blocking page load
     
     if (typeof window.LeoObserverProxy === "undefined" && typeof leoObserverId === 'string' ) {
     	

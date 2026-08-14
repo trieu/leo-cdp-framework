@@ -16,6 +16,30 @@
     // Global session tracking variable
     var localSessionKey = "";
 
+    function hasOwn(obj, key) {
+        return Object.prototype.hasOwnProperty.call(obj, key);
+    }
+
+    function toSafeParamValue(value) {
+        if (value === null || typeof value === 'undefined') {
+            return '';
+        }
+
+        if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+            return value;
+        }
+
+        if (typeof value === 'object') {
+            try {
+                return JSON.stringify(value);
+            } catch (e) {
+                return String(value);
+            }
+        }
+
+        return String(value);
+    }
+
     // Logger Utility
     function log(msg, type) {
         if (!window.console) return;
@@ -49,11 +73,9 @@
             xhr.open(method, url, true);
             
             if (headers) {
-                for (var key in headers) {
-                    if (headers.hasOwnProperty(key)) {
-                        xhr.setRequestHeader(key, headers[key]);
-                    }
-                }
+                Object.keys(headers).forEach(function(key) {
+                    xhr.setRequestHeader(key, headers[key]);
+                });
             }
 
             xhr.withCredentials = true;
@@ -178,27 +200,24 @@
 
             this.isFlushing[url] = true;
 
-            var buffer = queue.slice(0); 
-            this.queues[url] = []; 
+            var buffer = queue.slice(0);
+            this.queues[url] = [];
 
             var eventCount = buffer.length;
             var payload = this.createPayload(buffer);
             var finalUrl = url + (url.indexOf('?') === -1 ? '?' : '&') + "evc=" + eventCount;
-
-            // SMART SENDING LOGIC:
-            // If we don't have a sessionKey yet, we MUST use XHR to read the response.
-            // If we already have a key, we can use Beacon (faster, background).
-            var forceXHR = (localSessionKey === "" || !localSessionKey);
+            var forceXHR = !(localSessionKey && localSessionKey.length > 0);
 
             Network.sendBeaconOrXHR(finalUrl, payload, function(success, responseText) {
                 self.isFlushing[url] = false;
-                
+
                 if (success) {
-                    // Only process response if XHR was used (Beacon returns null text)
                     if (responseText) {
                         trackingCallback(responseText);
                     }
-                    log("Batch sent successfully (" + (responseText ? "XHR" : "Beacon") + "): " + eventCount + " events");
+                    if (CONFIG.DEBUG) {
+                        log("Batch sent successfully (" + (responseText ? "XHR" : "Beacon") + "): " + eventCount + " events");
+                    }
                 } else {
                     log("Batch failed. Restoring data.", "error");
                     self.queues[url] = buffer.concat(self.queues[url]);
@@ -229,25 +248,22 @@
     };
 
     // --- Automatic Flush Timer ---
-    setInterval(function() {
-        for (var url in BatchManager.queues) {
-            if (BatchManager.queues.hasOwnProperty(url)) {
-                BatchManager.flush(url);
-            }
-        }
-    }, CONFIG.TIME_TO_FLUSH);
+    var flushPendingQueues = function() {
+        Object.keys(BatchManager.queues).forEach(function(url) {
+            BatchManager.flush(url);
+        });
+    };
+
+    setInterval(flushPendingQueues, CONFIG.TIME_TO_FLUSH);
 
     // --- Flush on Page Unload ---
     if (window.addEventListener) {
-        window.addEventListener('unload', function() {
-            for (var url in BatchManager.queues) {
-                if (BatchManager.queues.hasOwnProperty(url)) {
-                    // On unload, we don't care about the response/sessionKey
-                    // so we let the system decide (usually Beacon)
-                    BatchManager.flush(url);
-                }
-            }
-        });
+        var handlePageExit = function() {
+            flushPendingQueues();
+        };
+
+        window.addEventListener('pagehide', handlePageExit, false);
+        window.addEventListener('beforeunload', handlePageExit, false);
     }
 
     global.LeoCorsRequest = LeoCorsRequest;
@@ -651,8 +667,8 @@ var leoVisitorIdStringKey = "leocdp_vid";
 (function(global, undefined) {
     var LeoEventObserver = {'fingerprintId' : ""};
     var sessionKey = false;
-    var debug = true;
-    
+    var debug = false;
+
     function debugLog(data){
     	if(debug && window.console){
 			window.console.log(data);
@@ -677,16 +693,34 @@ var leoVisitorIdStringKey = "leocdp_vid";
     }
     
     function initFingerprint(callback){
-    	var options = { excludes: { enumerateDevices : true, deviceMemory : true}}
+    	if (typeof Fingerprint2 === 'undefined' || typeof Fingerprint2.get !== 'function') {
+    		if (typeof callback === 'function') {
+    			callback('');
+    		}
+    		return;
+    	}
+
+    	var options = { excludes: { enumerateDevices : true, deviceMemory : true}};
     	Fingerprint2.get(options, function (components) {
-    	    var values = components.map(function (component) { return component.value })
-    	    var fingerprintId = Fingerprint2.x64hash128(values.join(''), 31)
+    	    if (!components || !components.length) {
+    	        if (typeof callback === 'function') {
+    	            callback('');
+    	        }
+    	        return;
+    	    }
+    
+    	    var values = components.map(function (component) {
+    	        return component && component.value;
+    	    }).filter(function (value) {
+    	        return typeof value !== 'undefined' && value !== null;
+    	    });
+    	    var fingerprintId = Fingerprint2.x64hash128(values.join(''), 31);
   
-    	    var oneWeekInMinutes = 10080;
     		lscache.set("leocdp_fgp", fingerprintId);
 
-    		// callback
-    		if(typeof callback === 'function') callback(fingerprintId);
+    		if (typeof callback === 'function') {
+    			callback(fingerprintId);
+    		}
     	});
     }
     
@@ -709,91 +743,135 @@ var leoVisitorIdStringKey = "leocdp_vid";
         var key = leoVisitorIdStringKey;
         var uuid =  lscache.get(key); 
         
-        // overwrite old ID  
         if(typeof INJECTED_VISITOR_ID === 'string' && typeof uuid === 'string') {
         	if(uuid !== INJECTED_VISITOR_ID) {
         		uuid = INJECTED_VISITOR_ID;
-        		
-        		lscache.flush();
-        		
-        		setTimeout(function(){
-        			lscache.set(key, uuid); //cache forever
-        		},200);
+        		lscache.set(key, uuid);
         	}
         }
         
         if (typeof uuid !== 'string') {
         	uuid = generateVisitorId();
-            lscache.set(key, uuid); //cache forever
+            lscache.set(key, uuid);
         } 
 
         return uuid;
     }
 
     var doTracking = function(eventType, params) {
-		var localSessionKey = getSessionKey(true);
-		LeoCorsRequest.setSessionKey(localSessionKey)
-		
-        var batchSize = Number.parseInt(params['batchsize'] || 1);
-        delete params['batchsize'];
-
-		var screen = params['screen'] || "";
-		delete params['screen'];
-
-		params["visid"] = getVisitorId();
-        var queryStr = objectToQueryString(params);
-		
-    	var prefixUrl = PREFIX_EVENT_VIEW_URL;
-        if(eventType === "action"){
-        	prefixUrl = PREFIX_EVENT_ACTION_URL;
-        } 
-        else if(eventType === "conversion"){
-        	prefixUrl = PREFIX_EVENT_CONVERSION_URL;
-        } 
-        else if(eventType === "feedback"){
-        	prefixUrl = PREFIX_EVENT_FEEDBACK_URL;
+        if (!params || typeof params !== 'object') {
+            params = {};
         }
-        
-        var url = prefixUrl + '?ctxsk=' + localSessionKey + "&screen=" + screen;
-            
-        if(batchSize <= 1){
-            // send of batchSize is 1 or 0 using HTTP POST
+
+        var activeSessionKey = getSessionKey(true);
+        LeoCorsRequest.setSessionKey(activeSessionKey);
+
+        var payload = {};
+        for (var key in params) {
+            if (!hasOwn(params, key)) {
+                continue;
+            }
+            if (key === 'batchsize' || key === 'screen' || typeof params[key] === 'undefined' || params[key] === null || typeof params[key] === 'function') {
+                continue;
+            }
+            payload[key] = params[key];
+        }
+
+        var batchSize = parseInt(params.batchsize, 10);
+        if (!isFinite(batchSize) || batchSize < 1) {
+            batchSize = 1;
+        }
+
+        var screen = params.screen || "";
+        payload.visid = getVisitorId();
+        var queryStr = objectToQueryString(payload);
+
+        var prefixUrl = PREFIX_EVENT_VIEW_URL;
+        if (eventType === "action") {
+            prefixUrl = PREFIX_EVENT_ACTION_URL;
+        } else if (eventType === "conversion") {
+            prefixUrl = PREFIX_EVENT_CONVERSION_URL;
+        } else if (eventType === "feedback") {
+            prefixUrl = PREFIX_EVENT_FEEDBACK_URL;
+        }
+
+        var url = prefixUrl + '?ctxsk=' + encodeURIComponent(activeSessionKey || "") + "&screen=" + encodeURIComponent(screen);
+
+        if (batchSize <= 1) {
             LeoCorsRequest.post(url, queryStr);
- 			console.log("LeoCorsRequest post " + url, queryStr)
+            if (CONFIG.DEBUG) {
+                log("LeoCorsRequest post " + url, "debug");
+            }
+        } else {
+            LeoCorsRequest.batchSend(url, payload, batchSize);
+            if (CONFIG.DEBUG) {
+                log("LeoCorsRequest batchSend " + url, "debug");
+            }
         }
-        else {
-			// push to queue
-            LeoCorsRequest.batchSend(url, params, batchSize)
-			console.log("LeoCorsRequest batchSend " + url, params)
-        }
-      
-    }
-    
+    };
+
     var updateProfile = function(params) {
-    	 var h = function(resHeaders, text) {
-             //var data = JSON.parse(text);             
+        if (!params || typeof params !== 'object') {
+            params = {};
+        }
+
+        var h = function(resHeaders, text) {
+             //var data = JSON.parse(text);
+         };
+
+         var payload = {};
+         for (var key in params) {
+             if (!hasOwn(params, key)) {
+                 continue;
+             }
+             if (typeof params[key] === 'undefined' || params[key] === null || typeof params[key] === 'function') {
+                 continue;
+             }
+             payload[key] = params[key];
          }
-    	 
-         params['visid'] =  getVisitorId();
-         var paramsStr = objectToQueryString(params);
-         
-         var sessionKey = getSessionKey();        
+
+         payload.visid = getVisitorId();
+         var paramsStr = objectToQueryString(payload);
+
+         var sessionKey = getSessionKey();
          var url = PREFIX_UPDATE_PROFILE_URL + '?' + 'ctxsk=' + sessionKey;
-         
+
          LeoCorsRequest.post(url, paramsStr, h);
-    }
-       
-    var objectToQueryString = function(params){
-    	// FIXME add fingerprint to params
-    	if(OBSERVE_WITH_FINGERPRINT){
-    		params['fgp'] = lscache.get("leocdp_fgp") || LeoEventObserver.fingerprintId;
-    	}
-    	
-    	var queryString = Object.keys(params).map((key) => {
-		    return encodeURIComponent(key) + '=' + encodeURIComponent(params[key])
-		}).join('&');
-		return queryString;
-    }
+    };
+
+    var objectToQueryString = function(params) {
+        if (!params || typeof params !== 'object') {
+            return '';
+        }
+
+        var normalized = {};
+        for (var key in params) {
+            if (!hasOwn(params, key)) {
+                continue;
+            }
+            var value = params[key];
+            if (typeof value === 'undefined' || value === null || typeof value === 'function') {
+                continue;
+            }
+            normalized[key] = toSafeParamValue(value);
+        }
+
+        if (OBSERVE_WITH_FINGERPRINT) {
+            var fingerprint = lscache.get("leocdp_fgp") || LeoEventObserver.fingerprintId || "";
+            if (fingerprint) {
+                normalized.fgp = fingerprint;
+            }
+        }
+
+        var pairs = [];
+        for (var field in normalized) {
+            if (!hasOwn(normalized, field)) {
+                continue;
+            }
+            pairs.push(encodeURIComponent(field) + '=' + encodeURIComponent(normalized[field]));
+        }
+        return pairs.join('&');
+    };
     
     function leoObserverProxyReady(data) {
     	setSessionKey(data.sessionKey);
@@ -809,32 +887,35 @@ var leoVisitorIdStringKey = "leocdp_vid";
     }
 
     var getContextSession = function(params) {
-    	var leoctxsk = getSessionKey();
-    	var isExpired = typeof leoctxsk !== 'string' || leoctxsk === '';
-    	//isExpired = true; // TODO to debug, uncomment this line
-    	
-    	if( isExpired ){
-    		// the cache is expired
-    		var h = function(resHeaders, text) {
-                var data = JSON.parse(text);
-                if(data.status === 101){
-                	leoObserverProxyReady(data);
+        if (!params || typeof params !== 'object') {
+            params = {};
+        }
+
+        var leoctxsk = getSessionKey();
+        var isExpired = typeof leoctxsk !== 'string' || leoctxsk === '';
+
+        if (isExpired) {
+            var h = function(resHeaders, text) {
+                try {
+                    var data = JSON.parse(text);
+                    if (data && data.status === 101) {
+                        leoObserverProxyReady(data);
+                    } else {
+                        log("Session init failed: " + (data ? JSON.stringify(data) : text), "error");
+                    }
+                } catch (e) {
+                    log("Failed to parse session init response: " + e.message, "error");
                 }
-                else {
-                	console.error(data)
-                }
-            }
+            };
+
             var queryStr = objectToQueryString(params);
             var vsId = getVisitorId();
             var url = PREFIX_SESSION_INIT_URL + '?' + queryStr + '&visid=' + vsId;
             LeoCorsRequest.get(url, h);
-    	}
-    	else {
-    		// the cache is valid
-    		sendMessage("LeoObserverProxyReady");
-    	}
-    }
-
+        } else {
+            sendMessage("LeoObserverProxyReady");
+        }
+    };
     LeoEventObserver.doTracking = doTracking;
     LeoEventObserver.getContextSession = getContextSession;
     LeoEventObserver.updateProfile = updateProfile;
