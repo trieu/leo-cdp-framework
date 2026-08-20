@@ -1,7 +1,6 @@
 /**
- * LeoEventObserver version 0.9.3 - Updated for Beacon & Session Handling
+ * Leo Event Observer version 0.9.3 - Updated for Beacon & Session Handling
  */
-
 (function(global) {
     'use strict';
 
@@ -24,11 +23,9 @@
         if (value === null || typeof value === 'undefined') {
             return '';
         }
-
         if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
             return value;
         }
-
         if (typeof value === 'object') {
             try {
                 return JSON.stringify(value);
@@ -36,7 +33,6 @@
                 return String(value);
             }
         }
-
         return String(value);
     }
 
@@ -916,6 +912,7 @@ var leoVisitorIdStringKey = "leocdp_vid";
             sendMessage("LeoObserverProxyReady");
         }
     };
+    // --- Expose Public API ---
     LeoEventObserver.doTracking = doTracking;
     LeoEventObserver.getContextSession = getContextSession;
     LeoEventObserver.updateProfile = updateProfile;
