@@ -1751,6 +1751,16 @@ public class Profile extends AbstractProfile implements Comparable<Profile> {
 	public TrackingEvent getLastItemViewEvent() {
 		return lastItemViewEvent;
 	}
+    
+	/**
+	 * Compatibility alias for profile metadata saved before item-view naming was introduced.
+	 *
+	 * @return the most recent item-view event
+	 */
+	@Deprecated
+	public TrackingEvent getLastProductViewEvent() {
+		return getLastItemViewEvent();
+	}
 
 	public void setLastItemViewEvent(TrackingEvent lastItemViewEvent) {
 		this.lastItemViewEvent = lastItemViewEvent;

@@ -189,12 +189,13 @@
 				
 				// redirect
 				location.href = targetMediaUrl;
-			},900)
+			},4500)
 		}
 		
 		// handle click action of user
 		var doClickAction= function(webVisitorId){
-			submitShortLinkClickEvent();	
+			submitShortLinkClickEvent();
+			injectedVisitorId = webVisitorId;
 			gotoTargetUrl(webVisitorId);
 		}
 		
