@@ -1,13 +1,57 @@
 /*
  * LEO JS code for LEO CDP - version 0.9.5 - built on 2025.12.15
  */
-// ------------ LEO Proxy ------------------
+
+//  Leo Tag Audit - Checks for the presence of common tracking tags on the page
+(function(global) {
+	'use strict';
+
+	function hasScriptMatching(pattern) {
+		var scripts = global.document && global.document.getElementsByTagName('script');
+
+		if (!scripts) {
+			return false;
+		}
+
+		for (var index = 0; index < scripts.length; index += 1) {
+			if (pattern.test(scripts[index].src || '')) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	function hasGlobalFunction(name) {
+		return typeof global[name] === 'function';
+	}
+
+	function checkTrackingTags() {
+		var dataLayer = global.dataLayer;
+		var hasGoogleTagManagerScript = hasScriptMatching(/googletagmanager\.com\/gtm\.js(?:\?|$)/i);
+		var hasGoogleAnalyticsScript = hasScriptMatching(/googletagmanager\.com\/gtag\/js(?:\?|$)/i);
+
+		return {
+			ga4: hasGlobalFunction('gtag') || hasGoogleAnalyticsScript,
+			gtm: hasGoogleTagManagerScript || !!global.google_tag_manager,
+			metaPixel: hasGlobalFunction('fbq') || hasScriptMatching(/connect\.facebook\.net\/[^/]+\/fbevents\.js/i),
+			tiktokPixel: !!global.ttq || hasScriptMatching(/analytics\.tiktok\.com\/i18n\/pixel\/events\.js/i),
+			checkedAt: new Date().toISOString(),
+			dataLayer: Array.isArray(dataLayer)
+		};
+	}
+
+	global.LeoTagAudit = global.LeoTagAudit || {};
+	global.LeoTagAudit.checkTrackingTags = checkTrackingTags;
+})(typeof window !== 'undefined' ? window : this);
+
+// LEO Proxy : collect and send events to LEO CDP server via cross-domain iframe
 (function() {
 	var leoObserverId = window.leoObserverId || "";
 	if(typeof window.leoObserverBatchSize !== 'number') {
 		window.leoObserverBatchSize = 10;
 	}
-	var TIME_TO_ADD_PROXY_IFRAME = 888;
+	var TIME_TO_ADD_PROXY_IFRAME = 500; // 500ms delay to add proxy iframe to avoid blocking page load
     
     if (typeof window.LeoObserverProxy === "undefined" && typeof leoObserverId === 'string' ) {
     	

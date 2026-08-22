@@ -92,74 +92,89 @@
     </script>
     
     <script>
-        // the event queue
-    	var queueTracking = [], queueUpdating = [], synchVisitorCall = false;
-    	
-    	var proxyCallHandler = function(data){
-    		
-        	if(data.call === 'doTracking' && data.eventType && data.params){
-        		queueTracking.push(data);
-        	} 
-			else if(data.call === 'getContextSession' && data.params) {
-        		LeoEventObserver.getContextSession(data.params);
-        	}
-        	else if(data.call === 'updateProfile' && data.params ){
-        		queueUpdating.push(data);
-        	}
-        	else if(data.call === 'synchLeoVisitorId' ){
-        		synchVisitorCall = data;
-        	}
-        }
-    	
-    	var codeIsReady = function() {
-    		// call Fingerprint then do the jobs
-    		LeoEventObserver.initFingerprint(function(fingerprintId){
-    			
-    			// synch visitorId and fingerprintId
-    			LeoEventObserver.visitorId = LeoEventObserver.getVisitorId();
-				LeoEventObserver.fingerprintId = fingerprintId;
-    			
-    			// done
-    			setTimeout(function(){
-    				// send ready signal to proxy 
-            		sendMessage("LeoObserverProxyLoaded");
-            		// check and get ContextSession
-            	},500);
-    			
-            	// init for first-time loads
-    			var queueProcessor = function() {
-            		var len = queueTracking.length;
-            		while(len > 0) { 
-            			var data = queueTracking.pop(); 
-            			LeoEventObserver.doTracking(data.eventType, data.params);
-            			len = len - 1;
-            		}
-            		len = queueUpdating.length;
-            		while(len > 0) { 
-            			var data = queueUpdating.pop(); 
-            			LeoEventObserver.updateProfile(data.params);
-            			len = len - 1;
-            		}
-            		if(synchVisitorCall !== false){
-            			var data = synchVisitorCall;
-            			// cross-browser synch
-                		sendMessage("synchLeoVisitorId-" + LeoEventObserver.visitorId);
-                		synchVisitorCall = false;
-            		}
-            	}
-    			setInterval(queueProcessor,888);
-    		});
-    	}
+        (function() {
+            var queueTracking = [];
+            var queueUpdating = [];
+            var synchVisitorCall = false;
+            var queueScheduled = false;
 
-  		var cbKey = "20251215";
-	   	var leoObserverJsUrl = "https://gcore.jsdelivr.net/gh/USPA-Technology/leo-cdp-static-files@v0.9.5/js/leo-observer/leo.observer.min.js?cb="+cbKey;
-	   	var isDev = ROOT_DOMAIN.indexOf('.example.com')>0;
-  		if(isDev) { 
-  			console.log("------------ LEOCDP DEV MODE TRUE ------------")
-			leoObserverJsUrl = "https://obs.example.com/public/js/leo-observer-src/leo.observer.js?cb="+(new Date().getTime());
-		}
-  		loadScript(leoObserverJsUrl, codeIsReady);
+            function processQueue() {
+                queueScheduled = false;
+
+                while (queueTracking.length) {
+                    var data = queueTracking.pop();
+                    if (data && data.eventType && data.params && window.LeoEventObserver && typeof window.LeoEventObserver.doTracking === 'function') {
+                        window.LeoEventObserver.doTracking(data.eventType, data.params);
+                    }
+                }
+
+                while (queueUpdating.length) {
+                    var data = queueUpdating.pop();
+                    if (data && data.params && window.LeoEventObserver && typeof window.LeoEventObserver.updateProfile === 'function') {
+                        window.LeoEventObserver.updateProfile(data.params);
+                    }
+                }
+
+                if (synchVisitorCall !== false && window.LeoEventObserver && typeof window.LeoEventObserver.visitorId !== 'undefined') {
+                    sendMessage('synchLeoVisitorId-' + window.LeoEventObserver.visitorId);
+                    synchVisitorCall = false;
+                }
+            }
+
+            function scheduleQueueFlush() {
+                if (queueScheduled) {
+                    return;
+                }
+                queueScheduled = true;
+                setTimeout(processQueue, 0);
+            }
+
+            var proxyCallHandler = function(data) {
+                if (!data || typeof data !== 'object') {
+                    return;
+                }
+
+                if (data.call === 'doTracking' && data.eventType && data.params) {
+                    queueTracking.push(data);
+                    scheduleQueueFlush();
+                } else if (data.call === 'getContextSession' && data.params && window.LeoEventObserver && typeof window.LeoEventObserver.getContextSession === 'function') {
+                    window.LeoEventObserver.getContextSession(data.params);
+                } else if (data.call === 'updateProfile' && data.params) {
+                    queueUpdating.push(data);
+                    scheduleQueueFlush();
+                } else if (data.call === 'synchLeoVisitorId') {
+                    synchVisitorCall = data;
+                    scheduleQueueFlush();
+                }
+            };
+
+            var codeIsReady = function() {
+                if (!window.LeoEventObserver || typeof window.LeoEventObserver.initFingerprint !== 'function') {
+                    return;
+                }
+
+                window.LeoEventObserver.initFingerprint(function(fingerprintId) {
+                    window.LeoEventObserver.visitorId = window.LeoEventObserver.getVisitorId();
+                    window.LeoEventObserver.fingerprintId = fingerprintId || '';
+
+                    setTimeout(function() {
+                        sendMessage('LeoObserverProxyLoaded');
+                    }, 0);
+
+                    scheduleQueueFlush();
+                });
+            };
+
+            var cbKey = '20251215';
+            var leoObserverJsUrl = 'https://gcore.jsdelivr.net/gh/USPA-Technology/leo-cdp-static-files@v0.9.5/js/leo-observer/leo.observer.min.js?cb=' + cbKey;
+            var isDev = ROOT_DOMAIN.indexOf('.example.com') > 0;
+
+            if (isDev) {
+                console.log('------------ LEOCDP DEV MODE TRUE ------------');
+                leoObserverJsUrl = 'https://obs.example.com/public/js/leo-observer-src/leo.observer.js?cb=' + (new Date().getTime());
+            }
+
+            loadScript(leoObserverJsUrl, codeIsReady);
+        })();
     </script>
 </body>
-
-</html>
