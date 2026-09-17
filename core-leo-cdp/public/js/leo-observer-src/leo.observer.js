@@ -1,5 +1,5 @@
 /**
- * Leo Event Observer version 0.9.3 - Updated for Beacon & Session Handling
+ * Leo Event Observer version v0.9.8 - Updated for Beacon & Session Handling
  */
 (function(global) {
     'use strict';
@@ -14,23 +14,6 @@
 
     // Global session tracking variable
     var localSessionKey = "";
-
-    function toSafeParamValue(value) {
-        if (value === null || typeof value === 'undefined') {
-            return '';
-        }
-        if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-            return value;
-        }
-        if (typeof value === 'object') {
-            try {
-                return JSON.stringify(value);
-            } catch (e) {
-                return String(value);
-            }
-        }
-        return String(value);
-    }
 
     // Logger Utility
     function log(msg, type) {
@@ -47,10 +30,10 @@
 
     function createXHR() {
         if (window.XMLHttpRequest) {
-            return new XMLHttpRequest();
+            return new window.XMLHttpRequest();
         }
         try {
-            return new ActiveXObject("Microsoft.XMLHTTP");
+            return new window.ActiveXObject("Microsoft.XMLHTTP");
         } catch (e) {
             log("XHR not supported.", "error");
             return null;
@@ -116,7 +99,7 @@
         sendBeaconOrXHR: function(url, payload, callback, forceXHR) {
             // 1. Force XHR if we need to read the response (e.g., to get sessionKey)
             // or if Beacon is not supported.
-            if (!forceXHR && navigator.sendBeacon) {
+            if (!forceXHR && typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function' && typeof Blob !== 'undefined') {
                 try {
                     var blob = new Blob([payload], { type: CONFIG.CONTENT_TYPE_FORM });
                     var queued = navigator.sendBeacon(url, blob);
@@ -223,15 +206,15 @@
     var LeoCorsRequest = {
         // Allow external setting of key if needed
         setSessionKey: function(key) {
-			if(key && key !== "") localSessionKey = key;
+			localSessionKey = typeof key === 'string' ? key : '';
         },
 
-        get: function(url) {
-            Network.get(url, trackingCallback);
+        get: function(url, callback) {
+            Network.get(url, callback || trackingCallback);
         },
         
-        post: function(url, params) {
-            Network.post(url, params, trackingCallback);
+        post: function(url, params, callback) {
+            Network.post(url, params, callback || trackingCallback);
         },
 
         batchSend: function(url, paramsObj, batchSize) {
@@ -661,8 +644,35 @@ var leoVisitorIdStringKey = "leocdp_vid";
     var sessionKey = false;
     var debug = false;
 
+    function log(msg, type) {
+        if (!window.console) return;
+        var prefix = "[LeoCDP] ";
+        if (type === 'error') {
+            window.console.error(prefix + msg);
+        } else if (debug) {
+            window.console.log(prefix + msg);
+        }
+    }
+
     function hasOwn(obj, key) {
         return Object.prototype.hasOwnProperty.call(obj, key);
+    }
+
+    function toSafeParamValue(value) {
+        if (value === null || typeof value === 'undefined') {
+            return '';
+        }
+        if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+            return value;
+        }
+        if (typeof value === 'object') {
+            try {
+                return JSON.stringify(value);
+            } catch (e) {
+                return String(value);
+            }
+        }
+        return String(value);
     }
 
     function debugLog(data){
@@ -672,19 +682,20 @@ var leoVisitorIdStringKey = "leocdp_vid";
     }
     
     function setSessionKey(key){
-    	sessionKey = key;
+        sessionKey = typeof key === 'string' ? key : '';
     	lscache.set(leoSessionStringKey, sessionKey);
     }
     
-    function getSessionKey(autoResfresh){
+    function getSessionKey(autoRefresh){
     	sessionKey = lscache.get(leoSessionStringKey);
-		if(typeof sessionKey !== 'string' && autoResfresh === true){
+        if(typeof sessionKey !== 'string' && autoRefresh === true){
 			sessionKey = "";
 		}
     	return sessionKey;
     }
     
     function clearSessionKey(){
+        sessionKey = false;
     	lscache.remove(leoSessionStringKey);
     }
     
@@ -795,12 +806,12 @@ var leoVisitorIdStringKey = "leocdp_vid";
 
         if (batchSize <= 1) {
             LeoCorsRequest.post(url, queryStr);
-            if (CONFIG.DEBUG) {
+            if (debug) {
                 log("LeoCorsRequest post " + url, "debug");
             }
         } else {
             LeoCorsRequest.batchSend(url, payload, batchSize);
-            if (CONFIG.DEBUG) {
+            if (debug) {
                 log("LeoCorsRequest batchSend " + url, "debug");
             }
         }
@@ -835,7 +846,7 @@ var leoVisitorIdStringKey = "leocdp_vid";
          LeoCorsRequest.post(url, paramsStr, h);
     };
 
-    var objectToQueryString = function(params) {
+    function objectToQueryString(params) {
         if (!params || typeof params !== 'object') {
             return '';
         }
@@ -852,7 +863,7 @@ var leoVisitorIdStringKey = "leocdp_vid";
             normalized[key] = toSafeParamValue(value);
         }
 
-        if (OBSERVE_WITH_FINGERPRINT) {
+        if (typeof OBSERVE_WITH_FINGERPRINT !== 'undefined' && OBSERVE_WITH_FINGERPRINT) {
             var fingerprint = lscache.get("leocdp_fgp") || LeoEventObserver.fingerprintId || "";
             if (fingerprint) {
                 normalized.fgp = fingerprint;
@@ -869,7 +880,16 @@ var leoVisitorIdStringKey = "leocdp_vid";
         return pairs.join('&');
     };
     
+    function notifyProxyReady() {
+        if (typeof sendMessage === 'function') {
+            sendMessage("LeoObserverProxyReady");
+        }
+    }
+
     function leoObserverProxyReady(data) {
+        if (!data || typeof data !== 'object') {
+            return;
+        }
     	setSessionKey(data.sessionKey);
     	
     	var vid = getVisitorId();
@@ -878,7 +898,7 @@ var leoVisitorIdStringKey = "leocdp_vid";
     		lscache.set(leoVisitorIdStringKey, newVisitorId);
     	}
     	
-		sendMessage("LeoObserverProxyReady");
+        notifyProxyReady();
         debugLog(data);
     }
 
@@ -891,7 +911,7 @@ var leoVisitorIdStringKey = "leocdp_vid";
         var isExpired = typeof leoctxsk !== 'string' || leoctxsk === '';
 
         if (isExpired) {
-            var h = function(resHeaders, text) {
+            var h = function(text) {
                 try {
                     var data = JSON.parse(text);
                     if (data && data.status === 101) {
@@ -906,10 +926,10 @@ var leoVisitorIdStringKey = "leocdp_vid";
 
             var queryStr = objectToQueryString(params);
             var vsId = getVisitorId();
-            var url = PREFIX_SESSION_INIT_URL + '?' + queryStr + '&visid=' + vsId;
+            var url = PREFIX_SESSION_INIT_URL + '?' + queryStr + '&visid=' + encodeURIComponent(vsId);
             LeoCorsRequest.get(url, h);
         } else {
-            sendMessage("LeoObserverProxyReady");
+            notifyProxyReady();
         }
     };
     // --- Expose Public API ---
