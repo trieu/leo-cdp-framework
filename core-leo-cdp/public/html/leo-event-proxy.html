@@ -59,21 +59,6 @@
             window.parent.postMessage(msg, PARENT_ORIGIN);
         };
         
-        // Listen to messages from parent window
-        bindEvent(window, 'message', function (e) {
-        	//console.log("===> iframe.e.origin " + e.origin + " data " + e.data)
-        	var json = {};
-        	try {
-        		json = JSON.parse(e.data)
-        	}
-        	catch(e){
-        		console.error(e)
-        	}        	
-        	if(typeof json.call ==='string') {
-        		proxyCallHandler(json)
-        	}
-        });
-
         function loadScript(src, callback) {
 		  	var s,r,t;
 		  	r = false;
@@ -147,6 +132,20 @@
                     scheduleQueueFlush();
                 }
             };
+
+            // Listen to messages from parent window
+            bindEvent(window, 'message', function (e) {
+                var json = {};
+                try {
+                    json = JSON.parse(e.data);
+                } catch (e) {
+                    console.error(e);
+                }
+
+                if (typeof json.call === 'string') {
+                    proxyCallHandler(json);
+                }
+            });
 
             var codeIsReady = function() {
                 if (!window.LeoEventObserver || typeof window.LeoEventObserver.initFingerprint !== 'function') {
