@@ -15,10 +15,6 @@
     // Global session tracking variable
     var localSessionKey = "";
 
-    function hasOwn(obj, key) {
-        return Object.prototype.hasOwnProperty.call(obj, key);
-    }
-
     function toSafeParamValue(value) {
         if (value === null || typeof value === 'undefined') {
             return '';
@@ -664,6 +660,10 @@ var leoVisitorIdStringKey = "leocdp_vid";
     var LeoEventObserver = {'fingerprintId' : ""};
     var sessionKey = false;
     var debug = false;
+
+    function hasOwn(obj, key) {
+        return Object.prototype.hasOwnProperty.call(obj, key);
+    }
 
     function debugLog(data){
     	if(debug && window.console){
