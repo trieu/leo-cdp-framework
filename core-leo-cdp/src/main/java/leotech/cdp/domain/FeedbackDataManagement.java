@@ -300,8 +300,8 @@ public final class FeedbackDataManagement {
 			SortedSet<SurveyResult> survetResults = report.getSurveyResults();
 			
 			// building header
-			SurveyResult headResult = survetResults.first();
-			if(headResult != null) {
+			if (!survetResults.isEmpty()) {
+				SurveyResult headResult = survetResults.first();
 				String question = "\"[" + headResult.getQuestionGroup() + "]" +headResult.getQuestion()+ "\"";
 				exportedStr.append(question).append(",");
 				SortedSet<SurveyChoice> answerResults = headResult.getAnswerResults();
